@@ -1,19 +1,125 @@
 /**
  * CRMCommandCenterView - Command Center de Gestao de Atletas
  *
- * Tela 5: Central de comando com filtros avancados, acoes em massa, automacoes,
- * e visao consolidada de todos os atletas
+ * Tela 5: Central de comando com filtros visuais (modality/level/group tabs),
+ * acoes em massa, sort por adesao, AthleteCard integrado, e Novo Atleta.
+ * Substitui os dropdowns por pill tabs iguais ao FluxDashboard.
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Send, Filter, X, MessageCircle, ExternalLink } from 'lucide-react';
+import {
+  ArrowLeft,
+  Send,
+  Filter,
+  X,
+  MessageCircle,
+  ExternalLink,
+  Plus,
+  Search,
+  GraduationCap,
+  Tag,
+  Settings,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Users,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { AthleteService } from '../services/athleteService';
+import { supabase } from '@/services/supabaseClient';
+import { AthleteService, CreateAthleteInput } from '../services/athleteService';
+import { AthleteProfileService } from '../services/athleteProfileService';
 import { AutomationService } from '../services/automationService';
-import { ConnectionStatusDot } from '../components/ConnectionStatusDot';
-import type { Athlete, TrainingModality, AthleteLevel, AthleteStatus } from '../types/flux';
-import type { WorkoutAutomation, CRMFilters } from '../types/flow';
-import { MODALITY_CONFIG, LEVEL_LABELS, STATUS_CONFIG } from '../types/flux';
+import { useAthletes } from '../hooks/useAthletes';
+import { useFluxGamification } from '../hooks/useFluxGamification';
+import { AthleteCard } from '../components/AthleteCard';
+import { AthleteFormDrawer } from '../components/forms';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import {
+  AthleteGroupManager,
+  loadGroupData,
+  getAthleteGroups,
+} from '../components/coach/AthleteGroupManager';
+import type {
+  Athlete,
+  TrainingModality,
+  AthleteLevel,
+  AthleteGroup,
+  AthleteGroupData,
+  ModalityLevel,
+  Alert,
+} from '../types/flux';
+import type { WorkoutAutomation } from '../types/flow';
+import {
+  MODALITY_CONFIG,
+  TRAINING_MODALITIES,
+  LEVEL_LABELS,
+  STATUS_CONFIG,
+  getGroupColorClasses,
+} from '../types/flux';
+
+// ============================================================================
+// Sort / Level types (mirroring FluxDashboard)
+// ============================================================================
+
+type SortOrder = 'none' | 'asc' | 'desc';
+
+type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado';
+
+const LEVEL_CATEGORIES: {
+  id: LevelCategory;
+  label: string;
+  icon: string;
+  levels: AthleteLevel[];
+}[] = [
+  { id: 'all', label: 'Todos', icon: '\uD83C\uDFAF', levels: [] },
+  { id: 'iniciante', label: 'Iniciante', icon: '\uD83C\uDF31', levels: ['iniciante'] },
+  { id: 'intermediario', label: 'Interm\u00e9dio', icon: '\uD83C\uDF3F', levels: ['intermediario'] },
+  { id: 'avancado', label: 'Avan\u00e7ado', icon: '\uD83C\uDF33', levels: ['avancado'] },
+];
+
+// ============================================================================
+// Modality Tab component (same as FluxDashboard)
+// ============================================================================
+
+const ModalityTab: React.FC<{
+  modality: TrainingModality | 'all';
+  isSelected: boolean;
+  count: number;
+  onClick: () => void;
+}> = ({ modality, isSelected, count, onClick }) => {
+  const config = modality === 'all' ? null : MODALITY_CONFIG[modality];
+  const label = modality === 'all' ? 'Todos' : config?.label || '';
+  const icon = modality === 'all' ? '\uD83C\uDFAF' : config?.icon || '';
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+        isSelected
+          ? 'ceramic-card bg-ceramic-base shadow-md'
+          : 'ceramic-inset hover:bg-white/50'
+      }`}
+    >
+      <span className="text-lg">{icon}</span>
+      <span
+        className={`text-xs font-bold uppercase tracking-wider ${
+          isSelected ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
+        }`}
+      >
+        {label}
+      </span>
+      <span
+        className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+          isSelected
+            ? 'bg-ceramic-info/20 text-ceramic-info'
+            : 'bg-ceramic-cool text-ceramic-text-secondary'
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+};
 
 // ============================================================================
 // Bulk WhatsApp Modal
@@ -56,10 +162,12 @@ function BulkWhatsAppModal({ isOpen, onClose, athletes }: BulkWhatsAppModalProps
                 Mensagem em Massa
               </h2>
               <p className="text-xs text-ceramic-text-secondary">
-                {athletesWithPhone.length} atleta{athletesWithPhone.length !== 1 ? 's' : ''} com telefone
+                {athletesWithPhone.length} atleta
+                {athletesWithPhone.length !== 1 ? 's' : ''} com telefone
                 {athletesWithoutPhone.length > 0 && (
                   <span className="text-ceramic-warning">
-                    {' '}({athletesWithoutPhone.length} sem telefone)
+                    {' '}
+                    ({athletesWithoutPhone.length} sem telefone)
                   </span>
                 )}
               </p>
@@ -132,7 +240,9 @@ function BulkWhatsAppModal({ isOpen, onClose, athletes }: BulkWhatsAppModalProps
                   className="flex items-center justify-between p-3 ceramic-inset rounded-lg mb-2 opacity-60"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{MODALITY_CONFIG[athlete.modality]?.icon}</span>
+                    <span className="text-lg">
+                      {MODALITY_CONFIG[athlete.modality]?.icon}
+                    </span>
                     <p className="text-sm text-ceramic-text-secondary">{athlete.name}</p>
                   </div>
                   <span className="text-xs text-ceramic-text-secondary">Sem telefone</span>
@@ -165,40 +275,169 @@ function BulkWhatsAppModal({ isOpen, onClose, athletes }: BulkWhatsAppModalProps
 
 export default function CRMCommandCenterView() {
   const navigate = useNavigate();
-  const [athletes, setAthletes] = useState<(Athlete & { adherence_rate?: number })[]>([]);
+
+  // Use the real-time hook for athletes (same as FluxDashboard)
+  const { athletes: allAthletes, isLoading, error, refresh } = useAthletes();
+
+  // Automations (separate fetch, not real-time)
   const [automations, setAutomations] = useState<WorkoutAutomation[]>([]);
+
+  // Gamification
+  const { trackAthleteCreated } = useFluxGamification();
+
+  // Selection state
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState<CRMFilters>({});
-  const [loading, setLoading] = useState(true);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
+  // Filter states (pill-based, not dropdown)
+  const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
+  const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [adherenceSort, setAdherenceSort] = useState<SortOrder>('none');
+
+  // Group filter states
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [groupManagerOpen, setGroupManagerOpen] = useState(false);
+  const [coachUserId, setCoachUserId] = useState('');
+  const [groupData, setGroupData] = useState<AthleteGroupData>({
+    groups: [],
+    assignments: {},
+  });
+
+  // Athlete form modal state
+  const [athleteModalOpen, setAthleteModalOpen] = useState(false);
+  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
+
+  // Delete confirmation modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
+
+  // Load automations
   useEffect(() => {
-    loadData();
+    AutomationService.getActiveAutomations().then((res) => {
+      if (res.data) setAutomations(res.data);
+    });
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
-    const [athletesRes, automationsRes] = await Promise.all([
-      AthleteService.getAthletesWithAdherence(),
-      AutomationService.getActiveAutomations(),
-    ]);
+  // Load coach user ID and group data
+  useEffect(() => {
+    const loadCoachData = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setCoachUserId(user.id);
+        setGroupData(loadGroupData(user.id));
+      }
+    };
+    loadCoachData();
+  }, []);
 
-    if (athletesRes.data) setAthletes(athletesRes.data);
-    if (automationsRes.data) setAutomations(automationsRes.data);
-    setLoading(false);
+  // ---- Modality counts (using practiced_modalities) ----
+  const modalityCounts = useMemo(() => {
+    const counts: Record<TrainingModality, number> = {
+      swimming: 0,
+      running: 0,
+      cycling: 0,
+      strength: 0,
+      walking: 0,
+    };
+
+    for (const athlete of allAthletes) {
+      const modalities = athlete.practiced_modalities?.length
+        ? athlete.practiced_modalities
+        : [athlete.modality];
+      for (const mod of modalities) {
+        if (counts[mod as TrainingModality] !== undefined) {
+          counts[mod as TrainingModality]++;
+        }
+      }
+    }
+
+    return counts;
+  }, [allAthletes]);
+
+  // ---- Level counts ----
+  const levelCounts = useMemo(() => {
+    const counts: Record<LevelCategory, number> = {
+      all: allAthletes.length,
+      iniciante: 0,
+      intermediario: 0,
+      avancado: 0,
+    };
+
+    for (const athlete of allAthletes) {
+      if (athlete.level === 'iniciante') counts.iniciante++;
+      else if (athlete.level === 'intermediario') counts.intermediario++;
+      else if (athlete.level === 'avancado') counts.avancado++;
+    }
+
+    return counts;
+  }, [allAthletes]);
+
+  // ---- Filtered + sorted athletes ----
+  const filteredAthletes = useMemo(() => {
+    let result = [...allAthletes];
+
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((a) => a.name.toLowerCase().includes(q));
+    }
+
+    // Modality (uses practiced_modalities array, fallback to primary)
+    if (selectedModality !== 'all') {
+      result = result.filter((a) =>
+        (a.practiced_modalities?.length ? a.practiced_modalities : [a.modality]).includes(
+          selectedModality
+        )
+      );
+    }
+
+    // Level
+    if (selectedLevel !== 'all') {
+      const levelCategory = LEVEL_CATEGORIES.find((c) => c.id === selectedLevel);
+      if (levelCategory) {
+        result = result.filter((a) => levelCategory.levels.includes(a.level));
+      }
+    }
+
+    // Group (OR logic)
+    if (selectedGroupIds.length > 0) {
+      result = result.filter((a) => {
+        const athleteGroupIds = groupData.assignments[a.id] || [];
+        return selectedGroupIds.some((gid) => athleteGroupIds.includes(gid));
+      });
+    }
+
+    // Sort by adherence
+    if (adherenceSort !== 'none') {
+      result.sort((a, b) => {
+        const rateA = a.adherence_rate ?? 0;
+        const rateB = b.adherence_rate ?? 0;
+        return adherenceSort === 'asc' ? rateA - rateB : rateB - rateA;
+      });
+    }
+
+    return result;
+  }, [
+    allAthletes,
+    searchQuery,
+    selectedModality,
+    selectedLevel,
+    selectedGroupIds,
+    groupData,
+    adherenceSort,
+  ]);
+
+  // ---- Helpers ----
+  const toggleAdherenceSort = () => {
+    setAdherenceSort((current) => {
+      if (current === 'none') return 'desc';
+      if (current === 'desc') return 'asc';
+      return 'none';
+    });
   };
-
-  const filteredAthletes = athletes.filter((athlete) => {
-    if (filters.modality && athlete.modality !== filters.modality) return false;
-    if (filters.level && athlete.level !== filters.level) return false;
-    if (filters.status && athlete.status !== filters.status) return false;
-    if (
-      filters.search &&
-      !athlete.name.toLowerCase().includes(filters.search.toLowerCase())
-    )
-      return false;
-    return true;
-  });
 
   const toggleAthlete = (athleteId: string) => {
     const newSelected = new Set(selectedAthletes);
@@ -219,8 +458,8 @@ export default function CRMCommandCenterView() {
   };
 
   const selectedAthletesList = useMemo(
-    () => athletes.filter((a) => selectedAthletes.has(a.id)),
-    [athletes, selectedAthletes]
+    () => allAthletes.filter((a) => selectedAthletes.has(a.id)),
+    [allAthletes, selectedAthletes]
   );
 
   const avgConsistency = useMemo(() => {
@@ -230,21 +469,180 @@ export default function CRMCommandCenterView() {
     return Math.round(sum / active.length);
   }, [filteredAthletes]);
 
-  const hasActiveFilters = filters.modality || filters.level || filters.status;
+  const hasActiveFilters =
+    selectedModality !== 'all' ||
+    selectedLevel !== 'all' ||
+    selectedGroupIds.length > 0;
 
   const clearFilters = () => {
-    setFilters({ search: filters.search });
+    setSelectedModality('all');
+    setSelectedLevel('all');
+    setSelectedGroupIds([]);
+    setAdherenceSort('none');
   };
+
+  // ---- Athlete CRUD handlers (same pattern as FluxDashboard) ----
+  const handleSaveAthlete = async (
+    athleteData: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }
+  ) => {
+    try {
+      const modalityLevels = athleteData.modalityLevels || [];
+      if (modalityLevels.length === 0) {
+        throw new Error('Selecione pelo menos uma modalidade');
+      }
+
+      const modalities = modalityLevels.map((ml) => ml.modality);
+      const primaryModality = modalities[0];
+      const { modalityLevels: _, ...athletePayload } = athleteData;
+      const athleteWithModality = { ...athletePayload, modality: primaryModality };
+
+      let athleteId: string;
+
+      if (editingAthlete) {
+        const { data, error } = await AthleteService.updateAthlete({
+          id: editingAthlete.id,
+          ...athleteWithModality,
+        });
+        if (error) throw new Error(error.message || 'Erro ao atualizar atleta');
+        if (!data) throw new Error('Atleta atualizado mas sem dados retornados');
+        athleteId = data.id;
+      } else {
+        const { data, error } = await AthleteService.createAthlete(
+          athleteWithModality as CreateAthleteInput
+        );
+        if (error) throw new Error(error.message || 'Erro ao criar atleta');
+        if (!data) throw new Error('Atleta criado mas sem dados retornados');
+        athleteId = data.id;
+        trackAthleteCreated().catch(() => {});
+      }
+
+      // Sync athlete profiles
+      const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
+        athleteId,
+        modalities,
+        {
+          level: athleteData.level as AthleteLevel,
+          anamnesis: athleteData.anamnesis,
+          ftp: athleteData.ftp,
+          pace_threshold: athleteData.pace_threshold,
+          css: athleteData.swim_css,
+          modalityLevels: modalityLevels as Array<{
+            modality: TrainingModality;
+            level: AthleteLevel;
+          }>,
+        }
+      );
+
+      if (profileError) {
+        console.error('Error syncing athlete profiles:', profileError);
+      }
+
+      setAthleteModalOpen(false);
+      setEditingAthlete(null);
+    } catch (err) {
+      console.error('Error saving athlete:', err);
+      throw err;
+    }
+  };
+
+  const handleEditAthlete = (athlete: Athlete) => {
+    setEditingAthlete(athlete);
+    setAthleteModalOpen(true);
+  };
+
+  const handleDeleteClick = (athlete: Athlete) => {
+    setAthleteToDelete(athlete);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!athleteToDelete) return;
+    try {
+      const { error: profileError } =
+        await AthleteProfileService.deleteProfilesByAthleteId(athleteToDelete.id);
+      if (profileError) {
+        console.error('Error deleting athlete profiles:', profileError);
+      }
+
+      const { error } = await AthleteService.deleteAthlete(athleteToDelete.id);
+      if (error) throw new Error(error.message || 'Erro ao excluir atleta');
+
+      setDeleteModalOpen(false);
+      setAthleteToDelete(null);
+      await refresh();
+    } catch (err) {
+      console.error('Error deleting athlete:', err);
+      throw err;
+    }
+  };
+
+  const handleSendInvite = async (athlete: Athlete) => {
+    if (!athlete.email) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const coachName =
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.email?.split('@')[0] ||
+      'Seu Coach';
+    await AthleteService.sendInvite({
+      athleteId: athlete.id,
+      athleteName: athlete.name,
+      athleteEmail: athlete.email,
+      coachName,
+    });
+  };
+
+  // ---- Loading / Error states ----
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base">
+        <div className="ceramic-card p-8 text-center space-y-4">
+          <div className="w-16 h-16 mx-auto">
+            <div className="w-16 h-16 border-4 border-ceramic-accent/20 border-t-ceramic-accent rounded-full animate-spin" />
+          </div>
+          <p className="text-lg font-bold text-ceramic-text-primary">
+            Carregando atletas...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base px-6">
+        <div className="ceramic-card p-8 text-center space-y-4 max-w-md">
+          <p className="text-lg font-bold text-ceramic-error mb-2">
+            Erro ao carregar atletas
+          </p>
+          <p className="text-sm text-ceramic-text-secondary">{error.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-ceramic-accent text-white rounded-lg font-medium hover:bg-ceramic-accent/90 transition-colors"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
+      {/* ================================================================ */}
+      {/* Header Area */}
+      {/* ================================================================ */}
       <div className="pt-8 px-6 pb-6 border-b border-ceramic-text-secondary/10">
         <button
           onClick={() => navigate('/flux')}
-          className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary"
+          className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm font-medium">Voltar</span>
+          <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
+            <ArrowLeft className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
         </button>
 
         <div className="flex items-center justify-between mb-6">
@@ -253,8 +651,10 @@ export default function CRMCommandCenterView() {
               Command Center
             </h1>
             <p className="text-sm text-ceramic-text-secondary">
-              {filteredAthletes.length} atleta{filteredAthletes.length !== 1 ? 's' : ''} •{' '}
-              {selectedAthletes.size} selecionado{selectedAthletes.size !== 1 ? 's' : ''}
+              {filteredAthletes.length} atleta
+              {filteredAthletes.length !== 1 ? 's' : ''} &bull;{' '}
+              {selectedAthletes.size} selecionado
+              {selectedAthletes.size !== 1 ? 's' : ''}
             </p>
           </div>
 
@@ -262,227 +662,405 @@ export default function CRMCommandCenterView() {
             {selectedAthletes.size > 0 && (
               <button
                 onClick={() => setBulkModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success/90"
+                className="flex items-center gap-2 px-4 py-2 bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success/90 transition-colors"
               >
                 <Send className="w-4 h-4" />
-                <span className="font-medium">Enviar Mensagem ({selectedAthletes.size})</span>
+                <span className="font-medium">
+                  Enviar Mensagem ({selectedAthletes.size})
+                </span>
               </button>
             )}
+
+            {/* Novo Atleta Button */}
+            <button
+              onClick={() => {
+                setEditingAthlete(null);
+                setAthleteModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-ceramic-accent text-white rounded-lg hover:bg-ceramic-accent/90 transition-colors font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Novo Atleta</span>
+            </button>
           </div>
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="ceramic-card p-4">
-            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">Total Atletas</p>
-            <p className="text-2xl font-bold text-ceramic-text-primary">{filteredAthletes.length}</p>
+            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">
+              Total Atletas
+            </p>
+            <p className="text-2xl font-bold text-ceramic-text-primary">
+              {filteredAthletes.length}
+            </p>
           </div>
           <div className="ceramic-card p-4">
-            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">Consistencia Media</p>
-            <p className="text-2xl font-bold text-ceramic-text-primary">{avgConsistency}%</p>
+            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">
+              Consistencia Media
+            </p>
+            <p className="text-2xl font-bold text-ceramic-text-primary">
+              {avgConsistency}%
+            </p>
           </div>
           <div className="ceramic-card p-4">
-            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">Automacoes Ativas</p>
-            <p className="text-2xl font-bold text-ceramic-text-primary">{automations.length}</p>
+            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">
+              Automacoes Ativas
+            </p>
+            <p className="text-2xl font-bold text-ceramic-text-primary">
+              {automations.length}
+            </p>
           </div>
           <div className="ceramic-card p-4">
-            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">Selecionados</p>
-            <p className="text-2xl font-bold text-ceramic-accent">{selectedAthletes.size}</p>
+            <p className="text-xs text-ceramic-text-secondary uppercase mb-1">
+              Selecionados
+            </p>
+            <p className="text-2xl font-bold text-ceramic-accent">
+              {selectedAthletes.size}
+            </p>
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              placeholder="Buscar atletas..."
-              value={filters.search || ''}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value || undefined })}
-              className="flex-1 px-4 py-2 bg-white/50 rounded-lg border border-ceramic-border text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-            />
-            <button
-              onClick={selectAll}
-              className="px-4 py-2 ceramic-card hover:bg-white/50 rounded-lg text-sm font-medium text-ceramic-text-primary"
-            >
-              Selecionar Todos
-            </button>
-            {selectedAthletes.size > 0 && (
-              <button
-                onClick={clearSelection}
-                className="px-4 py-2 ceramic-card hover:bg-white/50 rounded-lg text-sm font-medium text-ceramic-text-primary"
-              >
-                Limpar Selecao
-              </button>
-            )}
-          </div>
-
-          {/* Filter Dropdowns */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5">
+        {/* ============================================================== */}
+        {/* Filters Section — pill tabs (replaces dropdowns) */}
+        {/* ============================================================== */}
+        <div className="space-y-4">
+          {/* Modality Filter Tabs */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
               <Filter className="w-4 h-4 text-ceramic-text-secondary" />
-              <span className="text-xs font-medium text-ceramic-text-secondary uppercase tracking-wider">Filtros</span>
+              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Modalidade
+              </span>
             </div>
-
-            {/* Modality Filter */}
-            <select
-              value={filters.modality || ''}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  modality: (e.target.value as TrainingModality) || undefined,
-                })
-              }
-              className="px-3 py-1.5 bg-ceramic-base border border-ceramic-border rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-            >
-              <option value="">Todas Modalidades</option>
-              {(Object.entries(MODALITY_CONFIG) as [TrainingModality, { label: string; icon: string }][]).map(
-                ([key, config]) => (
-                  <option key={key} value={key}>
-                    {config.icon} {config.label}
-                  </option>
-                )
-              )}
-            </select>
-
-            {/* Level Filter */}
-            <select
-              value={filters.level || ''}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  level: (e.target.value as AthleteLevel) || undefined,
-                })
-              }
-              className="px-3 py-1.5 bg-ceramic-base border border-ceramic-border rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-            >
-              <option value="">Todos Niveis</option>
-              {(Object.entries(LEVEL_LABELS) as [AthleteLevel, string][]).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
+            <div className="flex flex-wrap gap-2">
+              <ModalityTab
+                modality="all"
+                isSelected={selectedModality === 'all'}
+                count={allAthletes.length}
+                onClick={() => setSelectedModality('all')}
+              />
+              {TRAINING_MODALITIES.map((modality) => (
+                <ModalityTab
+                  key={modality}
+                  modality={modality}
+                  isSelected={selectedModality === modality}
+                  count={modalityCounts[modality]}
+                  onClick={() => setSelectedModality(modality)}
+                />
               ))}
-            </select>
-
-            {/* Status Filter */}
-            <select
-              value={filters.status || ''}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  status: (e.target.value as AthleteStatus) || undefined,
-                })
-              }
-              className="px-3 py-1.5 bg-ceramic-base border border-ceramic-border rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-            >
-              <option value="">Todos Status</option>
-              {(Object.entries(STATUS_CONFIG) as [AthleteStatus, { label: string }][]).map(
-                ([key, config]) => (
-                  <option key={key} value={key}>
-                    {config.label}
-                  </option>
-                )
-              )}
-            </select>
-
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-ceramic-error hover:text-ceramic-error/80 transition-colors"
-              >
-                <X className="w-3 h-3" />
-                Limpar filtros
-              </button>
-            )}
+            </div>
           </div>
+
+          {/* Level Filter Tabs */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <GraduationCap className="w-4 h-4 text-ceramic-text-secondary" />
+              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Nivel
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {LEVEL_CATEGORIES.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedLevel(category.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                    selectedLevel === category.id
+                      ? 'ceramic-card bg-ceramic-base shadow-md'
+                      : 'ceramic-inset hover:bg-white/50'
+                  }`}
+                >
+                  <span className="text-lg">{category.icon}</span>
+                  <span
+                    className={`text-xs font-bold uppercase tracking-wider ${
+                      selectedLevel === category.id
+                        ? 'text-ceramic-text-primary'
+                        : 'text-ceramic-text-secondary'
+                    }`}
+                  >
+                    {category.label}
+                  </span>
+                  <span
+                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                      selectedLevel === category.id
+                        ? 'bg-ceramic-success/20 text-ceramic-success'
+                        : 'bg-ceramic-cool text-ceramic-text-secondary'
+                    }`}
+                  >
+                    {levelCounts[category.id]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Group Filter Pills */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-ceramic-text-secondary" />
+                <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Grupos
+                </span>
+              </div>
+              <button
+                onClick={() => setGroupManagerOpen(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
+                title="Gerenciar grupos"
+              >
+                <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Gerenciar
+                </span>
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {groupData.groups.length === 0 ? (
+                <button
+                  onClick={() => setGroupManagerOpen(true)}
+                  className="flex items-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                  <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                    Criar Grupo
+                  </span>
+                </button>
+              ) : (
+                <>
+                  {/* "Todos" pill to clear group filter */}
+                  <button
+                    onClick={() => setSelectedGroupIds([])}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      selectedGroupIds.length === 0
+                        ? 'ceramic-card bg-ceramic-base shadow-md'
+                        : 'ceramic-inset hover:bg-white/50'
+                    }`}
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider text-ceramic-text-primary">
+                      Todos
+                    </span>
+                  </button>
+
+                  {/* Group pills */}
+                  {groupData.groups.map((group) => {
+                    const isSelected = selectedGroupIds.includes(group.id);
+                    const colors = getGroupColorClasses(group.color);
+                    const memberCount = (
+                      Object.values(groupData.assignments) as string[][]
+                    ).filter((ids) => ids.includes(group.id)).length;
+
+                    return (
+                      <button
+                        key={group.id}
+                        onClick={() => {
+                          setSelectedGroupIds((prev) =>
+                            prev.includes(group.id)
+                              ? prev.filter((id) => id !== group.id)
+                              : [...prev, group.id]
+                          );
+                        }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                          isSelected
+                            ? 'ceramic-card bg-ceramic-base shadow-md ring-1 ring-ceramic-accent/30'
+                            : 'ceramic-inset hover:bg-white/50'
+                        }`}
+                      >
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${colors.bg} border border-black/10`}
+                        />
+                        <span
+                          className={`text-xs font-bold uppercase tracking-wider ${
+                            isSelected
+                              ? 'text-ceramic-text-primary'
+                              : 'text-ceramic-text-secondary'
+                          }`}
+                        >
+                          {group.name}
+                        </span>
+                        <span
+                          className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                            isSelected
+                              ? `${colors.bg} ${colors.text}`
+                              : 'bg-ceramic-cool text-ceramic-text-secondary'
+                          }`}
+                        >
+                          {memberCount}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {/* Quick add group */}
+                  <button
+                    onClick={() => setGroupManagerOpen(true)}
+                    className="flex items-center gap-1 px-2 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-all"
+                    title="Adicionar grupo"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Clear all filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-ceramic-error hover:text-ceramic-error/80 transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Limpar todos os filtros
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="px-6 py-6">
-        {loading ? (
-          <div className="text-ceramic-text-secondary">Carregando atletas...</div>
-        ) : filteredAthletes.length === 0 ? (
-          <div className="ceramic-inset p-8 text-center rounded-xl">
-            <p className="text-ceramic-text-secondary">
-              {hasActiveFilters
-                ? 'Nenhum atleta encontrado com os filtros selecionados.'
-                : 'Nenhum atleta cadastrado.'}
-            </p>
-            {hasActiveFilters && (
+      {/* ================================================================ */}
+      {/* Content Area */}
+      {/* ================================================================ */}
+      <div className="px-6 py-6 space-y-4">
+        {/* Search Bar + Select All + Sort */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-secondary" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar atleta por nome..."
+              className="w-full ceramic-inset pl-11 pr-10 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+            />
+            {searchQuery && (
               <button
-                onClick={clearFilters}
-                className="mt-3 text-sm font-medium text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
               >
-                Limpar filtros
+                <X className="w-4 h-4" />
               </button>
             )}
+          </div>
+
+          {/* Sort by Adherence */}
+          <button
+            onClick={toggleAdherenceSort}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all whitespace-nowrap ${
+              adherenceSort !== 'none'
+                ? 'ceramic-card bg-ceramic-base shadow-md'
+                : 'ceramic-inset hover:bg-white/50'
+            }`}
+            title={
+              adherenceSort === 'none'
+                ? 'Ordenar por adesao'
+                : adherenceSort === 'desc'
+                ? 'Maior adesao primeiro'
+                : 'Menor adesao primeiro'
+            }
+          >
+            {adherenceSort === 'none' && (
+              <ArrowUpDown className="w-4 h-4 text-ceramic-text-secondary" />
+            )}
+            {adherenceSort === 'desc' && (
+              <ArrowDown className="w-4 h-4 text-ceramic-success" />
+            )}
+            {adherenceSort === 'asc' && (
+              <ArrowUp className="w-4 h-4 text-ceramic-error" />
+            )}
+            <span
+              className={`text-xs font-bold uppercase tracking-wider ${
+                adherenceSort !== 'none'
+                  ? 'text-ceramic-text-primary'
+                  : 'text-ceramic-text-secondary'
+              }`}
+            >
+              Adesao
+            </span>
+          </button>
+
+          {/* Select / Deselect All */}
+          <button
+            onClick={selectedAthletes.size === filteredAthletes.length && filteredAthletes.length > 0 ? clearSelection : selectAll}
+            className="px-4 py-2.5 ceramic-card hover:bg-white/50 rounded-lg text-xs font-bold text-ceramic-text-primary uppercase tracking-wider whitespace-nowrap"
+          >
+            {selectedAthletes.size === filteredAthletes.length && filteredAthletes.length > 0
+              ? 'Limpar Selecao'
+              : 'Selecionar Todos'}
+          </button>
+        </div>
+
+        {/* Athlete Grid */}
+        {filteredAthletes.length === 0 ? (
+          <div className="ceramic-inset p-12 text-center space-y-4 rounded-xl">
+            <div className="w-16 h-16 mx-auto ceramic-card flex items-center justify-center">
+              <Users className="w-8 h-8 text-ceramic-text-secondary" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-ceramic-text-primary mb-2">
+                {hasActiveFilters || searchQuery
+                  ? 'Nenhum atleta encontrado'
+                  : 'Nenhum atleta cadastrado'}
+              </p>
+              <p className="text-sm text-ceramic-text-secondary font-light">
+                {hasActiveFilters || searchQuery
+                  ? 'Ajuste os filtros ou a busca para encontrar atletas'
+                  : 'Comece adicionando seu primeiro atleta'}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                if (hasActiveFilters || searchQuery) {
+                  clearFilters();
+                  setSearchQuery('');
+                } else {
+                  setEditingAthlete(null);
+                  setAthleteModalOpen(true);
+                }
+              }}
+              className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
+            >
+              {hasActiveFilters || searchQuery
+                ? 'Limpar Filtros'
+                : 'Adicionar Primeiro Atleta'}
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredAthletes.map((athlete) => {
               const isSelected = selectedAthletes.has(athlete.id);
-              const modalityConfig = MODALITY_CONFIG[athlete.modality];
+              const athleteGroupTags = getAthleteGroups(groupData, athlete.id);
 
               return (
                 <div
                   key={athlete.id}
-                  onClick={() => toggleAthlete(athlete.id)}
-                  className={`ceramic-card p-4 cursor-pointer transition-all ${
-                    isSelected ? 'ring-2 ring-ceramic-accent' : ''
+                  className={`relative transition-all ${
+                    isSelected ? 'ring-2 ring-ceramic-accent rounded-xl' : ''
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleAthlete(athlete.id)}
-                        className="w-4 h-4 rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <span className="text-xl">{modalityConfig?.icon}</span>
-                    </div>
-                    <ConnectionStatusDot status={athlete.invitation_status} />
+                  {/* Multi-select checkbox overlay */}
+                  <div className="absolute top-3 left-3 z-20">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleAthlete(athlete.id)}
+                      className="w-5 h-5 rounded cursor-pointer accent-ceramic-accent"
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </div>
 
-                  <h3 className="text-base font-bold text-ceramic-text-primary mb-1">
-                    {athlete.name}
-                  </h3>
-                  <p className="text-xs text-ceramic-text-secondary mb-3">
-                    {LEVEL_LABELS[athlete.level]} · {modalityConfig?.label}
-                  </p>
-
-                  {/* Per-athlete adherence bar */}
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] uppercase tracking-wide text-ceramic-text-secondary font-medium">Adesao</span>
-                      <span className={`text-xs font-bold ${
-                        (athlete.adherence_rate ?? 0) >= 80 ? 'text-ceramic-success' :
-                        (athlete.adherence_rate ?? 0) >= 60 ? 'text-amber-500' : 'text-ceramic-error'
-                      }`}>
-                        {athlete.adherence_rate ?? 0}%
-                      </span>
-                    </div>
-                    <div className="w-full h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          (athlete.adherence_rate ?? 0) >= 80 ? 'bg-ceramic-success' :
-                          (athlete.adherence_rate ?? 0) >= 60 ? 'bg-amber-500' : 'bg-ceramic-error'
-                        }`}
-                        style={{ width: `${Math.min(athlete.adherence_rate ?? 0, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/flux/athlete/${athlete.id}`);
-                    }}
-                    className="w-full px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg text-xs font-medium transition-colors"
-                  >
-                    Ver Detalhes
-                  </button>
+                  <AthleteCard
+                    athlete={athlete}
+                    activeAlerts={[]}
+                    adherenceRate={athlete.adherence_rate ?? 0}
+                    inviteStatus={athlete.invitation_email_status ?? 'none'}
+                    onClick={() => navigate(`/flux/athlete/${athlete.id}`)}
+                    onEdit={() => handleEditAthlete(athlete)}
+                    onDelete={() => handleDeleteClick(athlete)}
+                    onSendInvite={() => handleSendInvite(athlete)}
+                    onCopyLink={() => {}}
+                    groupTags={athleteGroupTags}
+                  />
                 </div>
               );
             })}
@@ -490,11 +1068,53 @@ export default function CRMCommandCenterView() {
         )}
       </div>
 
+      {/* ================================================================ */}
+      {/* Modals */}
+      {/* ================================================================ */}
+
       {/* Bulk WhatsApp Modal */}
       <BulkWhatsAppModal
         isOpen={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
         athletes={selectedAthletesList}
+      />
+
+      {/* Athlete Form Drawer */}
+      <AthleteFormDrawer
+        mode={editingAthlete ? 'edit' : 'create'}
+        initialData={editingAthlete || undefined}
+        isOpen={athleteModalOpen}
+        onClose={() => {
+          setAthleteModalOpen(false);
+          setEditingAthlete(null);
+        }}
+        onSave={handleSaveAthlete}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setAthleteToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Atleta"
+        message={
+          athleteToDelete
+            ? `Tem certeza que deseja excluir ${athleteToDelete.name}? Esta acao nao pode ser desfeita.`
+            : ''
+        }
+      />
+
+      {/* Athlete Group Manager Modal */}
+      <AthleteGroupManager
+        isOpen={groupManagerOpen}
+        onClose={() => setGroupManagerOpen(false)}
+        coachUserId={coachUserId}
+        athletes={allAthletes}
+        groupData={groupData}
+        onGroupDataChange={(updated) => setGroupData(updated)}
       />
     </div>
   );
