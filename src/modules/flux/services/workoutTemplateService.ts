@@ -191,9 +191,9 @@ export class WorkoutTemplateService {
         .update({ is_favorite, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
-      return { data, error };
+      return { data: data ?? null, error };
     } catch (error) {
       console.error('[WorkoutTemplateService] Error toggling favorite:', error);
       return { data: null, error };
