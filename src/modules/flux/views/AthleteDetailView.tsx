@@ -271,19 +271,6 @@ export default function AthleteDetailView() {
     navigate('/flux');
   };
 
-  // Handle edit canvas
-  const handleEditCanvas = () => {
-    if (athleteId) {
-      if (activeBlock) {
-        actions.editCanvas(activeBlock.id, athleteId);
-        navigate(`/flux/canvas/${athleteId}/${activeBlock.id}`);
-      } else {
-        // No active block - create new canvas
-        navigate(`/flux/canvas/${athleteId}`);
-      }
-    }
-  };
-
   // Loading
   if (loading) {
     return (
@@ -681,15 +668,6 @@ export default function AthleteDetailView() {
           <h2 className="text-lg font-bold text-ceramic-text-primary">
             {activeBlock ? 'Progresso Atual' : 'Prescrição de Treinos'}
           </h2>
-          <button
-            onClick={handleEditCanvas}
-            className="flex items-center gap-2 px-4 py-2 bg-ceramic-info hover:bg-ceramic-info/90 text-white rounded-lg shadow-md hover:scale-105 transition-all"
-          >
-            <Edit className="w-4 h-4" />
-            <span className="text-sm font-bold">
-              {activeBlock ? 'Editar Canvas' : 'Criar Canvas'}
-            </span>
-          </button>
         </div>
 
       {/* Progression Bar */}

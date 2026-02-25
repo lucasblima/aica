@@ -153,7 +153,9 @@ export function ProgressTimeline({
 
               {/* Fraction */}
               <p className="text-[10px] text-ceramic-text-secondary">
-                {week.completedSlots}/{week.totalSlots} treinos
+                {week.totalSlots > 0
+                  ? `${week.completedSlots}/${week.totalSlots} treinos`
+                  : 'Sem treinos'}
               </p>
 
               {/* Focus label */}
