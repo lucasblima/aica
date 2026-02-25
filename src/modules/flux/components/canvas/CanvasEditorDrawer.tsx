@@ -30,6 +30,27 @@ const MODALITY_PT_LABELS: Record<string, string> = {
   walking: 'Caminhada',
 };
 
+const AVATAR_COLORS = [
+  'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
+  'bg-violet-500', 'bg-teal-500', 'bg-pink-500', 'bg-indigo-500',
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 // ============================================
 // Sub-components
 // ============================================
@@ -158,18 +179,28 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
           {/* Athlete Info */}
           <div className="flex items-center gap-4">
             <div
-              className="w-14 h-14 rounded-[16px] flex items-center justify-center text-2xl"
+              className="w-14 h-14 rounded-[16px] flex items-center justify-center overflow-hidden flex-shrink-0"
               style={{
-                background: '#F0EFE9',
                 boxShadow:
                   '3px 3px 8px rgba(163,158,145,0.15), -3px -3px 8px rgba(255,255,255,0.9)',
               }}
             >
-              {athlete?.name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .substring(0, 2)}
+              {athlete?.avatar_url ? (
+                <img
+                  src={athlete.avatar_url}
+                  alt={athlete.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <div className={`w-full h-full flex items-center justify-center ${athlete?.name ? getAvatarColor(athlete.name) : 'bg-ceramic-cool'} ${athlete?.avatar_url ? 'hidden' : ''}`}>
+                <span className="text-white font-bold text-lg">
+                  {athlete?.name ? getInitials(athlete.name) : '?'}
+                </span>
+              </div>
             </div>
             <div>
               <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-0.5">

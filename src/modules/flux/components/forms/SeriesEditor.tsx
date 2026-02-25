@@ -1,7 +1,13 @@
 /**
- * SeriesEditor Component (V4)
+ * SeriesEditor Component (V5)
  *
  * Unified editor for all workout series with modality-specific forms.
+ *
+ * V5 Changes:
+ * - #450: "Séries" label for strength, "Repetições" for cardio; distance option for running
+ * - #451: Exercise name input shown only for strength modality
+ * - #452: Hours field added to running/walking duration (h + min + seg)
+ * - #453: Cycling distance mode no longer shows time-mode DurationInput
  *
  * V4 Changes:
  * - #430: Exercise name input per series, "Repetições" renamed to "Séries"
@@ -9,7 +15,7 @@
  * - #428: Km/M toggle for distance inputs (swimming, cycling, interval)
  * - #429: Intervalo supports time OR distance mode
  *
- * Field order: Nome do Exercício → Séries → Tipo de Trabalho → Duração/Distância → Zona → Intervalo
+ * Field order: Nome do Exercício (strength) → Séries/Repetições → Tipo de Trabalho → Duração/Distância → Zona → Intervalo
  * Duration and Interval use simple min + seg inputs (no unit toggle).
  * "Descanso" renamed to "Intervalo".
  */
@@ -116,19 +122,23 @@ function SeriesCard({ series, index, modality, onUpdate, onRemove, canRemove }: 
 
   return (
     <div className="ceramic-card p-4 relative">
-      {/* Header with exercise name input (#430) */}
+      {/* Header with exercise name input (strength only — #451) */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="w-8 h-8 rounded-full bg-ceramic-accent text-white flex items-center justify-center text-sm font-bold shrink-0">
             {index + 1}
           </div>
-          <input
-            type="text"
-            value={series.exercise_name || ''}
-            onChange={(e) => onUpdate({ exercise_name: e.target.value } as Partial<WorkoutSeries>)}
-            placeholder={`Exercício ${index + 1}`}
-            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-sm font-medium text-ceramic-text-primary placeholder:text-ceramic-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-          />
+          {modality === 'strength' ? (
+            <input
+              type="text"
+              value={series.exercise_name || ''}
+              onChange={(e) => onUpdate({ exercise_name: e.target.value } as Partial<WorkoutSeries>)}
+              placeholder={`Exercício ${index + 1}`}
+              className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-sm font-medium text-ceramic-text-primary placeholder:text-ceramic-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+            />
+          ) : (
+            <span className="text-sm font-medium text-ceramic-text-primary">Série {index + 1}</span>
+          )}
         </div>
 
         {canRemove && (
@@ -145,10 +155,11 @@ function SeriesCard({ series, index, modality, onUpdate, onRemove, canRemove }: 
 
       {/* Modality-specific form */}
       <div className="space-y-3">
-        {/* Séries count (was "Repetições") — ALL modalities (#430) */}
+        {/* Séries (strength) or Repetições (cardio) — #450 */}
         <SeriesCountInput
           value={series.repetitions ?? 1}
           onChange={(v) => onUpdate({ repetitions: v })}
+          modality={modality}
         />
 
         {(modality === 'running' || modality === 'walking') && (
@@ -187,10 +198,11 @@ function SeriesCard({ series, index, modality, onUpdate, onRemove, canRemove }: 
 // SHARED: SERIES COUNT INPUT (renamed from "Repetições" — #430)
 // ============================================================================
 
-function SeriesCountInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function SeriesCountInput({ value, onChange, modality }: { value: number; onChange: (v: number) => void; modality?: TrainingModality | '' }) {
+  const label = modality === 'strength' ? 'Séries' : 'Repetições';
   return (
     <div>
-      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Séries</label>
+      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">{label}</label>
       <input
         type="number"
         min="1"
@@ -548,22 +560,103 @@ function ZoneSelector({ zone, onChange }: { zone: IntensityZone; onChange: (z: I
 // ============================================================================
 
 function RunningFields({ series, onUpdate }: { series: RunningSeries; onUpdate: (u: Partial<RunningSeries>) => void }) {
-  // Convert legacy work_value to min/seg
-  const durationMin = series.work_unit === 'minutes' ? Math.floor(series.work_value) : Math.floor(series.work_value / 60);
-  const durationSec = series.work_unit === 'minutes' ? 0 : Math.round(series.work_value % 60);
+  const isDistance = series.work_unit === 'meters';
+
+  // Convert legacy work_value to h/min/seg for time mode
+  const totalSeconds = series.work_unit === 'minutes' ? series.work_value * 60 : (series.work_unit === 'seconds' ? series.work_value : 0);
+  const durationHours = Math.floor(totalSeconds / 3600);
+  const durationMin = Math.floor((totalSeconds % 3600) / 60);
+  const durationSec = Math.round(totalSeconds % 60);
+
+  const updateTimeFromParts = (h: number, m: number, s: number) => {
+    const total = h * 3600 + m * 60 + s;
+    onUpdate({ work_value: total, work_unit: 'seconds' });
+  };
 
   return (
     <>
-      <DurationInput
-        label="Duração"
-        minutes={durationMin}
-        seconds={durationSec}
-        onMinutesChange={(min) => onUpdate({ work_value: min, work_unit: 'minutes' })}
-        onSecondsChange={(sec) => {
-          // Store total seconds
-          onUpdate({ work_value: durationMin * 60 + sec, work_unit: 'seconds' });
-        }}
-      />
+      {/* Work Type Toggle — time or distance (#450) */}
+      <div>
+        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Tipo de Trabalho</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onUpdate({ work_value: 0, work_unit: 'minutes' })}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              !isDistance
+                ? 'bg-ceramic-accent text-white'
+                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Tempo
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdate({ work_value: 0, work_unit: 'meters' })}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              isDistance
+                ? 'bg-ceramic-accent text-white'
+                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
+            }`}
+          >
+            <Ruler className="w-4 h-4" />
+            Distância
+          </button>
+        </div>
+      </div>
+
+      {isDistance ? (
+        <DistanceInput
+          label="Distância"
+          meters={series.work_value || 0}
+          onChange={(meters) => onUpdate({ work_value: meters, work_unit: 'meters' })}
+          stepMeters={100}
+        />
+      ) : (
+        /* Duration with hours + min + seg (#452) */
+        <div>
+          <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Duração</label>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={durationHours}
+                onChange={(e) => updateTimeFromParts(parseInt(e.target.value) || 0, durationMin, durationSec)}
+                className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+              />
+              <span className="text-xs text-ceramic-text-secondary font-medium">h</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                value={durationMin}
+                onChange={(e) => updateTimeFromParts(durationHours, Math.min(59, parseInt(e.target.value) || 0), durationSec)}
+                className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+              />
+              <span className="text-xs text-ceramic-text-secondary font-medium">min</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                value={durationSec}
+                onChange={(e) => updateTimeFromParts(durationHours, durationMin, Math.min(59, parseInt(e.target.value) || 0))}
+                className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+              />
+              <span className="text-xs text-ceramic-text-secondary font-medium">seg</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
     </>
   );
@@ -640,8 +733,8 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
         </div>
       </div>
 
-      {/* Duration (time mode) or Distance + Duration (distance mode) */}
-      {isTime ? (
+      {/* Time mode: only DurationInput. Distance mode: only DistanceInput + duration (#453) */}
+      {isTime && (
         <DurationInput
           label="Duração"
           minutes={durationMin}
@@ -651,7 +744,8 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
             onUpdate({ work_value: durationMin * 60 + sec, unit_detail: 'seconds' });
           }}
         />
-      ) : (
+      )}
+      {!isTime && (
         <>
           {/* Distance with Km/M toggle (#428) */}
           <DistanceInput
@@ -663,7 +757,7 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
 
           {/* Duration alongside distance (#427) */}
           <HoursMinutesDuration
-            label="Tempo"
+            label="Duração Estimada"
             hours={cyclingDurationHours}
             minutes={cyclingDurationMinutes}
             onHoursChange={(h) => onUpdate({ cycling_duration_hours: h } as Partial<CyclingSeries>)}
