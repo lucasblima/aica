@@ -7,8 +7,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import type { AthleteCardProps } from '../types';
-import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG } from '../types';
+import type { AthleteCardProps, AthleteGroup } from '../types';
+import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ConnectionStatusDot } from './ConnectionStatusDot';
@@ -53,6 +53,8 @@ interface ExtendedAthleteCardProps extends Omit<AthleteCardProps, 'recentFeedbac
   onSendInvite?: () => void;
   onCopyLink?: () => void;
   inviteStatus?: 'none' | 'sent' | 'delivered' | 'bounced' | 'failed';
+  /** Group tags assigned to this athlete (from localStorage groups) */
+  groupTags?: AthleteGroup[];
 }
 
 export function AthleteCard({
@@ -67,6 +69,7 @@ export function AthleteCard({
   onSendInvite,
   onCopyLink,
   inviteStatus = 'none',
+  groupTags = [],
 }: ExtendedAthleteCardProps) {
   // Menu dropdown state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -286,6 +289,23 @@ export function AthleteCard({
             </div>
           )}
         </div>
+
+        {/* Group Tags */}
+        {groupTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {groupTags.map((group) => {
+              const colors = getGroupColorClasses(group.color);
+              return (
+                <span
+                  key={group.id}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}
+                >
+                  {group.name}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* Metrics Row */}
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-ceramic-text-secondary/10">

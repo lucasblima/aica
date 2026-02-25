@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Circle,
   Trash2,
+  Lock,
 } from 'lucide-react';
 import { CeramicTabSelector, ContactAvatar, ConfirmationModal } from '@/components/ui';
 import {
@@ -55,6 +56,7 @@ import whatsappAnalyticsService, {
 import { cn } from '@/lib/utils';
 import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion';
 import { useWhatsAppGamification } from '../hooks/useWhatsAppGamification';
+import { useConsciousnessPoints } from '@/hooks/useConsciousnessPoints';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('ConnectionsWhatsAppTab');
@@ -64,6 +66,9 @@ const log = createNamespacedLogger('ConnectionsWhatsAppTab');
 // ============================================================================
 
 type TabId = 'import' | 'contacts' | 'intelligence' | 'analytics';
+
+// Minimum CP required to unlock intelligence features
+const MIN_CP_FOR_INTELLIGENCE = 50;
 
 interface ConnectionsWhatsAppTabProps {
   userId?: string;
@@ -278,6 +283,11 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   // Gamification tracking
   const { trackAnalyticsView, trackContactAnalysis } = useWhatsAppGamification();
 
+  // Consciousness Points gate
+  const { balance } = useConsciousnessPoints({ autoFetch: true });
+  const currentCP = balance.total_cp;
+  const isIntelligenceUnlocked = currentCP >= MIN_CP_FOR_INTELLIGENCE;
+
   // Local sorting state
   const [sortBy, setSortBy] = useState<ContactSortField>('last_activity');
   const [sortOrder, setSortOrder] = useState<ContactSortOrder>('desc');
@@ -299,12 +309,13 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   // Entity extraction (Conversation Intelligence Phase 3)
   const { entities, stats: entityStats, isLoading: isEntitiesLoading, isExtracting, acceptEntity, rejectEntity, extractEntities } = useExtractedEntities();
 
-  // Tab configuration
+  // Tab configuration — show lock icon on gated tabs when CP is below threshold
+  const lockIcon = !isIntelligenceUnlocked ? <Lock className="w-3.5 h-3.5 text-ceramic-text-secondary" /> : undefined;
   const tabs = [
     { id: 'import', label: 'Importar' },
-    { id: 'contacts', label: 'Contatos' },
-    { id: 'intelligence', label: 'Inteligencia' },
-    { id: 'analytics', label: 'Analytics' },
+    { id: 'contacts', label: 'Contatos', icon: lockIcon },
+    { id: 'intelligence', label: 'Inteligencia', icon: lockIcon },
+    { id: 'analytics', label: 'Analytics', icon: lockIcon },
   ];
 
   // Load data on mount
@@ -429,6 +440,68 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
       <Loader2 className="w-8 h-8 animate-spin text-ceramic-accent" />
     </div>
   );
+
+  // ── Locked State (CP gate) ──
+  const renderLockedState = () => {
+    const progressPercent = Math.min((currentCP / MIN_CP_FOR_INTELLIGENCE) * 100, 100);
+
+    return (
+      <motion.div
+        className="flex items-center justify-center py-16 px-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="ceramic-card p-8 rounded-3xl max-w-md w-full text-center space-y-6">
+          {/* Lock icon */}
+          <div className="w-20 h-20 rounded-full bg-ceramic-cool flex items-center justify-center mx-auto">
+            <Lock className="w-10 h-10 text-ceramic-text-secondary" />
+          </div>
+
+          {/* Title */}
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-ceramic-text-primary">
+              Recurso Bloqueado
+            </h3>
+            <p className="text-sm text-ceramic-text-secondary leading-relaxed">
+              Desbloqueie com {MIN_CP_FOR_INTELLIGENCE} Pontos de Consciencia.
+              Continue registrando momentos e respondendo perguntas para desbloquear.
+            </p>
+          </div>
+
+          {/* Progress bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-medium">
+              <span className="text-ceramic-text-secondary">Progresso</span>
+              <span className="text-ceramic-accent">
+                {currentCP} / {MIN_CP_FOR_INTELLIGENCE} CP
+              </span>
+            </div>
+            <div className="w-full h-3 bg-ceramic-cool rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-ceramic-accent rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              />
+            </div>
+            <p className="text-xs text-ceramic-text-secondary">
+              Faltam {Math.max(MIN_CP_FOR_INTELLIGENCE - currentCP, 0)} CP
+            </p>
+          </div>
+
+          {/* CTA button */}
+          <a
+            href="/vida"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-ceramic-accent text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform"
+          >
+            <Sparkles className="w-5 h-5" />
+            Ir para Vida
+          </a>
+        </div>
+      </motion.div>
+    );
+  };
 
   // ── Import Tab ──
   const renderImportTab = () => (
@@ -856,9 +929,9 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'import' && renderImportTab()}
-            {activeTab === 'contacts' && renderContactsTab()}
-            {activeTab === 'intelligence' && renderIntelligenceTab()}
-            {activeTab === 'analytics' && renderAnalyticsTab()}
+            {activeTab === 'contacts' && (isIntelligenceUnlocked ? renderContactsTab() : renderLockedState())}
+            {activeTab === 'intelligence' && (isIntelligenceUnlocked ? renderIntelligenceTab() : renderLockedState())}
+            {activeTab === 'analytics' && (isIntelligenceUnlocked ? renderAnalyticsTab() : renderLockedState())}
           </motion.div>
         </AnimatePresence>
       </main>
