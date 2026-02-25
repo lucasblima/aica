@@ -597,17 +597,23 @@ export default function AthleteDetailView() {
                 </div>
               </div>
 
-              {/* Practice duration */}
+              {/* Practice duration (displayed as years, stored as months) */}
               <div>
                 <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
-                  Tempo de Pratica (meses)
+                  Anos de Pratica
                 </label>
                 <input
                   type="number"
-                  step="1"
-                  value={profileForm.practice_duration_months}
-                  onChange={(e) => setProfileForm(prev => ({ ...prev, practice_duration_months: e.target.value }))}
-                  placeholder="Ex: 24"
+                  step="0.5"
+                  value={profileForm.practice_duration_months
+                    ? String(Math.round(parseFloat(profileForm.practice_duration_months) / 12 * 2) / 2)
+                    : ''}
+                  onChange={(e) => {
+                    const years = e.target.value;
+                    const months = years ? String(Math.round(parseFloat(years) * 12)) : '';
+                    setProfileForm(prev => ({ ...prev, practice_duration_months: months }));
+                  }}
+                  placeholder="Ex: 2"
                   className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
                 />
               </div>

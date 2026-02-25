@@ -17,9 +17,11 @@ import {
   GripVertical,
   X,
   ArrowLeft,
+  User as UserIcon,
 } from 'lucide-react';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
 import { useWorkoutTemplates } from '../hooks';
+import { useAuth } from '@/hooks/useAuth';
 import TemplateFormDrawer from '../components/forms/TemplateFormDrawer';
 import type {
   WorkoutTemplate,
@@ -89,6 +91,9 @@ export default function TemplateLibraryView() {
     : location.pathname.includes('/edit')
     ? 'edit'
     : 'list';
+
+  // Auth for creator attribution
+  const { user } = useAuth();
 
   // Real-time templates subscription
   const { templates, isLoading, error, refresh } = useWorkoutTemplates();
@@ -214,8 +219,10 @@ export default function TemplateLibraryView() {
         prev.map((t) => (t.id === template.id ? { ...t, is_favorite: template.is_favorite } : t))
       );
     }
-    // Also refresh from DB to ensure consistency
-    refresh();
+    // Always refresh from DB to ensure is_favorite state stays in sync
+    // This is critical: the DB is the source of truth for favorites,
+    // not local state. The refresh ensures consistency after toggling.
+    await refresh();
   };
 
   const handleDuplicate = async (template: WorkoutTemplate) => {
@@ -397,6 +404,7 @@ export default function TemplateLibraryView() {
               <TemplateCard
                 key={template.id}
                 template={template}
+                currentUserId={user?.id}
                 onToggleFavorite={handleToggleFavorite}
                 onDuplicate={handleDuplicate}
                 onDelete={handleDelete}
@@ -427,6 +435,7 @@ export default function TemplateLibraryView() {
 
 interface TemplateCardProps {
   template: WorkoutTemplate;
+  currentUserId?: string;
   onToggleFavorite: (template: WorkoutTemplate) => void;
   onDuplicate: (template: WorkoutTemplate) => void;
   onDelete: (template: WorkoutTemplate) => void;
@@ -437,6 +446,7 @@ interface TemplateCardProps {
 
 function TemplateCard({
   template,
+  currentUserId,
   onToggleFavorite,
   onDuplicate,
   onDelete,
@@ -535,17 +545,17 @@ function TemplateCard({
               )}
               <div className="flex items-start gap-1.5">
                 <span className="text-ceramic-accent font-bold shrink-0">
-                  {es.series.length}x
+                  {es.series.length} {es.series.length === 1 ? 'série' : 'séries'}
                 </span>
-                <span className="line-clamp-1">
+                <span className="line-clamp-2">
                   {es.series.map((s: any) => {
-                    if (s.reps) return `${s.repetitions ?? 1}x${s.reps}rep`;
-                    if (s.distance_meters) return `${s.repetitions ?? 1}x${s.distance_meters}m`;
+                    if (s.reps) return `${s.reps} rep`;
+                    if (s.distance_meters) return `${s.distance_meters}m`;
                     if (s.work_value) {
                       const unit = s.work_unit === 'minutes' ? 'min' : s.work_unit === 'seconds' ? 's' : 'm';
-                      return `${s.repetitions ?? 1}x${s.work_value}${unit}`;
+                      return `${s.work_value}${unit}`;
                     }
-                    return `${s.repetitions ?? 1}x série`;
+                    return 'série';
                   }).join(' + ')}
                 </span>
               </div>
@@ -559,19 +569,36 @@ function TemplateCard({
           );
         })()}
 
-        {/* Metadata */}
-        <div className="flex items-center gap-3 text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-text-secondary/10">
-          {template.duration > 0 && (
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{template.duration}</span>
-              <span>min</span>
-            </div>
-          )}
-          {template.usage_count > 0 && (
-            <div className="flex items-center gap-1">
-              <Copy className="w-3 h-3" />
-              <span>{template.usage_count}x usado</span>
-            </div>
+        {/* Metadata + Creator Attribution */}
+        <div className="flex items-center justify-between text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-text-secondary/10">
+          <div className="flex items-center gap-3">
+            {template.duration > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="font-medium">{template.duration}</span>
+                <span>min</span>
+              </div>
+            )}
+            {template.usage_count > 0 && (
+              <div className="flex items-center gap-1">
+                <Copy className="w-3 h-3" />
+                <span>{template.usage_count}x usado</span>
+              </div>
+            )}
+          </div>
+
+          {/* Creator badge — only show when user is authenticated */}
+          {currentUserId && (
+            template.user_id === currentUserId ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ceramic-accent/10 text-ceramic-accent text-[10px] font-bold uppercase tracking-wider">
+                <UserIcon className="w-3 h-3" />
+                Meu
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ceramic-info/10 text-ceramic-info text-[10px] font-bold uppercase tracking-wider">
+                <UserIcon className="w-3 h-3" />
+                Comunidade
+              </span>
+            )
           )}
         </div>
 

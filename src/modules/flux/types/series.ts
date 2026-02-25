@@ -82,6 +82,8 @@ interface SeriesBase {
   repetitions: number; // How many times to repeat this series (e.g., 4x)
   rest_minutes: number; // Interval rest minutes
   rest_seconds: number; // Interval rest seconds
+  exercise_name?: string; // Custom exercise name per series
+  rest_distance_meters?: number; // Interval distance in meters (alternative to time)
   /** @deprecated Use rest_minutes + rest_seconds instead */
   rest_value?: number;
   /** @deprecated Use rest_minutes + rest_seconds instead */
@@ -116,6 +118,8 @@ export interface CyclingSeries extends SeriesBase {
   work_unit: CyclingUnit; // 'time' or 'distance'
   unit_detail: TimeUnit | DistanceUnit; // if time: minutes/seconds, if distance: meters
   zone: IntensityZone;
+  cycling_duration_hours?: number; // Hours when in distance mode
+  cycling_duration_minutes?: number; // Minutes when in distance mode
 }
 
 /**
