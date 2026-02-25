@@ -24,8 +24,6 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import type { Athlete } from '../types';
 import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
 import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search, CheckCircle, X } from 'lucide-react';
-import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
-import { useModuleAgent } from '@/hooks/useModuleAgent';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 import { useFluxGamification } from '../hooks/useFluxGamification';
 
@@ -77,12 +75,9 @@ const ModalityTab: React.FC<{
   );
 };
 
-const fluxAgentConfig = getModuleAgentConfig('flux')!;
-
 export default function FluxDashboard() {
   const navigate = useNavigate();
   const { actions } = useFlux();
-  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
   // Fetch real athletes with adherence from Supabase
   const { athletes: allAthletes, isLoading, error, refresh } = useAthletes();
@@ -527,27 +522,10 @@ export default function FluxDashboard() {
           </button>
 
           <button
-            onClick={() => navigate('/flux/crm')}
+            onClick={() => navigate('/meu-treino')}
             className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
           >
             <div className="flex flex-col items-center gap-2">
-              <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
-                <span className="text-xl">📋</span>
-              </div>
-              <p className="text-xs font-bold text-ceramic-text-primary text-center">Canvas</p>
-              {allAthletes.length > 0 && (
-                <span className="text-[10px] text-ceramic-text-secondary">
-                  {allAthletes.length} atleta{allAthletes.length !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/meu-treino')}
-            className="ceramic-card p-3 hover:scale-[1.02] transition-all group col-span-2"
-          >
-            <div className="flex items-center justify-center gap-3">
               <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
                 <span className="text-xl">🏃</span>
               </div>
@@ -878,19 +856,6 @@ export default function FluxDashboard() {
         </div>
       )}
 
-      {/* Module Agent */}
-      <ModuleAgentFAB onClick={openAgent} accentBg={fluxAgentConfig.accentBg} label="Agente Flux" />
-      <ModuleAgentChat
-        isOpen={isAgentOpen}
-        onClose={closeAgent}
-        module={fluxAgentConfig.module}
-        displayName={fluxAgentConfig.displayName}
-        accentColor={fluxAgentConfig.accentColor}
-        accentBg={fluxAgentConfig.accentBg}
-        suggestedPrompts={fluxAgentConfig.suggestedPrompts}
-        welcomeMessage={fluxAgentConfig.welcomeMessage}
-        placeholder={fluxAgentConfig.placeholder}
-      />
     </div>
     </ErrorBoundary>
   );
