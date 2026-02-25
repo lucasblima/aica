@@ -18,6 +18,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.ts",
+    "test:e2e:pipeline": "playwright test tests/e2e/file-pipeline-metrics.spec.ts --project=chromium",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "update-docs": "tsx scripts/update-docs.ts",
     "update-docs:full": "tsx scripts/update-docs.ts --commits 50",
