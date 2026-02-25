@@ -630,7 +630,8 @@ export function AppRouter() {
             )}
 
             {/* Aica Chat FAB - Floating button for quick AI access */}
-            {isAuthenticated && <AicaChatFAB position="bottom-left" bottomOffset={shouldShowGlobalNav ? 80 : 16} />}
+            {/* Hidden on Vida page where VidaChatHero provides inline chat entry (#391) */}
+            {isAuthenticated && currentView !== 'vida-new' && <AicaChatFAB position="bottom-left" bottomOffset={shouldShowGlobalNav ? 80 : 16} />}
 
             {/* Notification Toast Container */}
             <NotificationContainer />

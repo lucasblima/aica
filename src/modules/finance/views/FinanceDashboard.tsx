@@ -31,8 +31,6 @@ import { exportToCSV } from '../services/exportService';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement, BudgetAlert, FinanceTransaction } from '../types';
-import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
-import { useModuleAgent } from '@/hooks/useModuleAgent';
 
 // =====================================================
 // Types
@@ -119,9 +117,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     documents,
     clearSearchResults,
   } = useFinanceFileSearch({ userId, autoLoad: true });
-
-  const financeAgentConfig = getModuleAgentConfig('finance')!;
-  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
   const hasIndexedStatements = documents.length > 0;
 
@@ -563,19 +558,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         {/* Sub-view Content */}
         {renderSubView()}
 
-        {/* Module Agent FAB + Chat Overlay */}
-        <ModuleAgentFAB onClick={openAgent} accentBg={financeAgentConfig.accentBg} label="Agente Finance" />
-        <ModuleAgentChat
-          isOpen={isAgentOpen}
-          onClose={closeAgent}
-          module={financeAgentConfig.module}
-          displayName={financeAgentConfig.displayName}
-          accentColor={financeAgentConfig.accentColor}
-          accentBg={financeAgentConfig.accentBg}
-          suggestedPrompts={financeAgentConfig.suggestedPrompts}
-          welcomeMessage={financeAgentConfig.welcomeMessage}
-          placeholder={financeAgentConfig.placeholder}
-        />
       </div>
     );
   }
@@ -1274,19 +1256,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
       </main>
 
-      {/* Module Agent FAB + Chat Overlay */}
-      <ModuleAgentFAB onClick={openAgent} accentBg={financeAgentConfig.accentBg} label="Agente Finance" />
-      <ModuleAgentChat
-        isOpen={isAgentOpen}
-        onClose={closeAgent}
-        module={financeAgentConfig.module}
-        displayName={financeAgentConfig.displayName}
-        accentColor={financeAgentConfig.accentColor}
-        accentBg={financeAgentConfig.accentBg}
-        suggestedPrompts={financeAgentConfig.suggestedPrompts}
-        welcomeMessage={financeAgentConfig.welcomeMessage}
-        placeholder={financeAgentConfig.placeholder}
-      />
     </div>
   );
 };

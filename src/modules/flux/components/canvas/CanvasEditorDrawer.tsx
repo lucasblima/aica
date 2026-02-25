@@ -173,7 +173,7 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
             </div>
             <div>
               <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-0.5">
-                Canvas de Prescricao
+                Prescrição
               </p>
               <h1 className="text-2xl font-black text-ceramic-text-primary">
                 {athlete?.name}
