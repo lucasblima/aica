@@ -529,6 +529,7 @@ function IntervalInput({
 // ============================================================================
 
 function ZoneSelector({ zone, onChange }: { zone: IntensityZone; onChange: (z: IntensityZone) => void }) {
+  const safeZone = zone && ZONE_CONFIGS[zone] ? zone : 'Z2';
   return (
     <div>
       <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Zona de Intensidade</label>
@@ -541,7 +542,7 @@ function ZoneSelector({ zone, onChange }: { zone: IntensityZone; onChange: (z: I
               type="button"
               onClick={() => onChange(z)}
               className={`px-2 py-3 rounded-lg text-xs font-bold transition-all ${config.color} ${
-                zone === z ? 'ring-2 ring-ceramic-text-primary shadow-lg scale-105' : 'opacity-70 hover:opacity-100'
+                safeZone === z ? 'ring-2 ring-ceramic-text-primary shadow-lg scale-105' : 'opacity-70 hover:opacity-100'
               } text-white`}
               title={`${z} (${config.range})`}
             >
@@ -550,7 +551,7 @@ function ZoneSelector({ zone, onChange }: { zone: IntensityZone; onChange: (z: I
           );
         })}
       </div>
-      <p className="mt-1 text-xs text-ceramic-text-secondary">{ZONE_CONFIGS[zone].range}</p>
+      <p className="mt-1 text-xs text-ceramic-text-secondary">{ZONE_CONFIGS[safeZone].range}</p>
     </div>
   );
 }
@@ -805,6 +806,13 @@ function StrengthFields({ series, onUpdate }: { series: StrengthSeries; onUpdate
           <span className="text-xs text-ceramic-text-secondary font-medium">kg</span>
         </div>
       </div>
+      {/* Distance for strength exercises like farmer's walks, sled pushes (#454) */}
+      <DistanceInput
+        label="Distância (opcional)"
+        meters={series.distance_meters || 0}
+        onChange={(meters) => onUpdate({ distance_meters: meters } as Partial<StrengthSeries>)}
+        stepMeters={10}
+      />
     </>
   );
 }

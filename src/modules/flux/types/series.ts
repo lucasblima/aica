@@ -129,6 +129,7 @@ export interface StrengthSeries extends SeriesBase {
   type: 'strength';
   reps: number;
   load_kg: number;
+  distance_meters?: number; // For exercises like farmer's walks, sled pushes (#454)
 }
 
 /**
