@@ -38,7 +38,7 @@ import {
   ClipboardDocumentListIcon,
 } from '@heroicons/react/24/solid'
 import { CreateMomentInput } from '../types/moment'
-import { LEVEL_COLORS, getProgressToNextLevel } from '../types/consciousnessPoints'
+import { LEVEL_COLORS, CP_LEVELS, getProgressToNextLevel } from '../types/consciousnessPoints'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
 import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
@@ -152,7 +152,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   }, []);
 
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search' | 'interview'>('insights')
+  const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search' | 'interview'>('timeline')
   const [activeInterviewSessionId, setActiveInterviewSessionId] = useState<string | null>(null)
   const [showInsight, setShowInsight] = useState(false)
   const [currentInsight, setCurrentInsight] = useState<{
@@ -163,9 +163,9 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   } | null>(null)
 
   const { user } = useAuth()
-  const council = useLifeCouncil({ autoTrigger: true })
-  const userPatterns = useUserPatterns()
   const { moments, create: createMoment } = useMoments()
+  const council = useLifeCouncil({ autoTrigger: moments.length >= 3 })
+  const userPatterns = useUserPatterns()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion, followUp, isFollowUpLoading, acceptFollowUp, dismissFollowUp } = useDailyQuestionAI()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
@@ -387,7 +387,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                     </div>
                     {progress.next_level && (
                       <span className="text-xs text-ceramic-text-secondary/50 mt-0.5 leading-none">
-                        {progress.points_to_next} para nível {progress.next_level}
+                        {stats.level_name} → {CP_LEVELS[progress.next_level - 1]?.name || 'Mestre'} · faltam {progress.points_to_next} CP
                       </span>
                     )}
                   </div>

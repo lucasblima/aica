@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Mic2, AlertCircle, Calendar, BarChart3 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
@@ -56,6 +57,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
   userEmail,
   onLogout
 }) => {
+  const navigate = useNavigate();
   const [shows, setShows] = useState<PodcastShow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -140,6 +142,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
         subtitle="PODCAST COPILOT"
         userEmail={userEmail}
         onLogout={onLogout}
+        onLogoClick={() => navigate('/vida')}
       />
 
       {/* Main Content Area */}

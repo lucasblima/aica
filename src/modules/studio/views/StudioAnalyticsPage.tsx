@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, BarChart3, Eye, Heart, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
@@ -19,6 +20,7 @@ interface InsightCard {
 }
 
 export default function StudioAnalyticsPage() {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<StudioAnalyticsEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState<InsightCard[]>([]);
@@ -96,7 +98,7 @@ export default function StudioAnalyticsPage() {
 
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-      <HeaderGlobal title="Analytics" subtitle="STUDIO" />
+      <HeaderGlobal title="Analytics" subtitle="STUDIO" onLogoClick={() => navigate('/vida')} />
 
       <main className="flex-1 overflow-y-auto px-4 sm:px-6 pb-32 pt-4">
         {/* Metric Cards */}
