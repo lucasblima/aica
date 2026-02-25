@@ -5,8 +5,6 @@
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useState, useEffect } from 'react';
-import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
-import { useModuleAgent } from '@/hooks/useModuleAgent';
 import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical, Building2 } from 'lucide-react';
 import { EditalSetupWizard } from '../components/EditalSetupWizard';
 import { EditalDetailView } from '../components/EditalDetailView';
@@ -67,12 +65,9 @@ interface GrantsModuleViewProps {
 }
 
 /* data-tour markers: grants-header, opportunities-list, opportunity-filter, edital-parser, opportunity-detail, saved-opportunities, application-tracking, ai-briefing */
-const grantsAgentConfig = getModuleAgentConfig('captacao')!;
-
 export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) => {
   // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
   useTourAutoStart('grants-first-visit');
-  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
   // View state
   const [currentView, setCurrentView] = useState<ModuleView>('dashboard');
@@ -999,19 +994,6 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         </div>
       )}
 
-      {/* Module Agent */}
-      <ModuleAgentFAB onClick={openAgent} accentBg={grantsAgentConfig.accentBg} label="Agente Captacao" />
-      <ModuleAgentChat
-        isOpen={isAgentOpen}
-        onClose={closeAgent}
-        module={grantsAgentConfig.module}
-        displayName={grantsAgentConfig.displayName}
-        accentColor={grantsAgentConfig.accentColor}
-        accentBg={grantsAgentConfig.accentBg}
-        suggestedPrompts={grantsAgentConfig.suggestedPrompts}
-        welcomeMessage={grantsAgentConfig.welcomeMessage}
-        placeholder={grantsAgentConfig.placeholder}
-      />
     </>
   );
 };

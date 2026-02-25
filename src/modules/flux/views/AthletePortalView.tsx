@@ -337,7 +337,7 @@ export default function AthletePortalView() {
                 <List className="w-3.5 h-3.5" />Lista
               </button>
               <button onClick={() => handleViewModeChange('canvas')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'canvas' ? 'bg-white text-ceramic-text-primary shadow-sm' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}>
-                <LayoutGrid className="w-3.5 h-3.5" />Canvas
+                <LayoutGrid className="w-3.5 h-3.5" />Grade
               </button>
             </div>
           )}

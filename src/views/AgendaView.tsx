@@ -25,8 +25,6 @@ const log = createNamespacedLogger('AgendaView');
 import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, AgendaModeToggle, TaskListView, TaskKanbanView, TaskFilterBar } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
 import { CompletedTasksSection } from '../components/domain/CompletedTasksSection';
-import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '../components/features/ModuleAgentChat';
-import { useModuleAgent } from '../hooks/useModuleAgent';
 import { useTaskCompletion } from '../hooks/useTaskCompletion';
 import { useTaskFilters } from '../hooks/useTaskFilters';
 import type { AgendaMode } from '../components/domain/AgendaModeToggle';
@@ -46,8 +44,6 @@ interface AgendaViewProps {
     onLogout: () => void;
 }
 
-const agendaAgentConfig = getModuleAgentConfig('agenda')!;
-
 /** Extract HH:MM from either "HH:MM", "HH:MM:SS" or full timestamptz string */
 const extractTimeHHMM = (ts: string): string | null => {
     try {
@@ -63,7 +59,6 @@ const extractTimeHHMM = (ts: string): string | null => {
 
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
     useTourAutoStart('atlas-first-visit');
-    const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
     const isDesktop = useIsDesktop();
     const [mobileMode, setMobileMode] = useState<AgendaMode>('agenda');
 
@@ -1035,19 +1030,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 </DragOverlay>
             </DndContext>
 
-            {/* Module Agent */}
-            <ModuleAgentFAB onClick={openAgent} accentBg={agendaAgentConfig.accentBg} label="Agente Agenda" />
-            <ModuleAgentChat
-                isOpen={isAgentOpen}
-                onClose={closeAgent}
-                module={agendaAgentConfig.module}
-                displayName={agendaAgentConfig.displayName}
-                accentColor={agendaAgentConfig.accentColor}
-                accentBg={agendaAgentConfig.accentBg}
-                suggestedPrompts={agendaAgentConfig.suggestedPrompts}
-                welcomeMessage={agendaAgentConfig.welcomeMessage}
-                placeholder={agendaAgentConfig.placeholder}
-            />
         </div>
     );
 };
