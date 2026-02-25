@@ -138,6 +138,48 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
         log.error('Failed to award HP bonus', { hpErr });
       }
 
+      // Knowledge synthesis: fire-and-forget (non-blocking, non-critical)
+      const questionForSynth = { ...question };
+      const answerForSynth = answer;
+      void (async () => {
+        try {
+          const { data: currentPersona } = await supabase
+            .from('entity_personas')
+            .select('knowledge_summary, knowledge_confidence, persona_name, entity_type')
+            .eq('id', questionForSynth.persona_id)
+            .single();
+
+          if (currentPersona) {
+            const synthesisPrompt = `Informacao anterior: ${currentPersona.knowledge_summary || 'Nenhuma'}
+Pergunta: ${questionForSynth.question}
+Resposta do usuario: ${answerForSynth}
+
+Atualize o resumo de conhecimento da entidade "${currentPersona.persona_name}" (tipo: ${currentPersona.entity_type}) incorporando a nova informacao. Mantenha o resumo conciso (max 500 caracteres). Responda SOMENTE com o texto atualizado, sem formatacao.`;
+
+            const { data: synthData } = await supabase.functions.invoke('entity-agent-chat', {
+              body: {
+                persona_id: questionForSynth.persona_id,
+                message: synthesisPrompt,
+                synthesis_mode: true,
+              },
+            });
+
+            if (synthData?.success && synthData?.data?.response) {
+              const newSummary = (synthData.data.response as string).slice(0, 500);
+              await supabase
+                .from('entity_personas')
+                .update({
+                  knowledge_summary: newSummary,
+                  knowledge_confidence: Math.min(1, (currentPersona.knowledge_confidence || 0) + 0.05),
+                })
+                .eq('id', questionForSynth.persona_id);
+            }
+          }
+        } catch (synthErr) {
+          log.error('Knowledge synthesis failed (non-critical)', { synthErr });
+        }
+      })();
+
       incrementAnsweredToday();
       setAnsweredToday((prev) => prev + 1);
       setQuestions((prev) => prev.filter((q) => q.id !== questionId));

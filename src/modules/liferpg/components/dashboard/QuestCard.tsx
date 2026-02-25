@@ -3,13 +3,14 @@
  * Actions: Accept, Complete, Skip.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { supabase } from '@/services/supabaseClient';
 import type { EntityQuest, QuestPriority, QuestType } from '../../types/liferpg';
 
 interface QuestCardProps {
   quest: EntityQuest;
   onAccept?: (questId: string) => Promise<boolean>;
-  onComplete?: (questId: string, notes?: string) => Promise<{ success: boolean; xpAwarded?: number; leveledUp?: boolean }>;
+  onComplete?: (questId: string, notes?: string, photos?: string[]) => Promise<{ success: boolean; xpAwarded?: number; leveledUp?: boolean }>;
   onSkip?: (questId: string) => Promise<boolean>;
 }
 
@@ -40,7 +41,34 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 }) => {
   const [acting, setActing] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
+  const [completionPhotos, setCompletionPhotos] = useState<string[]>([]);
   const [showCompleteForm, setShowCompleteForm] = useState(false);
+
+  const [uploading, setUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || uploading) return;
+
+    setUploading(true);
+    const filesToUpload = Array.from(files).slice(0, 2 - completionPhotos.length);
+
+    for (const file of filesToUpload) {
+      const path = `quest-evidence/${quest.id}/${Date.now()}_${file.name}`;
+      const { error } = await supabase.storage.from('liferpg-photos').upload(path, file);
+      if (!error) {
+        const { data: urlData } = supabase.storage.from('liferpg-photos').getPublicUrl(path);
+        if (urlData.publicUrl) {
+          setCompletionPhotos((prev) => (prev.length < 2 ? [...prev, urlData.publicUrl] : prev));
+        }
+      }
+    }
+
+    setUploading(false);
+    // Reset input
+    e.target.value = '';
+  };
 
   const priority = priorityConfig[quest.priority] || priorityConfig.medium;
   const icon = questTypeIcons[quest.quest_type] || '\u{2753}';
@@ -56,9 +84,14 @@ export const QuestCard: React.FC<QuestCardProps> = ({
   const handleComplete = async () => {
     if (!onComplete) return;
     setActing(true);
-    const result = await onComplete(quest.id, completionNotes || undefined);
+    const result = await onComplete(
+      quest.id,
+      completionNotes || undefined,
+      completionPhotos.length > 0 ? completionPhotos : undefined
+    );
     setActing(false);
     setShowCompleteForm(false);
+    setCompletionPhotos([]);
     if (result.leveledUp) {
       // Could trigger a celebration animation here
     }
@@ -154,6 +187,46 @@ export const QuestCard: React.FC<QuestCardProps> = ({
                     placeholder="Notas (opcional)..."
                     className="w-full text-xs py-1.5 px-3 rounded-lg bg-ceramic-cool border border-ceramic-border"
                   />
+                  {/* Photo upload */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploading || completionPhotos.length >= 2}
+                      className="inline-flex items-center gap-1 text-[10px] text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors disabled:opacity-50"
+                    >
+                      {uploading ? 'Enviando...' : `${'\u{1F4F7}'} Adicionar foto (opcional)`}
+                    </button>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                    {completionPhotos.length > 0 && (
+                      <div className="flex gap-1 mt-1">
+                        {completionPhotos.map((url, idx) => (
+                          <div key={idx} className="relative w-12 h-12">
+                            <img
+                              src={url}
+                              alt={`Foto ${idx + 1}`}
+                              className="w-12 h-12 rounded-lg object-cover border border-ceramic-border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCompletionPhotos((prev) => prev.filter((_, pi) => pi !== idx))
+                              }
+                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[8px] flex items-center justify-center leading-none"
+                            >
+                              X
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={handleComplete}
@@ -163,7 +236,10 @@ export const QuestCard: React.FC<QuestCardProps> = ({
                       {acting ? 'Salvando...' : 'Confirmar'}
                     </button>
                     <button
-                      onClick={() => setShowCompleteForm(false)}
+                      onClick={() => {
+                        setShowCompleteForm(false);
+                        setCompletionPhotos([]);
+                      }}
                       className="text-xs py-1.5 px-3 rounded-lg bg-ceramic-cool text-ceramic-text-secondary"
                     >
                       Cancelar
