@@ -15,9 +15,6 @@ import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { PatternDashboard } from '../components/insights/PatternDashboard'
-import { LifeCouncilCard, PatternsSummary } from '@/components/features'
-import { useLifeCouncil } from '@/hooks/useLifeCouncil'
-import { useUserPatterns } from '@/hooks/useUserPatterns'
 
 import { JourneySearchPanel } from '../components/JourneySearchPanel'
 import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
@@ -164,8 +161,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
   const { user } = useAuth()
   const { moments, create: createMoment } = useMoments()
-  const council = useLifeCouncil({ autoTrigger: moments.length >= 3 })
-  const userPatterns = useUserPatterns()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestionAI()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
@@ -422,29 +417,8 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       {/* ═══ DESKTOP LAYOUT (lg+): 2-column — Insights left, Timeline right ═══ */}
       <div className="hidden lg:block max-w-7xl mx-auto p-6 pb-40">
         <div className="grid grid-cols-5 gap-6">
-          {/* LEFT COLUMN (3/5 = 60%) — Insights: Life Council + Patterns + Weekly Summary */}
+          {/* LEFT COLUMN (3/5 = 60%) — Insights: Weekly Summary */}
           <div className="col-span-3 space-y-5">
-            {/* Life Council — primary content */}
-            <LifeCouncilCard
-              insight={council.insight}
-              isLoading={council.isLoading}
-              isRunning={council.isRunning}
-              error={council.error}
-              onRun={council.runCouncil}
-              onMarkViewed={council.markViewed}
-              lastUpdated={council.insight?.insight_date}
-            />
-
-            {/* Behavioral Patterns */}
-            <PatternsSummary
-              patterns={userPatterns.patterns}
-              isLoading={userPatterns.isLoading}
-              isSynthesizing={userPatterns.isSynthesizing}
-              error={userPatterns.error}
-              onSynthesize={userPatterns.synthesize}
-              lastUpdated={userPatterns.lastSynthesizedAt}
-            />
-
             {/* Weekly Summary */}
             <FeatureGate featureId="weekly_summary">
               {isLoadingSummary ? (
@@ -620,25 +594,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              <LifeCouncilCard
-                insight={council.insight}
-                isLoading={council.isLoading}
-                isRunning={council.isRunning}
-                error={council.error}
-                onRun={council.runCouncil}
-                onMarkViewed={council.markViewed}
-                lastUpdated={council.insight?.insight_date}
-              />
-
-              <PatternsSummary
-                patterns={userPatterns.patterns}
-                isLoading={userPatterns.isLoading}
-                isSynthesizing={userPatterns.isSynthesizing}
-                error={userPatterns.error}
-                onSynthesize={userPatterns.synthesize}
-                lastUpdated={userPatterns.lastSynthesizedAt}
-              />
-
               <FeatureGate featureId="weekly_summary">
                 {isLoadingSummary ? (
                   <WeeklySummarySkeleton />
