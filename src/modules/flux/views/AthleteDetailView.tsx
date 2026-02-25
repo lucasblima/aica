@@ -10,6 +10,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import { AthleteService } from '../services/athleteService';
 import { ParQService } from '../services/parqService';
+import { MicrocycleService } from '../services/microcycleService';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { supabase } from '@/services/supabaseClient';
 import type { Athlete, Alert } from '../types';
@@ -36,6 +37,7 @@ import {
   Ruler,
   Calculator,
   Save,
+  CheckCircle,
 } from 'lucide-react';
 
 const AVATAR_COLORS = [
@@ -71,6 +73,8 @@ export default function AthleteDetailView() {
   const [latestParQ, setLatestParQ] = useState<ParQResponse | null>(null);
   const [parqLoading, setParqLoading] = useState(false);
   const [feedbacks, setFeedbacks] = useState<SlotFeedback[]>([]);
+  const [activeMicrocycle, setActiveMicrocycle] = useState<{ id: string; status: string; name?: string } | null>(null);
+  const [activatingMicrocycle, setActivatingMicrocycle] = useState(false);
   const alerts: Alert[] = [];
   const activeBlock = null;
 
@@ -170,6 +174,20 @@ export default function AthleteDetailView() {
     };
 
     loadFeedbacks();
+    return () => { cancelled = true; };
+  }, [athleteId]);
+
+  // Load active/draft microcycle for "Liberar Treino" button (#381)
+  useEffect(() => {
+    if (!athleteId) return;
+    let cancelled = false;
+
+    MicrocycleService.getActiveMicrocycle(athleteId).then(({ data }) => {
+      if (!cancelled && data) {
+        setActiveMicrocycle({ id: data.id, status: data.status, name: data.name });
+      }
+    });
+
     return () => { cancelled = true; };
   }, [athleteId]);
 
@@ -344,8 +362,26 @@ export default function AthleteDetailView() {
                   className="w-full text-2xl font-black text-ceramic-text-primary bg-transparent border-b-2 border-ceramic-accent focus:outline-none mb-2"
                 />
               ) : (
-                <h1 className="text-2xl font-black text-ceramic-text-primary mb-2">
+                <h1 className="text-2xl font-black text-ceramic-text-primary mb-2 flex items-center gap-2">
                   {athlete.name}
+                  {/* Status Indicators — #389 */}
+                  {athlete.financial_status && athlete.financial_status !== 'ok' && (
+                    <span
+                      className="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"
+                      title={athlete.financial_status === 'overdue' ? 'Pagamento em atraso' : 'Pagamento pendente'}
+                    />
+                  )}
+                  {athlete.parq_clearance_status &&
+                   ['pending', 'blocked', 'expired'].includes(athlete.parq_clearance_status) && (
+                    <span
+                      className="w-3 h-3 rounded-full bg-blue-500 animate-pulse flex-shrink-0"
+                      title={
+                        athlete.parq_clearance_status === 'blocked' ? 'Liberacao medica necessaria' :
+                        athlete.parq_clearance_status === 'expired' ? 'Documentos expirados' :
+                        'Documentos pendentes'
+                      }
+                    />
+                  )}
                 </h1>
               )}
               <LevelBadge level={athlete.level} size="md" />
@@ -756,6 +792,47 @@ export default function AthleteDetailView() {
               </div>
             </div>
           </button>
+
+          {/* Liberar Treino — #381 */}
+          {activeMicrocycle?.status === 'draft' && (
+            <button
+              onClick={async () => {
+                setActivatingMicrocycle(true);
+                try {
+                  const { error } = await MicrocycleService.activateMicrocycle(activeMicrocycle.id);
+                  if (!error) {
+                    setActiveMicrocycle(prev => prev ? { ...prev, status: 'active' } : null);
+                  } else {
+                    console.error('[AthleteDetail] Error activating microcycle:', error);
+                  }
+                } finally {
+                  setActivatingMicrocycle(false);
+                }
+              }}
+              disabled={activatingMicrocycle}
+              className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left disabled:opacity-50"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-ceramic-success/10 flex items-center justify-center group-hover:bg-ceramic-success/20 transition-colors flex-shrink-0">
+                  {activatingMicrocycle ? (
+                    <Loader2 className="w-5 h-5 text-ceramic-success animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 text-ceramic-success" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-ceramic-text-primary">Liberar Treino</p>
+                  <p className="text-xs text-ceramic-text-secondary">Ativar microciclo para o atleta</p>
+                </div>
+              </div>
+            </button>
+          )}
+          {activeMicrocycle?.status === 'active' && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-ceramic-success/10 rounded-xl">
+              <CheckCircle className="w-4 h-4 text-ceramic-success" />
+              <span className="text-xs font-bold text-ceramic-success">Treino Liberado</span>
+            </div>
+          )}
         </div>
       </div>
 
