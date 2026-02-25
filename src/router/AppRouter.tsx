@@ -630,8 +630,8 @@ export function AppRouter() {
             )}
 
             {/* Aica Chat FAB - Floating button for quick AI access */}
-            {/* Hidden on Vida page where VidaChatHero provides inline chat entry (#391) */}
-            {isAuthenticated && currentView !== 'vida-new' && <AicaChatFAB position="bottom-left" bottomOffset={shouldShowGlobalNav ? 80 : 16} />}
+            {/* On /vida, FAB button is hidden but drawer stays functional via CustomEvent from VidaChatHero (#391) */}
+            {isAuthenticated && <AicaChatFAB position="bottom-left" bottomOffset={shouldShowGlobalNav ? 80 : 16} hideButton={currentView === 'vida-new'} />}
 
             {/* Notification Toast Container */}
             <NotificationContainer />

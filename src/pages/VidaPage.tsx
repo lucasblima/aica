@@ -8,9 +8,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Ticket, Compass, type LucideIcon } from 'lucide-react';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Ticket, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget, InviteShareCard, InviteModal } from '../components';
 import { VidaChatHero } from '@/components/features/VidaChatHero';
+import { LifeCouncilCard, PatternsSummary } from '@/components/features';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -18,6 +19,8 @@ import { FluxCard } from '../modules/flux';
 import { InterviewerCard } from '../modules/journey/components/interviewer';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
+import { useLifeCouncil } from '@/hooks/useLifeCouncil';
+import { useUserPatterns } from '@/hooks/useUserPatterns';
 import { useGrantsHomeQuery } from '@/hooks/queries';
 import { ViewState } from '../../types';
 import { supabase } from '@/services/supabaseClient';
@@ -106,6 +109,12 @@ export default function VidaPage({
 
    // Identity data from Journey CP system
    const { stats: cpStats, progress: cpProgress } = useConsciousnessPoints();
+
+   // Life Council — auto-trigger daily insight generation
+   const council = useLifeCouncil({ autoTrigger: true });
+
+   // User Patterns — behavioral patterns from OpenClaw
+   const userPatterns = useUserPatterns();
 
    // User metadata for avatar and profile
    const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
@@ -207,6 +216,89 @@ export default function VidaPage({
             >
                <VidaChatHero />
             </motion.div>
+
+            {/* Quick Stats — real-time user data */}
+            {cpStats && (
+               <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
+                  className="grid grid-cols-3 gap-2"
+               >
+                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
+                     <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                        <Zap className="w-4 h-4 text-amber-500" />
+                     </div>
+                     <div className="min-w-0">
+                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
+                           {cpStats.total_points || 0}
+                        </p>
+                        <p className="text-[10px] text-ceramic-text-secondary truncate">Total CP</p>
+                     </div>
+                  </div>
+                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
+                     <div className="w-8 h-8 rounded-lg bg-ceramic-warning/10 flex items-center justify-center shrink-0">
+                        <Flame className="w-4 h-4 text-ceramic-warning" />
+                     </div>
+                     <div className="min-w-0">
+                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
+                           {cpStats.current_streak || 0}
+                        </p>
+                        <p className="text-[10px] text-ceramic-text-secondary truncate">Streak</p>
+                     </div>
+                  </div>
+                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
+                     <div className="w-8 h-8 rounded-lg bg-ceramic-info/10 flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-4 h-4 text-ceramic-info" />
+                     </div>
+                     <div className="min-w-0">
+                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
+                           {cpStats.total_moments || 0}
+                        </p>
+                        <p className="text-[10px] text-ceramic-text-secondary truncate">Momentos</p>
+                     </div>
+                  </div>
+               </motion.div>
+            )}
+
+            {/* Life Council — AI daily insight */}
+            <motion.div
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.4, delay: 0.15 }}
+            >
+               <LifeCouncilCard
+                  insight={council.insight}
+                  isLoading={council.isLoading}
+                  isRunning={council.isRunning}
+                  error={council.error}
+                  onRun={council.runCouncil}
+                  onMarkViewed={council.markViewed}
+                  compact
+                  onViewMore={() => onNavigateToView('journey')}
+                  lastUpdated={council.insight?.insight_date}
+               />
+            </motion.div>
+
+            {/* Behavioral Patterns — compact */}
+            {(userPatterns.isLoading || userPatterns.patterns.length > 0) && (
+               <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.2 }}
+               >
+                  <PatternsSummary
+                     patterns={userPatterns.patterns}
+                     isLoading={userPatterns.isLoading}
+                     isSynthesizing={userPatterns.isSynthesizing}
+                     error={userPatterns.error}
+                     onSynthesize={userPatterns.synthesize}
+                     compact
+                     onViewMore={() => onNavigateToView('journey')}
+                     lastUpdated={userPatterns.lastSynthesizedAt}
+                  />
+               </motion.div>
+            )}
 
             {/* Journey CTA — full width */}
             <motion.div
