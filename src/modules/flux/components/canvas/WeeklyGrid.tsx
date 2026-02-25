@@ -84,6 +84,12 @@ const INTENSITY_DOTS: Record<string, string> = {
   high: 'bg-[#9B4D3A]',
 };
 
+const INTENSITY_LABELS: Record<string, string> = {
+  low: 'Leve',
+  medium: 'Moderado',
+  high: 'Intenso',
+};
+
 const WEEK_FOCUS_LABELS: Record<number, string> = {
   1: 'Base',
   2: 'Progressao',
@@ -165,7 +171,8 @@ interface PositionedWorkoutCardProps {
   onDelete?: () => void;
 }
 
-const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, onClick, onDelete }) => {
+const PositionedWorkoutCard = React.forwardRef<HTMLDivElement, PositionedWorkoutCardProps>(
+  ({ workout, onClick, onDelete }, ref) => {
   const colors = MODALITY_COLORS[workout.modality] || MODALITY_COLORS.running;
   const top = workout.start_time ? timeToY(workout.start_time) : 0;
   const height = durationToHeight(workout.duration);
@@ -173,6 +180,7 @@ const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, 
 
   return (
     <motion.div
+      ref={ref}
       layout
       layoutId={`workout-${workout.id}`}
       data-workout-card
@@ -238,11 +246,16 @@ const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, 
           )}
           <span className="text-[9px] text-ceramic-text-tertiary">{workout.duration}min</span>
           <span className={`w-1.5 h-1.5 rounded-full ${INTENSITY_DOTS[workout.intensity] || ''}`} />
+          <span className="text-[8px] font-medium text-ceramic-text-secondary">
+            {INTENSITY_LABELS[workout.intensity] || ''}
+          </span>
         </div>
       </div>
     </motion.div>
   );
-};
+});
+
+PositionedWorkoutCard.displayName = 'PositionedWorkoutCard';
 
 // ============================================
 // Positioned Busy Slot
