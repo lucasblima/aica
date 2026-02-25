@@ -31,7 +31,6 @@ import {
   Activity,
   Edit,
   Zap,
-  TrendingUp,
   Loader2,
   Scale,
   Ruler,
@@ -772,23 +771,8 @@ export default function AthleteDetailView() {
                 <Calendar className="w-5 h-5 text-ceramic-info" />
               </div>
               <div>
-                <p className="text-sm font-bold text-ceramic-text-primary">Prescrever Microciclo</p>
-                <p className="text-xs text-ceramic-text-secondary">Plano de 3 semanas</p>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate(`/flux/intensity/${athleteId}`)}
-            className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-ceramic-warning/10 flex items-center justify-center group-hover:bg-ceramic-warning/20 transition-colors flex-shrink-0">
-                <TrendingUp className="w-5 h-5 text-ceramic-warning" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-ceramic-text-primary">Zonas de Intensidade</p>
-                <p className="text-xs text-ceramic-text-secondary">FTP, Pace, CSS</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">Prescrever Treino</p>
+                <p className="text-xs text-ceramic-text-secondary">Plano de 4 semanas</p>
               </div>
             </div>
           </button>
@@ -863,13 +847,13 @@ export default function AthleteDetailView() {
         <div className="flex items-center gap-2 mb-3">
           <FileText className="w-5 h-5 text-ceramic-text-primary" />
           <h2 className="text-lg font-bold text-ceramic-text-primary">
-            Feedbacks Recentes ({feedbacks.length})
+            Feedbacks
           </h2>
         </div>
 
         {feedbacks.length > 0 ? (
           <div className="space-y-3">
-            {feedbacks.slice(0, 5).map((fb) => (
+            {feedbacks.map((fb) => (
               <div key={fb.id} className="ceramic-card p-4 space-y-3">
                 {/* Header: slot name + date */}
                 <div className="flex items-center justify-between">
@@ -919,40 +903,6 @@ export default function AthleteDetailView() {
         )}
       </div>
 
-      {/* Anamnesis Section */}
-      {athlete.anamnesis && (
-        <div className="px-6 mb-6">
-          <h2 className="text-lg font-bold text-ceramic-text-primary mb-3">Anamnese</h2>
-          <div className="ceramic-card p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs text-ceramic-text-secondary mb-1">Sono</p>
-                <p className="text-sm font-bold text-ceramic-text-primary">
-                  {athlete.anamnesis.sleep_quality || 'N/A'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-ceramic-text-secondary mb-1">Estresse</p>
-                <p className="text-sm font-bold text-ceramic-text-primary">
-                  {athlete.anamnesis.stress_level || 'N/A'}
-                </p>
-              </div>
-            </div>
-            {athlete.anamnesis.injuries && athlete.anamnesis.injuries.length > 0 && (
-              <div className="pt-3 border-t border-ceramic-text-secondary/10">
-                <p className="text-xs text-ceramic-text-secondary mb-2">Lesoes Previas</p>
-                <ul className="space-y-1">
-                  {athlete.anamnesis.injuries.map((injury, index) => (
-                    <li key={index} className="text-sm text-ceramic-text-primary">
-                      - {injury}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
     </ErrorBoundary>
   );

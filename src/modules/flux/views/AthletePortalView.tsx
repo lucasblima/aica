@@ -42,6 +42,21 @@ const log = createNamespacedLogger('AthletePortalView');
 const DAY_NAMES = ['', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
+const AVATAR_COLORS = [
+  'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
+  'bg-violet-500', 'bg-teal-500', 'bg-pink-500', 'bg-indigo-500',
+];
+
+function getInitials(name: string): string {
+  return name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 // ─── Stagger animation variants ────────────────────────────────────
 
 const sectionVariants: Variants = {
@@ -333,29 +348,28 @@ export default function AthletePortalView() {
       <motion.section className="px-5 mb-4" custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
         <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{modalityConfig?.icon || '\u{1F3CB}\u{FE0F}'}</span>
+            {/* Avatar with fallback to initials */}
+            {(profile as unknown as Record<string, unknown>).avatar_url ? (
+              <img
+                src={(profile as unknown as Record<string, unknown>).avatar_url as string}
+                alt={profile.athlete_name}
+                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ${getAvatarColor(profile.athlete_name)}`}>
+                <span className="text-white font-bold">{getInitials(profile.athlete_name)}</span>
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-black text-ceramic-text-primary truncate">{profile.athlete_name}</h1>
-              <p className="text-xs text-ceramic-text-secondary">Treinado por {profile.coach_name}</p>
-            </div>
-          </div>
-
-          {/* Treinos — prescribed modalities (#379: only show coach-prescribed modalities) */}
-          <div className="pt-3 border-t border-ceramic-border/30 space-y-2">
-            <p className="text-[10px] font-bold text-sky-600 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" />
-              Treinos
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {prescribedModalities.map((mod) => {
-                const cfg = MODALITY_CONFIG[mod];
-                if (!cfg) return null;
-                return (
-                  <span key={mod} className="inline-flex items-center gap-1.5 text-xs font-medium text-ceramic-text-primary bg-ceramic-cool/60 rounded-lg px-2.5 py-1">
-                    <span>{cfg.icon}</span>{cfg.label}
+              <h1 className="text-xl font-black text-ceramic-text-primary truncate">
+                {profile.athlete_name}
+                {prescribedModalities.map((mod) => (
+                  <span key={mod} className="ml-1" title={MODALITY_CONFIG[mod]?.label}>
+                    {MODALITY_CONFIG[mod]?.icon}
                   </span>
-                );
-              })}
+                ))}
+              </h1>
+              <p className="text-xs text-ceramic-text-secondary">Prescrito por {profile.coach_name}</p>
             </div>
           </div>
 
