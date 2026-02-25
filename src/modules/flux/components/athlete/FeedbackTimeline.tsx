@@ -1,20 +1,22 @@
 /**
- * FeedbackTimeline — week-grouped timeline for the redesigned Feedback tab
+ * FeedbackTimeline -- week-grouped timeline for the redesigned Feedback tab
  *
  * Shows weeks in reverse order (most recent first).
- * Each week displays: weekly feedback status + per-exercise feedback status.
- * Exercises on the same day are grouped under a single day header.
- * Tapping a pending item opens the relevant form.
+ * Each week displays:
+ *   - Weekly feedback status + radar chart (if submitted)
+ *   - Daily feedback rows grouped by day of week
+ *
+ * Per-exercise questionnaire was removed (#431).
+ * Radar chart added at top of each feedback entry (#432).
  */
 
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { MessageSquare } from 'lucide-react';
 import { FeedbackStatusRow } from './FeedbackStatusRow';
-import { ExerciseQuestionnaireSheet } from './ExerciseQuestionnaireSheet';
+import { FeedbackRadarChart } from './FeedbackRadarChart';
 import { MODALITY_CONFIG } from '../../types';
 import type { TrainingModality } from '../../types';
-import type { WeekFeedbackSummary, SubmitExerciseFeedbackInput, FeedbackSlotSummary } from '../../hooks/useAthleteFeedback';
+import type { WeekFeedbackSummary, FeedbackSlotSummary } from '../../hooks/useAthleteFeedback';
 
 const DAY_NAMES: Record<number, string> = {
   1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sab', 7: 'Dom',
@@ -45,11 +47,11 @@ function isSlotInFuture(
   currentWeek: number,
   dayOfWeek: number,
 ): boolean {
-  // Future week — all slots locked
+  // Future week -- all slots locked
   if (weekNumber > currentWeek) return true;
-  // Past week — all slots unlocked
+  // Past week -- all slots unlocked
   if (weekNumber < currentWeek) return false;
-  // Current week — compare day of week with today
+  // Current week -- compare day of week with today
   const now = new Date();
   const jsDay = now.getDay(); // 0=Sun, 1=Mon
   const todayIso = jsDay === 0 ? 7 : jsDay; // 1=Mon..7=Sun
@@ -59,7 +61,6 @@ function isSlotInFuture(
 export interface FeedbackTimelineProps {
   weekSummaries: WeekFeedbackSummary[];
   currentWeek: number;
-  onSubmitExercise: (input: SubmitExerciseFeedbackInput) => Promise<void>;
   onOpenWeeklyFeedback?: (weekNumber: number) => void;
   isSubmitting: boolean;
   modality?: TrainingModality;
@@ -68,37 +69,11 @@ export interface FeedbackTimelineProps {
 export function FeedbackTimeline({
   weekSummaries,
   currentWeek,
-  onSubmitExercise,
   onOpenWeeklyFeedback,
-  isSubmitting,
+  isSubmitting: _isSubmitting,
   modality,
 }: FeedbackTimelineProps) {
   const modalityIcon = modality ? MODALITY_CONFIG[modality]?.icon : undefined;
-  const [openQuestionnaire, setOpenQuestionnaire] = useState<{
-    slotId: string;
-    slotName: string;
-    dayLabel: string;
-  } | null>(null);
-
-  const handleOpenExercise = useCallback((slotId: string, slotName: string, dayOfWeek: number) => {
-    setOpenQuestionnaire({
-      slotId,
-      slotName,
-      dayLabel: DAY_NAMES[dayOfWeek] || '',
-    });
-  }, []);
-
-  const handleSubmitQuestionnaire = useCallback(
-    async (data: { slotId: string; questionnaire: Record<string, number | undefined>; notes: string }) => {
-      await onSubmitExercise({
-        slotId: data.slotId,
-        questionnaire: data.questionnaire,
-        notes: data.notes,
-      });
-      setOpenQuestionnaire(null);
-    },
-    [onSubmitExercise]
-  );
 
   if (weekSummaries.length === 0) {
     return (
@@ -119,63 +94,71 @@ export function FeedbackTimeline({
   }
 
   return (
-    <>
-      <div className="space-y-6">
-        {weekSummaries.map((ws, i) => {
-          const isCurrent = ws.weekNumber === currentWeek;
-          const weeklySubmitted = !!ws.weeklyFeedback;
-          const weeklyDate = ws.weeklyFeedback?.created_at;
-          const weeklyNotes = ws.weeklyFeedback?.notes || ws.weeklyFeedback?.voice_transcript;
-          const weeklyPreview = weeklyNotes
-            ? weeklyNotes.length > 50
-              ? weeklyNotes.slice(0, 50) + '...'
-              : weeklyNotes
-            : undefined;
+    <div className="space-y-6">
+      {weekSummaries.map((ws, i) => {
+        const isCurrent = ws.weekNumber === currentWeek;
+        const weeklySubmitted = !!ws.weeklyFeedback;
+        const weeklyDate = ws.weeklyFeedback?.created_at;
+        const weeklyNotes = ws.weeklyFeedback?.notes || ws.weeklyFeedback?.voice_transcript;
+        const weeklyPreview = weeklyNotes
+          ? weeklyNotes.length > 50
+            ? weeklyNotes.slice(0, 50) + '...'
+            : weeklyNotes
+          : undefined;
 
-          const isFutureWeek = ws.weekNumber > currentWeek;
+        const isFutureWeek = ws.weekNumber > currentWeek;
 
-          return (
-            <motion.div
-              key={ws.weekNumber}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06, duration: 0.3 }}
-              className="space-y-2"
-            >
-              {/* Week header */}
-              <div className="flex items-center gap-2 px-1">
-                <div className={`h-px flex-1 ${isCurrent ? 'bg-amber-300' : 'bg-ceramic-border/50'}`} />
-                <span className={`text-xs font-bold uppercase tracking-wider px-2 ${isCurrent ? 'text-amber-600' : 'text-ceramic-text-secondary'}`}>
-                  Semana {ws.weekNumber} {isCurrent ? '(atual)' : ''}
-                </span>
-                <div className={`h-px flex-1 ${isCurrent ? 'bg-amber-300' : 'bg-ceramic-border/50'}`} />
+        // Weekly feedback questionnaire data for radar chart
+        const weeklyQuestionnaire = ws.weeklyFeedback?.questionnaire;
+
+        return (
+          <motion.div
+            key={ws.weekNumber}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, duration: 0.3 }}
+            className="space-y-2"
+          >
+            {/* Week header */}
+            <div className="flex items-center gap-2 px-1">
+              <div className={`h-px flex-1 ${isCurrent ? 'bg-amber-300' : 'bg-ceramic-border/50'}`} />
+              <span className={`text-xs font-bold uppercase tracking-wider px-2 ${isCurrent ? 'text-amber-600' : 'text-ceramic-text-secondary'}`}>
+                Semana {ws.weekNumber} {isCurrent ? '(atual)' : ''}
+              </span>
+              <div className={`h-px flex-1 ${isCurrent ? 'bg-amber-300' : 'bg-ceramic-border/50'}`} />
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              {/* Weekly feedback row */}
+              <div className="px-2 pt-2">
+                <FeedbackStatusRow
+                  type="weekly"
+                  label="Feedback Semanal"
+                  isSubmitted={weeklySubmitted}
+                  locked={isFutureWeek}
+                  summary={weeklyPreview}
+                  dateLabel={weeklyDate ? formatDate(weeklyDate) : undefined}
+                  onTap={
+                    !weeklySubmitted && isCurrent && onOpenWeeklyFeedback
+                      ? () => onOpenWeeklyFeedback(ws.weekNumber)
+                      : undefined
+                  }
+                />
               </div>
 
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                {/* Weekly feedback row */}
-                <div className="px-2 pt-2">
-                  <FeedbackStatusRow
-                    type="weekly"
-                    label="Feedback Semanal"
-                    isSubmitted={weeklySubmitted}
-                    locked={isFutureWeek}
-                    summary={weeklyPreview}
-                    dateLabel={weeklyDate ? formatDate(weeklyDate) : undefined}
-                    onTap={
-                      !weeklySubmitted && isCurrent && onOpenWeeklyFeedback
-                        ? () => onOpenWeeklyFeedback(ws.weekNumber)
-                        : weeklySubmitted
-                          ? undefined
-                          : undefined
-                    }
-                  />
+              {/* Weekly radar chart (shown if weekly feedback has questionnaire data) */}
+              {weeklyQuestionnaire && (
+                <div className="px-4 py-3">
+                  <FeedbackRadarChart questionnaire={weeklyQuestionnaire} />
                 </div>
+              )}
 
-                {/* Exercise rows grouped by day */}
-                <div className="px-2 pb-2">
-                  {groupSlotsByDay(ws.slots).map((dayGroup) => (
+              {/* Daily feedback rows grouped by day */}
+              <div className="px-2 pb-2">
+                {groupSlotsByDay(ws.slots).map((dayGroup) => {
+                  return (
                     <div key={dayGroup.day}>
-                      {/* Day header — shown once per day */}
+                      {/* Day header */}
                       <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
                         <span className="text-[10px] font-black text-ceramic-text-secondary/70 uppercase tracking-wider w-7">
                           {DAY_NAMES[dayGroup.day] || ''}
@@ -183,64 +166,57 @@ export function FeedbackTimeline({
                         <div className="h-px flex-1 bg-ceramic-border/30" />
                       </div>
 
-                      {/* Exercises for this day */}
+                      {/* Slot rows for this day (daily feedback indicators) */}
                       <div className="space-y-0.5">
                         {dayGroup.slots.map((slot) => {
-                          const hasExerciseFeedback = !!slot.feedbackEntry;
                           const slotLocked = isSlotInFuture(ws.weekNumber, currentWeek, slot.dayOfWeek);
-                          const answered = slot.questionnaireAnswered;
+                          const isCompleted = slot.isCompleted;
                           const rpe = slot.rpe;
-                          const summary = hasExerciseFeedback
-                            ? `${answered}/8 resp.${rpe != null ? ` RPE ${rpe}` : ''}`
-                            : slot.isCompleted && rpe != null
-                              ? `RPE ${rpe}`
+                          const summary = isCompleted && rpe != null
+                            ? `RPE ${rpe}`
+                            : isCompleted
+                              ? 'Concluido'
                               : undefined;
 
+                          // Daily feedback radar: show if this slot has a feedback entry with questionnaire
+                          const slotQuestionnaire = slot.feedbackEntry?.questionnaire;
+
                           return (
-                            <FeedbackStatusRow
-                              key={slot.slotId}
-                              type="exercise"
-                              label={slot.templateName}
-                              isSubmitted={hasExerciseFeedback}
-                              locked={slotLocked}
-                              summary={summary}
-                              modalityIcon={modalityIcon}
-                              dateLabel={
-                                slot.feedbackEntry?.created_at
-                                  ? formatDate(slot.feedbackEntry.created_at)
-                                  : undefined
-                              }
-                              onTap={
-                                !slotLocked && !hasExerciseFeedback
-                                  ? () => handleOpenExercise(slot.slotId, slot.templateName, slot.dayOfWeek)
-                                  : undefined
-                              }
-                            />
+                            <div key={slot.slotId}>
+                              <FeedbackStatusRow
+                                type="exercise"
+                                label={slot.templateName}
+                                isSubmitted={isCompleted}
+                                locked={slotLocked}
+                                summary={summary}
+                                modalityIcon={modalityIcon}
+                                dateLabel={
+                                  slot.completedAt
+                                    ? formatDate(slot.completedAt)
+                                    : undefined
+                                }
+                              />
+                              {/* Radar chart for daily feedback entry */}
+                              {slotQuestionnaire && (
+                                <div className="px-4 py-2">
+                                  <FeedbackRadarChart
+                                    questionnaire={slotQuestionnaire}
+                                    size={180}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Exercise questionnaire sheet (bottom sheet) */}
-      <AnimatePresence>
-        {openQuestionnaire && (
-          <ExerciseQuestionnaireSheet
-            slotId={openQuestionnaire.slotId}
-            slotName={openQuestionnaire.slotName}
-            dayLabel={openQuestionnaire.dayLabel}
-            onSubmit={handleSubmitQuestionnaire}
-            onClose={() => setOpenQuestionnaire(null)}
-            isSubmitting={isSubmitting}
-          />
-        )}
-      </AnimatePresence>
-    </>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
   );
 }

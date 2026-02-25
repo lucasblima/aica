@@ -19,3 +19,5 @@ export type { ExerciseQuestionnaireSheetProps } from './ExerciseQuestionnaireShe
 export { FeedbackTimeline } from './FeedbackTimeline';
 export type { FeedbackTimelineProps } from './FeedbackTimeline';
 export { FeedbackStatusRow } from './FeedbackStatusRow';
+export { FeedbackRadarChart } from './FeedbackRadarChart';
+export type { FeedbackRadarChartProps } from './FeedbackRadarChart';

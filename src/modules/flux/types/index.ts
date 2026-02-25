@@ -40,6 +40,10 @@ export type {
   Alert,
   Exercise,
 
+  // Athlete Groups (localStorage-based)
+  AthleteGroupData,
+  AthleteGroup,
+
   // UI State
   FluxMode,
   FluxState,
@@ -69,6 +73,8 @@ export {
   SEVERITY_COLORS,
   MODALITY_CONFIG,
   TRAINING_MODALITIES,
+  GROUP_COLORS,
+  getGroupColorClasses,
 } from './flux';
 
 // ============================================

@@ -324,6 +324,51 @@ export interface MyAthleteProfile {
 }
 
 // ============================================
+// ATHLETE GROUPS (localStorage-based, no migration)
+// ============================================
+
+/**
+ * Athlete group for coach organization (stored in localStorage)
+ * Key: `flux_athlete_groups_${coachUserId}`
+ */
+export interface AthleteGroupData {
+  groups: AthleteGroup[];
+  assignments: Record<string, string[]>; // athleteId -> groupId[]
+}
+
+/**
+ * Single group definition
+ */
+export interface AthleteGroup {
+  id: string;
+  name: string;
+  color: string; // Tailwind color key e.g. 'amber', 'rose', 'sky'
+  createdAt: string;
+}
+
+/**
+ * Available group colors (Ceramic-friendly palette)
+ */
+export const GROUP_COLORS: { id: string; label: string; bg: string; text: string }[] = [
+  { id: 'amber', label: 'Amarelo', bg: 'bg-amber-100', text: 'text-amber-700' },
+  { id: 'rose', label: 'Rosa', bg: 'bg-rose-100', text: 'text-rose-700' },
+  { id: 'sky', label: 'Azul', bg: 'bg-sky-100', text: 'text-sky-700' },
+  { id: 'emerald', label: 'Verde', bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  { id: 'violet', label: 'Violeta', bg: 'bg-violet-100', text: 'text-violet-700' },
+  { id: 'orange', label: 'Laranja', bg: 'bg-orange-100', text: 'text-orange-700' },
+  { id: 'teal', label: 'Teal', bg: 'bg-teal-100', text: 'text-teal-700' },
+  { id: 'pink', label: 'Pink', bg: 'bg-pink-100', text: 'text-pink-700' },
+];
+
+/**
+ * Helper: get group color classes by color id
+ */
+export function getGroupColorClasses(colorId: string): { bg: string; text: string } {
+  const found = GROUP_COLORS.find((c) => c.id === colorId);
+  return found ? { bg: found.bg, text: found.text } : { bg: 'bg-ceramic-cool', text: 'text-ceramic-text-secondary' };
+}
+
+// ============================================
 // UI STATE TYPES
 // ============================================
 

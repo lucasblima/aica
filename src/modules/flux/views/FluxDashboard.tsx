@@ -14,16 +14,17 @@ import { useAthleteActivity } from '../hooks/useAthleteActivity';
 import { AthleteService, CreateAthleteInput } from '../services/athleteService';
 import { supabase } from '@/services/supabaseClient';
 import { AthleteProfileService } from '../services/athleteProfileService';
-import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
-import type { TrainingModality, AthleteLevel, Alert, ModalityLevel } from '../types';
+import { MODALITY_CONFIG, TRAINING_MODALITIES, getGroupColorClasses } from '../types';
+import type { TrainingModality, AthleteLevel, Alert, ModalityLevel, AthleteGroupData } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
 import type { SlotFeedback } from '../components/AthleteCard';
 import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
 import { AthleteFormDrawer } from '../components/forms';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { AthleteGroupManager, loadGroupData, saveGroupData, getAthleteGroups } from '../components/coach/AthleteGroupManager';
 import type { Athlete } from '../types';
 import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
-import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search, CheckCircle, X } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search, CheckCircle, X, Tag, Settings } from 'lucide-react';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 import { useFluxGamification } from '../hooks/useFluxGamification';
 
@@ -96,6 +97,24 @@ export default function FluxDashboard() {
   const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
   const [consistencySort, setAdherenceSort] = useState<SortOrder>('none');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Group filter states
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [groupManagerOpen, setGroupManagerOpen] = useState(false);
+  const [coachUserId, setCoachUserId] = useState<string>('');
+  const [groupData, setGroupData] = useState<AthleteGroupData>({ groups: [], assignments: {} });
+
+  // Load coach user ID and group data
+  useEffect(() => {
+    const loadCoachData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCoachUserId(user.id);
+        setGroupData(loadGroupData(user.id));
+      }
+    };
+    loadCoachData();
+  }, []);
 
   // WhatsApp modal state
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
@@ -238,6 +257,14 @@ export default function FluxDashboard() {
       }
     }
 
+    // Filter by group (OR logic: athlete must be in at least one selected group)
+    if (selectedGroupIds.length > 0) {
+      result = result.filter((a) => {
+        const athleteGroupIds = groupData.assignments[a.id] || [];
+        return selectedGroupIds.some((gid) => athleteGroupIds.includes(gid));
+      });
+    }
+
     // Sort by adherence rate
     if (consistencySort !== 'none') {
       result.sort((a, b) => {
@@ -248,7 +275,7 @@ export default function FluxDashboard() {
     }
 
     return result;
-  }, [allAthletes, selectedModality, selectedLevel, consistencySort, searchQuery]);
+  }, [allAthletes, selectedModality, selectedLevel, consistencySort, searchQuery, selectedGroupIds, groupData]);
 
   // Toggle sort order
   const toggleAdherenceSort = () => {
@@ -624,6 +651,105 @@ export default function FluxDashboard() {
               ))}
             </div>
           </div>
+
+          {/* Group Filter Pills */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-ceramic-text-secondary" />
+                <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Grupos
+                </span>
+              </div>
+              <button
+                onClick={() => setGroupManagerOpen(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
+                title="Gerenciar grupos"
+              >
+                <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Gerenciar
+                </span>
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {groupData.groups.length === 0 ? (
+                <button
+                  onClick={() => setGroupManagerOpen(true)}
+                  className="flex items-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                  <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                    Criar Grupo
+                  </span>
+                </button>
+              ) : (
+                <>
+                  {/* "Todos" pill to clear group filter */}
+                  <button
+                    onClick={() => setSelectedGroupIds([])}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      selectedGroupIds.length === 0
+                        ? 'ceramic-card bg-ceramic-base shadow-md'
+                        : 'ceramic-inset hover:bg-white/50'
+                    }`}
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider text-ceramic-text-primary">
+                      Todos
+                    </span>
+                  </button>
+
+                  {/* Group pills */}
+                  {groupData.groups.map((group) => {
+                    const isSelected = selectedGroupIds.includes(group.id);
+                    const colors = getGroupColorClasses(group.color);
+                    const memberCount = (Object.values(groupData.assignments) as string[][]).filter((ids) =>
+                      ids.includes(group.id)
+                    ).length;
+
+                    return (
+                      <button
+                        key={group.id}
+                        onClick={() => {
+                          setSelectedGroupIds((prev) =>
+                            prev.includes(group.id)
+                              ? prev.filter((id) => id !== group.id)
+                              : [...prev, group.id]
+                          );
+                        }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                          isSelected
+                            ? 'ceramic-card bg-ceramic-base shadow-md ring-1 ring-ceramic-accent/30'
+                            : 'ceramic-inset hover:bg-white/50'
+                        }`}
+                      >
+                        <span className={`w-2.5 h-2.5 rounded-full ${colors.bg} border border-black/10`} />
+                        <span className={`text-xs font-bold uppercase tracking-wider ${
+                          isSelected ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
+                        }`}>
+                          {group.name}
+                        </span>
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                          isSelected ? `${colors.bg} ${colors.text}` : 'bg-ceramic-cool text-ceramic-text-secondary'
+                        }`}>
+                          {memberCount}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {/* Quick add group */}
+                  <button
+                    onClick={() => setGroupManagerOpen(true)}
+                    className="flex items-center gap-1 px-2 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-all"
+                    title="Adicionar grupo"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
       </div>
@@ -652,7 +778,7 @@ export default function FluxDashboard() {
 
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-ceramic-text-primary">
-            {selectedModality === 'all' && selectedLevel === 'all'
+            {selectedModality === 'all' && selectedLevel === 'all' && selectedGroupIds.length === 0
               ? 'Meus Atletas'
               : 'Atletas'}
             {selectedModality !== 'all' && (
@@ -662,6 +788,14 @@ export default function FluxDashboard() {
               <span className="ml-1">
                 {selectedModality !== 'all' ? ' - ' : 'de nivel '}
                 {LEVEL_CATEGORIES.find((c) => c.id === selectedLevel)?.label}
+              </span>
+            )}
+            {selectedGroupIds.length > 0 && (
+              <span className="ml-1">
+                {selectedModality !== 'all' || selectedLevel !== 'all' ? ' - ' : ''}
+                {selectedGroupIds.length === 1
+                  ? groupData.groups.find((g) => g.id === selectedGroupIds[0])?.name || ''
+                  : `${selectedGroupIds.length} grupos`}
               </span>
             )}
             <span className="ml-2 text-sm font-normal text-ceramic-text-secondary">
@@ -711,6 +845,7 @@ export default function FluxDashboard() {
           {filteredAthletes.slice(0, 20).map((athlete) => {
             const athleteAlerts: Alert[] = [];
             const athleteFeedbacks = feedbacksByAthlete[athlete.id] || [];
+            const athleteGroupTags = getAthleteGroups(groupData, athlete.id);
 
             return (
               <AthleteCard
@@ -726,6 +861,7 @@ export default function FluxDashboard() {
                 onDelete={() => handleDeleteClick(athlete)}
                 onSendInvite={() => handleSendInvite(athlete)}
                 onCopyLink={() => {}}
+                groupTags={athleteGroupTags}
               />
             );
           })}
@@ -748,12 +884,12 @@ export default function FluxDashboard() {
             </div>
             <div>
               <p className="text-lg font-bold text-ceramic-text-primary mb-2">
-                {selectedModality === 'all' && selectedLevel === 'all'
+                {selectedModality === 'all' && selectedLevel === 'all' && selectedGroupIds.length === 0
                   ? 'Nenhum atleta cadastrado'
                   : 'Nenhum atleta encontrado'}
               </p>
               <p className="text-sm text-ceramic-text-secondary font-light">
-                {selectedModality === 'all' && selectedLevel === 'all'
+                {selectedModality === 'all' && selectedLevel === 'all' && selectedGroupIds.length === 0
                   ? 'Gerencie treinos de natacao, corrida, ciclismo ou forca'
                   : 'Ajuste os filtros ou cadastre novos atletas'}
               </p>
@@ -761,18 +897,19 @@ export default function FluxDashboard() {
             <button
               onClick={() => {
                 // Se não há filtros ativos, abre modal de criar atleta
-                if (selectedModality === 'all' && selectedLevel === 'all') {
+                if (selectedModality === 'all' && selectedLevel === 'all' && selectedGroupIds.length === 0) {
                   setAthleteModalOpen(true);
                 } else {
                   // Se há filtros ativos, limpa os filtros
                   setSelectedModality('all');
                   setSelectedLevel('all');
                   setAdherenceSort('none');
+                  setSelectedGroupIds([]);
                 }
               }}
               className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
             >
-              {selectedModality === 'all' && selectedLevel === 'all'
+              {selectedModality === 'all' && selectedLevel === 'all' && selectedGroupIds.length === 0
                 ? 'Adicionar Primeiro Atleta'
                 : 'Limpar Filtros'}
             </button>
@@ -820,6 +957,16 @@ export default function FluxDashboard() {
             ? `Tem certeza que deseja excluir ${athleteToDelete.name}? Esta ação não pode ser desfeita.`
             : ''
         }
+      />
+
+      {/* Athlete Group Manager Modal */}
+      <AthleteGroupManager
+        isOpen={groupManagerOpen}
+        onClose={() => setGroupManagerOpen(false)}
+        coachUserId={coachUserId}
+        athletes={allAthletes}
+        groupData={groupData}
+        onGroupDataChange={(updated) => setGroupData(updated)}
       />
 
       {/* Invite Toast */}
