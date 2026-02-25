@@ -401,11 +401,44 @@ export function useAthleteFeedback(profile: MyAthleteProfile | null) {
     []
   );
 
+  // Aggregated questionnaire averages across all completed feedbacks
+  const aggregatedQuestionnaire = useMemo<QuestionnaireData | null>(() => {
+    const withQ = feedbackRows.filter((r) => {
+      if (!r.questionnaire) return false;
+      return countAnswered(r.questionnaire) >= 3;
+    });
+    if (withQ.length === 0) return null;
+
+    const sums: Record<string, { total: number; count: number }> = {};
+    for (const row of withQ) {
+      for (const key of QUESTIONNAIRE_KEYS) {
+        const val = row.questionnaire?.[key];
+        if (val != null) {
+          if (!sums[key]) sums[key] = { total: 0, count: 0 };
+          sums[key].total += val;
+          sums[key].count += 1;
+        }
+      }
+    }
+
+    const result: QuestionnaireData = {};
+    let populated = 0;
+    for (const key of QUESTIONNAIRE_KEYS) {
+      if (sums[key] && sums[key].count > 0) {
+        (result as Record<string, number>)[key] = Math.round((sums[key].total / sums[key].count) * 10) / 10;
+        populated++;
+      }
+    }
+
+    return populated >= 3 ? result : null;
+  }, [feedbackRows]);
+
   return {
     // New API
     weekSummaries,
     feedbackRows,
     submitExerciseFeedback,
+    aggregatedQuestionnaire,
     isLoading,
 
     // Legacy API (backward compat)

@@ -21,6 +21,10 @@ export interface FeedbackRadarChartProps {
   size?: number;
   /** Fill color for the value polygon. Defaults to amber-500 (#F59E0B). */
   accentColor?: string;
+  /** Optional title displayed above the chart */
+  title?: string;
+  /** Optional subtitle displayed below the title */
+  subtitle?: string;
 }
 
 // ---- Geometry helpers (same pattern as EntityStatRadar) ----
@@ -105,6 +109,8 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
   questionnaire,
   size = 220,
   accentColor = '#F59E0B', // amber-500
+  title,
+  subtitle,
 }) => {
   const dimensions = useMemo(() => extractDimensions(questionnaire), [questionnaire]);
 
@@ -147,7 +153,13 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
   const valuePoints = buildPolygonPoints(cx, cy, radius, values, MAX_VALUE);
 
   return (
-    <div className="flex justify-center">
+    <div className="flex flex-col items-center">
+      {title && (
+        <h4 className="text-sm font-bold text-ceramic-text-primary mb-1">{title}</h4>
+      )}
+      {subtitle && (
+        <p className="text-xs text-ceramic-text-secondary mb-2">{subtitle}</p>
+      )}
       <svg
         width="100%"
         height="auto"
