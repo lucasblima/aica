@@ -141,6 +141,24 @@ export function AthleteCard({
             <h3 className="text-base font-bold text-ceramic-text-primary truncate flex items-center gap-1.5">
               {athlete.name}
               <ConnectionStatusDot status={athlete.invitation_status} />
+              {/* Status Indicators — #389 */}
+              {athlete.financial_status && athlete.financial_status !== 'ok' && (
+                <span
+                  className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0"
+                  title={athlete.financial_status === 'overdue' ? 'Pagamento em atraso' : 'Pagamento pendente'}
+                />
+              )}
+              {athlete.parq_clearance_status &&
+               ['pending', 'blocked', 'expired'].includes(athlete.parq_clearance_status) && (
+                <span
+                  className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse flex-shrink-0"
+                  title={
+                    athlete.parq_clearance_status === 'blocked' ? 'Liberacao medica necessaria' :
+                    athlete.parq_clearance_status === 'expired' ? 'Documentos expirados' :
+                    'Documentos pendentes'
+                  }
+                />
+              )}
             </h3>
             <div className="mt-1 flex items-center gap-2">
               <LevelBadge level={athlete.level} size="sm" />
