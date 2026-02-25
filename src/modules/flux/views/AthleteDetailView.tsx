@@ -769,7 +769,7 @@ export default function AthleteDetailView() {
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => navigate('/flux/microcycle/new')}
+            onClick={() => navigate(`/flux/canvas/${athleteId}`)}
             className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
           >
             <div className="flex items-start gap-3">
