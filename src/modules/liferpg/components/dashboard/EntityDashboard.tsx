@@ -8,10 +8,12 @@
 import React, { useState, useCallback } from 'react';
 import { useEntityPersona } from '../../hooks/useEntityPersona';
 import { useEntityQuests } from '../../hooks/useEntityQuests';
+import { useHPHistory } from '../../hooks/useHPHistory';
 import { EntityHPBar } from './EntityHPBar';
 import { EntityStatRadar } from './EntityStatRadar';
+import { HPSparkline } from './HPSparkline';
 import { QuestCard } from './QuestCard';
-import { EntityAgentService, type ChatMessage } from '../../services/entityAgentService';
+import { EntityAgentService } from '../../services/entityAgentService';
 import {
   ENTITY_COLORS,
   ENTITY_EMOJI,
@@ -19,7 +21,14 @@ import {
   getXPProgress,
   type EntityType,
   type EntityStats,
+  type SuggestedAction,
 } from '../../types/liferpg';
+
+interface DashboardChatMessage {
+  role: 'user' | 'entity';
+  content: string;
+  suggested_actions?: SuggestedAction[];
+}
 
 interface EntityDashboardProps {
   personaId: string;
@@ -38,40 +47,59 @@ export const EntityDashboard: React.FC<EntityDashboardProps> = ({ personaId }) =
     statusFilter: ['pending', 'accepted', 'in_progress'],
   });
 
+  const { data: hpHistory } = useHPHistory(personaId, 30);
+
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatMessages, setChatMessages] = useState<DashboardChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
 
-  const handleSendMessage = useCallback(async () => {
-    if (!chatInput.trim() || chatLoading) return;
+  const sendMessage = useCallback(
+    async (message: string) => {
+      if (!message.trim() || chatLoading) return;
 
-    const userMsg: ChatMessage = { role: 'user', content: chatInput.trim() };
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatInput('');
-    setChatLoading(true);
+      const userMsg: DashboardChatMessage = { role: 'user', content: message.trim() };
+      setChatMessages((prev) => [...prev, userMsg]);
+      setChatInput('');
+      setChatLoading(true);
 
-    const result = await EntityAgentService.chat(personaId, userMsg.content, [...chatMessages, userMsg]);
+      // Map to service format (only role + content)
+      const historyForService = [...chatMessages, userMsg].map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
 
-    if (result.success && result.data) {
-      setChatMessages((prev) => [
-        ...prev,
-        { role: 'entity', content: result.data!.response },
-      ]);
-    } else {
-      setChatMessages((prev) => [
-        ...prev,
-        { role: 'entity', content: 'Desculpe, nao consegui processar sua mensagem.' },
-      ]);
-    }
+      const result = await EntityAgentService.chat(personaId, userMsg.content, historyForService);
 
-    setChatLoading(false);
-  }, [chatInput, chatLoading, chatMessages, personaId]);
+      if (result.success && result.data) {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: 'entity',
+            content: result.data!.response,
+            suggested_actions: result.data!.suggested_actions,
+          },
+        ]);
+      } else {
+        setChatMessages((prev) => [
+          ...prev,
+          { role: 'entity', content: 'Desculpe, nao consegui processar sua mensagem.' },
+        ]);
+      }
+
+      setChatLoading(false);
+    },
+    [chatLoading, chatMessages, personaId]
+  );
+
+  const handleSendMessage = useCallback(() => {
+    sendMessage(chatInput);
+  }, [chatInput, sendMessage]);
 
   const handleQuestComplete = useCallback(
-    async (questId: string, notes?: string) => {
-      const result = await completeQuest(questId, notes);
+    async (questId: string, notes?: string, photos?: string[]) => {
+      const result = await completeQuest(questId, notes, photos);
       if (result.success) {
         reload();
         reloadQuests();
@@ -157,6 +185,12 @@ export const EntityDashboard: React.FC<EntityDashboardProps> = ({ personaId }) =
         <div className="mt-4">
           <EntityHPBar hp={persona.hp} size="lg" />
         </div>
+        {hpHistory.length >= 2 && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-[10px] text-ceramic-text-secondary">Ultimos 30 dias</span>
+            <HPSparkline data={hpHistory} width={160} height={32} />
+          </div>
+        )}
       </div>
 
       {/* Stats Radar */}
@@ -278,15 +312,37 @@ export const EntityDashboard: React.FC<EntityDashboardProps> = ({ personaId }) =
                 </p>
               )}
               {chatMessages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`text-xs p-2 rounded-lg max-w-[85%] ${
-                    msg.role === 'user'
-                      ? 'ml-auto bg-ceramic-cool text-ceramic-text-primary'
-                      : 'bg-ceramic-base border border-ceramic-border text-ceramic-text-primary'
-                  }`}
-                >
-                  {msg.content}
+                <div key={i}>
+                  <div
+                    className={`text-xs p-2 rounded-lg max-w-[85%] ${
+                      msg.role === 'user'
+                        ? 'ml-auto bg-ceramic-cool text-ceramic-text-primary'
+                        : 'bg-ceramic-base border border-ceramic-border text-ceramic-text-primary'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                  {msg.suggested_actions && msg.suggested_actions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {msg.suggested_actions.map((action, j) => (
+                        <button
+                          key={j}
+                          onClick={() => sendMessage(action.label)}
+                          className="text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                          title={action.description}
+                        >
+                          {action.type === 'quest'
+                            ? '\u2694\uFE0F'
+                            : action.type === 'inventory_check'
+                              ? '\u{1F4E6}'
+                              : action.type === 'feedback'
+                                ? '\u{1F4AC}'
+                                : '\u{1F527}'}{' '}
+                          {action.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               {chatLoading && (

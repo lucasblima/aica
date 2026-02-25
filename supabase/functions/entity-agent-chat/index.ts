@@ -37,6 +37,7 @@ interface ChatRequest {
   persona_id: string;
   message: string;
   history?: Array<{ role: string; content: string }>;
+  synthesis_mode?: boolean;
 }
 
 interface GeminiMessage {
@@ -185,13 +186,82 @@ serve(async (req: Request) => {
     }
 
     const body: ChatRequest = await req.json();
-    const { persona_id, message, history = [] } = body;
+    const { persona_id, message, history = [], synthesis_mode } = body;
 
     if (!persona_id || !message) {
       return new Response(
         JSON.stringify({ success: false, error: "persona_id and message are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ========================================================================
+    // SYNTHESIS MODE — lightweight fast path for knowledge summary updates
+    // Skips rate limiting, context loading, history, event logging, feedback
+    // ========================================================================
+    if (synthesis_mode) {
+      try {
+        // Ownership check even in synthesis mode
+        const { data: ownCheck } = await supabase
+          .from("entity_personas")
+          .select("id")
+          .eq("id", persona_id)
+          .eq("user_id", user.id)
+          .single();
+
+        if (!ownCheck) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Persona not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const synthResp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{
+                  text: "Voce e um assistente que sintetiza informacoes sobre entidades. Responda de forma concisa e direta em portugues.",
+                }],
+              },
+              contents: [{ role: "user", parts: [{ text: message }] }],
+              generationConfig: {
+                maxOutputTokens: 1024,
+                temperature: 0.3,
+              },
+            }),
+          }
+        );
+
+        if (!synthResp.ok) {
+          const errText = await synthResp.text();
+          console.error("[entity-agent-chat] Synthesis Gemini error:", errText);
+          return new Response(
+            JSON.stringify({ success: false, error: "Synthesis AI call failed" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const synthData = await synthResp.json();
+        const synthText = synthData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: { response: synthText.trim(), tone: "neutral" },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (synthErr) {
+        console.error("[entity-agent-chat] Synthesis error:", synthErr);
+        return new Response(
+          JSON.stringify({ success: false, error: (synthErr as Error).message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Load persona

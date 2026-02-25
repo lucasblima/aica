@@ -21,7 +21,7 @@ interface UseEntityQuestsReturn {
   error: string | null;
   reload: () => Promise<void>;
   acceptQuest: (questId: string) => Promise<boolean>;
-  completeQuest: (questId: string, notes?: string) => Promise<{ success: boolean; xpAwarded?: number; leveledUp?: boolean }>;
+  completeQuest: (questId: string, notes?: string, photos?: string[]) => Promise<{ success: boolean; xpAwarded?: number; leveledUp?: boolean }>;
   skipQuest: (questId: string) => Promise<boolean>;
 }
 
@@ -85,12 +85,12 @@ export function useEntityQuests({
   }, []);
 
   const completeQuest = useCallback(
-    async (questId: string, notes?: string) => {
+    async (questId: string, notes?: string, photos?: string[]) => {
       try {
         const { data, error: rpcError } = await supabase.rpc('complete_entity_quest', {
           p_quest_id: questId,
           p_completion_notes: notes || null,
-          p_completion_photos: '[]',
+          p_completion_photos: JSON.stringify(photos || []),
         });
 
         if (rpcError) throw rpcError;
