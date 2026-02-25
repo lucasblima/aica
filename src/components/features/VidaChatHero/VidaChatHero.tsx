@@ -16,6 +16,8 @@ export function VidaChatHero() {
    const inputRef = useRef<HTMLInputElement>(null);
 
    const openChat = (message?: string) => {
+      // Blur the hero input so mobile keyboard dismisses and FAB input can take over
+      inputRef.current?.blur();
       window.dispatchEvent(
          new CustomEvent('aica-chat-open', { detail: { message } })
       );

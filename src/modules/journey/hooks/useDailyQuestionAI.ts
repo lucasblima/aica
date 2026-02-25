@@ -117,11 +117,19 @@ export function useDailyQuestionAI() {
         // Save response based on question source
         let result: AnswerQuestionResult
 
-        if (state.source === 'ai') {
-          // Save response in logs
-          await saveDailyResponse(user.id, state.question.id, responseText, 'ai')
+        // Check if question_id is a real DB UUID (journey questions from daily_questions table)
+        const isRealDBQuestion = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(state.question.id)
 
-          // Heuristic CP scoring (no Gemini call to control costs)
+        if (isRealDBQuestion) {
+          // Real DB question — save via questionService (Gemini quality eval + CP)
+          result = await saveQuestionResponse(user.id, {
+            question_id: state.question.id,
+            response_text: responseText,
+          })
+        } else {
+          // AI/template/pool question with synthetic ID — use heuristic CP scoring
+          await saveDailyResponse(user.id, state.question.id, responseText, state.source as 'ai' | 'journey' | 'pool')
+
           const wordCount = responseText.trim().split(/\s+/).length
           let cpEarned = 3
           if (wordCount >= 10) cpEarned = 5
@@ -139,12 +147,12 @@ export function useDailyQuestionAI() {
             })
             leveledUp = awardData?.leveled_up || false
           } catch (err) {
-            log.warn('Failed to award CP for AI question:', err)
+            log.warn('Failed to award CP:', err)
           }
 
           result = {
             response: {
-              id: `ai-response-${Date.now()}`,
+              id: `response-${Date.now()}`,
               user_id: user.id,
               question_id: state.question.id,
               response_text: responseText,
@@ -153,12 +161,6 @@ export function useDailyQuestionAI() {
             cp_earned: cpEarned,
             leveled_up: leveledUp,
           }
-        } else {
-          // For journey/pool questions, save with CP reward
-          result = await saveQuestionResponse(user.id, {
-            question_id: state.question.id,
-            response_text: responseText,
-          })
         }
 
         // Update state to show answered

@@ -988,13 +988,21 @@ export async function saveDailyResponse(
   source: 'ai' | 'journey' | 'pool'
 ): Promise<boolean> {
   try {
-    // Save ALL responses to question_responses, including AI-generated questions
+    // question_responses.question_id is FK to daily_questions(id) — only valid UUIDs work.
+    // AI/template/pool questions use synthetic IDs (ai-xxx, pool-X) that aren't in the DB.
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(questionId)
+    if (!isValidUUID) {
+      log.info(`Skipping question_responses insert for non-DB question: ${questionId} (source=${source})`)
+      return true
+    }
+
     const { error } = await supabase.from('question_responses').insert({
       user_id: userId,
       question_id: questionId,
       response_text: responseText,
       responded_at: new Date().toISOString(),
-      ...(source === 'ai' ? { metadata: { source: 'ai', generated: true } } : {}),
+      question_source: source,
+      is_ai_generated_question: source === 'ai',
     })
 
     if (source === 'ai') {
