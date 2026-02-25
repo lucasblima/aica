@@ -1,9 +1,12 @@
 /**
- * AthleteFeedbackView — redesigned feedback tab with linear timeline
+ * AthleteFeedbackView -- redesigned feedback tab with linear timeline
  *
- * Replaces the old "Hoje"/"Semanal" toggle with a week-grouped timeline.
- * Each week shows weekly feedback status + per-exercise feedback status.
- * Uses the new `athlete_feedback_entries` table via `useAthleteFeedback`.
+ * Shows a week-grouped timeline with:
+ *   - Weekly feedback (one card per week)
+ *   - Daily feedback (one entry per workout day)
+ *
+ * Per-exercise questionnaire removed (#431).
+ * Radar chart added to feedback responses (#432).
  */
 
 import { MessageSquare, Loader2 } from 'lucide-react';
@@ -19,11 +22,10 @@ export interface AthleteFeedbackViewProps {
   selectedWeek?: number;
 }
 
-export function AthleteFeedbackView({ profile, onRefetch, selectedWeek }: AthleteFeedbackViewProps) {
+export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWeek }: AthleteFeedbackViewProps) {
   const {
     weekSummaries,
     currentWeek,
-    submitExerciseFeedback,
     isSubmitting,
     isLoading,
     error,
@@ -33,11 +35,6 @@ export function AthleteFeedbackView({ profile, onRefetch, selectedWeek }: Athlet
   const filteredSummaries = selectedWeek != null
     ? weekSummaries.filter((ws) => ws.weekNumber === selectedWeek)
     : weekSummaries;
-
-  const handleSubmitExercise = async (input: Parameters<typeof submitExerciseFeedback>[0]) => {
-    await submitExerciseFeedback(input);
-    await onRefetch();
-  };
 
   return (
     <div className="space-y-5">
@@ -63,7 +60,6 @@ export function AthleteFeedbackView({ profile, onRefetch, selectedWeek }: Athlet
         <FeedbackTimeline
           weekSummaries={filteredSummaries}
           currentWeek={currentWeek}
-          onSubmitExercise={handleSubmitExercise}
           isSubmitting={isSubmitting}
           modality={profile.modality}
         />
