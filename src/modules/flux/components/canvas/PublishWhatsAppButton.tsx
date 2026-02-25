@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Send, Calendar, X, Check, CheckCircle, AlertCircle } from 'lucide-react';
+import { MessageCircle, Send, Calendar, X, Check, CheckCircle, AlertCircle } from 'lucide-react';
 import { publishWorkoutViaWhatsApp } from '../../services/fluxWhatsAppService';
 import type { WorkoutBlockData } from './WorkoutBlock';
 
@@ -108,18 +108,18 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
 
   return (
     <>
-      {/* Main Button */}
+      {/* Main Button — WhatsApp-style "Enviar Treino" */}
       <button
         onClick={() => setIsModalOpen(true)}
         disabled={disabled || weekWorkouts.length === 0}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-md transition-all ${
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold shadow-md transition-all ${
           disabled || weekWorkouts.length === 0
             ? 'bg-ceramic-border text-ceramic-text-secondary cursor-not-allowed'
-            : 'bg-green-500 hover:bg-green-600 text-white hover:scale-105'
+            : 'bg-[#25D366] hover:bg-[#1EBE5A] text-white hover:scale-105'
         }`}
       >
-        <Send className="w-4 h-4" />
-        Publicar WhatsApp
+        <MessageCircle className="w-4 h-4" />
+        Enviar Treino
       </button>
 
       {/* Confirmation Modal */}
