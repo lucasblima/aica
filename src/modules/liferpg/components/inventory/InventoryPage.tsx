@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { useEntityInventory } from '../../hooks/useEntityInventory';
 import { InventoryItemForm, type FormValues } from './InventoryItemForm';
 import { InventoryStats } from './InventoryStats';
+import { InventoryAISuggest } from './InventoryAISuggest';
 import type { InventoryItem } from '../../types/liferpg';
 
 interface InventoryPageProps {
@@ -32,6 +33,7 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({ personaId, persona
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('updated');
+  const [suggestedDefaults, setSuggestedDefaults] = useState<{ name: string; category: string } | null>(null);
 
   const filteredAndSorted = useMemo(() => {
     let filtered = items;
@@ -75,8 +77,12 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({ personaId, persona
       purchase_date: values.purchase_date || undefined,
       notes: values.notes || undefined,
       attributes: values.attributes,
+      photo_urls: values.photo_urls.length > 0 ? values.photo_urls : undefined,
     });
-    if (ok) setShowForm(false);
+    if (ok) {
+      setShowForm(false);
+      setSuggestedDefaults(null);
+    }
     return ok;
   };
 
@@ -95,9 +101,16 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({ personaId, persona
       purchase_date: values.purchase_date || undefined,
       notes: values.notes || undefined,
       attributes: values.attributes,
+      photo_urls: values.photo_urls,
     });
     if (ok) setEditingItem(null);
     return ok;
+  };
+
+  const handleAddSuggested = (name: string, category: string) => {
+    setSuggestedDefaults({ name, category });
+    setEditingItem(null);
+    setShowForm(true);
   };
 
   const conditionColor = (c: number) => {
@@ -122,6 +135,9 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({ personaId, persona
 
       {/* Stats */}
       <InventoryStats {...stats} />
+
+      {/* AI Suggestions */}
+      <InventoryAISuggest personaId={personaId} onAddSuggested={handleAddSuggested} />
 
       {/* Search + Filters + Sort */}
       <div className="flex flex-wrap gap-2">
@@ -184,10 +200,15 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({ personaId, persona
               purchase_date: editingItem.purchase_date || '',
               notes: editingItem.notes || '',
               attributes: editingItem.attributes || {},
+              photo_urls: editingItem.photo_urls || [],
+            } : suggestedDefaults ? {
+              name: suggestedDefaults.name,
+              category: suggestedDefaults.category,
             } : undefined}
             onSubmit={editingItem ? handleUpdate : handleCreate}
-            onCancel={() => { setShowForm(false); setEditingItem(null); }}
+            onCancel={() => { setShowForm(false); setEditingItem(null); setSuggestedDefaults(null); }}
             isEditing={!!editingItem}
+            personaId={personaId}
           />
         </div>
       )}
@@ -212,15 +233,23 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({ personaId, persona
               onClick={() => setEditingItem(item)}
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-ceramic-cool flex items-center justify-center text-lg">
-                  {item.category === 'food' ? '\u{1F34E}' :
-                   item.category === 'appliance' ? '\u{1F50C}' :
-                   item.category === 'furniture' ? '\u{1FA91}' :
-                   item.category === 'electronics' ? '\u{1F4F1}' :
-                   item.category === 'document' ? '\u{1F4C4}' :
-                   item.category === 'tool' ? '\u{1F6E0}' :
-                   '\u{1F4E6}'}
-                </div>
+                {item.photo_urls && item.photo_urls.length > 0 ? (
+                  <img
+                    src={item.photo_urls[0]}
+                    alt={item.name}
+                    className="w-10 h-10 rounded-lg object-cover border border-ceramic-border flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-ceramic-cool flex items-center justify-center text-lg flex-shrink-0">
+                    {item.category === 'food' ? '\u{1F34E}' :
+                     item.category === 'appliance' ? '\u{1F50C}' :
+                     item.category === 'furniture' ? '\u{1FA91}' :
+                     item.category === 'electronics' ? '\u{1F4F1}' :
+                     item.category === 'document' ? '\u{1F4C4}' :
+                     item.category === 'tool' ? '\u{1F6E0}' :
+                     '\u{1F4E6}'}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-medium text-ceramic-text-primary truncate">
                     {item.name}

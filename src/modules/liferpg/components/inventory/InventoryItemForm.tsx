@@ -1,9 +1,11 @@
 /**
  * InventoryItemForm — Adaptive form by category.
  * Base fields + extra JSONB attributes per category.
+ * Supports photo upload to Supabase Storage.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { supabase } from '@/services/supabaseClient';
 import type { InventoryCategory } from '../../types/liferpg';
 
 interface InventoryItemFormProps {
@@ -11,6 +13,7 @@ interface InventoryItemFormProps {
   onSubmit: (values: FormValues) => Promise<boolean>;
   onCancel: () => void;
   isEditing?: boolean;
+  personaId?: string;
 }
 
 export interface FormValues {
@@ -26,6 +29,7 @@ export interface FormValues {
   purchase_date: string;
   notes: string;
   attributes: Record<string, unknown>;
+  photo_urls: string[];
 }
 
 const CATEGORIES: { value: InventoryCategory; label: string }[] = [
@@ -54,19 +58,68 @@ const DEFAULT_VALUES: FormValues = {
   purchase_date: '',
   notes: '',
   attributes: {},
+  photo_urls: [],
 };
+
+const MAX_PHOTOS = 5;
+
+async function uploadPhoto(file: File, personaId: string): Promise<string | null> {
+  const path = `${personaId}/${Date.now()}_${file.name}`;
+  const { error } = await supabase.storage.from('liferpg-photos').upload(path, file);
+  if (error) return null;
+  const { data: urlData } = supabase.storage.from('liferpg-photos').getPublicUrl(path);
+  return urlData.publicUrl;
+}
 
 export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
   initialValues,
   onSubmit,
   onCancel,
   isEditing = false,
+  personaId,
 }) => {
   const [values, setValues] = useState<FormValues>({
     ...DEFAULT_VALUES,
     ...initialValues,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !personaId) return;
+
+    const remaining = MAX_PHOTOS - values.photo_urls.length;
+    if (remaining <= 0) return;
+
+    const filesToUpload = Array.from(files).slice(0, remaining);
+    setUploading(true);
+
+    const newUrls: string[] = [];
+    for (const file of filesToUpload) {
+      const url = await uploadPhoto(file, personaId);
+      if (url) newUrls.push(url);
+    }
+
+    if (newUrls.length > 0) {
+      setValues((prev) => ({
+        ...prev,
+        photo_urls: [...prev.photo_urls, ...newUrls],
+      }));
+    }
+
+    setUploading(false);
+    // Reset input so the same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [personaId, values.photo_urls.length]);
+
+  const removePhoto = useCallback((index: number) => {
+    setValues((prev) => ({
+      ...prev,
+      photo_urls: prev.photo_urls.filter((_, i) => i !== index),
+    }));
+  }, []);
 
   const updateField = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -366,6 +419,55 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Photo Upload */}
+      {personaId && (
+        <div className="border-t border-ceramic-border pt-3">
+          <label className="text-xs text-ceramic-text-secondary block mb-2">
+            Fotos ({values.photo_urls.length}/{MAX_PHOTOS})
+          </label>
+
+          {/* Thumbnails */}
+          {values.photo_urls.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {values.photo_urls.map((url, i) => (
+                <div key={i} className="relative w-[60px] h-[60px] rounded-lg overflow-hidden border border-ceramic-border">
+                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[8px] rounded-bl-md flex items-center justify-center hover:bg-red-600"
+                    title="Remover foto"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {values.photo_urls.length < MAX_PHOTOS && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoSelect}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-xs py-1.5 px-3 rounded-lg bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-border transition-colors disabled:opacity-50"
+              >
+                {uploading ? 'Enviando...' : 'Adicionar Foto'}
+              </button>
+            </>
+          )}
         </div>
       )}
 
