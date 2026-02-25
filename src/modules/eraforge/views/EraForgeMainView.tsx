@@ -30,6 +30,8 @@ import type {
   TurnConsequences,
   WorldCreateInput,
   ChildProfileCreateInput,
+  ParentalSettings,
+  ParentalSettingsUpdateInput,
   SimulationEvent,
   StatsDelta,
 } from '../types/eraforge.types';
@@ -62,6 +64,7 @@ export default function EraForgeMainView({ onExitToApp }: EraForgeMainViewProps 
   // Data loading state
   const [worlds, setWorlds] = useState<World[]>([]);
   const [childProfiles, setChildProfiles] = useState<ChildProfile[]>([]);
+  const [parentalSettings, setParentalSettings] = useState<ParentalSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Game flow state
@@ -88,13 +91,15 @@ export default function EraForgeMainView({ onExitToApp }: EraForgeMainViewProps 
     const loadData = async () => {
       setLoading(true);
       try {
-        const [worldsResult, childrenResult] = await Promise.all([
+        const [worldsResult, childrenResult, settingsResult] = await Promise.all([
           EraforgeGameService.getWorlds(),
           EraforgeGameService.getChildProfiles(),
+          EraforgeGameService.getParentalSettings(),
         ]);
 
         if (worldsResult.data) setWorlds(worldsResult.data);
         if (childrenResult.data) setChildProfiles(childrenResult.data);
+        if (settingsResult.data) setParentalSettings(settingsResult.data);
       } catch (err) {
         log.error('Error loading EraForge data:', err);
         actions.setError('Erro ao carregar dados');
@@ -597,17 +602,58 @@ export default function EraForgeMainView({ onExitToApp }: EraForgeMainViewProps 
 
   // ------- PARENT DASHBOARD HANDLERS -------
 
-  const handleVerifyPin = useCallback(async (_pin: string): Promise<boolean> => {
-    // TODO: Call eraforge_verify_pin RPC
-    return true;
-  }, []);
+  const handleVerifyPin = useCallback(async (pin: string): Promise<boolean> => {
+    if (!parentalSettings?.pin_hash) {
+      // No PIN set yet — any 4-digit entry is accepted (first-time setup)
+      // Store the new PIN hash so subsequent entries are verified
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(pin);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const result = await EraforgeGameService.upsertParentalSettings({ pin_hash: hashHex });
+        if (result.data) setParentalSettings(result.data);
+      } catch (err) {
+        log.error('Failed to store PIN hash:', err);
+      }
+      return true;
+    }
 
-  const handleUpdateSettings = useCallback((_updates: { max_turns_per_day?: number; voice_enabled?: boolean }) => {
-    // TODO: Update parental settings
-  }, []);
+    // Hash the entered PIN and compare to stored hash
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pin);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex === parentalSettings.pin_hash;
+    } catch (err) {
+      log.error('PIN verification error:', err);
+      return false;
+    }
+  }, [parentalSettings]);
 
-  const handleAddChild = useCallback(async (input: { display_name: string; avatar_emoji: string; birth_year?: number }) => {
-    const result = await EraforgeGameService.createChildProfile(input);
+  const handleUpdateSettings = useCallback(async (updates: Partial<ParentalSettingsUpdateInput>) => {
+    try {
+      const result = await EraforgeGameService.upsertParentalSettings(updates);
+      if (result.data) {
+        setParentalSettings(result.data);
+      } else {
+        log.error('Failed to update parental settings:', result.error);
+        actions.setError('Erro ao salvar configurações');
+      }
+    } catch (err) {
+      log.error('Unexpected error updating settings:', err);
+      actions.setError('Erro inesperado ao salvar configurações');
+    }
+  }, [actions]);
+
+  const handleAddChild = useCallback(async (input: ChildProfileCreateInput) => {
+    const result = await EraforgeGameService.createChildProfile({
+      ...input,
+      consent_given_at: input.consent_given_at ?? new Date().toISOString(),
+    });
     if (result.data) {
       setChildProfiles(prev => [...prev, result.data!]);
     } else {
@@ -616,7 +662,7 @@ export default function EraForgeMainView({ onExitToApp }: EraForgeMainViewProps 
     }
   }, [actions]);
 
-  const handleEditChild = useCallback(async (id: string, input: { display_name?: string; avatar_emoji?: string }) => {
+  const handleEditChild = useCallback(async (id: string, input: { display_name?: string; avatar_emoji?: string; avatar_color?: string }) => {
     const result = await EraforgeGameService.updateChildProfile(id, input);
     if (result.data) {
       setChildProfiles(prev => prev.map(c => c.id === id ? result.data! : c));
@@ -715,7 +761,7 @@ export default function EraForgeMainView({ onExitToApp }: EraForgeMainViewProps 
       return (
         <EF_ParentDashboard
           children={childProfiles}
-          settings={null}
+          settings={parentalSettings}
           onVerifyPin={handleVerifyPin}
           onUpdateSettings={handleUpdateSettings}
           onAddChild={handleAddChild}

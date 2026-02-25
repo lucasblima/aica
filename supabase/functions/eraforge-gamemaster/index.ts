@@ -110,9 +110,12 @@ interface GameMasterRequest {
   payload: Record<string, any>
 }
 
+type SocialMode = 'solo' | 'encounter' | 'collaborative' | 'interdependent'
+
 interface GenerateScenarioPayload {
   era: string
   worldName: string
+  socialMode?: SocialMode
   memberStats: { knowledge: number; cooperation: number; courage: number }
   turnHistory?: Array<{ title?: string; decision?: string }>
 }
@@ -216,9 +219,18 @@ function sanitizeObject(obj: any): any {
 // PROMPT BUILDERS
 // ============================================================================
 
+const SOCIAL_MODE_INSTRUCTIONS: Record<SocialMode, string> = {
+  solo: 'cenário individual de sobrevivência ou exploração — a criança age sozinha, descobre recursos, enfrenta desafios da natureza',
+  encounter: 'encontro com outros exploradores, troca de recursos, primeiro contato com outros grupos — cooperação inicial e curiosidade',
+  collaborative: 'construção coletiva, decisões da comunidade, trabalho em equipe para superar desafios comuns',
+  interdependent: 'decisões políticas, diplomacia, papéis de liderança, alianças estratégicas e consequências para toda a civilização',
+}
+
 function buildGenerateScenarioPrompt(payload: GenerateScenarioPayload): string {
   const eraLabel = ERA_LABELS[payload.era] || payload.era
   const { knowledge, cooperation, courage } = payload.memberStats
+  const socialMode = payload.socialMode || 'solo'
+  const socialInstruction = SOCIAL_MODE_INSTRUCTIONS[socialMode] || SOCIAL_MODE_INSTRUCTIONS.solo
 
   const recentTurns = payload.turnHistory?.slice(-3).map((t, i) =>
     `  Turno ${i + 1}: ${t.title || 'Sem título'} — Escolha: ${t.decision || 'nenhuma'}`
@@ -231,12 +243,15 @@ ESTATÍSTICAS DA CRIANÇA:
 - Cooperação: ${cooperation}/100
 - Coragem: ${courage}/100
 
+MODO SOCIAL: ${socialMode}
+Tipo de cenário esperado: ${socialInstruction}
+
 TURNOS RECENTES (evite repetir temas):
 ${recentTurns}
 
 REQUISITOS DO CENÁRIO:
 - Título criativo e envolvente (máx 60 caracteres)
-- Descrição: 2-3 frases descrevendo a situação (máx 200 caracteres)
+- Descrição: 2-3 frases descrevendo a situação (máx 200 caracteres) — deve refletir o Modo Social acima
 - Local histórico real ou plausível da era
 - 3 escolhas distintas que promovam valores diferentes (conhecimento, cooperação, coragem)
 - Contexto histórico: 1 fato real simplificado sobre a era
