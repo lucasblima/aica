@@ -20,14 +20,9 @@ interface DailyQuestionCardProps {
   question: QuestionWithResponse
   onAnswer: (questionId: string, responseText: string) => Promise<void>
   onSkip?: () => void
-  /** Follow-up question generated after answering (Wave 3) */
-  followUp?: QuestionWithResponse | null
-  isFollowUpLoading?: boolean
-  onAcceptFollowUp?: () => void
-  onDismissFollowUp?: () => void
 }
 
-export function DailyQuestionCard({ question, onAnswer, onSkip, followUp, isFollowUpLoading, onAcceptFollowUp, onDismissFollowUp }: DailyQuestionCardProps) {
+export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionCardProps) {
   const [responseText, setResponseText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
@@ -116,44 +111,6 @@ export function DailyQuestionCard({ question, onAnswer, onSkip, followUp, isFoll
           </div>
         </div>
 
-        {/* Follow-up loading */}
-        {isFollowUpLoading && (
-          <div className="bg-ceramic-info/5 border border-ceramic-info/20 rounded-xl p-4 animate-pulse">
-            <div className="flex items-center gap-2 text-sm text-ceramic-info">
-              <SparklesIcon className="h-4 w-4 animate-spin" />
-              <span>Pensando em uma pergunta para aprofundar...</span>
-            </div>
-          </div>
-        )}
-
-        {/* Follow-up prompt */}
-        {followUp && !isFollowUpLoading && (
-          <div className="bg-gradient-to-br from-ceramic-info/5 to-purple-50 border border-ceramic-info/30 rounded-xl p-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center gap-2 mb-3">
-              <SparklesIcon className="h-4 w-4 text-ceramic-info" />
-              <span className="text-xs font-medium text-ceramic-info uppercase tracking-wide">Quer aprofundar?</span>
-            </div>
-
-            <p className="text-base font-medium text-ceramic-text-primary mb-4">
-              {followUp.question_text}
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                onClick={onAcceptFollowUp}
-                className="flex-1 px-4 py-2 bg-ceramic-info text-white rounded-lg text-sm font-medium hover:bg-ceramic-info/80 transition-colors"
-              >
-                Responder
-              </button>
-              <button
-                onClick={onDismissFollowUp}
-                className="px-4 py-2 bg-ceramic-highlight text-ceramic-text-secondary rounded-lg text-sm font-medium hover:bg-ceramic-highlight/80 transition-colors"
-              >
-                Pular
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     )
   }

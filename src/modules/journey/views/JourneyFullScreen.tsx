@@ -167,7 +167,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const council = useLifeCouncil({ autoTrigger: moments.length >= 3 })
   const userPatterns = useUserPatterns()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
-  const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion, followUp, isFollowUpLoading, acceptFollowUp, dismissFollowUp } = useDailyQuestionAI()
+  const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestionAI()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, newLevel, qualityFeedback, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
@@ -496,10 +496,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                   question={question}
                   onAnswer={handleAnswerQuestion}
                   onSkip={skipQuestion}
-                  followUp={followUp}
-                  isFollowUpLoading={isFollowUpLoading}
-                  onAcceptFollowUp={acceptFollowUp}
-                  onDismissFollowUp={dismissFollowUp}
                 />
               ) : (
                 <DailyQuestionRetryState onRetry={refreshQuestion} />
@@ -601,10 +597,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                       question={question}
                       onAnswer={handleAnswerQuestion}
                       onSkip={skipQuestion}
-                      followUp={followUp}
-                      isFollowUpLoading={isFollowUpLoading}
-                      onAcceptFollowUp={acceptFollowUp}
-                      onDismissFollowUp={dismissFollowUp}
                     />
                   </motion.div>
                 ) : (
