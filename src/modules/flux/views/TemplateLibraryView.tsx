@@ -233,8 +233,12 @@ export default function TemplateLibraryView() {
   const handleDelete = async (template: WorkoutTemplate) => {
     if (!confirm(`Deletar template "${template.name}"?`)) return;
 
-    await WorkoutTemplateService.deleteTemplate(template.id);
-    // Real-time hook will update automatically
+    const { error: deleteError } = await WorkoutTemplateService.deleteTemplate(template.id);
+    if (deleteError) {
+      console.error('[TemplateLibraryView] Delete failed:', deleteError);
+    }
+    // Always refresh to sync UI with DB state
+    await refresh();
   };
 
   const handleDragStart = (template: WorkoutTemplate) => {
