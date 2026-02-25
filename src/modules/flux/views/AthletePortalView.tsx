@@ -72,7 +72,7 @@ const sectionVariants: Variants = {
 export default function AthletePortalView() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { profile, isLoading, error, isLinked, refetch } = useMyAthleteProfile();
+  const { profile, avatarUrl, isLoading, error, isLinked, refetch } = useMyAthleteProfile();
   const { user } = useAuth();
 
   const parq = useParQ({ athleteId: profile?.athlete_id || '', filledByRole: 'athlete' });
@@ -349,9 +349,9 @@ export default function AthletePortalView() {
         <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
           <div className="flex items-center gap-3">
             {/* Avatar with fallback to initials */}
-            {(profile as unknown as Record<string, unknown>).avatar_url ? (
+            {avatarUrl ? (
               <img
-                src={(profile as unknown as Record<string, unknown>).avatar_url as string}
+                src={avatarUrl}
                 alt={profile.athlete_name}
                 className="w-12 h-12 rounded-full object-cover flex-shrink-0"
               />

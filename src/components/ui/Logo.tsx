@@ -17,6 +17,8 @@ interface LogoProps {
   height?: number | string;
   /** Alt text for accessibility */
   alt?: string;
+  /** Optional click handler — when provided, logo becomes a clickable button */
+  onClick?: () => void;
 }
 
 const logoSources: Record<LogoVariant, string> = {
@@ -43,6 +45,9 @@ const logoSources: Record<LogoVariant, string> = {
  *
  * // With custom className
  * <Logo className="rounded-full shadow-lg" width={80} />
+ *
+ * // Clickable logo for navigation
+ * <Logo onClick={() => navigate('/vida')} />
  */
 export function Logo({
   variant = 'default',
@@ -50,6 +55,7 @@ export function Logo({
   width,
   height,
   alt = 'Aica Life OS',
+  onClick,
 }: LogoProps) {
   const src = logoSources[variant];
 
@@ -61,7 +67,7 @@ export function Logo({
     style.height = typeof height === 'number' ? `${height}px` : height;
   }
 
-  return (
+  const img = (
     <img
       src={src}
       alt={alt}
@@ -70,6 +76,21 @@ export function Logo({
       loading="eager"
     />
   );
+
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="focus:outline-none focus:ring-2 focus:ring-amber-500/30 rounded-lg"
+        aria-label="Voltar para início"
+        type="button"
+      >
+        {img}
+      </button>
+    );
+  }
+
+  return img;
 }
 
 export default Logo;

@@ -157,7 +157,7 @@ export function QuickCapture({
         onTextChange={handleTextChange}
         placeholder={compact ? 'O que esta te movendo agora?' : 'Comece a escrever... A IA vai te ajudar a refletir.'}
         compact={compact}
-        minRows={compact ? 3 : 5}
+        minRows={compact ? 1 : 5}
         submitLabel="Salvar"
         onCancel={onCancel}
         showAudio

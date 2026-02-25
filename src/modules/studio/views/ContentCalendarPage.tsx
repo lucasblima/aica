@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Plus, Clock } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
@@ -51,6 +52,7 @@ function getMonthDays(year: number, month: number) {
 }
 
 export default function ContentCalendarPage() {
+  const navigate = useNavigate();
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth());
   const [entries, setEntries] = useState<ContentCalendarEntry[]>([]);
@@ -124,7 +126,7 @@ export default function ContentCalendarPage() {
 
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-      <HeaderGlobal title="Calendario de Conteudo" subtitle="STUDIO" />
+      <HeaderGlobal title="Calendario de Conteudo" subtitle="STUDIO" onLogoClick={() => navigate('/vida')} />
 
       <main className="flex-1 overflow-y-auto px-4 sm:px-6 pb-32 pt-4">
         {/* Month Navigation */}

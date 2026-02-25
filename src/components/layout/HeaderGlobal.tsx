@@ -25,6 +25,8 @@ interface HeaderGlobalProps {
     totalPoints?: number;
     currentStreak?: number;
     onAvatarClick?: () => void;
+    /** Click handler for the AICA logo — used for navigation in focused modes (e.g., Studio) */
+    onLogoClick?: () => void;
 }
 
 export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
@@ -47,6 +49,7 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
     totalPoints = 0,
     currentStreak = 0,
     onAvatarClick,
+    onLogoClick,
 }) => {
     const [showInviteModal, setShowInviteModal] = useState(false);
 
@@ -63,7 +66,7 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
         <header className="flex-none pt-8 px-6 pb-6">
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-4">
-                    <Logo variant="default" width={44} className="rounded-lg" />
+                    <Logo variant="default" width={44} className="rounded-lg" onClick={onLogoClick} />
                     <div>
                         <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">
                             {subtitle}
