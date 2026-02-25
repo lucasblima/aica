@@ -40,10 +40,14 @@ export default function TemplateFormDrawer({
     touched,
     isSubmitting,
     isDirty,
+    isDescriptionManuallyEdited,
+    setIsDescriptionManuallyEdited,
     handleChange,
     handleBlur,
     handleSubmit,
   } = useTemplateForm({
+    mode,
+    isOpen,
     initialData,
     onSuccess: (template) => {
       onSave(template);
@@ -139,6 +143,9 @@ export default function TemplateFormDrawer({
       handleChange('description', value);
     }
   };
+
+  // #426: Whether to show post-modality sections (progressive disclosure)
+  const isModalitySelected = !!formData.modality;
 
   const handleCoachNotesChange = (value: string) => {
     if (value.length <= 500) {
@@ -267,109 +274,138 @@ export default function TemplateFormDrawer({
                   )}
                 </div>
 
-                {/* Name & Description (edit mode only) */}
-                {mode === 'edit' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-                        Nome do Exercício
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name || ''}
-                        onChange={(e) => handleChange('name', e.target.value)}
-                        placeholder="Gerado automaticamente ao salvar"
-                        className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-                        Descrição
-                      </label>
-                      <textarea
-                        value={formData.description || ''}
-                        onChange={(e) => handleDescriptionChange(e.target.value)}
-                        placeholder="Gerada automaticamente ao salvar"
-                        rows={2}
-                        className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
-                      />
-                      <span className="text-xs text-ceramic-text-secondary">
-                        {descCharCount}/280
-                      </span>
-                    </div>
-                  </div>
-                )}
+                {/* #426: Progressive disclosure — show remaining fields only after modality is selected */}
+                <AnimatePresence>
+                  {isModalitySelected && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                      className="space-y-6 overflow-hidden"
+                    >
+                      {/* #426: Prompt removed — fields revealed smoothly */}
 
-                {/* Aquecimento */}
-                <div>
-                  <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-                    Aquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
-                  </label>
-                  <textarea
-                    value={formData.exercise_structure?.warmup || ''}
-                    onChange={(e) => handleWarmupChange(e.target.value)}
-                    placeholder="Descreva o aquecimento..."
-                    rows={2}
-                    className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
-                  />
-                  <span className="text-xs text-ceramic-text-secondary">
-                    {warmupCharCount}/140
-                  </span>
-                </div>
+                      {/* Name & Description (#421: show in both modes for consistency) */}
+                      {mode === 'edit' && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                              Nome do Exercício
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.name || ''}
+                              onChange={(e) => handleChange('name', e.target.value)}
+                              placeholder="Gerado automaticamente ao salvar"
+                              className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                              Descrição
+                              {isDescriptionManuallyEdited && (
+                                <span className="ml-2 text-xs text-ceramic-text-secondary font-normal">(editada manualmente)</span>
+                              )}
+                            </label>
+                            <textarea
+                              value={formData.description || ''}
+                              onChange={(e) => handleDescriptionChange(e.target.value)}
+                              placeholder="Gerada automaticamente ao salvar"
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
+                            />
+                            <span className="text-xs text-ceramic-text-secondary">
+                              {descCharCount}/280
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
-                {/* Séries */}
-                <div>
-                  <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
-                    Séries
-                  </label>
-                  <SeriesEditor
-                    modality={formData.modality}
-                    series={formData.exercise_structure?.series || []}
-                    onChange={handleSeriesChange}
-                  />
-                  {touched.has('exercise_structure') && errors.exercise_structure && (
-                    <p className="mt-2 text-xs text-ceramic-error">{errors.exercise_structure}</p>
+                      {/* Aquecimento */}
+                      <div>
+                        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                          Aquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+                        </label>
+                        <textarea
+                          value={formData.exercise_structure?.warmup || ''}
+                          onChange={(e) => handleWarmupChange(e.target.value)}
+                          placeholder="Descreva o aquecimento..."
+                          rows={2}
+                          className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
+                        />
+                        <span className="text-xs text-ceramic-text-secondary">
+                          {warmupCharCount}/140
+                        </span>
+                      </div>
+
+                      {/* Séries */}
+                      <div>
+                        <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
+                          Séries
+                        </label>
+                        <SeriesEditor
+                          modality={formData.modality}
+                          series={formData.exercise_structure?.series || []}
+                          onChange={handleSeriesChange}
+                        />
+                        {touched.has('exercise_structure') && errors.exercise_structure && (
+                          <p className="mt-2 text-xs text-ceramic-error">{errors.exercise_structure}</p>
+                        )}
+                      </div>
+
+                      {/* Desaquecimento */}
+                      <div>
+                        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                          Desaquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+                        </label>
+                        <textarea
+                          value={formData.exercise_structure?.cooldown || ''}
+                          onChange={(e) => handleCooldownChange(e.target.value)}
+                          placeholder="Descreva o desaquecimento..."
+                          rows={2}
+                          className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
+                        />
+                        <span className="text-xs text-ceramic-text-secondary">
+                          {cooldownCharCount}/140
+                        </span>
+                      </div>
+
+                      {/* Timeline Visual (after cooldown) */}
+                      {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
+                        <TimelineVisual series={formData.exercise_structure.series} />
+                      )}
+
+                      {/* Coach Notes */}
+                      <div>
+                        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                          Notas do Coach <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+                        </label>
+                        <textarea
+                          value={formData.coach_notes || ''}
+                          onChange={(e) => handleCoachNotesChange(e.target.value)}
+                          placeholder="Observações, orientações ou lembretes para este exercício..."
+                          rows={3}
+                          className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
+                        />
+                        <span className="text-xs text-ceramic-text-secondary">
+                          {coachNotesCharCount}/500
+                        </span>
+                      </div>
+                    </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
 
-                {/* Desaquecimento */}
-                <div>
-                  <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-                    Desaquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
-                  </label>
-                  <textarea
-                    value={formData.exercise_structure?.cooldown || ''}
-                    onChange={(e) => handleCooldownChange(e.target.value)}
-                    placeholder="Descreva o desaquecimento..."
-                    rows={2}
-                    className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
-                  />
-                  <span className="text-xs text-ceramic-text-secondary">
-                    {cooldownCharCount}/140
-                  </span>
-                </div>
-
-                {/* Timeline Visual (after cooldown) */}
-                {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
-                  <TimelineVisual series={formData.exercise_structure.series} />
+                {/* #426: Hint when no modality is selected */}
+                {!isModalitySelected && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm text-ceramic-text-secondary text-center py-8"
+                  >
+                    Selecione uma modalidade acima para montar o exercício
+                  </motion.p>
                 )}
-
-                {/* Coach Notes */}
-                <div>
-                  <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-                    Notas do Coach <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
-                  </label>
-                  <textarea
-                    value={formData.coach_notes || ''}
-                    onChange={(e) => handleCoachNotesChange(e.target.value)}
-                    placeholder="Observações, orientações ou lembretes para este exercício..."
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
-                  />
-                  <span className="text-xs text-ceramic-text-secondary">
-                    {coachNotesCharCount}/500
-                  </span>
-                </div>
               </div>
             </form>
 
