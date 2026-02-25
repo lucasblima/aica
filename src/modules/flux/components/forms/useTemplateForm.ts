@@ -1,9 +1,14 @@
 /**
- * useTemplateForm Hook (V2)
+ * useTemplateForm Hook (V3)
  *
  * Manages form state, validation, and submission for workout template creation/editing.
  * Auto-generates name and description from exercise structure using market-standard terminology.
  * Name/description are editable in edit mode but not shown in create mode.
+ *
+ * Fixes:
+ * - #422: Full form reset when opening in create mode (no stale data)
+ * - #412: Auto-regenerate description when series change (unless manually edited)
+ * - #421: Persist description correctly on save, return full updated template
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -26,11 +31,25 @@ export interface TemplateFormState {
 type FormErrors = Partial<Record<keyof TemplateFormState, string>>;
 
 interface UseTemplateFormProps {
+  mode?: 'create' | 'edit';
+  isOpen?: boolean;
   initialData?: WorkoutTemplate;
   onSuccess?: (template: WorkoutTemplate) => void;
 }
 
-export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps = {}) {
+const EMPTY_FORM_STATE: TemplateFormState = {
+  modality: '',
+  name: undefined,
+  description: undefined,
+  exercise_structure: {
+    warmup: '',
+    series: [],
+    cooldown: '',
+  },
+  coach_notes: '',
+};
+
+export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTemplateFormProps = {}) {
   // Form state
   const [formData, setFormData] = useState<TemplateFormState>(() => {
     if (initialData) {
@@ -43,15 +62,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
       };
     }
 
-    return {
-      modality: '',
-      exercise_structure: {
-        warmup: '',
-        series: [],
-        cooldown: '',
-      },
-      coach_notes: '',
-    };
+    return { ...EMPTY_FORM_STATE, exercise_structure: { warmup: '', series: [], cooldown: '' } };
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -59,9 +70,24 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
+  // #412: Track whether the user has manually edited the description field
+  const [isDescriptionManuallyEdited, setIsDescriptionManuallyEdited] = useState(false);
+
   // Track whether to skip the next formData change for dirty tracking.
   // This prevents initialData load from marking the form as dirty.
   const skipNextDirty = useRef(true);
+
+  // #422: Reset form completely when drawer opens in create mode
+  useEffect(() => {
+    if (isOpen && mode === 'create') {
+      skipNextDirty.current = true;
+      setFormData({ ...EMPTY_FORM_STATE, exercise_structure: { warmup: '', series: [], cooldown: '' } });
+      setErrors({});
+      setTouched(new Set());
+      setIsDirty(false);
+      setIsDescriptionManuallyEdited(false);
+    }
+  }, [isOpen, mode]);
 
   // Sync form state when initialData changes (async load for edit mode)
   useEffect(() => {
@@ -77,6 +103,8 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
       setErrors({});
       setTouched(new Set());
       setIsDirty(false);
+      // In edit mode, treat the loaded description as "manual" so it's preserved
+      setIsDescriptionManuallyEdited(!!initialData.description);
     }
   }, [initialData]);
 
@@ -88,6 +116,31 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     }
     setIsDirty(true);
   }, [formData]);
+
+  // #412: Auto-regenerate description when series change (unless manually edited)
+  const prevSeriesRef = useRef<string>('');
+  useEffect(() => {
+    const series = formData.exercise_structure?.series || [];
+    const modality = formData.modality;
+    const seriesKey = JSON.stringify(series);
+
+    // Skip if series haven't actually changed, or if no modality is set
+    if (seriesKey === prevSeriesRef.current || !modality) {
+      return;
+    }
+    prevSeriesRef.current = seriesKey;
+
+    // Only auto-update if user hasn't manually edited the description
+    if (!isDescriptionManuallyEdited && formData.exercise_structure) {
+      const autoDescription = generateWorkoutDescription(modality, formData.exercise_structure);
+      const autoName = generateWorkoutName(modality, series);
+      setFormData((prev) => ({
+        ...prev,
+        description: autoDescription || prev.description,
+        name: prev.name || autoName,
+      }));
+    }
+  }, [formData.exercise_structure?.series, formData.modality, isDescriptionManuallyEdited]);
 
   // Field validation
   const validateField = useCallback((name: keyof TemplateFormState, value: TemplateFormState[keyof TemplateFormState]): string | null => {
@@ -155,6 +208,11 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
 
   // Handle field change
   const handleChange = useCallback((name: keyof TemplateFormState, value: TemplateFormState[keyof TemplateFormState]) => {
+    // #412: Track manual description edits
+    if (name === 'description') {
+      setIsDescriptionManuallyEdited(true);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -201,9 +259,13 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         ? generateWorkoutDescription(modality, formData.exercise_structure)
         : undefined;
 
+      // #421: Always compute the final description — use manual if edited, else auto-generated
+      const finalName = formData.name || autoName;
+      const finalDescription = formData.description || autoDescription;
+
       const payload: CreateWorkoutTemplateV2Input = {
-        name: formData.name || autoName,
-        description: formData.description || autoDescription,
+        name: finalName,
+        description: finalDescription,
         modality,
         category: 'main',
         exercise_structure: formData.exercise_structure,
@@ -227,9 +289,16 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
       }
 
       if (result.data) {
+        // #421: Ensure the returned template has the correct name/description
+        // (in case the DB didn't return them, overlay with what we sent)
+        const savedTemplate: WorkoutTemplate = {
+          ...result.data,
+          name: result.data.name || finalName,
+          description: result.data.description || finalDescription,
+        };
         setIsDirty(false);
-        onSuccess?.(result.data);
-        return { success: true, data: result.data };
+        onSuccess?.(savedTemplate);
+        return { success: true, data: savedTemplate };
       }
 
       return { success: false, error: 'Erro desconhecido' };
@@ -243,18 +312,12 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
 
   // Reset form
   const resetForm = useCallback(() => {
-    setFormData({
-      modality: '',
-      exercise_structure: {
-        warmup: '',
-        series: [],
-        cooldown: '',
-      },
-      coach_notes: '',
-    });
+    skipNextDirty.current = true;
+    setFormData({ ...EMPTY_FORM_STATE, exercise_structure: { warmup: '', series: [], cooldown: '' } });
     setErrors({});
     setTouched(new Set());
     setIsDirty(false);
+    setIsDescriptionManuallyEdited(false);
   }, []);
 
   return {
@@ -263,6 +326,8 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     touched,
     isSubmitting,
     isDirty,
+    isDescriptionManuallyEdited,
+    setIsDescriptionManuallyEdited,
     handleChange,
     handleBlur,
     handleSubmit,

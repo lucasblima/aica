@@ -181,7 +181,14 @@ export default function FluxDashboard() {
     };
 
     for (const athlete of allAthletes) {
-      counts[athlete.modality]++;
+      const modalities = athlete.practiced_modalities?.length
+        ? athlete.practiced_modalities
+        : [athlete.modality];
+      for (const mod of modalities) {
+        if (counts[mod as TrainingModality] !== undefined) {
+          counts[mod as TrainingModality]++;
+        }
+      }
     }
 
     return counts;
@@ -215,9 +222,12 @@ export default function FluxDashboard() {
       result = result.filter((a) => a.name.toLowerCase().includes(query));
     }
 
-    // Filter by modality
+    // Filter by modality (check practiced_modalities array, fallback to primary modality)
     if (selectedModality !== 'all') {
-      result = result.filter((a) => a.modality === selectedModality);
+      result = result.filter((a) =>
+        (a.practiced_modalities?.length ? a.practiced_modalities : [a.modality])
+          .includes(selectedModality)
+      );
     }
 
     // Filter by level category
