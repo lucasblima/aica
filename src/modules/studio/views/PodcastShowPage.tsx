@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
@@ -64,6 +65,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
   userEmail,
   onLogout,
 }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('episodes');
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [show, setShow] = useState<PodcastShow | null>(null);
@@ -144,6 +146,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
         subtitle="PODCAST COPILOT"
         userEmail={userEmail}
         onLogout={onLogout}
+        onLogoClick={() => navigate('/vida')}
       />
 
       {/* Main Content */}

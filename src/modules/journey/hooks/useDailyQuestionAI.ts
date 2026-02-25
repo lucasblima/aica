@@ -13,6 +13,7 @@ import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 
 const log = createNamespacedLogger('useDailyQuestionAI')
+import { supabase } from '@/services/supabaseClient'
 import { QuestionWithResponse, AnswerQuestionResult } from '../types/dailyQuestion'
 import {
   getDailyQuestionWithContext,
@@ -117,10 +118,30 @@ export function useDailyQuestionAI() {
         let result: AnswerQuestionResult
 
         if (state.source === 'ai') {
-          // For AI questions, just save in logs
+          // Save response in logs
           await saveDailyResponse(user.id, state.question.id, responseText, 'ai')
 
-          // Return simulated result (no CP awarded for AI questions to control costs)
+          // Heuristic CP scoring (no Gemini call to control costs)
+          const wordCount = responseText.trim().split(/\s+/).length
+          let cpEarned = 3
+          if (wordCount >= 10) cpEarned = 5
+          if (wordCount >= 25) cpEarned = 8
+          if (wordCount >= 50) cpEarned = 12
+          if (wordCount >= 80) cpEarned = 15
+
+          // Award CP via RPC
+          let leveledUp = false
+          try {
+            const { data: awardData } = await supabase.rpc('award_consciousness_points', {
+              p_user_id: user.id,
+              p_points: cpEarned,
+              p_reason: 'question_answered',
+            })
+            leveledUp = awardData?.leveled_up || false
+          } catch (err) {
+            log.warn('Failed to award CP for AI question:', err)
+          }
+
           result = {
             response: {
               id: `ai-response-${Date.now()}`,
@@ -129,8 +150,8 @@ export function useDailyQuestionAI() {
               response_text: responseText,
               responded_at: new Date().toISOString(),
             },
-            cp_earned: 0,
-            leveled_up: false,
+            cp_earned: cpEarned,
+            leveled_up: leveledUp,
           }
         } else {
           // For journey/pool questions, save with CP reward
