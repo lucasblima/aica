@@ -5,7 +5,6 @@
  * - 3-column layout: Library (sidebar) + Grid (center) + Editor (drawer)
  * - Dual view: Weekly (7 days) or Microcycle (4 weeks)
  * - Framer Motion drag-and-drop with magnetic snap
- * - Google Calendar integration (coach + athlete events)
  * - Real data from Supabase workout_slots + microcycles
  * - Athlete selector when no athleteId in URL
  *
@@ -18,10 +17,7 @@ import { motion } from 'framer-motion';
 import { useFlux } from '../context/FluxContext';
 import { useAthletes, type AthleteWithAdherence } from '../hooks/useAthletes';
 import { useCanvasWorkouts } from '../hooks/useCanvasWorkouts';
-import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
-import { useCalendarSync } from '@/hooks/useCalendarSync';
-import { isGoogleCalendarConnected } from '@/services/googleAuthService';
-import { hasCalendarWriteScope } from '@/services/googleCalendarTokenService';
+import type { BusySlot } from '../hooks/useCanvasCalendar';
 import type { WorkoutTemplate, WorkoutSlot, PaceZone } from '../types/flow';
 import type { WeekWorkout } from '../components/canvas/WeeklyGrid';
 import { MicrocycleService } from '../services/microcycleService';
@@ -40,7 +36,6 @@ import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundar
 // ============================================
 
 type ViewMode = 'weekly' | 'microcycle';
-type SyncState = 'disconnected' | 'readonly' | 'ready' | 'syncing' | 'done';
 
 // ============================================
 // Athlete Selector (no athleteId in URL)
@@ -218,45 +213,8 @@ export default function CanvasEditorView() {
     dayOfWeek: number;
     startTime: string;
   } | null>(null);
-  const [calSyncState, setCalSyncState] = useState<SyncState>('disconnected');
   const [isReleasing, setIsReleasing] = useState(false);
   const [microcycleStatus, setMicrocycleStatus] = useState<string | undefined>(undefined);
-
-  // Calendar sync hook
-  const {
-    bulkSyncFlux,
-    isSyncing: calSyncing,
-    syncStats: calSyncStats,
-    scopeUpgradeNeeded,
-    requestScopeUpgrade,
-  } = useCalendarSync();
-
-  // Detect calendar connection + scope state on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const connected = await isGoogleCalendarConnected();
-        if (cancelled) return;
-        if (!connected) {
-          setCalSyncState('disconnected');
-          return;
-        }
-        const hasWrite = await hasCalendarWriteScope();
-        if (cancelled) return;
-        setCalSyncState(hasWrite ? 'ready' : 'readonly');
-      } catch {
-        if (!cancelled) setCalSyncState('disconnected');
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (scopeUpgradeNeeded) setCalSyncState('readonly');
-  }, [scopeUpgradeNeeded]);
 
   // All hooks MUST be called before any conditional return
   const { athletes, isLoading: athletesLoading } = useAthletes();
@@ -280,17 +238,8 @@ export default function CanvasEditorView() {
     return start;
   }, [activeMicrocycle?.start_date, currentWeek]);
 
-  const {
-    busySlots,
-    isConnected: calendarConnected,
-    athleteCalendarConnected,
-    showCoach,
-    showAthlete,
-    toggleCoach,
-    toggleAthlete,
-    isLoading: calendarLoading,
-    refresh: refreshCalendar,
-  } = useCanvasCalendar({ weekStartDate, athleteId });
+  // Calendar integration removed (issue #386) — pass empty busy slots
+  const busySlots = useMemo<BusySlot[]>(() => [], []);
 
   // Track microcycle status for Liberar Treino button
   useEffect(() => {
@@ -342,11 +291,6 @@ export default function CanvasEditorView() {
   }, [slots]);
 
   // Handlers
-  const handleBulkSync = useCallback(async () => {
-    if (!activeMicrocycle) return;
-    await bulkSyncFlux(activeMicrocycle.id, activeMicrocycle.start_date);
-  }, [activeMicrocycle, bulkSyncFlux]);
-
   const handleBack = useCallback(() => {
     if (athlete) {
       actions.viewAthleteDetail(athlete.id);
@@ -568,19 +512,6 @@ export default function CanvasEditorView() {
         microcycleStatus={microcycleStatus}
         onReleaseMicrocycle={handleReleaseMicrocycle}
         isReleasing={isReleasing}
-        calendarConnected={calendarConnected}
-        athleteCalendarConnected={athleteCalendarConnected}
-        showCoach={showCoach}
-        showAthlete={showAthlete}
-        toggleCoach={toggleCoach}
-        toggleAthlete={toggleAthlete}
-        calendarLoading={calendarLoading}
-        refreshCalendar={refreshCalendar}
-        calSyncState={calSyncState}
-        calSyncing={calSyncing}
-        calSyncStats={calSyncStats}
-        requestScopeUpgrade={requestScopeUpgrade}
-        handleBulkSync={handleBulkSync}
         onBack={handleBack}
         onOpenCalculator={() => setIsCalculatorOpen(true)}
       />

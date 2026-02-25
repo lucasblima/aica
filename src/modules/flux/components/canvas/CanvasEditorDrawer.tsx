@@ -1,21 +1,18 @@
 /**
  * CanvasEditorDrawer
  *
- * Top header bar of the Canvas editor: athlete info, Google Calendar status,
+ * Top header bar of the Canvas editor: athlete info,
  * view toggle, week navigation (all weeks visible), and WhatsApp send button.
  */
 
 import React from 'react';
 import {
   ArrowLeft,
-  CalendarCheck,
-  Check,
   CheckCircle,
   LayoutGrid,
   List,
   Loader2,
   Send,
-  ShieldAlert,
 } from 'lucide-react';
 import type { Athlete } from '../../types/flux';
 import { PublishWhatsAppButton } from './PublishWhatsAppButton';
@@ -38,67 +35,6 @@ const MODALITY_PT_LABELS: Record<string, string> = {
 // ============================================
 
 type ViewMode = 'weekly' | 'microcycle';
-type SyncState = 'disconnected' | 'readonly' | 'ready' | 'syncing' | 'done';
-
-interface CalendarSyncStatusProps {
-  syncState: SyncState;
-  isSyncing: boolean;
-  syncStats: { synced: number; skipped: number; failed: number } | null;
-  onUpgradeScope: () => void;
-  onBulkSync: () => void;
-}
-
-const CalendarSyncStatus: React.FC<CalendarSyncStatusProps> = ({
-  syncState,
-  isSyncing,
-  syncStats,
-  onUpgradeScope,
-  onBulkSync,
-}) => {
-  if (syncState === 'disconnected') return null;
-
-  if (syncState === 'readonly') {
-    return (
-      <button
-        onClick={onUpgradeScope}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider transition-all bg-amber-100 text-amber-700 hover:bg-amber-200"
-        title="Autorize escrita no Google Calendar para sincronizar treinos"
-      >
-        <ShieldAlert size={12} />
-        Autorizar escrita
-      </button>
-    );
-  }
-
-  if (isSyncing) {
-    return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider bg-ceramic-info/10 text-ceramic-info">
-        <Loader2 size={12} className="animate-spin" />
-        Sincronizando...
-      </div>
-    );
-  }
-
-  if (syncStats) {
-    return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider bg-ceramic-success/10 text-ceramic-success">
-        <Check size={12} />
-        Google Calendar · {syncStats.synced} sync
-        {syncStats.failed > 0 && ` · ${syncStats.failed} erro(s)`}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider text-ceramic-success"
-      title="Google Calendar sincronizado com permissao de escrita"
-    >
-      <CalendarCheck size={12} />
-      Google Calendar
-    </div>
-  );
-};
 
 interface ViewToggleProps {
   mode: ViewMode;
@@ -179,21 +115,6 @@ export interface CanvasEditorDrawerProps {
   microcycleStatus?: string;
   onReleaseMicrocycle?: () => void;
   isReleasing?: boolean;
-  // Calendar (kept for data layer, toggles removed from UI)
-  calendarConnected: boolean;
-  athleteCalendarConnected: boolean;
-  showCoach: boolean;
-  showAthlete: boolean;
-  toggleCoach: () => void;
-  toggleAthlete: () => void;
-  calendarLoading: boolean;
-  refreshCalendar: () => void;
-  // Sync
-  calSyncState: SyncState;
-  calSyncing: boolean;
-  calSyncStats: { synced: number; skipped: number; failed: number } | null;
-  requestScopeUpgrade: () => void;
-  handleBulkSync: () => void;
   // Actions
   onBack: () => void;
   onOpenCalculator: () => void;
@@ -211,11 +132,6 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
   microcycleStatus,
   onReleaseMicrocycle,
   isReleasing,
-  calSyncState,
-  calSyncing,
-  calSyncStats,
-  requestScopeUpgrade,
-  handleBulkSync,
   onBack,
 }) => {
   return (
@@ -273,14 +189,6 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            <CalendarSyncStatus
-              syncState={calSyncState}
-              isSyncing={calSyncing}
-              syncStats={calSyncStats}
-              onUpgradeScope={requestScopeUpgrade}
-              onBulkSync={handleBulkSync}
-            />
-
             <ViewToggle mode={viewMode} onChange={setViewMode} />
 
             {/* Liberar Treino / Status Badge */}
