@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Ticket, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget, InviteShareCard, InviteModal } from '../components';
 import { VidaChatHero } from '@/components/features/VidaChatHero';
-import { LifeCouncilCard, PatternsSummary } from '@/components/features';
+// #440: LifeCouncilCard and PatternsSummary removed from /vida
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -19,8 +19,7 @@ import { FluxCard } from '../modules/flux';
 import { InterviewerCard } from '../modules/journey/components/interviewer';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
-import { useLifeCouncil } from '@/hooks/useLifeCouncil';
-import { useUserPatterns } from '@/hooks/useUserPatterns';
+// #440: useLifeCouncil and useUserPatterns removed from /vida
 import { useGrantsHomeQuery } from '@/hooks/queries';
 import { ViewState } from '../../types';
 import { supabase } from '@/services/supabaseClient';
@@ -110,11 +109,7 @@ export default function VidaPage({
    // Identity data from Journey CP system
    const { stats: cpStats, progress: cpProgress } = useConsciousnessPoints();
 
-   // Life Council — auto-trigger daily insight generation
-   const council = useLifeCouncil({ autoTrigger: true });
-
-   // User Patterns — behavioral patterns from OpenClaw
-   const userPatterns = useUserPatterns();
+   // #440: Life Council and Patterns hooks removed — re-enable when data is sufficient
 
    // User metadata for avatar and profile
    const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
@@ -261,44 +256,7 @@ export default function VidaPage({
                </motion.div>
             )}
 
-            {/* Life Council — AI daily insight */}
-            <motion.div
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.4, delay: 0.15 }}
-            >
-               <LifeCouncilCard
-                  insight={council.insight}
-                  isLoading={council.isLoading}
-                  isRunning={council.isRunning}
-                  error={council.error}
-                  onRun={council.runCouncil}
-                  onMarkViewed={council.markViewed}
-                  compact
-                  onViewMore={() => onNavigateToView('journey')}
-                  lastUpdated={council.insight?.insight_date}
-               />
-            </motion.div>
-
-            {/* Behavioral Patterns — compact */}
-            {(userPatterns.isLoading || userPatterns.patterns.length > 0) && (
-               <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
-               >
-                  <PatternsSummary
-                     patterns={userPatterns.patterns}
-                     isLoading={userPatterns.isLoading}
-                     isSynthesizing={userPatterns.isSynthesizing}
-                     error={userPatterns.error}
-                     onSynthesize={userPatterns.synthesize}
-                     compact
-                     onViewMore={() => onNavigateToView('journey')}
-                     lastUpdated={userPatterns.lastSynthesizedAt}
-                  />
-               </motion.div>
-            )}
+            {/* #440: Life Council and Patterns removed from /vida — re-enable when data is sufficient */}
 
             {/* Journey CTA — full width */}
             <motion.div

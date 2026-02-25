@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAthletes } from '../hooks/useAthletes';
 import { useAthleteActivity } from '../hooks/useAthleteActivity';
 import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
-import { ArrowLeft, Users, BookOpen, Dumbbell, TrendingUp, Plus, CheckCircle, X } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, Dumbbell, CheckCircle, X } from 'lucide-react';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 export default function FluxDashboard() {
@@ -25,14 +25,8 @@ export default function FluxDashboard() {
   // Workout templates count
   const { templates } = useWorkoutTemplates();
 
-  // Aggregate stats
+  // Aggregate stats (for card badges only)
   const activeAthletes = allAthletes.filter((a) => a.status === 'active').length;
-  const avgConsistency = React.useMemo(() => {
-    const activeWithAdherence = allAthletes.filter((a) => a.status === 'active');
-    if (activeWithAdherence.length === 0) return 0;
-    const sum = activeWithAdherence.reduce((acc, a) => acc + (a.adherence_rate ?? 0), 0);
-    return Math.round(sum / activeWithAdherence.length);
-  }, [allAthletes]);
 
   // Loading state
   if (isLoading) {
@@ -162,48 +156,7 @@ export default function FluxDashboard() {
           </button>
         </div>
 
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="ceramic-card p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="ceramic-inset p-2">
-                <Users className="w-4 h-4 text-ceramic-info" />
-              </div>
-              <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                Atletas Ativos
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-ceramic-text-primary">
-              {activeAthletes}
-            </p>
-          </div>
-
-          <div className="ceramic-card p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="ceramic-inset p-2">
-                <TrendingUp className="w-4 h-4 text-ceramic-success" />
-              </div>
-              <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                Consistencia Media
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-ceramic-text-primary">
-              {avgConsistency}%
-            </p>
-          </div>
-        </div>
-
-        {/* Novo Atleta Button */}
-        <div className="mt-6">
-          <button
-            data-tour="flux-add-athlete"
-            onClick={() => navigate('/flux/crm?new=1')}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 ceramic-card hover:scale-[1.01] transition-transform"
-          >
-            <Plus className="w-5 h-5 text-ceramic-text-primary" />
-            <span className="text-sm font-bold text-ceramic-text-primary">Novo Atleta</span>
-          </button>
-        </div>
+        {/* #442: Stats and Novo Atleta button removed — accessed via Command Center */}
       </div>
 
       {/* Activity Toast Notifications */}
