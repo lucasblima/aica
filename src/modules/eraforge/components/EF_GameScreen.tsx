@@ -23,7 +23,10 @@ import type {
   Era,
   AdvisorId,
   TurnConsequences,
+  SocialMode,
 } from '../types/eraforge.types';
+import { ERA_CONFIG, getSocialScenarioConfig } from '../types/eraforge.types';
+import type { SceneChild } from './scenes/types';
 
 // ============================================
 // TYPES
@@ -67,6 +70,10 @@ export interface EF_GameScreenProps {
   worldName?: string;
   eraLabel?: string;
   onBack?: () => void;
+  /** World members mapped to SceneChild for avatar rendering in scenes */
+  worldMembers?: SceneChild[];
+  /** Previous era — when it differs from current era, trigger era transition animation */
+  prevEra?: Era | null;
 }
 
 // ============================================
@@ -109,6 +116,127 @@ function EFButton({
 // COMPONENT
 // ============================================
 
+// ============================================
+// SOCIAL MODE CONFIG
+// ============================================
+
+const SOCIAL_MODE_LABELS: Record<SocialMode, string> = {
+  solo: '🏃 Explorador Solitário',
+  encounter: '👋 Encontro!',
+  collaborative: '🏗️ Cooperação',
+  interdependent: '👑 Império',
+};
+
+const SOCIAL_MODE_COLORS: Record<SocialMode, string> = {
+  solo: 'bg-gray-100 text-gray-600 border-gray-200',
+  encounter: 'bg-amber-100 text-amber-700 border-amber-200',
+  collaborative: 'bg-green-100 text-green-700 border-green-200',
+  interdependent: 'bg-purple-100 text-purple-700 border-purple-200',
+};
+
+// ============================================
+// ERA TRANSITION OVERLAY
+// ============================================
+
+interface EraTransitionOverlayProps {
+  fromEra: Era;
+  toEra: Era;
+  onComplete: () => void;
+}
+
+function EraTransitionOverlay({ fromEra, toEra, onComplete }: EraTransitionOverlayProps) {
+  const fromConfig = ERA_CONFIG[fromEra];
+  const toConfig = ERA_CONFIG[toEra];
+  const socialConfig = getSocialScenarioConfig(toEra);
+  const socialLabel = SOCIAL_MODE_LABELS[socialConfig.mode];
+
+  useEffect(() => {
+    const timer = setTimeout(onComplete, 3200);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
+
+  return (
+    <motion.div
+      key="era-transition"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
+      style={{
+        background: `linear-gradient(135deg, var(--ef-from, #d97706), var(--ef-to, #92400e))`,
+      }}
+    >
+      {/* Gradient override via inline style */}
+      <style>{`
+        @keyframes ef-era-icon-out {
+          0%   { opacity: 1; transform: scale(1) translateY(0); }
+          40%  { opacity: 0; transform: scale(0.6) translateY(-20px); }
+          100% { opacity: 0; transform: scale(0.6) translateY(-20px); }
+        }
+        @keyframes ef-era-icon-in {
+          0%   { opacity: 0; transform: scale(0.6) translateY(20px); }
+          40%  { opacity: 0; transform: scale(0.6) translateY(20px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes ef-era-label-in {
+          0%, 50% { opacity: 0; transform: translateY(8px); }
+          100%    { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ef-era-pulse-ring {
+          0%   { transform: scale(0.8); opacity: 0.8; }
+          100% { transform: scale(2.4); opacity: 0; }
+        }
+        .ef-era-icon-out { animation: ef-era-icon-out 1.4s ease-in-out forwards; }
+        .ef-era-icon-in  { animation: ef-era-icon-in  1.4s ease-in-out forwards; }
+        .ef-era-label-in { animation: ef-era-label-in 1.2s ease-out forwards; }
+        .ef-era-pulse    { animation: ef-era-pulse-ring 1.8s ease-out infinite; }
+      `}</style>
+
+      {/* Pulsing ring */}
+      <div className="relative flex items-center justify-center mb-8">
+        <div className="absolute w-24 h-24 rounded-full bg-white/20 ef-era-pulse" />
+        <div className="relative w-24 h-24 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center">
+          {/* Old era icon fades out */}
+          <span className="absolute text-5xl ef-era-icon-out" aria-hidden>
+            {fromConfig.icon === 'bone' ? '🦴' :
+             fromConfig.icon === 'pyramid' ? '🏺' :
+             fromConfig.icon === 'columns' ? '🏛️' :
+             fromConfig.icon === 'shield' ? '⚔️' :
+             fromConfig.icon === 'castle' ? '🏰' :
+             fromConfig.icon === 'palette' ? '🎨' :
+             fromConfig.icon === 'cog' ? '⚙️' :
+             fromConfig.icon === 'globe' ? '🌍' : '🚀'}
+          </span>
+          {/* New era icon fades in */}
+          <span className="absolute text-5xl ef-era-icon-in" aria-hidden>
+            {toConfig.icon === 'bone' ? '🦴' :
+             toConfig.icon === 'pyramid' ? '🏺' :
+             toConfig.icon === 'columns' ? '🏛️' :
+             toConfig.icon === 'shield' ? '⚔️' :
+             toConfig.icon === 'castle' ? '🏰' :
+             toConfig.icon === 'palette' ? '🎨' :
+             toConfig.icon === 'cog' ? '⚙️' :
+             toConfig.icon === 'globe' ? '🌍' : '🚀'}
+          </span>
+        </div>
+      </div>
+
+      {/* Message */}
+      <div className="ef-era-label-in text-center px-8">
+        <p className="text-white/70 text-sm font-nunito mb-1">Sua civilização evoluiu!</p>
+        <h2 className="text-white text-2xl font-bold font-fredoka drop-shadow-lg mb-2">
+          {toConfig.label}
+        </h2>
+        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border bg-white/20 text-white border-white/30`}>
+          {socialLabel}
+        </span>
+        <p className="text-white/60 text-xs mt-3 font-nunito">{toConfig.period}</p>
+      </div>
+    </motion.div>
+  );
+}
+
 export function EF_GameScreen({
   currentTurn,
   member,
@@ -138,14 +266,22 @@ export function EF_GameScreen({
   worldName,
   eraLabel,
   onBack,
+  worldMembers,
+  prevEra = null,
 }: EF_GameScreenProps) {
   const scenario = currentTurn?.scenario;
+
+  // ----- Social mode -----
+  const socialConfig = getSocialScenarioConfig(era);
+  const visibleMembers = worldMembers?.slice(0, socialConfig.maxVisibleMembers);
 
   // ----- FSM State -----
   const [phase, setPhase] = useState<GamePhase>('scenario');
   const [prevMember, setPrevMember] = useState<WorldMember>(member);
   const [animatingStats, setAnimatingStats] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showEraTransition, setShowEraTransition] = useState(false);
+  const [transitionFromEra, setTransitionFromEra] = useState<Era | null>(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
@@ -204,6 +340,19 @@ export function EF_GameScreen({
       setPrevMember(member);
     }
   }, [phase, member.knowledge, member.cooperation, member.courage]);
+
+  // Detect era transition: show animation when prevEra differs from current era
+  useEffect(() => {
+    if (prevEra && prevEra !== era) {
+      setTransitionFromEra(prevEra);
+      setShowEraTransition(true);
+    }
+  }, [era, prevEra]);
+
+  const handleEraTransitionComplete = useCallback(() => {
+    setShowEraTransition(false);
+    setTransitionFromEra(null);
+  }, []);
 
   // ----- Handlers -----
 
@@ -572,9 +721,29 @@ export function EF_GameScreen({
         <EF_TurnCounter turnsRemaining={turnsRemaining} />
       </div>
 
-      {/* Scene */}
+      {/* Social mode badge */}
+      <div className="px-4 pb-2">
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={socialConfig.mode}
+            initial={{ opacity: 0, scale: 0.9, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -4 }}
+            transition={{ duration: 0.25 }}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border font-nunito ${SOCIAL_MODE_COLORS[socialConfig.mode]}`}
+          >
+            {SOCIAL_MODE_LABELS[socialConfig.mode]}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+
+      {/* Scene — pass visible members for avatar rendering */}
       <div className="px-4">
-        <EF_SceneRenderer era={era} />
+        <EF_SceneRenderer
+          era={era}
+          members={socialConfig.showOtherMembers ? visibleMembers : undefined}
+          isAnimating={phase === 'scenario'}
+        />
       </div>
 
       {/* Phase content */}
@@ -642,6 +811,17 @@ export function EF_GameScreen({
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Era transition full-screen overlay */}
+      <AnimatePresence>
+        {showEraTransition && transitionFromEra && (
+          <EraTransitionOverlay
+            fromEra={transitionFromEra}
+            toEra={era}
+            onComplete={handleEraTransitionComplete}
+          />
         )}
       </AnimatePresence>
     </motion.div>
