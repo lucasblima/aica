@@ -80,6 +80,9 @@ const IntensityCalculatorView = lazy(() => import('../modules/flux/views/Intensi
 const CRMCommandCenterView = lazy(() => import('../modules/flux/views/CRMCommandCenterView').then(m => ({ default: m.default })));
 const ParQFormView = lazy(() => import('../modules/flux/views/ParQFormView').then(m => ({ default: m.default })));
 
+// Google Hub Module - Google Calendar integration dashboard
+const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ default: m.GoogleHubPage })));
+
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
 const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
@@ -687,6 +690,10 @@ export function AppRouter() {
                   path="/privacy"
                   element={<PrivacyPolicyPage />}
                />
+               <Route
+                  path="/privacy-policy"
+                  element={<PrivacyPolicyPage />}
+               />
 
                {/* Terms of Service - Public route */}
                <Route
@@ -778,6 +785,9 @@ export function AppRouter() {
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
                <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
+
+               {/* Google Hub - Calendar integration dashboard */}
+               <Route path="/google-hub" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Google Hub" />}><GoogleHubPage /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Guest Portal - Read-only episode view for podcast guests */}
                <Route path="/meu-episodio" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Meu Episodio" />}><GuestPortalView /></ErrorBoundary></ProtectedRoute>} />
