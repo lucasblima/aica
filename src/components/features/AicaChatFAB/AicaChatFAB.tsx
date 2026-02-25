@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2 } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
@@ -24,11 +24,14 @@ import './AicaChatFAB.css'
 interface AicaChatFABProps {
   position?: 'bottom-right' | 'bottom-left'
   bottomOffset?: number
+  /** When true, hides the FAB circle button but keeps the drawer functional (openable via CustomEvent). Used on /vida where VidaChatHero replaces the FAB button. */
+  hideButton?: boolean
 }
 
 export function AicaChatFAB({
   position = 'bottom-right',
   bottomOffset = 80,
+  hideButton = false,
 }: AicaChatFABProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -60,18 +63,37 @@ export function AicaChatFAB({
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
 
+  // Ref to hold pending message from external event (VidaChatHero)
+  const pendingMessageRef = useRef<string | null>(null)
+
   // Listen for external open requests (e.g. from VidaChatHero)
   useEffect(() => {
     const handleExternalOpen = (e: Event) => {
       const detail = (e as CustomEvent).detail
       setIsOpen(true)
       if (detail?.message) {
+        // Store the message to be auto-sent once the drawer is open
+        pendingMessageRef.current = detail.message
         setInput(detail.message)
       }
     }
     window.addEventListener('aica-chat-open', handleExternalOpen)
     return () => window.removeEventListener('aica-chat-open', handleExternalOpen)
   }, [])
+
+  // Auto-send pending message once the drawer is open and not loading
+  useEffect(() => {
+    if (isOpen && pendingMessageRef.current && !isLoading) {
+      const message = pendingMessageRef.current
+      pendingMessageRef.current = null
+      // Small delay to let the drawer animation finish and input render
+      const timer = setTimeout(() => {
+        setInput('')
+        sendMessage(message)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen, isLoading, sendMessage])
 
   // Escape cascade: sessions → expanded → close
   useEffect(() => {
@@ -290,8 +312,40 @@ export function AicaChatFAB({
               {/* Messages */}
               <div className="aica-fab-messages">
                 {messages.length === 0 && !isLoading && (
-                  <div className="aica-fab-empty">
-                    <p>Ola! Como posso ajudar?</p>
+                  <div className="aica-fab-empty-state">
+                    <p className="aica-fab-empty-state__greeting">Ola! Como posso ajudar?</p>
+                    <div className="aica-fab-quick-actions">
+                      <button
+                        className="aica-fab-quick-action"
+                        onClick={() => {
+                          setInput('')
+                          sendMessage('Quero registrar um momento agora')
+                        }}
+                      >
+                        <PenLine size={13} />
+                        <span>Registrar momento</span>
+                      </button>
+                      <button
+                        className="aica-fab-quick-action"
+                        onClick={() => {
+                          setInput('')
+                          sendMessage('Me faca a pergunta do dia')
+                        }}
+                      >
+                        <MessageCircle size={13} />
+                        <span>Pergunta do dia</span>
+                      </button>
+                      <button
+                        className="aica-fab-quick-action"
+                        onClick={() => {
+                          setInput('')
+                          sendMessage('Quais sao meus padroes comportamentais recentes?')
+                        }}
+                      >
+                        <Brain size={13} />
+                        <span>Meus padroes</span>
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -394,19 +448,21 @@ export function AicaChatFAB({
         )}
       </div>
 
-      {/* FAB Button */}
-      <button
-        className={cn(
-          'aica-fab-button',
-          isOpen && 'aica-fab-button--hidden',
-          position === 'bottom-left' && 'aica-fab-button--left'
-        )}
-        onClick={() => setIsOpen(true)}
-        style={{ '--fab-bottom-offset': `${bottomOffset}px` } as React.CSSProperties}
-        aria-label="Abrir chat com Aica"
-      >
-        <MessageCircle size={24} />
-      </button>
+      {/* FAB Button — hidden when hideButton=true (e.g. /vida where VidaChatHero replaces it) */}
+      {!hideButton && (
+        <button
+          className={cn(
+            'aica-fab-button',
+            isOpen && 'aica-fab-button--hidden',
+            position === 'bottom-left' && 'aica-fab-button--left'
+          )}
+          onClick={() => setIsOpen(true)}
+          style={{ '--fab-bottom-offset': `${bottomOffset}px` } as React.CSSProperties}
+          aria-label="Abrir chat com Aica"
+        >
+          <MessageCircle size={24} />
+        </button>
+      )}
     </>
   )
 }

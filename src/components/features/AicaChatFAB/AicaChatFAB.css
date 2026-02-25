@@ -315,6 +315,63 @@
   font-weight: 400;
 }
 
+/* Empty state with quick actions */
+.aica-fab-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+}
+
+.aica-fab-empty-state__greeting {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.4);
+  font-weight: 500;
+}
+
+.aica-fab-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.aica-fab-quick-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.06);
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.aica-fab-quick-action:hover {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+}
+
+.aica-fab-quick-action:active {
+  transform: translateY(0);
+}
+
+.aica-fab-quick-action svg {
+  flex-shrink: 0;
+  color: #f59e0b;
+}
+
 /* Message bubbles */
 .aica-fab-message {
   max-width: 85%;
@@ -873,6 +930,25 @@
 
   .aica-fab-empty p {
     color: rgba(255, 255, 255, 0.3);
+  }
+
+  .aica-fab-empty-state__greeting {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .aica-fab-quick-action {
+    border-color: rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+  }
+
+  .aica-fab-quick-action:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.35);
+  }
+
+  .aica-fab-quick-action svg {
+    color: #fbbf24;
   }
 
   .aica-fab-message--assistant {
