@@ -135,6 +135,13 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
 }) => {
   const [timeUntilMap, setTimeUntilMap] = useState<Record<string, string>>({});
 
+  // Tick counter forces re-render every 60s so time-dependent UI stays fresh
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const tickInterval = setInterval(() => setTick(t => t + 1), 60_000);
+    return () => clearInterval(tickInterval);
+  }, []);
+
   // Update countdown every minute
   useEffect(() => {
     const updateCountdowns = () => {
@@ -148,7 +155,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     };
 
     updateCountdowns();
-    const interval = setInterval(updateCountdowns, 60000);
+    const interval = setInterval(updateCountdowns, 60_000);
     return () => clearInterval(interval);
   }, [events]);
 
@@ -188,10 +195,15 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
 
   const renderEventCard = (event: EventWithCategory, index: number) => {
     const timeUntil = timeUntilMap[event.id] || event.timeUntil;
+    const now = new Date();
+    const startDate = new Date(event.startTime);
     const endDate = new Date(event.endTime);
+    const isStartValid = !isNaN(startDate.getTime());
     const isEndValid = !isNaN(endDate.getTime());
-    const isPast = isEndValid && endDate < new Date() && timeUntil !== 'Agora';
-    const isHappening = timeUntil === 'Agora';
+    // An event is "happening now" only if it has started AND not yet ended
+    const isHappening = isStartValid && isEndValid && startDate <= now && now < endDate;
+    // An event is "past" if its end time is in the past (and it's not happening now)
+    const isPast = isEndValid && endDate <= now;
     const completing = isTaskCompleting(event.id);
 
     // Quadrant color border for task items

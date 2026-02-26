@@ -26,6 +26,7 @@ export interface TemplateFormState {
   description?: string; // Editable in edit mode, auto-generated in create
   exercise_structure?: ExerciseStructureV2;
   coach_notes?: string; // Free-text notes from the coach
+  is_public: boolean; // #458: Public (marketplace) vs Private (coach-only)
 }
 
 type FormErrors = Partial<Record<keyof TemplateFormState, string>>;
@@ -47,6 +48,7 @@ const EMPTY_FORM_STATE: TemplateFormState = {
     cooldown: '',
   },
   coach_notes: '',
+  is_public: false, // #458: Default to private (safer)
 };
 
 export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTemplateFormProps = {}) {
@@ -59,6 +61,7 @@ export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTem
         description: initialData.description,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
         coach_notes: initialData.coach_notes || '',
+        is_public: initialData.is_public ?? false,
       };
     }
 
@@ -99,6 +102,7 @@ export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTem
         description: initialData.description,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
         coach_notes: initialData.coach_notes || '',
+        is_public: initialData.is_public ?? false,
       });
       setErrors({});
       setTouched(new Set());
@@ -271,7 +275,7 @@ export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTem
         exercise_structure: formData.exercise_structure,
       };
 
-      const extras = { coach_notes: formData.coach_notes };
+      const extras = { coach_notes: formData.coach_notes, is_public: formData.is_public };
 
       let result;
       if (initialData) {
