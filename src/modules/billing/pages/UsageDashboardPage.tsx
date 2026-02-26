@@ -8,11 +8,14 @@ import {
   Gift,
   Loader2,
   RefreshCw,
+  Ticket,
 } from 'lucide-react';
 import { PageShell } from '@/components/ui';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserCredits } from '@/hooks/useUserCredits';
+import { useCouponRedemption } from '@/hooks/useCouponRedemption';
+import { getUserRedemptions, type CouponRedemption } from '@/services/couponService';
 import { UsageStatsCard } from '../components/UsageStatsCard';
 
 // ---------------------------------------------------------------------------
@@ -109,6 +112,9 @@ export function UsageDashboardPage() {
   });
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
+  const [redemptions, setRedemptions] = useState<CouponRedemption[]>([]);
+  const [couponCode, setCouponCode] = useState('');
+  const { isRedeeming, result: couponResult, error: couponError, redeem, reset: resetCoupon } = useCouponRedemption();
 
   // -------------------------------------------------------------------------
   // Data Loading
@@ -148,6 +154,10 @@ export function UsageDashboardPage() {
         if (transactions) {
           setCreditTransactions(transactions as CreditTransaction[]);
         }
+
+        // Fetch coupon redemptions
+        const redemptionData = await getUserRedemptions();
+        setRedemptions(redemptionData);
 
         // Calculate today's interactions
         const todayStart = new Date();
@@ -224,6 +234,15 @@ export function UsageDashboardPage() {
       setTimeout(() => setClaimMessage(null), 4000);
     } finally {
       setIsClaiming(false);
+    }
+  };
+
+  const handleRedeemCoupon = async () => {
+    const res = await redeem(couponCode);
+    if (res.success) {
+      setCouponCode('');
+      await loadData(true);
+      setTimeout(() => resetCoupon(), 3000);
     }
   };
 
@@ -420,6 +439,97 @@ export function UsageDashboardPage() {
                     </td>
                     <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
                       {formatTimestamp(log.created_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Coupon Redemption Section */}
+      <div className="bg-ceramic-50 rounded-xl shadow-ceramic-emboss overflow-hidden">
+        <div className="p-5 pb-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Ticket className="w-4 h-4 text-amber-500" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary">
+              Cupons
+            </h3>
+          </div>
+
+          {/* Coupon Input */}
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === 'Enter' && handleRedeemCoupon()}
+              placeholder="Digite o codigo do cupom"
+              disabled={isRedeeming}
+              className="flex-1 border border-ceramic-border rounded-lg px-3 py-2 text-sm uppercase bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50"
+            />
+            <button
+              onClick={handleRedeemCoupon}
+              disabled={isRedeeming || !couponCode.trim()}
+              className="bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50"
+            >
+              {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Resgatar'}
+            </button>
+          </div>
+          {couponResult && (
+            <p className="mb-3 text-sm font-medium text-ceramic-success">
+              +{couponResult.credits_earned} creditos adicionados!
+            </p>
+          )}
+          {couponError && (
+            <p className="mb-3 text-sm font-medium text-ceramic-error">
+              {couponError}
+            </p>
+          )}
+
+          {/* Redemptions History */}
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
+            Cupons Resgatados
+          </h4>
+        </div>
+
+        {redemptions.length === 0 ? (
+          <div className="px-5 pb-5">
+            <p className="text-sm text-ceramic-text-secondary italic">
+              Nenhum cupom resgatado ainda.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-ceramic-text-secondary/10">
+                  <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                    Codigo
+                  </th>
+                  <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                    Creditos
+                  </th>
+                  <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                    Data
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {redemptions.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-b border-ceramic-text-secondary/5 hover:bg-ceramic-text-secondary/5 transition-colors"
+                  >
+                    <td className="px-5 py-3 text-ceramic-text-primary font-medium">
+                      {r.coupons?.code ?? r.coupon_id.slice(0, 8)}
+                    </td>
+                    <td className="px-3 py-3 text-right font-bold text-ceramic-success">
+                      +{r.credits}
+                    </td>
+                    <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
+                      {formatTimestamp(r.redeemed_at)}
                     </td>
                   </tr>
                 ))}

@@ -10,8 +10,9 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Coins, Plus, TrendingUp, Loader2, Check, Gift } from 'lucide-react'
+import { Coins, Plus, TrendingUp, Loader2, Check, Gift, Ticket } from 'lucide-react'
 import { useUserCredits } from '@/hooks/useUserCredits'
+import { useCouponRedemption } from '@/hooks/useCouponRedemption'
 
 interface CreditBalanceWidgetProps {
   /** Compact mode for inline display */
@@ -40,6 +41,9 @@ export function CreditBalanceWidget({
   const [isClaiming, setIsClaiming] = useState(false)
   const [claimSuccess, setClaimSuccess] = useState(false)
   const [claimMessage, setClaimMessage] = useState<string | null>(null)
+  const [showCouponInput, setShowCouponInput] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const { isRedeeming, result: couponResult, error: couponError, redeem, reset: resetCoupon } = useCouponRedemption()
 
   const handleClaimDaily = async () => {
     setIsClaiming(true)
@@ -60,6 +64,17 @@ export function CreditBalanceWidget({
       }
     } finally {
       setIsClaiming(false)
+    }
+  }
+
+  const handleRedeemCoupon = async () => {
+    const res = await redeem(couponCode)
+    if (res.success) {
+      setCouponCode('')
+      setTimeout(() => {
+        setShowCouponInput(false)
+        resetCoupon()
+      }, 3000)
     }
   }
 
@@ -192,6 +207,70 @@ export function CreditBalanceWidget({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Coupon Input */}
+      <div className="mt-3">
+        {!showCouponInput ? (
+          <button
+            onClick={() => { setShowCouponInput(true); resetCoupon() }}
+            className="flex items-center gap-1 text-amber-600 hover:text-amber-700 text-xs font-medium transition-colors"
+          >
+            <Ticket className="w-3 h-3" />
+            Tenho um cupom
+          </button>
+        ) : (
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleRedeemCoupon()}
+                  placeholder="CODIGO"
+                  disabled={isRedeeming}
+                  className="flex-1 border border-ceramic-border rounded-lg px-3 py-1.5 text-sm uppercase bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50"
+                />
+                <button
+                  onClick={handleRedeemCoupon}
+                  disabled={isRedeeming || !couponCode.trim()}
+                  className="bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3 py-1.5 text-sm font-bold transition-colors disabled:opacity-50"
+                >
+                  {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Resgatar'}
+                </button>
+                <button
+                  onClick={() => { setShowCouponInput(false); setCouponCode(''); resetCoupon() }}
+                  className="text-ceramic-text-secondary hover:text-ceramic-text-primary text-xs px-1"
+                >
+                  &times;
+                </button>
+              </div>
+              {couponResult && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-2 text-xs font-medium text-ceramic-success"
+                >
+                  +{couponResult.credits_earned} creditos!
+                </motion.p>
+              )}
+              {couponError && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-2 text-xs font-medium text-ceramic-error"
+                >
+                  {couponError}
+                </motion.p>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
 
       {/* Stats */}
       {showStats && (
