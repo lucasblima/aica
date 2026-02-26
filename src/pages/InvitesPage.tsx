@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Ticket,
@@ -17,6 +18,9 @@ import {
   Loader2,
   Trash2,
   Link2,
+  Users,
+  ArrowRight,
+  AlertCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { PageShell } from '@/components/ui';
@@ -49,6 +53,8 @@ function StatusBadge({ status, isActive }: { status: EnrichedReferral['status'];
 }
 
 export default function InvitesPage() {
+  const navigate = useNavigate();
+
   const {
     stats,
     enrichedReferrals,
@@ -69,8 +75,15 @@ export default function InvitesPage() {
 
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
 
-  useEffect(() => { refreshDashboard(); }, [refreshDashboard]);
+  useEffect(() => {
+    setDashboardError(null);
+    refreshDashboard().catch((err) => {
+      console.error('[InvitesPage] Dashboard load failed:', err);
+      setDashboardError('Nao foi possivel carregar os dados de convites. Verifique sua conexao e tente novamente.');
+    });
+  }, [refreshDashboard]);
 
   useEffect(() => {
     if (copied) { const t = setTimeout(() => setCopied(false), 2000); return () => clearTimeout(t); }
@@ -99,7 +112,7 @@ export default function InvitesPage() {
 
   if (loading) {
     return (
-      <PageShell title="Convites">
+      <PageShell title="Convites" onBack={() => navigate('/')}>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-ceramic-text-secondary" />
         </div>
@@ -108,8 +121,19 @@ export default function InvitesPage() {
   }
 
   return (
-    <PageShell title="Convites">
+    <PageShell title="Convites" onBack={() => navigate('/')}>
       <div className="max-w-lg mx-auto px-4 py-6 pb-24 space-y-6">
+        {/* Error banner */}
+        {dashboardError && (
+          <div className="ceramic-inset p-4 rounded-xl flex items-start gap-3 border border-ceramic-error/20">
+            <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-bold text-ceramic-error mb-0.5">Erro ao carregar</div>
+              <div className="text-xs text-ceramic-text-secondary">{dashboardError}</div>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">
           {[
@@ -163,10 +187,16 @@ export default function InvitesPage() {
             <span className="font-bold">Gerar Convite</span>
           </button>
         ) : (
-          <div className="ceramic-inset p-6 rounded-2xl text-center">
+          <div className="ceramic-inset p-6 rounded-2xl text-center space-y-2">
             <div className="text-4xl mb-2">📭</div>
-            <div className="text-ceramic-text-primary font-bold mb-1">Sem convites disponiveis</div>
-            <div className="text-sm text-ceramic-text-secondary">Voce ganha +2 convites quando alguem aceita!</div>
+            <div className="text-ceramic-text-primary font-bold">Sem convites disponiveis</div>
+            <div className="text-sm text-ceramic-text-secondary">
+              Voce ganha +2 convites sempre que alguem aceitar seu convite e se tornar ativo.
+            </div>
+            <div className="pt-2 text-xs text-ceramic-text-secondary bg-ceramic-cool/50 rounded-lg p-3">
+              <span className="font-semibold text-ceramic-text-primary">Como funciona:</span> Cada convite aceito gera
+              XP para voce e para quem foi convidado. Convites expiram em 7 dias se nao forem usados.
+            </div>
           </div>
         )}
 
@@ -239,13 +269,33 @@ export default function InvitesPage() {
           </div>
         )}
 
-        {/* Empty state */}
-        {enrichedReferrals.length === 0 && (
-          <div className="ceramic-inset p-8 rounded-2xl text-center">
+        {/* Empty state — no referrals at all */}
+        {enrichedReferrals.length === 0 && !dashboardError && (
+          <div className="ceramic-inset p-8 rounded-2xl text-center space-y-2">
             <Ticket className="w-8 h-8 text-ceramic-text-secondary mx-auto mb-3" />
-            <div className="text-sm text-ceramic-text-secondary">Nenhum convite enviado ainda</div>
+            <div className="text-sm font-bold text-ceramic-text-primary">Nenhum convite enviado ainda</div>
+            <div className="text-sm text-ceramic-text-secondary">
+              Gere seu primeiro convite acima e compartilhe com quem voce quer trazer para o Aica.
+            </div>
           </div>
         )}
+
+        {/* Minha Rede — link to Connections (#488) */}
+        <button
+          onClick={() => navigate('/connections')}
+          className="w-full ceramic-card p-4 rounded-2xl flex items-center gap-4 hover:scale-[1.01] active:scale-[0.99] transition-transform text-left"
+        >
+          <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center flex-shrink-0">
+            <Users className="w-5 h-5 text-ceramic-info" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold text-ceramic-text-primary">Minha Rede</div>
+            <div className="text-xs text-ceramic-text-secondary">
+              Veja sua rede completa de conexoes e contatos
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
+        </button>
       </div>
     </PageShell>
   );

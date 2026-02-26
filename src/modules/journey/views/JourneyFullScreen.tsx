@@ -326,30 +326,31 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0EFE9]">
+    <div className="min-h-screen bg-ceramic-base">
       {/* Header - Digital Ceramic System */}
-      <div className="ceramic-card rounded-none p-6 border-b border-[#A39E91]/10" data-tour="journey-header">
+      <div className="ceramic-card rounded-none p-4 lg:p-6 border-b border-[#A39E91]/10" data-tour="journey-header">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left: Back button + icon + title */}
+            <div className="flex items-center gap-3 min-w-0">
               {/* Back Navigation Button */}
               <button
                 onClick={() => onBack ? onBack() : navigate('/')}
-                className="ceramic-card hover:ceramic-elevated p-2 rounded-full transition-all"
+                className="ceramic-card hover:ceramic-elevated p-2 rounded-full transition-all shrink-0"
                 aria-label="Voltar para página inicial"
               >
-                <ArrowLeftIcon className="h-5 w-5 text-[#5C554B]" />
+                <ArrowLeftIcon className="h-5 w-5 text-ceramic-text-secondary" />
               </button>
 
-              <SparklesIcon className="h-8 w-8 text-amber-600" />
-              <h1 className="text-2xl font-semibold tracking-tight text-etched">Minha Jornada</h1>
+              <SparklesIcon className="h-6 w-6 lg:h-8 lg:w-8 text-amber-600 shrink-0" />
+              <h1 className="text-lg lg:text-2xl font-semibold tracking-tight text-etched truncate">Minha Jornada</h1>
             </div>
 
-            {/* CP Stats with progress */}
+            {/* Center: CP Stats — desktop only */}
             {stats ? (() => {
               const progress = getProgressToNextLevel(stats.total_points)
               return (
-                <div className="flex items-center gap-4" data-tour="consciousness-points">
+                <div className="hidden lg:flex items-center gap-4" data-tour="consciousness-points">
                   {/* Level badge */}
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0"
@@ -397,18 +398,40 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 </div>
               )
             })() : (
-              <div className="flex items-center gap-3 animate-pulse" data-tour="consciousness-points">
-                <div className="w-8 h-8 bg-[#E0DDD5] rounded-full" />
+              <div className="hidden lg:flex items-center gap-3 animate-pulse" data-tour="consciousness-points">
+                <div className="w-8 h-8 bg-ceramic-cool rounded-full" />
                 <div className="flex flex-col gap-1.5">
-                  <div className="h-4 w-20 bg-[#E0DDD5] rounded" />
-                  <div className="h-1.5 w-28 bg-[#E0DDD5] rounded-full" />
+                  <div className="h-4 w-20 bg-ceramic-cool rounded" />
+                  <div className="h-1.5 w-28 bg-ceramic-cool rounded-full" />
                 </div>
               </div>
             )}
 
-            <div className="flex items-center gap-3">
+            {/* Mobile: compact level badge (replaces the full CP stats) */}
+            {stats && (
+              <div className="flex lg:hidden items-center gap-1.5 shrink-0" data-tour="consciousness-points">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                  style={{ backgroundColor: LEVEL_COLORS[stats.level] }}
+                  title={stats.level_name}
+                >
+                  {stats.level}
+                </div>
+                <span className="text-sm font-semibold text-ceramic-text-primary">
+                  {stats.total_points.toLocaleString()}
+                </span>
+                <span className="text-xs text-ceramic-text-secondary">CP</span>
+              </div>
+            )}
+
+            {/* Right: Help + Settings */}
+            <div className="flex items-center gap-2 lg:gap-3 shrink-0">
               <HelpButton tourKey="journey-first-visit" />
-              <SettingsMenu userEmail={user?.email} />
+              <SettingsMenu
+                userEmail={user?.email}
+                avatarUrl={user?.user_metadata?.avatar_url}
+                userName={user?.user_metadata?.full_name || user?.email?.split('@')[0]}
+              />
             </div>
           </div>
         </div>
