@@ -109,6 +109,16 @@ export function VidaUniversalInput() {
 
       {/* Input row */}
       <div className="flex items-center gap-2 p-3">
+        {/* Chat icon — opens fullscreen chat directly */}
+        <button
+          onClick={() => openChat()}
+          disabled={isCreating}
+          className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center hover:bg-amber-500/20 transition-colors disabled:opacity-40"
+          aria-label="Abrir chat"
+        >
+          <MessageCircle className="w-4 h-4 text-amber-600" />
+        </button>
+
         <input
           ref={inputRef}
           type="text"

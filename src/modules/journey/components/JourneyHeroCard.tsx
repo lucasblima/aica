@@ -12,15 +12,14 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, ChevronRight, MessageCircleQuestion,
-  Send, CheckCircle2, Loader2, Flame,
+  Send, CheckCircle2, Loader2, Flame, Mic, MicOff,
 } from 'lucide-react'
 import { useConsciousnessPoints } from '../hooks/useConsciousnessPoints'
 import { useMoments } from '../hooks/useMoments'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import type { UserConsciousnessStats } from '../types/consciousnessPoints'
-import { getEmotionDisplay } from '../types/emotionHelper'
-import { format, isToday } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { isToday } from 'date-fns'
 
 interface JourneyHeroCardProps {
   onOpenJourney?: () => void
@@ -42,6 +41,11 @@ export function JourneyHeroCard({
 
   const [answerText, setAnswerText] = useState('')
   const [answered, setAnswered] = useState(false)
+
+  const speech = useSpeechRecognition({
+    lang: 'pt-BR',
+    onResult: (transcript) => setAnswerText(prev => prev ? `${prev} ${transcript}` : transcript),
+  })
 
   const lastMoment = moments[0]
   const hasUnansweredQuestion = question && !question.user_response && !answered
@@ -99,34 +103,6 @@ export function JourneyHeroCard({
         <ChevronRight className="h-5 w-5 text-[#948D82] group-hover:text-[#5C554B] transition-colors" />
       </motion.div>
 
-      {/* Last moment preview */}
-      {lastMoment && (
-        <motion.div
-          className="mb-4 p-3 ceramic-inset-shallow rounded-2xl"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-[#948D82]">Ultimo momento</span>
-            <span className="text-xs text-[#948D82]">
-              {format(new Date(lastMoment.created_at), 'HH:mm', {
-                locale: ptBR,
-              })}
-            </span>
-          </div>
-
-          <div className="flex items-start gap-2">
-            {lastMoment.emotion && (
-              <span className="text-xl">{getEmotionDisplay(lastMoment.emotion).emoji}</span>
-            )}
-            <p className="text-sm text-[#5C554B] line-clamp-2">
-              {lastMoment.content || 'Audio gravado'}
-            </p>
-          </div>
-        </motion.div>
-      )}
-
       {/* Streak nudge — when streak active but no moment today */}
       {showStreakNudge && (
         <motion.div
@@ -183,6 +159,21 @@ export function JourneyHeroCard({
                 disabled={isSubmitting}
                 className="flex-1 bg-white/60 rounded-xl px-3 py-2 text-sm text-[#5C554B] placeholder:text-amber-400/60 outline-none focus:ring-2 focus:ring-amber-400/30 disabled:opacity-60"
               />
+              {/* Mic button for voice answer */}
+              {speech.isSupported && (
+                <button
+                  onClick={speech.toggle}
+                  disabled={isSubmitting}
+                  className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                    speech.isListening
+                      ? 'bg-ceramic-error text-white animate-pulse'
+                      : 'bg-white/60 text-amber-600 hover:bg-white/80'
+                  } disabled:opacity-40`}
+                  aria-label={speech.isListening ? 'Parar gravacao' : 'Ditar resposta'}
+                >
+                  {speech.isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                </button>
+              )}
               <button
                 onClick={handleAnswerSubmit}
                 disabled={!answerText.trim() || isSubmitting}

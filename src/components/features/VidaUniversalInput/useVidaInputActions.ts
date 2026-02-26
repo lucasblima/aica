@@ -8,7 +8,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { classifyIntent, type IntentResult } from '@/lib/agents/intentClassifier'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
-import { createWorkItem } from '@/services/supabaseService'
 import { createMoment } from '@/modules/journey/services/momentService'
 import { supabase } from '@/services/supabaseClient'
 import { useAuth } from '@/hooks/useAuth'
@@ -121,23 +120,21 @@ export function useVidaInputActions() {
     setActionStatus('creating')
     setLastActionType('task')
     try {
-      // Get user's default association (personal)
-      const { data: assocs } = await supabase
-        .from('associations')
+      // Insert directly (same pattern as TaskCreationQuickAdd — uses user_id, not created_by)
+      const { error: insertError } = await supabase
+        .from('work_items')
+        .insert({
+          user_id: user.id,
+          title: input.trim().slice(0, 200),
+          priority: 'medium',
+          status: 'todo',
+          task_type: 'task',
+          archived: false,
+        })
         .select('id')
-        .eq('type', 'personal')
-        .limit(1)
+        .single()
 
-      const associationId = assocs?.[0]?.id
-      if (!associationId) {
-        throw new Error('No personal association found')
-      }
-
-      await createWorkItem({
-        title: input.trim().slice(0, 200),
-        association_id: associationId,
-        priority: 'medium',
-      })
+      if (insertError) throw insertError
 
       setActionStatus('success')
       setInput('')
@@ -154,23 +151,21 @@ export function useVidaInputActions() {
     setActionStatus('creating')
     setLastActionType('event')
     try {
-      // Get user's default association
-      const { data: assocs } = await supabase
-        .from('associations')
+      // Insert as event (task_type='event') — same pattern as TaskCreationQuickAdd
+      const { error: insertError } = await supabase
+        .from('work_items')
+        .insert({
+          user_id: user.id,
+          title: input.trim().slice(0, 200),
+          priority: 'medium',
+          status: 'todo',
+          task_type: 'event',
+          archived: false,
+        })
         .select('id')
-        .eq('type', 'personal')
-        .limit(1)
+        .single()
 
-      const associationId = assocs?.[0]?.id
-      if (!associationId) {
-        throw new Error('No personal association found')
-      }
-
-      await createWorkItem({
-        title: input.trim().slice(0, 200),
-        association_id: associationId,
-        priority: 'medium',
-      })
+      if (insertError) throw insertError
 
       setActionStatus('success')
       setInput('')
