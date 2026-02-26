@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
-import { X, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, AlertCircle, CheckCircle, Lock, Globe } from 'lucide-react';
 import { useTemplateForm } from './useTemplateForm';
 import SeriesEditor from './SeriesEditor';
 import TimelineVisual from './TimelineVisual';
@@ -292,6 +292,49 @@ export default function TemplateFormDrawer({
                       className="space-y-6 overflow-hidden"
                     >
                       {/* #426: Prompt removed — fields revealed smoothly */}
+
+                      {/* #458: Public/Private visibility toggle */}
+                      <div>
+                        <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
+                          Visibilidade
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleChange('is_public', false)}
+                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                              !formData.is_public
+                                ? 'bg-ceramic-text-primary text-white shadow-md'
+                                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-secondary'
+                            }`}
+                          >
+                            <Lock className="w-4 h-4" />
+                            <div className="text-left">
+                              <span className="block">Privado</span>
+                              <span className={`block text-xs font-normal ${!formData.is_public ? 'text-white/70' : 'text-ceramic-text-secondary/70'}`}>
+                                So para voce
+                              </span>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleChange('is_public', true)}
+                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                              formData.is_public
+                                ? 'bg-ceramic-accent text-white shadow-md'
+                                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-secondary'
+                            }`}
+                          >
+                            <Globe className="w-4 h-4" />
+                            <div className="text-left">
+                              <span className="block">Publico</span>
+                              <span className={`block text-xs font-normal ${formData.is_public ? 'text-white/70' : 'text-ceramic-text-secondary/70'}`}>
+                                Visivel para todos
+                              </span>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
 
                       {/* Name & Description (#421: show in both modes for consistency) */}
                       {mode === 'edit' && (

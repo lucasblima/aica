@@ -1,3 +1,23 @@
+// TODO #468: Apply chat context UI pattern to Agenda
+// The expanded chat uses a ChatContextSidebar (src/components/features/AicaChatFAB/ChatContextSidebar.tsx)
+// that renders StatCard / ListCard components with module-specific data (tasks, finance, events).
+// Data is fetched via useChatContextData (src/hooks/useChatContextData.ts) which calls
+// getUserAIContext() from userAIContextService. The ContextCard component
+// (src/components/ContextCard/ContextCard.tsx) is a separate hero card on Home that shows
+// contextual prompts (event-based, journey-based, daily question) using the useContextSource
+// hook (src/hooks/useContextSource.ts) with a 3-tier priority cascade.
+//
+// To unify Agenda into a single-page view (like List/Kanban/Matrix modes), consider:
+// 1. Reuse ChatContextSidebar's StatCard/ListCard pattern for an Agenda context panel
+// 2. Use useContextSource to surface event-based prompts inline in the Agenda timeline
+// 3. The sidebar could show: upcoming events summary, task counts, calendar sync status
+// Reference files:
+//   - src/components/features/AicaChatFAB/ChatContextSidebar.tsx (context cards)
+//   - src/components/ContextCard/ContextCard.tsx (contextual prompt hero)
+//   - src/hooks/useChatContextData.ts (data fetching for chat context)
+//   - src/hooks/useContextSource.ts (3-tier priority: event > journey > daily)
+//   - src/services/userAIContextService.ts (AI context data aggregation)
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     DndContext,
@@ -61,6 +81,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useTourAutoStart('atlas-first-visit');
     const isDesktop = useIsDesktop();
     const [mobileMode, setMobileMode] = useState<AgendaMode>('agenda');
+
+    // Tick counter — increments every 60s so time-dependent useMemos
+    // (nextEvent, restOfDay, nextTwoDaysEvents) recalculate with a fresh `now`.
+    // This prevents stale "Acontecendo Agora" badges on ended events (#468).
+    const [timeTick, setTimeTick] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setTimeTick(t => t + 1), 60_000);
+        return () => clearInterval(id);
+    }, []);
 
     const [matrixTasks, setMatrixTasks] = useState<Record<Quadrant, Task[]>>({
         'urgent-important': [],
@@ -361,7 +390,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             } : undefined,
             restOfDay: combinedRest
         };
-    }, [calendarEvents, timelineTasks]);
+    }, [calendarEvents, timelineTasks, timeTick]);
 
     // Prepare next 2 days events with categories
     const nextTwoDaysEvents = useMemo(() => {
@@ -462,7 +491,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         });
 
         return filtered;
-    }, [calendarEvents, skippedEvents, allDueDateTasks]);
+    }, [calendarEvents, skippedEvents, allDueDateTasks, timeTick]);
 
     const loadAllTasks = async (forDate?: Date, { silent = false }: { silent?: boolean } = {}) => {
         try {
