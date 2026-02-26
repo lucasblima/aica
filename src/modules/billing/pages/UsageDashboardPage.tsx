@@ -2,20 +2,20 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity,
+  BarChart2,
   Coins,
   CreditCard,
   DollarSign,
   Gift,
   Loader2,
   RefreshCw,
-  Ticket,
+  TrendingDown,
+  Zap,
 } from 'lucide-react';
 import { PageShell } from '@/components/ui';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserCredits } from '@/hooks/useUserCredits';
-import { useCouponRedemption } from '@/hooks/useCouponRedemption';
-import { getUserRedemptions, type CouponRedemption } from '@/services/couponService';
 import { UsageStatsCard } from '../components/UsageStatsCard';
 
 // ---------------------------------------------------------------------------
@@ -47,7 +47,24 @@ interface DailyUsageSummary {
   daily_limit: number;
   plan_name: string;
   total_cost_30d: number;
+  total_interactions_30d: number;
+  avg_cost_per_interaction: number;
+  top_model: string | null;
 }
+
+interface DailyChartBar {
+  date: string;       // "DD/MM"
+  isoDate: string;    // "YYYY-MM-DD" — used as key
+  count: number;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const INTERACTIONS_PAGE_SIZE = 50;
+const TRANSACTIONS_PAGE_SIZE = 30;
+const CHART_DAYS = 14;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -90,6 +107,20 @@ function transactionTypeColor(type: string): string {
   return 'text-ceramic-text-primary';
 }
 
+/** Returns an array of the last N days (today last), each with isoDate + formatted label. */
+function buildDateRange(days: number): { isoDate: string; label: string }[] {
+  const result: { isoDate: string; label: string }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+    const isoDate = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    result.push({ isoDate, label });
+  }
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -109,15 +140,25 @@ export function UsageDashboardPage() {
     daily_limit: 50,
     plan_name: 'Free',
     total_cost_30d: 0,
+    total_interactions_30d: 0,
+    avg_cost_per_interaction: 0,
+    top_model: null,
   });
+
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
+  const [usageLogsOffset, setUsageLogsOffset] = useState(0);
+  const [hasMoreLogs, setHasMoreLogs] = useState(false);
+  const [isLoadingMoreLogs, setIsLoadingMoreLogs] = useState(false);
+
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
-  const [redemptions, setRedemptions] = useState<CouponRedemption[]>([]);
-  const [couponCode, setCouponCode] = useState('');
-  const { isRedeeming, result: couponResult, error: couponError, redeem, reset: resetCoupon } = useCouponRedemption();
+  const [txOffset, setTxOffset] = useState(0);
+  const [hasMoreTx, setHasMoreTx] = useState(false);
+  const [isLoadingMoreTx, setIsLoadingMoreTx] = useState(false);
+
+  const [dailyChart, setDailyChart] = useState<DailyChartBar[]>([]);
 
   // -------------------------------------------------------------------------
-  // Data Loading
+  // Data Loading — initial / refresh
   // -------------------------------------------------------------------------
 
   const loadData = useCallback(
@@ -131,35 +172,39 @@ export function UsageDashboardPage() {
           setIsLoading(true);
         }
 
-        // Fetch usage logs (last 20)
+        // Reset pagination on refresh
+        setUsageLogsOffset(0);
+        setTxOffset(0);
+
+        // --- Usage logs (first page) ---
         const { data: logs } = await supabase
           .from('usage_logs')
           .select('id, action, module, model_used, tokens_input, tokens_output, cost_brl, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(20);
+          .range(0, INTERACTIONS_PAGE_SIZE); // fetch one extra to detect hasMore
 
         if (logs) {
-          setUsageLogs(logs as UsageLog[]);
+          setHasMoreLogs(logs.length > INTERACTIONS_PAGE_SIZE);
+          setUsageLogs((logs as UsageLog[]).slice(0, INTERACTIONS_PAGE_SIZE));
+          setUsageLogsOffset(INTERACTIONS_PAGE_SIZE);
         }
 
-        // Fetch credit transactions (last 10)
+        // --- Credit transactions (first page) ---
         const { data: transactions } = await supabase
           .from('credit_transactions')
           .select('id, transaction_type, amount, balance_after, description, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(10);
+          .range(0, TRANSACTIONS_PAGE_SIZE);
 
         if (transactions) {
-          setCreditTransactions(transactions as CreditTransaction[]);
+          setHasMoreTx(transactions.length > TRANSACTIONS_PAGE_SIZE);
+          setCreditTransactions((transactions as CreditTransaction[]).slice(0, TRANSACTIONS_PAGE_SIZE));
+          setTxOffset(TRANSACTIONS_PAGE_SIZE);
         }
 
-        // Fetch coupon redemptions
-        const redemptionData = await getUserRedemptions();
-        setRedemptions(redemptionData);
-
-        // Calculate today's interactions
+        // --- Today's interactions ---
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
 
@@ -169,19 +214,31 @@ export function UsageDashboardPage() {
           .eq('user_id', user.id)
           .gte('created_at', todayStart.toISOString());
 
-        // Calculate 30-day cost
+        // --- 30-day cost + count ---
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         const { data: costData } = await supabase
           .from('usage_logs')
-          .select('cost_brl')
+          .select('cost_brl, model_used')
           .eq('user_id', user.id)
           .gte('created_at', thirtyDaysAgo.toISOString());
 
         const totalCost30d = costData?.reduce((sum, row) => sum + (row.cost_brl || 0), 0) ?? 0;
+        const totalInteractions30d = costData?.length ?? 0;
+        const avgCost = totalInteractions30d > 0 ? totalCost30d / totalInteractions30d : 0;
 
-        // Fetch plan info
+        // --- Top model (last 30d) ---
+        const modelCounts: Record<string, number> = {};
+        costData?.forEach((row) => {
+          if (row.model_used) {
+            modelCounts[row.model_used] = (modelCounts[row.model_used] ?? 0) + 1;
+          }
+        });
+        const topModel =
+          Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+        // --- Plan info ---
         const { data: subscription } = await supabase
           .from('user_subscriptions')
           .select('plan_id, daily_interaction_limit')
@@ -200,7 +257,38 @@ export function UsageDashboardPage() {
           daily_limit: subscription?.daily_interaction_limit ?? 50,
           plan_name: planNames[subscription?.plan_id ?? 'free'] ?? 'Free',
           total_cost_30d: totalCost30d,
+          total_interactions_30d: totalInteractions30d,
+          avg_cost_per_interaction: avgCost,
+          top_model: topModel,
         });
+
+        // --- Daily chart (last 14 days) ---
+        const chartFrom = new Date();
+        chartFrom.setDate(chartFrom.getDate() - (CHART_DAYS - 1));
+        chartFrom.setHours(0, 0, 0, 0);
+
+        const { data: chartRaw } = await supabase
+          .from('usage_logs')
+          .select('created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', chartFrom.toISOString())
+          .order('created_at', { ascending: true });
+
+        // Build count-per-day map
+        const countByDay: Record<string, number> = {};
+        chartRaw?.forEach((row) => {
+          const dayKey = new Date(row.created_at).toISOString().slice(0, 10);
+          countByDay[dayKey] = (countByDay[dayKey] ?? 0) + 1;
+        });
+
+        const dateRange = buildDateRange(CHART_DAYS);
+        setDailyChart(
+          dateRange.map(({ isoDate, label }) => ({
+            isoDate,
+            date: label,
+            count: countByDay[isoDate] ?? 0,
+          }))
+        );
       } catch {
         // Silently handle errors — data will show defaults
       } finally {
@@ -216,7 +304,62 @@ export function UsageDashboardPage() {
   }, [loadData]);
 
   // -------------------------------------------------------------------------
-  // Handlers
+  // Pagination — load more interactions
+  // -------------------------------------------------------------------------
+
+  const loadMoreLogs = async () => {
+    if (!user || isLoadingMoreLogs) return;
+    setIsLoadingMoreLogs(true);
+
+    try {
+      const { data: more } = await supabase
+        .from('usage_logs')
+        .select('id, action, module, model_used, tokens_input, tokens_output, cost_brl, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(usageLogsOffset, usageLogsOffset + INTERACTIONS_PAGE_SIZE);
+
+      if (more) {
+        setHasMoreLogs(more.length > INTERACTIONS_PAGE_SIZE);
+        setUsageLogs((prev) => [...prev, ...(more as UsageLog[]).slice(0, INTERACTIONS_PAGE_SIZE)]);
+        setUsageLogsOffset((prev) => prev + INTERACTIONS_PAGE_SIZE);
+      }
+    } finally {
+      setIsLoadingMoreLogs(false);
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // Pagination — load more transactions
+  // -------------------------------------------------------------------------
+
+  const loadMoreTx = async () => {
+    if (!user || isLoadingMoreTx) return;
+    setIsLoadingMoreTx(true);
+
+    try {
+      const { data: more } = await supabase
+        .from('credit_transactions')
+        .select('id, transaction_type, amount, balance_after, description, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(txOffset, txOffset + TRANSACTIONS_PAGE_SIZE);
+
+      if (more) {
+        setHasMoreTx(more.length > TRANSACTIONS_PAGE_SIZE);
+        setCreditTransactions((prev) => [
+          ...prev,
+          ...(more as CreditTransaction[]).slice(0, TRANSACTIONS_PAGE_SIZE),
+        ]);
+        setTxOffset((prev) => prev + TRANSACTIONS_PAGE_SIZE);
+      }
+    } finally {
+      setIsLoadingMoreTx(false);
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // Daily claim handler
   // -------------------------------------------------------------------------
 
   const handleClaimDaily = async () => {
@@ -237,15 +380,6 @@ export function UsageDashboardPage() {
     }
   };
 
-  const handleRedeemCoupon = async () => {
-    const res = await redeem(couponCode);
-    if (res.success) {
-      setCouponCode('');
-      await loadData(true);
-      setTimeout(() => resetCoupon(), 3000);
-    }
-  };
-
   // -------------------------------------------------------------------------
   // Loading State
   // -------------------------------------------------------------------------
@@ -261,13 +395,19 @@ export function UsageDashboardPage() {
   }
 
   // -------------------------------------------------------------------------
-  // Render
+  // Derived values
   // -------------------------------------------------------------------------
 
   const usagePercent =
     summary.daily_limit > 0
       ? Math.min((summary.interactions_today / summary.daily_limit) * 100, 100)
       : 0;
+
+  const chartMax = Math.max(...dailyChart.map((d) => d.count), 1);
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
 
   return (
     <PageShell
@@ -295,8 +435,8 @@ export function UsageDashboardPage() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Stats Cards — 6 cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <UsageStatsCard
           title="Interacoes Hoje"
           value={`${summary.interactions_today} / ${summary.daily_limit}`}
@@ -316,10 +456,22 @@ export function UsageDashboardPage() {
           icon={<CreditCard className="w-5 h-5 text-amber-600" />}
         />
         <UsageStatsCard
-          title="Custo (30d)"
+          title="Custo Total (30d)"
           value={formatCurrencyShort(summary.total_cost_30d)}
           subtitle="Ultimos 30 dias"
           icon={<DollarSign className="w-5 h-5 text-amber-600" />}
+        />
+        <UsageStatsCard
+          title="Custo Medio/Interacao"
+          value={formatCurrency(summary.avg_cost_per_interaction)}
+          subtitle={`${summary.total_interactions_30d} interacoes (30d)`}
+          icon={<TrendingDown className="w-5 h-5 text-amber-600" />}
+        />
+        <UsageStatsCard
+          title="Modelo mais usado"
+          value={summary.top_model ?? '—'}
+          subtitle="Ultimos 30 dias"
+          icon={<Zap className="w-5 h-5 text-amber-600" />}
         />
       </div>
 
@@ -365,24 +517,93 @@ export function UsageDashboardPage() {
         </div>
       )}
 
-      {/* Usage Chart Placeholder */}
+      {/* Daily Usage Bar Chart — last 14 days */}
       <div className="bg-ceramic-50 rounded-xl p-6 shadow-ceramic-emboss">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary mb-4">
-          Grafico de Uso
-        </h3>
-        <div className="h-48 flex items-center justify-center border-2 border-dashed border-ceramic-text-secondary/20 rounded-lg">
-          <p className="text-sm text-ceramic-text-secondary">
-            Grafico de uso semanal (implementacao futura)
-          </p>
+        <div className="flex items-center gap-2 mb-5">
+          <BarChart2 className="w-4 h-4 text-amber-600" />
+          <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary">
+            Interacoes por Dia — Ultimos {CHART_DAYS} dias
+          </h3>
+        </div>
+
+        {dailyChart.every((d) => d.count === 0) ? (
+          <div className="h-40 flex items-center justify-center">
+            <p className="text-sm text-ceramic-text-secondary italic">
+              Nenhuma interacao nos ultimos {CHART_DAYS} dias.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-end gap-1 h-40" aria-label="Grafico de interacoes diarias">
+            {dailyChart.map((bar) => {
+              const heightPct = chartMax > 0 ? (bar.count / chartMax) * 100 : 0;
+              const isToday = bar.isoDate === new Date().toISOString().slice(0, 10);
+              return (
+                <div
+                  key={bar.isoDate}
+                  className="flex flex-col items-center gap-1 flex-1 min-w-0 group"
+                >
+                  {/* Value label — shown on hover */}
+                  <span
+                    className={`text-[10px] font-bold text-amber-600 transition-opacity ${
+                      bar.count > 0 ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {bar.count}
+                  </span>
+
+                  {/* Bar */}
+                  <div className="w-full flex-1 flex items-end">
+                    <div
+                      className={`w-full rounded-t transition-all duration-300 ${
+                        isToday ? 'bg-amber-500' : 'bg-amber-300 group-hover:bg-amber-400'
+                      } ${bar.count === 0 ? 'opacity-20' : ''}`}
+                      style={{ height: bar.count === 0 ? '4px' : `${heightPct}%` }}
+                      title={`${bar.date}: ${bar.count} interacoes`}
+                    />
+                  </div>
+
+                  {/* Date label */}
+                  <span
+                    className={`text-[9px] leading-none truncate w-full text-center ${
+                      isToday
+                        ? 'text-amber-600 font-bold'
+                        : 'text-ceramic-text-secondary'
+                    }`}
+                  >
+                    {bar.date}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Chart legend */}
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-ceramic-text-secondary/10">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm bg-amber-500" />
+            <span className="text-[10px] text-ceramic-text-secondary">Hoje</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm bg-amber-300" />
+            <span className="text-[10px] text-ceramic-text-secondary">Dias anteriores</span>
+          </div>
+          <span className="ml-auto text-[10px] text-ceramic-text-secondary">
+            Pico: {chartMax} interacoes
+          </span>
         </div>
       </div>
 
       {/* Recent Interactions Table */}
       <div className="bg-ceramic-50 rounded-xl shadow-ceramic-emboss overflow-hidden">
-        <div className="p-5 pb-3">
+        <div className="p-5 pb-3 flex items-center justify-between">
           <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary">
-            Interacoes Recentes
+            Log de Interacoes
           </h3>
+          <span className="text-xs text-ceramic-text-secondary">
+            {usageLogs.length} registros exibidos
+          </span>
         </div>
 
         {usageLogs.length === 0 ? (
@@ -392,159 +613,88 @@ export function UsageDashboardPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ceramic-text-secondary/10">
-                  <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Acao
-                  </th>
-                  <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Modulo
-                  </th>
-                  <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary hidden md:table-cell">
-                    Modelo
-                  </th>
-                  <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary hidden md:table-cell">
-                    Tokens
-                  </th>
-                  <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Custo
-                  </th>
-                  <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Data
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {usageLogs.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="border-b border-ceramic-text-secondary/5 hover:bg-ceramic-text-secondary/5 transition-colors"
-                  >
-                    <td className="px-5 py-3 text-ceramic-text-primary font-medium truncate max-w-[160px]">
-                      {log.action}
-                    </td>
-                    <td className="px-3 py-3 text-ceramic-text-secondary">
-                      {log.module ?? '-'}
-                    </td>
-                    <td className="px-3 py-3 text-ceramic-text-secondary hidden md:table-cell">
-                      {log.model_used ?? '-'}
-                    </td>
-                    <td className="px-3 py-3 text-ceramic-text-secondary text-right hidden md:table-cell">
-                      {(log.tokens_input + log.tokens_output).toLocaleString('pt-BR')}
-                    </td>
-                    <td className="px-3 py-3 text-ceramic-text-primary text-right font-medium">
-                      {formatCurrency(log.cost_brl)}
-                    </td>
-                    <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
-                      {formatTimestamp(log.created_at)}
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-ceramic-text-secondary/10">
+                    <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Acao
+                    </th>
+                    <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Modulo
+                    </th>
+                    <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary hidden md:table-cell">
+                      Modelo
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary hidden md:table-cell">
+                      Tokens
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Custo
+                    </th>
+                    <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Data
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {usageLogs.map((log) => (
+                    <tr
+                      key={log.id}
+                      className="border-b border-ceramic-text-secondary/5 hover:bg-ceramic-text-secondary/5 transition-colors"
+                    >
+                      <td className="px-5 py-3 text-ceramic-text-primary font-medium truncate max-w-[160px]">
+                        {log.action}
+                      </td>
+                      <td className="px-3 py-3 text-ceramic-text-secondary">
+                        {log.module ?? '-'}
+                      </td>
+                      <td className="px-3 py-3 text-ceramic-text-secondary hidden md:table-cell">
+                        {log.model_used ?? '-'}
+                      </td>
+                      <td className="px-3 py-3 text-ceramic-text-secondary text-right hidden md:table-cell">
+                        {(log.tokens_input + log.tokens_output).toLocaleString('pt-BR')}
+                      </td>
+                      <td className="px-3 py-3 text-ceramic-text-primary text-right font-medium">
+                        {formatCurrency(log.cost_brl)}
+                      </td>
+                      <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
+                        {formatTimestamp(log.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-      {/* Coupon Redemption Section */}
-      <div className="bg-ceramic-50 rounded-xl shadow-ceramic-emboss overflow-hidden">
-        <div className="p-5 pb-3">
-          <div className="flex items-center gap-2 mb-3">
-            <Ticket className="w-4 h-4 text-amber-500" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary">
-              Cupons
-            </h3>
-          </div>
-
-          {/* Coupon Input */}
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === 'Enter' && handleRedeemCoupon()}
-              placeholder="Digite o codigo do cupom"
-              disabled={isRedeeming}
-              className="flex-1 border border-ceramic-border rounded-lg px-3 py-2 text-sm uppercase bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50"
-            />
-            <button
-              onClick={handleRedeemCoupon}
-              disabled={isRedeeming || !couponCode.trim()}
-              className="bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50"
-            >
-              {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Resgatar'}
-            </button>
-          </div>
-          {couponResult && (
-            <p className="mb-3 text-sm font-medium text-ceramic-success">
-              +{couponResult.credits_earned} creditos adicionados!
-            </p>
-          )}
-          {couponError && (
-            <p className="mb-3 text-sm font-medium text-ceramic-error">
-              {couponError}
-            </p>
-          )}
-
-          {/* Redemptions History */}
-          <h4 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
-            Cupons Resgatados
-          </h4>
-        </div>
-
-        {redemptions.length === 0 ? (
-          <div className="px-5 pb-5">
-            <p className="text-sm text-ceramic-text-secondary italic">
-              Nenhum cupom resgatado ainda.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ceramic-text-secondary/10">
-                  <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Codigo
-                  </th>
-                  <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Creditos
-                  </th>
-                  <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Data
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {redemptions.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="border-b border-ceramic-text-secondary/5 hover:bg-ceramic-text-secondary/5 transition-colors"
-                  >
-                    <td className="px-5 py-3 text-ceramic-text-primary font-medium">
-                      {r.coupons?.code ?? r.coupon_id.slice(0, 8)}
-                    </td>
-                    <td className="px-3 py-3 text-right font-bold text-ceramic-success">
-                      +{r.credits}
-                    </td>
-                    <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
-                      {formatTimestamp(r.redeemed_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            {hasMoreLogs && (
+              <div className="p-4 border-t border-ceramic-text-secondary/10 flex justify-center">
+                <button
+                  onClick={loadMoreLogs}
+                  disabled={isLoadingMoreLogs}
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isLoadingMoreLogs ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  {isLoadingMoreLogs ? 'Carregando...' : `Ver mais ${INTERACTIONS_PAGE_SIZE} registros`}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {/* Credit Transactions Table */}
       <div className="bg-ceramic-50 rounded-xl shadow-ceramic-emboss overflow-hidden">
-        <div className="p-5 pb-3">
+        <div className="p-5 pb-3 flex items-center justify-between">
           <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary">
             Transacoes de Creditos
           </h3>
+          <span className="text-xs text-ceramic-text-secondary">
+            {creditTransactions.length} registros exibidos
+          </span>
         </div>
 
         {creditTransactions.length === 0 ? (
@@ -554,58 +704,75 @@ export function UsageDashboardPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ceramic-text-secondary/10">
-                  <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Tipo
-                  </th>
-                  <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Valor
-                  </th>
-                  <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Saldo
-                  </th>
-                  <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary hidden md:table-cell">
-                    Descricao
-                  </th>
-                  <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                    Data
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {creditTransactions.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className="border-b border-ceramic-text-secondary/5 hover:bg-ceramic-text-secondary/5 transition-colors"
-                  >
-                    <td className="px-5 py-3 text-ceramic-text-primary font-medium">
-                      {formatTransactionType(tx.transaction_type)}
-                    </td>
-                    <td
-                      className={`px-3 py-3 text-right font-bold ${transactionTypeColor(
-                        tx.transaction_type
-                      )}`}
-                    >
-                      {tx.amount > 0 ? '+' : ''}
-                      {tx.amount}
-                    </td>
-                    <td className="px-3 py-3 text-ceramic-text-secondary text-right">
-                      {tx.balance_after}
-                    </td>
-                    <td className="px-3 py-3 text-ceramic-text-secondary hidden md:table-cell truncate max-w-[200px]">
-                      {tx.description ?? '-'}
-                    </td>
-                    <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
-                      {formatTimestamp(tx.created_at)}
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-ceramic-text-secondary/10">
+                    <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Tipo
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Valor
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Saldo
+                    </th>
+                    <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary hidden md:table-cell">
+                      Descricao
+                    </th>
+                    <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                      Data
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {creditTransactions.map((tx) => (
+                    <tr
+                      key={tx.id}
+                      className="border-b border-ceramic-text-secondary/5 hover:bg-ceramic-text-secondary/5 transition-colors"
+                    >
+                      <td className="px-5 py-3 text-ceramic-text-primary font-medium">
+                        {formatTransactionType(tx.transaction_type)}
+                      </td>
+                      <td
+                        className={`px-3 py-3 text-right font-bold ${transactionTypeColor(
+                          tx.transaction_type
+                        )}`}
+                      >
+                        {tx.amount > 0 ? '+' : ''}
+                        {tx.amount}
+                      </td>
+                      <td className="px-3 py-3 text-ceramic-text-secondary text-right">
+                        {tx.balance_after}
+                      </td>
+                      <td className="px-3 py-3 text-ceramic-text-secondary hidden md:table-cell truncate max-w-[200px]">
+                        {tx.description ?? '-'}
+                      </td>
+                      <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
+                        {formatTimestamp(tx.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {hasMoreTx && (
+              <div className="p-4 border-t border-ceramic-text-secondary/10 flex justify-center">
+                <button
+                  onClick={loadMoreTx}
+                  disabled={isLoadingMoreTx}
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isLoadingMoreTx ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  {isLoadingMoreTx ? 'Carregando...' : `Ver mais ${TRANSACTIONS_PAGE_SIZE} registros`}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </PageShell>
