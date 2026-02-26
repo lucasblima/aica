@@ -1,11 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Users, Star } from 'lucide-react';
+import { ChevronRight, Users, Star, Dumbbell } from 'lucide-react';
 import { ConnectionSpace } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+/** Check if a space is a sports advisory (Assessoria Esportiva) */
+function isAssessoriaEsportiva(space: ConnectionSpace): boolean {
+  return (
+    space.archetype === 'ventures' &&
+    !!(space.settings as Record<string, unknown>)?.space_type &&
+    (space.settings as Record<string, unknown>).space_type === 'assessoria_esportiva'
+  );
+}
 
 interface SpaceCardProps {
   /** Connection space data */
@@ -157,9 +166,17 @@ export function SpaceCard({
 
         {/* Title and subtitle */}
         <div className="flex-1 min-w-0 pt-1">
-          <h3 className="text-base font-bold text-ceramic-text-primary mb-1 line-clamp-1">
-            {space.name}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-base font-bold text-ceramic-text-primary line-clamp-1">
+              {space.name}
+            </h3>
+            {isAssessoriaEsportiva(space) && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 text-[10px] font-bold uppercase tracking-wider flex-shrink-0">
+                <Dumbbell className="w-3 h-3" />
+                Assessoria
+              </span>
+            )}
+          </div>
           {space.subtitle && (
             <p className="text-xs text-ceramic-text-secondary line-clamp-1">
               {space.subtitle}

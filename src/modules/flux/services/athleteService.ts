@@ -35,6 +35,9 @@ export interface UpdateAthleteInput extends Partial<CreateAthleteInput> {
   practiced_modalities?: string[];
   practice_duration_months?: number;
   training_zones?: Record<string, unknown>;
+  // Financial fields
+  financial_status?: 'ok' | 'pending' | 'overdue';
+  onboarding_data?: Record<string, unknown>;
 }
 
 export class AthleteService {
@@ -531,4 +534,154 @@ export class AthleteService {
       return { data: null, error };
     }
   }
+
+  /**
+   * Update athlete payment metadata (stored in onboarding_data JSONB + financial_status)
+   * Issue #463
+   */
+  static async updatePaymentInfo(
+    athleteId: string,
+    payment: AthletePaymentData
+  ): Promise<{ data: Athlete | null; error: any }> {
+    try {
+      // First read current onboarding_data to merge (not overwrite)
+      const { data: current, error: readError } = await supabase
+        .from('athletes')
+        .select('onboarding_data')
+        .eq('id', athleteId)
+        .single();
+
+      if (readError) {
+        console.error('[AthleteService] Error reading athlete for payment update:', readError);
+        return { data: null, error: readError };
+      }
+
+      const existingData = (current?.onboarding_data as Record<string, unknown>) || {};
+
+      // Map payment_status to financial_status column value
+      const financialStatus: 'ok' | 'pending' | 'overdue' =
+        payment.payment_status === 'paid' ? 'ok' : payment.payment_status;
+
+      const { data, error } = await supabase
+        .from('athletes')
+        .update({
+          financial_status: financialStatus,
+          onboarding_data: {
+            ...existingData,
+            payment_due_day: payment.payment_due_day,
+            monthly_fee: payment.monthly_fee,
+            payment_status: payment.payment_status,
+            last_payment_date: payment.last_payment_date,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', athleteId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('[AthleteService] Error updating payment info:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Batch update payment status for multiple athletes
+   * Issue #463
+   */
+  static async batchUpdatePaymentStatus(
+    athleteIds: string[],
+    status: 'paid' | 'pending' | 'overdue'
+  ): Promise<{ success: boolean; error: any }> {
+    try {
+      const financialStatus: 'ok' | 'pending' | 'overdue' =
+        status === 'paid' ? 'ok' : status;
+
+      const now = new Date().toISOString();
+      const results = await Promise.all(
+        athleteIds.map(async (id) => {
+          // Read current data
+          const { data: current } = await supabase
+            .from('athletes')
+            .select('onboarding_data')
+            .eq('id', id)
+            .single();
+
+          const existingData = (current?.onboarding_data as Record<string, unknown>) || {};
+
+          return supabase
+            .from('athletes')
+            .update({
+              financial_status: financialStatus,
+              onboarding_data: {
+                ...existingData,
+                payment_status: status,
+                last_payment_date: status === 'paid' ? now.split('T')[0] : existingData.last_payment_date,
+              },
+              updated_at: now,
+            })
+            .eq('id', id);
+        })
+      );
+
+      const errors = results.filter((r) => r.error);
+      if (errors.length > 0) {
+        console.error('[AthleteService] Batch payment update had errors:', errors);
+        return { success: false, error: errors[0].error };
+      }
+
+      return { success: true, error: null };
+    } catch (error) {
+      console.error('[AthleteService] Error batch updating payment status:', error);
+      return { success: false, error };
+    }
+  }
+}
+
+// ============================================
+// Payment Metadata Types (Issue #463)
+// ============================================
+
+/** Payment data stored in athlete.onboarding_data JSONB */
+export interface AthletePaymentData {
+  /** Day of month when payment is due (1-31) */
+  payment_due_day?: number;
+  /** Monthly fee amount in BRL */
+  monthly_fee?: number;
+  /** Current month's payment status */
+  payment_status: 'paid' | 'pending' | 'overdue';
+  /** ISO date of last confirmed payment */
+  last_payment_date?: string;
+}
+
+/**
+ * Extract payment data from athlete's onboarding_data JSONB
+ */
+export function getPaymentData(athlete: Athlete): AthletePaymentData {
+  const data = (athlete.onboarding_data || {}) as Record<string, unknown>;
+  return {
+    payment_due_day: typeof data.payment_due_day === 'number' ? data.payment_due_day : undefined,
+    monthly_fee: typeof data.monthly_fee === 'number' ? data.monthly_fee : undefined,
+    payment_status: derivePaymentStatus(athlete, data),
+    last_payment_date: typeof data.last_payment_date === 'string' ? data.last_payment_date : undefined,
+  };
+}
+
+/**
+ * Derive the payment status from financial_status column + onboarding_data
+ */
+function derivePaymentStatus(
+  athlete: Athlete,
+  data: Record<string, unknown>
+): 'paid' | 'pending' | 'overdue' {
+  // If onboarding_data has explicit payment_status, use it
+  if (data.payment_status === 'paid' || data.payment_status === 'pending' || data.payment_status === 'overdue') {
+    return data.payment_status as 'paid' | 'pending' | 'overdue';
+  }
+  // Fallback to financial_status column
+  if (athlete.financial_status === 'ok') return 'paid';
+  if (athlete.financial_status === 'overdue') return 'overdue';
+  if (athlete.financial_status === 'pending') return 'pending';
+  return 'pending';
 }

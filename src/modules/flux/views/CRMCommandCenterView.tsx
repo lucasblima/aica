@@ -1,9 +1,11 @@
 /**
- * CRMCommandCenterView - Command Center de Gestao de Atletas
+ * CRMCommandCenterView - Painel do Treinador (Coach Panel)
  *
- * Tela 5: Central de comando com filtros visuais (modality/level/group tabs),
+ * Tela 5: Central de gestao com filtros visuais (modality/level/group tabs),
  * acoes em massa, sort por adesao, AthleteCard integrado, e Novo Atleta.
  * Substitui os dropdowns por pill tabs iguais ao FluxDashboard.
+ *
+ * Renamed from "Command Center" to "Painel do Treinador" (#460).
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -23,10 +25,13 @@ import {
   ArrowUp,
   ArrowDown,
   Users,
+  DollarSign,
+  CheckCircle,
+  Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
-import { AthleteService, CreateAthleteInput } from '../services/athleteService';
+import { AthleteService, CreateAthleteInput, getPaymentData } from '../services/athleteService';
 import { AthleteProfileService } from '../services/athleteProfileService';
 import { AutomationService } from '../services/automationService';
 import { useAthletes } from '../hooks/useAthletes';
@@ -312,6 +317,9 @@ export default function CRMCommandCenterView() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
 
+  // Batch payment state (#463)
+  const [batchPaymentLoading, setBatchPaymentLoading] = useState(false);
+
   // Load automations
   useEffect(() => {
     AutomationService.getActiveAutomations().then((res) => {
@@ -469,6 +477,20 @@ export default function CRMCommandCenterView() {
     return Math.round(sum / active.length);
   }, [filteredAthletes]);
 
+  // Payment summary (#463)
+  const paymentSummary = useMemo(() => {
+    let paid = 0;
+    let pending = 0;
+    let overdue = 0;
+    for (const a of allAthletes) {
+      const pd = getPaymentData(a);
+      if (pd.payment_status === 'paid') paid++;
+      else if (pd.payment_status === 'overdue') overdue++;
+      else pending++;
+    }
+    return { paid, pending, overdue, total: allAthletes.length };
+  }, [allAthletes]);
+
   const hasActiveFilters =
     selectedModality !== 'all' ||
     selectedLevel !== 'all' ||
@@ -594,6 +616,29 @@ export default function CRMCommandCenterView() {
     });
   };
 
+  // ---- Batch payment handler (#463) ----
+  const handleBatchMarkPaid = async () => {
+    if (selectedAthletes.size === 0) return;
+    setBatchPaymentLoading(true);
+    try {
+      const { success, error: batchError } = await AthleteService.batchUpdatePaymentStatus(
+        Array.from(selectedAthletes),
+        'paid'
+      );
+      if (batchError) {
+        console.error('Batch payment error:', batchError);
+      }
+      if (success) {
+        clearSelection();
+        await refresh();
+      }
+    } catch (err) {
+      console.error('Batch payment error:', err);
+    } finally {
+      setBatchPaymentLoading(false);
+    }
+  };
+
   // ---- Loading / Error states ----
   if (isLoading) {
     return (
@@ -648,7 +693,7 @@ export default function CRMCommandCenterView() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-black text-ceramic-text-primary mb-2">
-              Command Center
+              Painel do Treinador
             </h1>
             <p className="text-sm text-ceramic-text-secondary">
               {filteredAthletes.length} atleta
@@ -660,15 +705,33 @@ export default function CRMCommandCenterView() {
 
           <div className="flex items-center gap-3">
             {selectedAthletes.size > 0 && (
-              <button
-                onClick={() => setBulkModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success/90 transition-colors"
-              >
-                <Send className="w-4 h-4" />
-                <span className="font-medium">
-                  Enviar Mensagem ({selectedAthletes.size})
-                </span>
-              </button>
+              <>
+                {/* Batch mark paid — #463 */}
+                <button
+                  onClick={handleBatchMarkPaid}
+                  disabled={batchPaymentLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90 transition-colors disabled:opacity-50"
+                >
+                  {batchPaymentLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <DollarSign className="w-4 h-4" />
+                  )}
+                  <span className="font-medium">
+                    Marcar Pago ({selectedAthletes.size})
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setBulkModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success/90 transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                  <span className="font-medium">
+                    Enviar Mensagem ({selectedAthletes.size})
+                  </span>
+                </button>
+              </>
             )}
 
             {/* Novo Atleta Button */}
@@ -703,13 +766,33 @@ export default function CRMCommandCenterView() {
               {avgConsistency}%
             </p>
           </div>
+          {/* Payment summary — #463 */}
           <div className="ceramic-card p-4">
             <p className="text-xs text-ceramic-text-secondary uppercase mb-1">
-              Automacoes Ativas
+              Pagamentos
             </p>
-            <p className="text-2xl font-bold text-ceramic-text-primary">
-              {automations.length}
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-ceramic-success">
+                {paymentSummary.paid}
+              </span>
+              <span className="text-xs text-ceramic-text-secondary">
+                / {paymentSummary.total}
+              </span>
+            </div>
+            {(paymentSummary.pending > 0 || paymentSummary.overdue > 0) && (
+              <div className="flex items-center gap-2 mt-1">
+                {paymentSummary.pending > 0 && (
+                  <span className="text-[10px] font-bold text-ceramic-warning">
+                    {paymentSummary.pending} pend.
+                  </span>
+                )}
+                {paymentSummary.overdue > 0 && (
+                  <span className="text-[10px] font-bold text-ceramic-error">
+                    {paymentSummary.overdue} atras.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="ceramic-card p-4">
             <p className="text-xs text-ceramic-text-secondary uppercase mb-1">
@@ -1048,6 +1131,31 @@ export default function CRMCommandCenterView() {
                       onClick={(e) => e.stopPropagation()}
                     />
                   </div>
+
+                  {/* Payment status badge — #463 */}
+                  {(() => {
+                    const pd = getPaymentData(athlete);
+                    return (
+                      <div className="absolute top-3 right-3 z-20">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            pd.payment_status === 'paid'
+                              ? 'bg-ceramic-success/15 text-ceramic-success'
+                              : pd.payment_status === 'overdue'
+                                ? 'bg-ceramic-error/15 text-ceramic-error'
+                                : 'bg-ceramic-warning/15 text-ceramic-warning'
+                          }`}
+                        >
+                          <DollarSign className="w-2.5 h-2.5" />
+                          {pd.payment_status === 'paid'
+                            ? 'Pago'
+                            : pd.payment_status === 'overdue'
+                              ? 'Atrasado'
+                              : 'Pendente'}
+                        </span>
+                      </div>
+                    );
+                  })()}
 
                   <AthleteCard
                     athlete={athlete}
