@@ -219,6 +219,13 @@ export default function TemplateFormDrawer({
               </button>
             </div>
 
+            {/* Timeline Visual — sticky above form (#465) */}
+            {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
+              <div className="px-6 py-3 border-b border-ceramic-text-secondary/10 bg-ceramic-base/95 backdrop-blur-sm">
+                <TimelineVisual series={formData.exercise_structure.series} />
+              </div>
+            )}
+
             {/* Form Content (scrollable) */}
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-6">
@@ -370,11 +377,6 @@ export default function TemplateFormDrawer({
                           {cooldownCharCount}/140
                         </span>
                       </div>
-
-                      {/* Timeline Visual (after cooldown) */}
-                      {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
-                        <TimelineVisual series={formData.exercise_structure.series} />
-                      )}
 
                       {/* Coach Notes */}
                       <div>

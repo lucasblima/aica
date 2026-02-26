@@ -1061,6 +1061,30 @@ export default function CRMCommandCenterView() {
                     onCopyLink={() => {}}
                     groupTags={athleteGroupTags}
                   />
+
+                  {/* CRM extra info: all practiced modalities + level */}
+                  {athlete.practiced_modalities && athlete.practiced_modalities.length > 1 && (
+                    <div className="px-4 py-2 bg-ceramic-cool/50 border-t border-ceramic-border flex items-center gap-1.5 flex-wrap rounded-b-xl -mt-1">
+                      <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mr-1">
+                        Modalidades:
+                      </span>
+                      {athlete.practiced_modalities.map((mod) => {
+                        const config = MODALITY_CONFIG[mod as TrainingModality];
+                        return config ? (
+                          <span
+                            key={mod}
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-ceramic-base rounded text-[10px] font-medium text-ceramic-text-primary"
+                            title={config.label}
+                          >
+                            {config.icon} {config.label}
+                          </span>
+                        ) : null;
+                      })}
+                      <span className="text-[10px] text-ceramic-text-secondary ml-1">
+                        &bull; {LEVEL_LABELS[athlete.level]}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}

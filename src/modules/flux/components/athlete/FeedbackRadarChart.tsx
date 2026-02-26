@@ -228,6 +228,24 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
           return <circle key={i} cx={x} cy={y} r={3} fill={accentColor} />;
         })}
 
+        {/* Numeric scale labels along first axis (12 o'clock) */}
+        {rings.map((ring) => {
+          const r = (ring / MAX_VALUE) * radius;
+          const { x, y } = polarToCartesian(cx, cy, r, 0);
+          return (
+            <text
+              key={`scale-${ring}`}
+              x={x + 8}
+              y={y}
+              textAnchor="start"
+              dominantBaseline="middle"
+              className="fill-ceramic-text-secondary text-[8px] font-bold"
+            >
+              {ring}
+            </text>
+          );
+        })}
+
         {/* Axis labels */}
         {labelPositions.map(({ label, x, y }, i) => (
           <text
