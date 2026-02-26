@@ -39,7 +39,11 @@ import {
   CheckCircle,
   Lock,
   Unlock,
+  DollarSign,
 } from 'lucide-react';
+import { PaymentRuler } from '../components/athlete/PaymentRuler';
+import { getPaymentData } from '../services/athleteService';
+import type { AthletePaymentData } from '../services/athleteService';
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
@@ -98,6 +102,14 @@ export default function AthleteDetailView() {
   // Block/unblock athlete state
   const [blockingAthlete, setBlockingAthlete] = useState(false);
 
+  // Payment / Financial state (#463)
+  const [financeOpen, setFinanceOpen] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    payment_due_day: '',
+    monthly_fee: '',
+  });
+  const [paymentSaving, setPaymentSaving] = useState(false);
+
   const docs = useAthleteDocuments({ athleteId: athleteId || '' });
 
   useEffect(() => {
@@ -131,6 +143,16 @@ export default function AthleteDetailView() {
       birth_date: athlete.birth_date || '',
       practiced_modalities: athlete.practiced_modalities || [],
       practice_duration_months: athlete.practice_duration_months?.toString() || '',
+    });
+  }, [athlete]);
+
+  // Populate payment form when athlete loads (#463)
+  useEffect(() => {
+    if (!athlete) return;
+    const pd = getPaymentData(athlete);
+    setPaymentForm({
+      payment_due_day: pd.payment_due_day?.toString() || '',
+      monthly_fee: pd.monthly_fee?.toString() || '',
     });
   }, [athlete]);
 
@@ -301,6 +323,62 @@ export default function AthleteDetailView() {
       }
     } finally {
       setBlockingAthlete(false);
+    }
+  };
+
+  // Handle payment save (#463)
+  const handlePaymentSave = async () => {
+    if (!athleteId || !athlete) return;
+    setPaymentSaving(true);
+    try {
+      const currentPayment = getPaymentData(athlete);
+      const paymentData: AthletePaymentData = {
+        payment_due_day: paymentForm.payment_due_day
+          ? parseInt(paymentForm.payment_due_day, 10)
+          : undefined,
+        monthly_fee: paymentForm.monthly_fee
+          ? parseFloat(paymentForm.monthly_fee)
+          : undefined,
+        payment_status: currentPayment.payment_status,
+        last_payment_date: currentPayment.last_payment_date,
+      };
+      const { error } = await AthleteService.updatePaymentInfo(athleteId, paymentData);
+      if (error) {
+        console.error('Error saving payment info:', error);
+      } else {
+        const { data } = await AthleteService.getAthleteById(athleteId);
+        if (data) setAthlete(data);
+      }
+    } finally {
+      setPaymentSaving(false);
+    }
+  };
+
+  // Handle payment status toggle (#463)
+  const handleTogglePaymentStatus = async () => {
+    if (!athleteId || !athlete) return;
+    setPaymentSaving(true);
+    try {
+      const currentPayment = getPaymentData(athlete);
+      const newStatus: 'paid' | 'pending' =
+        currentPayment.payment_status === 'paid' ? 'pending' : 'paid';
+      const paymentData: AthletePaymentData = {
+        ...currentPayment,
+        payment_status: newStatus,
+        last_payment_date:
+          newStatus === 'paid'
+            ? new Date().toISOString().split('T')[0]
+            : currentPayment.last_payment_date,
+      };
+      const { error } = await AthleteService.updatePaymentInfo(athleteId, paymentData);
+      if (error) {
+        console.error('Error toggling payment status:', error);
+      } else {
+        const { data } = await AthleteService.getAthleteById(athleteId);
+        if (data) setAthlete(data);
+      }
+    } finally {
+      setPaymentSaving(false);
     }
   };
 
@@ -730,6 +808,197 @@ export default function AthleteDetailView() {
                   <>
                     <Save className="w-4 h-4" />
                     Salvar Perfil Fisico
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Financeiro Section — #463 */}
+      <div className="px-6 mb-6">
+        <div className="ceramic-card overflow-hidden">
+          <button
+            onClick={() => setFinanceOpen(!financeOpen)}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="ceramic-inset p-2">
+                <DollarSign className="w-5 h-5 text-ceramic-text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-ceramic-text-primary">Financeiro</p>
+                <p className="text-xs text-ceramic-text-secondary">
+                  Cobranca, vencimento e status
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Status badge */}
+              {(() => {
+                const pd = getPaymentData(athlete);
+                return (
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded ${
+                      pd.payment_status === 'paid'
+                        ? 'bg-ceramic-success/10 text-ceramic-success'
+                        : pd.payment_status === 'overdue'
+                          ? 'bg-ceramic-error/10 text-ceramic-error'
+                          : 'bg-ceramic-warning/10 text-ceramic-warning'
+                    }`}
+                  >
+                    {pd.payment_status === 'paid'
+                      ? 'Pago'
+                      : pd.payment_status === 'overdue'
+                        ? 'Atrasado'
+                        : 'Pendente'}
+                  </span>
+                );
+              })()}
+              <span className={`text-ceramic-text-secondary transition-transform ${financeOpen ? 'rotate-180' : ''}`}>
+                &#9662;
+              </span>
+            </div>
+          </button>
+
+          {financeOpen && (
+            <div className="p-4 pt-0 space-y-4">
+              {/* Payment Status Card */}
+              {(() => {
+                const pd = getPaymentData(athlete);
+                return (
+                  <div className="ceramic-inset p-4 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            pd.payment_status === 'paid'
+                              ? 'bg-ceramic-success/10'
+                              : pd.payment_status === 'overdue'
+                                ? 'bg-ceramic-error/10'
+                                : 'bg-ceramic-warning/10'
+                          }`}
+                        >
+                          <DollarSign
+                            className={`w-5 h-5 ${
+                              pd.payment_status === 'paid'
+                                ? 'text-ceramic-success'
+                                : pd.payment_status === 'overdue'
+                                  ? 'text-ceramic-error'
+                                  : 'text-ceramic-warning'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-ceramic-text-primary">
+                            {pd.payment_status === 'paid'
+                              ? 'Pago'
+                              : pd.payment_status === 'overdue'
+                                ? 'Atrasado'
+                                : 'Pendente'}
+                          </p>
+                          {pd.monthly_fee != null && pd.monthly_fee > 0 && (
+                            <p className="text-xs text-ceramic-text-secondary">
+                              R$ {pd.monthly_fee.toFixed(2).replace('.', ',')}
+                              {pd.payment_due_day ? ` - Dia ${pd.payment_due_day}` : ''}
+                            </p>
+                          )}
+                          {pd.last_payment_date && (
+                            <p className="text-[10px] text-ceramic-text-secondary/60">
+                              Ultimo pagamento:{' '}
+                              {new Date(pd.last_payment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Toggle button */}
+                      <button
+                        onClick={handleTogglePaymentStatus}
+                        disabled={paymentSaving}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
+                          pd.payment_status === 'paid'
+                            ? 'bg-ceramic-warning/10 text-ceramic-warning hover:bg-ceramic-warning/20 border border-ceramic-warning/20'
+                            : 'bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/20 border border-ceramic-success/20'
+                        }`}
+                      >
+                        {paymentSaving ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : pd.payment_status === 'paid' ? (
+                          'Marcar Pendente'
+                        ) : (
+                          'Marcar Pago'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Payment Ruler Visualization */}
+              {(() => {
+                const pd = getPaymentData(athlete);
+                if (!pd.payment_due_day) return null;
+                return (
+                  <PaymentRuler
+                    dueDay={pd.payment_due_day}
+                    paymentStatus={pd.payment_status}
+                  />
+                );
+              })()}
+
+              {/* Payment Settings */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
+                    Dia Vencimento (1-31)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={paymentForm.payment_due_day}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({ ...prev, payment_due_day: e.target.value }))
+                    }
+                    placeholder="Ex: 10"
+                    className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
+                    Mensalidade (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={paymentForm.monthly_fee}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({ ...prev, monthly_fee: e.target.value }))
+                    }
+                    placeholder="Ex: 250,00"
+                    className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                  />
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <button
+                onClick={handlePaymentSave}
+                disabled={paymentSaving}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ceramic-accent hover:bg-ceramic-accent/90 disabled:bg-ceramic-text-secondary/20 disabled:cursor-not-allowed text-white font-bold rounded-lg text-sm transition-all"
+              >
+                {paymentSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Salvar Financeiro
                   </>
                 )}
               </button>
