@@ -333,7 +333,7 @@ export class WorkoutTemplateService {
    */
   static async createTemplateV2(
     input: CreateWorkoutTemplateV2Input,
-    extras?: { coach_notes?: string }
+    extras?: { coach_notes?: string; is_public?: boolean }
   ): Promise<{ data: WorkoutTemplate | null; error: any }> {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -364,6 +364,11 @@ export class WorkoutTemplateService {
         insertData.coach_notes = extras.coach_notes || null;
       }
 
+      // #458: Include visibility (default false = private)
+      if (extras?.is_public !== undefined) {
+        insertData.is_public = extras.is_public;
+      }
+
       const { data, error } = await supabase
         .from('workout_templates')
         .insert(insertData)
@@ -382,7 +387,7 @@ export class WorkoutTemplateService {
    */
   static async updateTemplateV2(
     input: UpdateWorkoutTemplateV2Input,
-    extras?: { coach_notes?: string }
+    extras?: { coach_notes?: string; is_public?: boolean }
   ): Promise<{ data: WorkoutTemplate | null; error: any }> {
     try {
       const { id, ...updates } = input;
@@ -400,6 +405,11 @@ export class WorkoutTemplateService {
 
       if (extras?.coach_notes !== undefined) {
         dbUpdates.coach_notes = extras.coach_notes || null;
+      }
+
+      // #458: Include visibility
+      if (extras?.is_public !== undefined) {
+        dbUpdates.is_public = extras.is_public;
       }
 
       const { data, error } = await supabase
