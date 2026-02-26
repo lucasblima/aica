@@ -54,9 +54,8 @@ dist-ssr
 *.sw?
 
 
-# Test and E2E artifacts (test files themselves are tracked)
+# Test artifacts (generated, not source code)
 test-results/
-tests/
 playwright-report/
 tests-results/
 tests/e2e/.auth.json
