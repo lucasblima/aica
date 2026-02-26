@@ -71,6 +71,9 @@ export function AicaChatFAB({
     const handleExternalOpen = (e: Event) => {
       const detail = (e as CustomEvent).detail
       setIsOpen(true)
+      if (detail?.fullscreen) {
+        setIsExpanded(true)
+      }
       if (detail?.message) {
         // Store the message to be auto-sent once the drawer is open
         pendingMessageRef.current = detail.message

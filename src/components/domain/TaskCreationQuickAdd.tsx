@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2, Calendar, Clock, X, Sparkles, Check, XCircle, CheckCircle2, Mic, Brain, Save, ListChecks, CalendarDays } from 'lucide-react';
+import { Plus, Loader2, Calendar, Clock, Timer, X, Sparkles, Check, XCircle, CheckCircle2, Mic, Brain, Save, ListChecks, CalendarDays } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
@@ -480,22 +480,51 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 <motion.div key="task-content" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-3 overflow-hidden">
                   <textarea value={previewDescription} onChange={(e) => setPreviewDescription(e.target.value)} placeholder="Descricao (opcional)" rows={2} className="w-full px-4 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors resize-none" disabled={isLoading} />
                   <div className="flex flex-wrap gap-2">
-                    <select value={previewPriority} onChange={(e) => setPreviewPriority(e.target.value as ExtractedTaskData['priority'])} className="flex-1 min-w-[120px] px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary focus:outline-none focus:border-ceramic-accent transition-colors" disabled={isLoading}>
-                      <option value="urgent">Urgente</option>
-                      <option value="high">Alta</option>
-                      <option value="medium">Media</option>
-                      <option value="low">Baixa</option>
-                    </select>
-                    <div className="flex items-center gap-1 flex-1 min-w-[140px] px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                      <Calendar className="w-4 h-4 text-ceramic-text-secondary shrink-0" />
-                      <input type="date" value={previewDueDate} onChange={(e) => setPreviewDueDate(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} />
+                    {/* Priority */}
+                    <div className="flex flex-col gap-0.5 flex-1 min-w-[120px]">
+                      <label className="text-xs font-medium text-ceramic-text-secondary">Prioridade</label>
+                      <select
+                        value={previewPriority}
+                        onChange={(e) => setPreviewPriority(e.target.value as ExtractedTaskData['priority'])}
+                        className="w-full px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary focus:outline-none focus:border-ceramic-accent transition-colors"
+                        disabled={isLoading}
+                        aria-label="Prioridade"
+                      >
+                        <option value="urgent">Urgente</option>
+                        <option value="high">Alta</option>
+                        <option value="medium">Media</option>
+                        <option value="low">Baixa</option>
+                      </select>
                     </div>
-                    <div className="flex items-center gap-1 min-w-[110px] px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                      <Clock className="w-4 h-4 text-ceramic-text-secondary shrink-0" />
-                      <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} />
+                    {/* Due Date */}
+                    <div className="flex flex-col gap-0.5 flex-1 min-w-[140px]">
+                      <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
+                        <Calendar className="w-3 h-3" />
+                        Data Limite
+                      </label>
+                      <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
+                        <input type="date" value={previewDueDate} onChange={(e) => setPreviewDueDate(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Data Limite" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 min-w-[80px] px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                      <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="min" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} />
+                    {/* Scheduled Time */}
+                    <div className="flex flex-col gap-0.5 min-w-[110px]">
+                      <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
+                        <Clock className="w-3 h-3" />
+                        Horario
+                      </label>
+                      <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
+                        <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Horario" />
+                      </div>
+                    </div>
+                    {/* Duration */}
+                    <div className="flex flex-col gap-0.5 min-w-[100px]">
+                      <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
+                        <Timer className="w-3 h-3" />
+                        Duracao
+                      </label>
+                      <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
+                        <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="min" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} aria-label="Duracao em minutos" />
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">

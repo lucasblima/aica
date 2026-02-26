@@ -200,7 +200,7 @@ export function useVidaInputActions() {
   const openChat = useCallback((message?: string) => {
     const text = message || input.trim()
     window.dispatchEvent(
-      new CustomEvent('aica-chat-open', { detail: { message: text } })
+      new CustomEvent('aica-chat-open', { detail: { message: text, fullscreen: true } })
     )
     setInput('')
     setIntent(null)
