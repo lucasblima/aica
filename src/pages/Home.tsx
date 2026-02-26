@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { motion } from 'framer-motion';
-import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Ticket, Compass, type LucideIcon } from 'lucide-react';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
@@ -90,7 +90,6 @@ export default function Home({
    onSelectArchetype,
    onCreateAssociation
 }: HomeProps) {
-   const navigate = useNavigate();
    const { user } = useAuth();
 
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
@@ -367,40 +366,6 @@ export default function Home({
                            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">EraForge</span>
                         </div>
                         <p className="text-xs text-ceramic-text-secondary line-clamp-1">Aventuras na Historia</p>
-                     </div>
-                  </motion.div>
-               </motion.div>
-
-               {/* Convites — compact inline card */}
-               <motion.div
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={cardIndex++}
-                  onClick={() => navigate('/invites')}
-                  className="cursor-pointer"
-               >
-                  <motion.div
-                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
-                     style={{
-                        background: 'linear-gradient(135deg, #F0EFE9 0%, #FEF3C7 100%)'
-                     }}
-                     variants={cardElevationVariants}
-                     initial="rest"
-                     whileHover="hover"
-                     whileTap="pressed"
-                  >
-                     <Ticket className="absolute -right-2 -bottom-2 w-20 h-20 text-amber-500 opacity-10" />
-                     <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex items-center gap-2 mb-2">
-                           <div className="ceramic-inset p-1.5">
-                              <Ticket className="w-4 h-4 text-amber-500" />
-                           </div>
-                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Convites</span>
-                        </div>
-                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">
-                           Gerencie seus convites
-                        </p>
                      </div>
                   </motion.div>
                </motion.div>
