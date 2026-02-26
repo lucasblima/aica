@@ -166,7 +166,13 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
   const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    await createTask({ title: title.trim() });
+    await createTask({
+      title: title.trim(),
+      priority: previewPriority,
+      due_date: previewDueDate || undefined,
+      scheduled_time: previewScheduledTime || undefined,
+      estimated_duration: previewDuration ? parseInt(previewDuration) : undefined,
+    });
   };
 
   const handleSparklesClick = async () => {
@@ -405,6 +411,54 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Quick fields — always visible with labels */}
+            {!isTranscribing && (
+              <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-0.5 flex-1 min-w-[120px]">
+                  <label className="text-xs font-medium text-ceramic-text-secondary">Prioridade</label>
+                  <select
+                    value={previewPriority}
+                    onChange={(e) => setPreviewPriority(e.target.value as ExtractedTaskData['priority'])}
+                    className="w-full px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary focus:outline-none focus:border-ceramic-accent transition-colors"
+                    disabled={isLoading}
+                    aria-label="Prioridade"
+                  >
+                    <option value="urgent">Urgente</option>
+                    <option value="high">Alta</option>
+                    <option value="medium">Media</option>
+                    <option value="low">Baixa</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-0.5 flex-1 min-w-[140px]">
+                  <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
+                    <Calendar className="w-3 h-3" />
+                    Data Limite
+                  </label>
+                  <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
+                    <input type="date" value={previewDueDate} onChange={(e) => setPreviewDueDate(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Data Limite" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-0.5 min-w-[110px]">
+                  <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
+                    <Clock className="w-3 h-3" />
+                    Horario
+                  </label>
+                  <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
+                    <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Horario" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-0.5 min-w-[100px]">
+                  <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
+                    <Timer className="w-3 h-3" />
+                    Duracao
+                  </label>
+                  <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
+                    <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="min" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} aria-label="Duracao em minutos" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {error && <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-xs text-ceramic-error ml-1">{error}</motion.p>}
 

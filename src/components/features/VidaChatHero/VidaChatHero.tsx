@@ -19,7 +19,7 @@ export function VidaChatHero() {
       // Blur the hero input so mobile keyboard dismisses and FAB input can take over
       inputRef.current?.blur();
       window.dispatchEvent(
-         new CustomEvent('aica-chat-open', { detail: { message } })
+         new CustomEvent('aica-chat-open', { detail: { message, fullscreen: true } })
       );
       setInput('');
    };

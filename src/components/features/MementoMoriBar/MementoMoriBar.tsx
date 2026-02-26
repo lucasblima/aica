@@ -249,7 +249,7 @@ export function MementoMoriBar({ onSetBirthdate }: MementoMoriBarProps) {
         </div>
         {dateError && (
           <p className="text-[10px] text-red-400 mt-1">Data invalida. Use o formato DD/MM/AAAA.</p>
-        )
+        )}
       </div>
     )
   }
