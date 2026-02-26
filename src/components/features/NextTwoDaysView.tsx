@@ -54,8 +54,18 @@ export function detectEventCategory(title: string, description?: string): string
 }
 
 // Calcular tempo ate o evento
-export function calculateTimeUntil(startTime: string): string {
+// Accepts optional endTime to detect events that already ended
+export function calculateTimeUntil(startTime: string, endTime?: string): string {
   const now = new Date();
+
+  // If endTime is provided and the event has already ended, mark it
+  if (endTime) {
+    const end = new Date(endTime);
+    if (!isNaN(end.getTime()) && now >= end) {
+      return 'Encerrado';
+    }
+  }
+
   const start = new Date(startTime);
   const diffMs = start.getTime() - now.getTime();
 
@@ -131,7 +141,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
       const newMap: Record<string, string> = {};
       events.forEach(event => {
         if (event.isToday) {
-          newMap[event.id] = calculateTimeUntil(event.startTime);
+          newMap[event.id] = calculateTimeUntil(event.startTime, event.endTime);
         }
       });
       setTimeUntilMap(newMap);
