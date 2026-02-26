@@ -2,7 +2,8 @@
  * TemplateLibraryView - Biblioteca de Templates de Treino
  *
  * Tela 1 do Flow Module: Grid filtrável de templates com drag support,
- * quick actions (edit/duplicate/delete/favorite), e criação de novos templates.
+ * quick actions (duplicate/delete/favorite), e criação de novos templates.
+ * #458: Templates are immutable — no edit action. Only clone + delete (own only).
  */
 
 import React, { useState, useEffect } from 'react';
@@ -12,7 +13,6 @@ import {
   Plus,
   Star,
   Copy,
-  Edit2,
   Trash2,
   GripVertical,
   X,
@@ -86,10 +86,9 @@ export default function TemplateLibraryView() {
   const location = useLocation();
 
   // Determine mode based on URL
-  const mode: 'create' | 'edit' | 'list' = location.pathname.includes('/new')
+  // #458: Edit mode removed — templates are immutable. Edit URLs redirect to list.
+  const mode: 'create' | 'list' = location.pathname.includes('/new')
     ? 'create'
-    : location.pathname.includes('/edit')
-    ? 'edit'
     : 'list';
 
   // Auth for creator attribution
@@ -110,30 +109,20 @@ export default function TemplateLibraryView() {
     applyFilters();
   }, [templates, filters]);
 
-  // Load template for editing
+  // #458: Redirect legacy /edit URLs to list (templates are immutable)
   useEffect(() => {
-    if (mode === 'edit' && templateId) {
-      loadTemplateForEdit(templateId);
-    } else if (mode === 'list') {
+    if (location.pathname.includes('/edit')) {
+      navigate('/flux/templates', { replace: true });
+      return;
+    }
+    if (mode === 'list') {
       setEditingTemplate(null);
       setModalOpen(false);
     } else if (mode === 'create') {
       setEditingTemplate(null);
       setModalOpen(true);
     }
-  }, [mode, templateId]);
-
-  const loadTemplateForEdit = async (id: string) => {
-    const { data, error } = await WorkoutTemplateService.getTemplateById(id);
-
-    if (error) {
-      console.error('Error loading template:', error);
-      navigate('/flux/templates');
-    } else if (data) {
-      setEditingTemplate(data);
-      setModalOpen(true);
-    }
-  };
+  }, [mode, templateId, location.pathname]);
 
   const handleModalClose = () => {
     setModalOpen(false);
@@ -142,16 +131,8 @@ export default function TemplateLibraryView() {
   };
 
   const handleModalSave = (template: WorkoutTemplate) => {
-    // Optimistic update — immediately reflect the saved template in the grid
-    setFilteredTemplates((prev) => {
-      const exists = prev.some((t) => t.id === template.id);
-      if (exists) {
-        // Edit: replace existing template
-        return prev.map((t) => (t.id === template.id ? template : t));
-      }
-      // Create: prepend new template
-      return [template, ...prev];
-    });
+    // Optimistic update — prepend new template to grid (#458: no edit path)
+    setFilteredTemplates((prev) => [template, ...prev]);
 
     // Also refresh from DB to ensure consistency with real-time subscription
     refresh();
@@ -422,8 +403,9 @@ export default function TemplateLibraryView() {
       </div>
 
       {/* Template Form Drawer */}
+      {/* #458: Always create mode — templates are immutable */}
       <TemplateFormDrawer
-        mode={mode === 'edit' ? 'edit' : 'create'}
+        mode="create"
         initialData={editingTemplate || undefined}
         isOpen={isModalOpen}
         onClose={handleModalClose}
@@ -458,7 +440,6 @@ function TemplateCard({
   onDragEnd,
   isDragging,
 }: TemplateCardProps) {
-  const navigate = useNavigate();
   const modalityConfig = MODALITY_CONFIG[template.modality as TrainingModality];
 
   return (
@@ -606,16 +587,8 @@ function TemplateCard({
           )}
         </div>
 
-        {/* Actions */}
+        {/* Actions — #458: Templates are immutable (no Edit button) */}
         <div className="flex items-center gap-2 pt-2 border-t border-ceramic-text-secondary/10">
-          <button
-            onClick={() => navigate(`/flux/templates/${template.id}/edit`)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-colors"
-          >
-            <Edit2 className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-            <span className="text-xs font-medium text-ceramic-text-primary">Editar</span>
-          </button>
-
           <button
             onClick={() => onDuplicate(template)}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-colors"
@@ -624,12 +597,15 @@ function TemplateCard({
             <span className="text-xs font-medium text-ceramic-text-primary" title="Cria um novo template com base neste">Criar a partir deste</span>
           </button>
 
-          <button
-            onClick={() => onDelete(template)}
-            className="px-3 py-2 ceramic-inset hover:bg-ceramic-error/10 rounded-lg transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-ceramic-error" />
-          </button>
+          {/* Delete only for own templates */}
+          {currentUserId && template.user_id === currentUserId && (
+            <button
+              onClick={() => onDelete(template)}
+              className="px-3 py-2 ceramic-inset hover:bg-ceramic-error/10 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-ceramic-error" />
+            </button>
+          )}
         </div>
       </div>
     </div>
