@@ -136,7 +136,7 @@ export function MementoMoriBar({ onSetBirthdate }: MementoMoriBarProps) {
   const { user } = useAuth()
   const { birthdate, gender, isLoading } = useUserBirthdate()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [dateInput, setDateInput] = useState('')
+  const [dateInput, setDateInput] = useState('') // DD/MM/AAAA display format
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [dateError, setDateError] = useState(false)
