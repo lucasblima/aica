@@ -37,6 +37,8 @@ import {
   Calculator,
   Save,
   CheckCircle,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 
 const AVATAR_COLORS = [
@@ -92,6 +94,9 @@ export default function AthleteDetailView() {
     practice_duration_months: '',
   });
   const [profileSaving, setProfileSaving] = useState(false);
+
+  // Block/unblock athlete state
+  const [blockingAthlete, setBlockingAthlete] = useState(false);
 
   const docs = useAthleteDocuments({ athleteId: athleteId || '' });
 
@@ -282,6 +287,23 @@ export default function AthleteDetailView() {
     }
   };
 
+  // Handle block/unblock athlete
+  const handleToggleBlock = async () => {
+    if (!athleteId || !athlete) return;
+    setBlockingAthlete(true);
+    try {
+      const newStatus = athlete.status === 'paused' ? 'active' : 'paused';
+      const { data, error } = await AthleteService.updateStatus(athleteId, newStatus);
+      if (error) {
+        console.error('Error toggling athlete block status:', error);
+      } else if (data) {
+        setAthlete(data);
+      }
+    } finally {
+      setBlockingAthlete(false);
+    }
+  };
+
   // Handle back
   const handleBack = () => {
     actions.viewDashboard();
@@ -329,6 +351,19 @@ export default function AthleteDetailView() {
           </div>
           <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
         </button>
+
+        {/* Blocked Banner */}
+        {athlete.status === 'paused' && (
+          <div className="flex items-center gap-3 p-4 mb-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
+            <Lock className="w-5 h-5 text-ceramic-error flex-shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-ceramic-error">Atleta Bloqueado</p>
+              <p className="text-xs text-ceramic-error/80">
+                Este atleta esta com acesso pausado e nao pode visualizar treinos.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Athlete Profile Card */}
         <div className="ceramic-card p-6 space-y-4">
@@ -777,7 +812,7 @@ export default function AthleteDetailView() {
                 <Calendar className="w-5 h-5 text-ceramic-info" />
               </div>
               <div>
-                <p className="text-sm font-bold text-ceramic-text-primary">Prescrever Treino</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">Prescrever e ver Treinos</p>
                 <p className="text-xs text-ceramic-text-secondary">Plano de 4 semanas</p>
               </div>
             </div>
@@ -823,6 +858,40 @@ export default function AthleteDetailView() {
               <span className="text-xs font-bold text-ceramic-success">Treino Liberado</span>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Gerenciamento Section — #464 */}
+      <div className="px-6 mb-6">
+        <h2 className="text-lg font-bold text-ceramic-text-primary mb-3">
+          Gerenciamento
+        </h2>
+        <div className="ceramic-card p-4">
+          <button
+            onClick={handleToggleBlock}
+            disabled={blockingAthlete}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+              athlete.status === 'paused'
+                ? 'bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/20 border border-ceramic-success/20'
+                : 'bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 border border-ceramic-error/20'
+            }`}
+          >
+            {blockingAthlete ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : athlete.status === 'paused' ? (
+              <Unlock className="w-5 h-5" />
+            ) : (
+              <Lock className="w-5 h-5" />
+            )}
+            <div className="text-left">
+              <p>{athlete.status === 'paused' ? 'Desbloquear Atleta' : 'Bloquear Atleta'}</p>
+              <p className="text-xs font-normal opacity-70">
+                {athlete.status === 'paused'
+                  ? 'Reativar acesso aos treinos'
+                  : 'Pausar acesso aos treinos'}
+              </p>
+            </div>
+          </button>
         </div>
       </div>
 
