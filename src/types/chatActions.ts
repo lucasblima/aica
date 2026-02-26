@@ -11,7 +11,9 @@ export type ChatActionType =
   | 'start_task'
   | 'update_priority'
   | 'reschedule_task'
-  | 'create_moment';
+  | 'create_moment'
+  | 'create_task'
+  | 'create_tasks';
 
 export interface ChatAction {
   /** Unique action ID (e.g., "complete_task_abc123") */
@@ -23,7 +25,7 @@ export interface ChatAction {
   /** Lucide icon name (e.g., "CheckCircle", "Play", "Calendar") */
   icon: string;
   /** Source module for the action */
-  module: 'atlas' | 'journey';
+  module: 'atlas' | 'journey' | 'agenda';
   /** Parameters passed to execute_chat_action */
   params: Record<string, string | number | boolean>;
 }

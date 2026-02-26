@@ -12,6 +12,7 @@ import {
   Calendar,
   Star,
   PenLine,
+  Plus,
   Loader2,
   AlertCircle,
 } from 'lucide-react'
@@ -23,6 +24,7 @@ const ICON_MAP: Record<string, typeof CheckCircle> = {
   Calendar,
   Star,
   PenLine,
+  Plus,
 }
 
 interface ChatActionButtonsProps {
@@ -55,7 +57,7 @@ export function ChatActionButtons({ actions, onExecute }: ChatActionButtonsProps
 
   if (!actions.length) return null
 
-  const visibleActions = actions.slice(0, 3)
+  const visibleActions = actions.slice(0, 5)
 
   return (
     <div className="aica-fab-actions">
