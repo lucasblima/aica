@@ -21,6 +21,7 @@ import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
 import { AuthGuard } from '../components/guards/AuthGuard';
 import { ActivationGuard } from '../components/guards/ActivationGuard';
+import { AdminGuard } from '../components/guards/AdminGuard';
 import { AicaChatFAB } from '../components/features/AicaChatFAB';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -94,6 +95,7 @@ const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m =
 const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingPage })));
 const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
+const AdminCouponsPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminCouponsPage })));
 
 // Invites Dashboard - Manage sent invites
 const InvitesPage = lazy(() => import('../pages/InvitesPage'));
@@ -858,6 +860,12 @@ export function AppRouter() {
                <Route
                   path="/manage-subscription"
                   element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
+               />
+
+               {/* Admin Routes - Protected by AdminGuard */}
+               <Route
+                  path="/admin/coupons"
+                  element={<ProtectedRoute><AdminGuard><AdminCouponsPage /></AdminGuard></ProtectedRoute>}
                />
 
                {/* Module Hub - Coming Soon system (CS-004) */}
