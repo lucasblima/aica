@@ -2,15 +2,18 @@
  * FluxDashboard - Main coach dashboard view (navigation hub)
  *
  * Clean overview page with navigation cards to Atletas (CRM), Biblioteca,
- * and Meus Treinos. Athlete management is accessed through /flux/crm.
+ * Meus Treinos, and Assessoria Esportiva. Athlete management is accessed
+ * through /flux/crm. Assessoria links to Connections Ventures.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAthletes } from '../hooks/useAthletes';
 import { useAthleteActivity } from '../hooks/useAthleteActivity';
 import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
-import { ArrowLeft, Users, BookOpen, Dumbbell, CheckCircle, X } from 'lucide-react';
+import { useAssessoriaEsportiva } from '../hooks/useAssessoriaEsportiva';
+import { CreateAssessoriaModal } from '../components/CreateAssessoriaModal';
+import { ArrowLeft, Users, BookOpen, Dumbbell, Briefcase, CheckCircle, X, ExternalLink } from 'lucide-react';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 export default function FluxDashboard() {
@@ -24,6 +27,17 @@ export default function FluxDashboard() {
 
   // Workout templates count
   const { templates } = useWorkoutTemplates();
+
+  // Assessoria Esportiva
+  const {
+    assessoria,
+    hasAssessoria,
+    isLoading: assessoriaLoading,
+    create: createAssessoria,
+    navigateToAssessoria,
+  } = useAssessoriaEsportiva();
+  const [showCreateAssessoria, setShowCreateAssessoria] = useState(false);
+  const [isCreatingAssessoria, setIsCreatingAssessoria] = useState(false);
 
   // Aggregate stats (for card badges only)
   const activeAthletes = allAthletes.filter((a) => a.status === 'active').length;
@@ -96,7 +110,7 @@ export default function FluxDashboard() {
         </div>
 
         {/* Navigation Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Atletas Card */}
           <button
             onClick={() => navigate('/flux/crm')}
@@ -154,9 +168,46 @@ export default function FluxDashboard() {
               Portal do atleta
             </p>
           </button>
+
+          {/* Assessoria Esportiva Card */}
+          <button
+            onClick={() => {
+              if (hasAssessoria) {
+                navigateToAssessoria();
+              } else {
+                setShowCreateAssessoria(true);
+              }
+            }}
+            className="bg-white rounded-xl p-6 shadow-sm border border-ceramic-border/30 hover:shadow-md transition-shadow cursor-pointer text-left group relative"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                <Briefcase className="w-6 h-6 text-purple-600" />
+              </div>
+              {hasAssessoria && (
+                <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600">
+                  <ExternalLink className="w-3 h-3" />
+                  Abrir
+                </span>
+              )}
+              {!hasAssessoria && !assessoriaLoading && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600">
+                  Criar
+                </span>
+              )}
+            </div>
+            <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">
+              {hasAssessoria ? assessoria!.name : 'Assessoria Esportiva'}
+            </h3>
+            <p className="text-sm text-ceramic-text-secondary">
+              {hasAssessoria
+                ? 'Gerencie sua assessoria no Connections'
+                : 'Configure sua assessoria esportiva'}
+            </p>
+          </button>
         </div>
 
-        {/* #442: Stats and Novo Atleta button removed — accessed via Command Center */}
+        {/* #442: Stats and Novo Atleta button removed — accessed via Painel do Treinador */}
       </div>
 
       {/* Activity Toast Notifications */}
@@ -188,6 +239,24 @@ export default function FluxDashboard() {
           ))}
         </div>
       )}
+
+      {/* Create Assessoria Modal */}
+      <CreateAssessoriaModal
+        isOpen={showCreateAssessoria}
+        onClose={() => setShowCreateAssessoria(false)}
+        isSubmitting={isCreatingAssessoria}
+        onSubmit={async (input) => {
+          setIsCreatingAssessoria(true);
+          try {
+            const space = await createAssessoria(input);
+            setShowCreateAssessoria(false);
+            // Navigate to the new assessoria in Connections
+            navigate(`/connections/${space.id}`);
+          } finally {
+            setIsCreatingAssessoria(false);
+          }
+        }}
+      />
 
     </div>
     </ErrorBoundary>
