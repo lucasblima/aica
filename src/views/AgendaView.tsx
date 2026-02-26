@@ -342,8 +342,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             .filter(item => !nextTwoDaysIds.has(item.id))
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-        // Check if next event is happening now
-        const isNow = nextEventData && new Date(nextEventData.startTime) <= now;
+        // Check if next event is happening now (started but not yet ended)
+        const isNow = nextEventData &&
+            new Date(nextEventData.startTime) <= now &&
+            now < new Date(nextEventData.endTime);
 
         return {
             nextEvent: nextEventData ? {
@@ -407,7 +409,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     category: detectEventCategory(event.title, event.description),
                     isToday,
                     isTomorrow,
-                    timeUntil: isToday ? calculateTimeUntil(event.startTime) : undefined,
+                    timeUntil: isToday ? calculateTimeUntil(event.startTime, event.endTime) : undefined,
                     skipped: skippedEvents.has(event.id)
                 };
             });
