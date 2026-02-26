@@ -16,6 +16,7 @@ import type {
   StreamOptions
 } from './types'
 import { createNamespacedLogger } from '@/lib/logger'
+import { checkInteractionLimit } from '@/services/billingService'
 
 const log = createNamespacedLogger('GeminiClient')
 
@@ -90,6 +91,23 @@ export class GeminiClient {
     request: GeminiChatRequest,
     options?: RetryOptions
   ): Promise<GeminiChatResponse> {
+    // Check billing limit before every AI call (fail-open: errors allow the call through)
+    try {
+      const limit = await checkInteractionLimit()
+      if (!limit.allowed) {
+        const resetDate = new Date(limit.resetsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        throw new GeminiError(
+          `Limite de interações atingido. Seus créditos acabaram. Resets às ${resetDate}.`,
+          'CREDIT_LIMIT_EXCEEDED',
+          402
+        )
+      }
+    } catch (err) {
+      // Only re-throw if it's our own credit limit error; otherwise fail-open
+      if (err instanceof GeminiError && err.code === 'CREDIT_LIMIT_EXCEEDED') throw err
+      // Billing check failure → allow the call through (non-blocking)
+    }
+
     // Determinar endpoint apropriado
     let endpoint = EDGE_FUNCTION_URL
 

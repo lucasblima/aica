@@ -21,7 +21,6 @@ import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
 import { AuthGuard } from '../components/guards/AuthGuard';
 import { ActivationGuard } from '../components/guards/ActivationGuard';
-import { AdminGuard } from '../components/guards/AdminGuard';
 import { AicaChatFAB } from '../components/features/AicaChatFAB';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -95,7 +94,6 @@ const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m =
 const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingPage })));
 const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
-const AdminCouponsPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminCouponsPage })));
 
 // Invites Dashboard - Manage sent invites
 const InvitesPage = lazy(() => import('../pages/InvitesPage'));
@@ -108,7 +106,6 @@ const LifeRPGMainView = lazy(() => import('../modules/liferpg/views/LifeRPGMainV
 const LifeRPGDetailView = lazy(() => import('../modules/liferpg/views/LifeRPGDetailView'));
 
 // Analytics/Settings - Rarely accessed
-const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
 const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
 const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => ({ default: m.default })));
 
@@ -588,10 +585,11 @@ export function AppRouter() {
                   </ErrorBoundary>
                </motion.div>
             )}
-            {currentView === 'ai-cost' && userId && (
-               <motion.div key="ai-cost" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
-                  <AICostDashboard userId={userId} onBack={() => setCurrentView('vida')} />
-               </motion.div>
+            {currentView === 'ai-cost' && (
+               // Redirect ai-cost view-state to /usage (consolidated billing dashboard)
+               <React.Fragment key="ai-cost-redirect">
+                  {(() => { navigate('/usage'); setCurrentView('vida'); return null; })()}
+               </React.Fragment>
             )}
             {currentView === 'file-search-analytics' && userId && (
                <motion.div key="file-search" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
@@ -824,10 +822,10 @@ export function AppRouter() {
                />
 
 
-               {/* AI Cost Dashboard - Protected */}
+               {/* AI Cost Dashboard - redirects to /usage (consolidated billing dashboard) */}
                <Route
                   path="/ai-cost"
-                  element={<ProtectedRoute><AICostDashboard userId={userId || ''} onBack={() => navigate('/')} /></ProtectedRoute>}
+                  element={<Navigate to="/usage" replace />}
                />
 
                {/* File Search Analytics - Protected */}
@@ -860,12 +858,6 @@ export function AppRouter() {
                <Route
                   path="/manage-subscription"
                   element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
-               />
-
-               {/* Admin Routes - Protected by AdminGuard */}
-               <Route
-                  path="/admin/coupons"
-                  element={<ProtectedRoute><AdminGuard><AdminCouponsPage /></AdminGuard></ProtectedRoute>}
                />
 
                {/* Module Hub - Coming Soon system (CS-004) */}

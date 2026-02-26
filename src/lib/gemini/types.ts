@@ -146,6 +146,7 @@ export type GeminiErrorCode =
   | 'VALIDATION_ERROR'
   | 'API_KEY_EXPIRED'
   | 'PERMISSION_DENIED'
+  | 'CREDIT_LIMIT_EXCEEDED'
 
 /**
  * Erro customizado para operações Gemini
