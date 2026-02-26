@@ -125,8 +125,13 @@ export class GeminiClient {
     }
 
     // Fazer chamada com retry
+    // agent-proxy expects flat payload (message, session_id, context), not the wrapper
+    const requestBody = DEDICATED_EDGE_FUNCTIONS[request.action] === 'agent-proxy'
+      ? request.payload as GeminiChatRequest
+      : request
+
     return callWithRetry(async () => {
-      return this.makeRequest(endpoint, request)
+      return this.makeRequest(endpoint, requestBody)
     }, options)
   }
 

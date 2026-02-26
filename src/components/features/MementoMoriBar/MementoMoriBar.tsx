@@ -6,10 +6,10 @@
  *
  * Fallback: prompts user to set birthdate if not available.
  *
- * Max human lifespan used (not life expectancy):
- *   Female: 122y (Jeanne Calment)
- *   Male: 116y (Jiroemon Kimura)
- *   Default/unknown: 119y
+ * IBGE 2024 Brazilian life expectancy:
+ *   Female: 80y (IBGE: 79.9)
+ *   Male: 73y (IBGE: 73.3)
+ *   Default/unknown: 77y (IBGE: 76.6)
  */
 
 import { useState, useMemo } from 'react'
@@ -20,20 +20,20 @@ import { updateUserProfile } from '@/services/supabaseService'
 import { useAuth } from '@/hooks/useAuth'
 import { LifeWeeksStrip } from '@/modules/journey/components/ceramic/LifeWeeksStrip'
 
-// Max recorded human lifespan by gender (not life expectancy)
-const MAX_LIFESPAN: Record<string, number> = {
-  female: 122,
-  feminino: 122,
-  f: 122,
-  male: 116,
-  masculino: 116,
-  m: 116,
+// IBGE 2024 Brazilian life expectancy by gender
+const LIFE_EXPECTANCY: Record<string, number> = {
+  female: 80,
+  feminino: 80,
+  f: 80,
+  male: 73,
+  masculino: 73,
+  m: 73,
 }
-const DEFAULT_MAX_LIFESPAN = 119
+const DEFAULT_LIFE_EXPECTANCY = 77
 
-function getMaxLifespan(gender: string | null): number {
-  if (!gender) return DEFAULT_MAX_LIFESPAN
-  return MAX_LIFESPAN[gender.toLowerCase()] ?? DEFAULT_MAX_LIFESPAN
+function getLifeExpectancy(gender: string | null): number {
+  if (!gender) return DEFAULT_LIFE_EXPECTANCY
+  return LIFE_EXPECTANCY[gender.toLowerCase()] ?? DEFAULT_LIFE_EXPECTANCY
 }
 
 interface MementoMoriBarProps {
@@ -141,8 +141,8 @@ export function MementoMoriBar({ onSetBirthdate }: MementoMoriBarProps) {
   const [saved, setSaved] = useState(false)
   const [dateError, setDateError] = useState(false)
 
-  const maxLifespanYears = getMaxLifespan(gender)
-  const totalWeeks = Math.ceil(maxLifespanYears * 52.1429)
+  const lifeExpectancyYears = getLifeExpectancy(gender)
+  const totalWeeks = Math.ceil(lifeExpectancyYears * 52.1429)
 
   const lifeData = useMemo(() => {
     if (!birthdate) return null
@@ -284,7 +284,7 @@ export function MementoMoriBar({ onSetBirthdate }: MementoMoriBarProps) {
           </div>
         </div>
 
-        {/* Life-dots visualization — each bar = 1 year of max human lifespan */}
+        {/* Life-dots visualization — each bar = 1 year of life expectancy */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -314,14 +314,14 @@ export function MementoMoriBar({ onSetBirthdate }: MementoMoriBarProps) {
 
               <LifeWeeksStrip
                 birthDate={lifeData.birthDate}
-                expectedLifespan={maxLifespanYears}
+                expectedLifespan={lifeExpectancyYears}
               />
 
               <div className="mt-3 flex items-center gap-4 text-[10px] text-ceramic-text-secondary">
                 <span>{formatter.format(lifeData.remainingWeeks)} semanas restantes</span>
                 <span className="opacity-60">
                   {/* Amber = atual · Escuro = vivido · Vazio = futuro */}
-                  Maximo: {maxLifespanYears} anos
+                  Expectativa: {lifeExpectancyYears} anos
                 </span>
               </div>
             </div>

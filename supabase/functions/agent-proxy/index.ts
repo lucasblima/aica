@@ -72,8 +72,10 @@ serve(async (req) => {
     }
 
     // Parse request body
+    // Support both direct payload and GeminiClient wrapper format
     const body = await req.json()
-    const { message, session_id, context } = body
+    const payload = body.payload || body
+    const { message, session_id, context, history } = payload
 
     if (!message) {
       return new Response(

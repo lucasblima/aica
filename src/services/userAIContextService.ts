@@ -63,7 +63,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .from('profiles')
         .select('full_name')
         .eq('id', userId)
-        .single(),
+        .maybeSingle(),
       supabase
         .from('work_items')
         .select('*', { count: 'exact', head: true })
@@ -98,15 +98,9 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .gte('transaction_date', monthStart),
     ])
 
-    // calendar_events may not exist yet — query separately with graceful fallback
-    const eventsRes = await supabase
-      .from('calendar_events')
-      .select('title, start_time')
-      .eq('user_id', userId)
-      .gte('start_time', new Date().toISOString())
-      .order('start_time', { ascending: true })
-      .limit(5)
-      .then(res => res, () => ({ data: null, error: null }))
+    // TODO: Re-enable when calendar_events table is created
+    // calendar_events table not yet migrated — skip query to avoid 404 noise
+    const eventsRes = { data: null as any, error: null }
 
     // Calculate finance summary
     let financeSummary: UserAIContext['financeSummary'] = null
