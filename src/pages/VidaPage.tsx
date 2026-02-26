@@ -6,10 +6,9 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Ticket, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
-import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget, InviteShareCard, InviteModal } from '../components';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
+import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget } from '../components';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
 // #440: LifeCouncilCard and PatternsSummary removed from /vida
@@ -17,7 +16,6 @@ import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
 import { FluxCard } from '../modules/flux';
-import { InterviewerCard } from '../modules/journey/components/interviewer';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
 // #440: useLifeCouncil and useUserPatterns removed from /vida
@@ -100,12 +98,10 @@ export default function VidaPage({
    onSelectArchetype,
    onCreateAssociation
 }: VidaPageProps) {
-   const navigate = useNavigate();
    const { user } = useAuth();
 
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileDrawerOpen, setProfileDrawerOpen] = useState(false);
-   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
 
    // Identity data from Journey CP system
    const { stats: cpStats, progress: cpProgress } = useConsciousnessPoints();
@@ -403,48 +399,6 @@ export default function VidaPage({
                   </motion.div>
                </motion.div>
 
-               {/* Convites */}
-               <motion.div
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={cardIndex++}
-                  onClick={() => navigate('/invites')}
-                  className="cursor-pointer"
-               >
-                  <motion.div
-                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
-                     style={{ background: 'linear-gradient(135deg, #F0EFE9 0%, #FEF3C7 100%)' }}
-                     variants={cardElevationVariants}
-                     initial="rest"
-                     whileHover="hover"
-                     whileTap="pressed"
-                  >
-                     <Ticket className="absolute -right-2 -bottom-2 w-20 h-20 text-amber-500 opacity-10" />
-                     <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex items-center gap-2 mb-2">
-                           <div className="ceramic-inset p-1.5">
-                              <Ticket className="w-4 h-4 text-amber-500" />
-                           </div>
-                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Convites</span>
-                        </div>
-                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">Gerencie seus convites</p>
-                     </div>
-                  </motion.div>
-               </motion.div>
-
-               {/* Interviewer */}
-               <motion.div
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={cardIndex++}
-                  onClick={() => onNavigateToView('journey')}
-                  className="cursor-pointer"
-               >
-                  <InterviewerCard compact />
-               </motion.div>
-
                {/* EraForge */}
                <motion.div
                   variants={cardVariants}
@@ -473,16 +427,6 @@ export default function VidaPage({
                         <p className="text-xs text-ceramic-text-secondary line-clamp-1">Aventuras na Historia</p>
                      </div>
                   </motion.div>
-               </motion.div>
-
-               {/* Invite Share */}
-               <motion.div
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={cardIndex++}
-               >
-                  <InviteShareCard onClick={() => setInviteModalOpen(true)} />
                </motion.div>
 
                {/* Active generic modules */}
@@ -549,11 +493,6 @@ export default function VidaPage({
             onDeleteAccount={handleDeleteAccount}
          />
 
-         {/* Invite Modal */}
-         <InviteModal
-            isOpen={isInviteModalOpen}
-            onClose={() => setInviteModalOpen(false)}
-         />
       </div>
    );
 }
