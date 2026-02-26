@@ -73,4 +73,10 @@ export { VidaChatHero } from './VidaChatHero';
 export { MultiModalInput } from './MultiModalInput';
 export type { MultiModalOutput } from './MultiModalInput';
 
+// Vida Universal Input — Text + voice + action pills for VidaPage
+export { VidaUniversalInput } from './VidaUniversalInput';
+
+// Memento Mori Bar — Life progress bar + expandable year view
+export { MementoMoriBar } from './MementoMoriBar';
+
 
