@@ -10,7 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Ticket, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget, InviteShareCard, InviteModal } from '../components';
-import { VidaChatHero } from '@/components/features/VidaChatHero';
+import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
+import { MementoMoriBar } from '@/components/features/MementoMoriBar';
 // #440: LifeCouncilCard and PatternsSummary removed from /vida
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
@@ -203,13 +204,22 @@ export default function VidaPage({
          )}
 
          <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
-            {/* Chat Hero — inline chat with expand/collapse */}
+            {/* Memento Mori — life progress bar */}
             <motion.div
                initial={{ opacity: 0, y: 10 }}
                animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.4 }}
+               transition={{ duration: 0.3 }}
             >
-               <VidaChatHero />
+               <MementoMoriBar onSetBirthdate={() => setProfileDrawerOpen(true)} />
+            </motion.div>
+
+            {/* Universal Input — text + voice + action pills */}
+            <motion.div
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.4, delay: 0.05 }}
+            >
+               <VidaUniversalInput />
             </motion.div>
 
             {/* Quick Stats — real-time user data */}

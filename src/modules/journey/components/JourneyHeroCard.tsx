@@ -1,23 +1,25 @@
 /**
- * JourneyHeroCard Component
- * CTA card for Journey module — daily question, last moment, mini stats
- * Digital Ceramic V2 - Dashboard Redesign
+ * JourneyHeroCard Component — v2
  *
- * Hero section (avatar, level, progress) moved to HeaderGlobal.
- * This card now focuses on Journey content and quick actions.
- * Layer 2 (Elevated) - The "physical card" on the ceramic table
+ * CTA card for Journey module on VidaPage.
+ * v2 changes:
+ * - Inline daily question input (answer directly without navigating)
+ * - Removed mini stats grid (duplicated Quick Stats above)
+ * - Added streak nudge when streak > 0 but no moment today
  */
 
-import React from 'react'
-import { motion } from 'framer-motion'
-import { Sparkles, ChevronRight, MessageCircleQuestion } from 'lucide-react'
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Sparkles, ChevronRight, MessageCircleQuestion,
+  Send, CheckCircle2, Loader2, Flame, Mic, MicOff,
+} from 'lucide-react'
 import { useConsciousnessPoints } from '../hooks/useConsciousnessPoints'
 import { useMoments } from '../hooks/useMoments'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import type { UserConsciousnessStats } from '../types/consciousnessPoints'
-import { getEmotionDisplay } from '../types/emotionHelper'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { isToday } from 'date-fns'
 
 interface JourneyHeroCardProps {
   onOpenJourney?: () => void
@@ -35,10 +37,33 @@ export function JourneyHeroCard({
   const isLoading = statsProp !== undefined ? false : internalCP.isLoading
 
   const { moments } = useMoments({ limit: 1, autoFetch: true })
-  const { question } = useDailyQuestion()
+  const { question, answer, isSubmitting } = useDailyQuestion()
+
+  const [answerText, setAnswerText] = useState('')
+  const [answered, setAnswered] = useState(false)
+
+  const speech = useSpeechRecognition({
+    lang: 'pt-BR',
+    onResult: (transcript) => setAnswerText(prev => prev ? `${prev} ${transcript}` : transcript),
+  })
 
   const lastMoment = moments[0]
-  const hasUnansweredQuestion = question && !question.user_response
+  const hasUnansweredQuestion = question && !question.user_response && !answered
+  const hasMomentToday = lastMoment && isToday(new Date(lastMoment.created_at))
+  const showStreakNudge = resolvedStats
+    && (resolvedStats.current_streak || 0) > 0
+    && !hasMomentToday
+
+  const handleAnswerSubmit = async () => {
+    if (!answerText.trim() || isSubmitting) return
+    try {
+      await answer(answerText.trim())
+      setAnswered(true)
+      setAnswerText('')
+    } catch {
+      // error is handled by useDailyQuestion
+    }
+  }
 
   if (isLoading) {
     return (
@@ -49,11 +74,6 @@ export function JourneyHeroCard({
         <div className="flex flex-col gap-4 animate-pulse">
           <div className="h-6 bg-ceramic-text-secondary/10 rounded w-40" />
           <div className="h-24 bg-ceramic-text-secondary/10 rounded-2xl" />
-          <div className="grid grid-cols-3 gap-2 pt-4">
-            <div className="h-12 bg-ceramic-text-secondary/10 rounded" />
-            <div className="h-12 bg-ceramic-text-secondary/10 rounded" />
-            <div className="h-12 bg-ceramic-text-secondary/10 rounded" />
-          </div>
         </div>
       </div>
     )
@@ -83,95 +103,105 @@ export function JourneyHeroCard({
         <ChevronRight className="h-5 w-5 text-[#948D82] group-hover:text-[#5C554B] transition-colors" />
       </motion.div>
 
-      {/* Last moment preview */}
-      {lastMoment && (
+      {/* Streak nudge — when streak active but no moment today */}
+      {showStreakNudge && (
         <motion.div
-          className="mb-4 p-3 ceramic-inset-shallow rounded-2xl"
+          className="mb-4 p-3 rounded-2xl bg-ceramic-warning/10 border border-ceramic-warning/20 cursor-pointer"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
+          onClick={onOpenJourney}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-[#948D82]">Ultimo momento</span>
-            <span className="text-xs text-[#948D82]">
-              {format(new Date(lastMoment.created_at), 'HH:mm', {
-                locale: ptBR,
-              })}
-            </span>
-          </div>
-
-          <div className="flex items-start gap-2">
-            {lastMoment.emotion && (
-              <span className="text-xl">{getEmotionDisplay(lastMoment.emotion).emoji}</span>
-            )}
-            <p className="text-sm text-[#5C554B] line-clamp-2">
-              {lastMoment.content || 'Audio gravado'}
+          <div className="flex items-center gap-2">
+            <Flame className="h-4 w-4 text-ceramic-warning" />
+            <p className="text-xs font-medium text-ceramic-warning">
+              Streak de {resolvedStats!.current_streak} dias! Registre um momento para manter.
             </p>
           </div>
         </motion.div>
       )}
 
-      {/* Daily Question CTA */}
-      {hasUnansweredQuestion && (
-        <motion.div
-          className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200/50 cursor-pointer group"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          onClick={onOpenJourney}
-          whileHover={{ scale: 1.01 }}
-          role="button"
-          aria-label="Responder pergunta do dia"
-        >
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-amber-100 flex-shrink-0">
-              <MessageCircleQuestion className="h-5 w-5 text-amber-600" />
+      {/* Daily Question — inline input (v2) */}
+      <AnimatePresence>
+        {hasUnansweredQuestion && (
+          <motion.div
+            className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200/50"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-start gap-3 mb-3">
+              <div className="p-2 rounded-xl bg-amber-100 flex-shrink-0">
+                <MessageCircleQuestion className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-amber-700 mb-1">
+                  Pergunta do dia
+                </p>
+                <p className="text-sm font-medium text-[#5C554B]">
+                  "{question.question_text}"
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-amber-700 mb-1">
-                Pergunta do dia
-              </p>
-              <p className="text-sm font-medium text-[#5C554B] line-clamp-2 group-hover:text-[#3D3830] transition-colors">
-                "{question.question_text}"
-              </p>
-              <p className="text-xs text-amber-600 mt-2 font-medium group-hover:text-amber-700 transition-colors">
-                Toque para responder →
-              </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={answerText}
+                onChange={(e) => setAnswerText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleAnswerSubmit()
+                  }
+                }}
+                placeholder="Sua resposta..."
+                disabled={isSubmitting}
+                className="flex-1 bg-white/60 rounded-xl px-3 py-2 text-sm text-[#5C554B] placeholder:text-amber-400/60 outline-none focus:ring-2 focus:ring-amber-400/30 disabled:opacity-60"
+              />
+              {/* Mic button for voice answer */}
+              {speech.isSupported && (
+                <button
+                  onClick={speech.toggle}
+                  disabled={isSubmitting}
+                  className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                    speech.isListening
+                      ? 'bg-ceramic-error text-white animate-pulse'
+                      : 'bg-white/60 text-amber-600 hover:bg-white/80'
+                  } disabled:opacity-40`}
+                  aria-label={speech.isListening ? 'Parar gravacao' : 'Ditar resposta'}
+                >
+                  {speech.isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                </button>
+              )}
+              <button
+                onClick={handleAnswerSubmit}
+                disabled={!answerText.trim() || isSubmitting}
+                className="shrink-0 w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center disabled:opacity-40 hover:bg-amber-600 transition-colors"
+                aria-label="Enviar resposta"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
+              </button>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
 
-      {/* Mini stats grid */}
-      {resolvedStats && (
-        <motion.div
-          className="grid grid-cols-3 gap-2 pt-4 border-t border-[#A39E91]/20"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="text-center">
-            <div className="text-lg font-bold text-[#5C554B]">
-              {resolvedStats.total_moments}
-            </div>
-            <div className="text-xs text-[#948D82]">Momentos</div>
-          </div>
-
-          <div className="text-center">
-            <div className="text-lg font-bold text-[#5C554B]">
-              {resolvedStats.total_questions_answered}
-            </div>
-            <div className="text-xs text-[#948D82]">Perguntas</div>
-          </div>
-
-          <div className="text-center">
-            <div className="text-lg font-bold text-[#5C554B]">
-              {resolvedStats.longest_streak}
-            </div>
-            <div className="text-xs text-[#948D82]">Recorde</div>
-          </div>
-        </motion.div>
-      )}
+        {/* Success after answering */}
+        {answered && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-3 rounded-2xl bg-ceramic-success/10 border border-ceramic-success/20 flex items-center gap-2"
+          >
+            <CheckCircle2 className="h-4 w-4 text-ceramic-success" />
+            <p className="text-xs font-medium text-ceramic-success">Resposta registrada!</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
