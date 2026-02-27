@@ -16,6 +16,7 @@ export interface KeyMoment {
 
 export interface WeeklySummaryData {
   emotionalTrend: EmotionalTrend
+  trendJustification?: string
   dominantEmotions: string[]
   keyMoments: KeyMoment[]
   insights: string[]
@@ -84,6 +85,14 @@ export function getWeekDateRange(year: number, week: number): { start: Date; end
   const end = new Date(ISOweekStart)
   end.setDate(end.getDate() + 6)
   return { start, end }
+}
+
+// Emotional trend labels (Portuguese display names)
+export const EMOTIONAL_TREND_LABELS: Record<EmotionalTrend, string> = {
+  ascending: 'Ascendente',
+  stable: 'Estável',
+  descending: 'Em declínio',
+  volatile: 'Volátil',
 }
 
 // Emotional trend descriptions
