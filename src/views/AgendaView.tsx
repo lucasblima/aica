@@ -84,13 +84,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     const MOBILE_VIEWS: AgendaMode[] = ['agenda', 'list', 'kanban', 'matrix'];
     const SWIPE_THRESHOLD = 60;
+    const SWIPE_VELOCITY = 100;
 
     const handleSwipe = useCallback((_: unknown, info: PanInfo) => {
       if (isDesktop) return;
       const currentIndex = MOBILE_VIEWS.indexOf(mobileMode);
-      if (info.offset.x < -SWIPE_THRESHOLD && info.velocity.x < -100 && currentIndex < MOBILE_VIEWS.length - 1) {
+      if (info.offset.x < -SWIPE_THRESHOLD && info.velocity.x < -SWIPE_VELOCITY && currentIndex < MOBILE_VIEWS.length - 1) {
         setMobileMode(MOBILE_VIEWS[currentIndex + 1]);
-      } else if (info.offset.x > SWIPE_THRESHOLD && info.velocity.x > 100 && currentIndex > 0) {
+      } else if (info.offset.x > SWIPE_THRESHOLD && info.velocity.x > SWIPE_VELOCITY && currentIndex > 0) {
         setMobileMode(MOBILE_VIEWS[currentIndex - 1]);
       }
     }, [mobileMode, isDesktop]);
@@ -1015,7 +1016,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     <AnimatePresence mode="wait">
                         <motion.main
                             key={mobileMode}
-                            drag="x"
+                            drag={isDesktop ? false : "x"}
                             dragConstraints={{ left: 0, right: 0 }}
                             dragElastic={0.15}
                             dragDirectionLock

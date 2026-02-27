@@ -84,7 +84,7 @@ export function ChatActionButtons({ actions, onExecute }: ChatActionButtonsProps
             ) : (
               <Star size={12} />
             )}
-            <span>{status === 'success' ? 'Feito!' : action.label}</span>
+            <span>{status === 'success' ? 'Feito!' : status === 'error' ? 'Erro — tente novamente' : action.label}</span>
           </button>
         )
       })}
