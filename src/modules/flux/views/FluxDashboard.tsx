@@ -95,19 +95,39 @@ export default function FluxDashboard() {
           <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
         </button>
 
-        <div data-tour="flux-header" className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 ceramic-card flex items-center justify-center">
-            <span className="text-3xl">{hasAssessoria ? '🏢' : '🏋️'}</span>
+        {hasAssessoria ? (
+          <button
+            onClick={() => navigate(`/connections/${assessoria!.id}`)}
+            className="flex items-center gap-4 mb-8 text-left group"
+            data-tour="flux-header"
+          >
+            <div className="w-16 h-16 ceramic-card flex items-center justify-center group-hover:shadow-md transition-shadow">
+              <span className="text-3xl">🏢</span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 group-hover:text-ceramic-accent transition-colors">
+                {assessoria!.name}
+              </p>
+              <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
+                Flux
+              </h1>
+            </div>
+          </button>
+        ) : (
+          <div data-tour="flux-header" className="flex items-center gap-4 mb-8">
+            <div className="w-16 h-16 ceramic-card flex items-center justify-center">
+              <span className="text-3xl">🏋️</span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5">
+                Gestao de Treinos
+              </p>
+              <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
+                Flux
+              </h1>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5">
-              {hasAssessoria ? assessoria!.name : 'Gestao de Treinos'}
-            </p>
-            <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
-              Flux
-            </h1>
-          </div>
-        </div>
+        )}
 
         {/* Navigation Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -199,7 +219,7 @@ export default function FluxDashboard() {
       </div>
 
       {/* Admin Dashboard Section */}
-      <AdminDashboardSection athletes={allAthletes} />
+      <AdminDashboardSection athletes={allAthletes} templateCount={templates.length} />
 
       {/* Activity Toast Notifications */}
       {notifications.length > 0 && (
