@@ -13,6 +13,7 @@ const log = createNamespacedLogger('WeeklySummaryCard')
 import {
   EMOTIONAL_TREND_COLORS,
   EMOTIONAL_TREND_DESCRIPTIONS,
+  EMOTIONAL_TREND_LABELS,
 } from '../../types/weeklySummary'
 import {
   SparklesIcon,
@@ -181,10 +182,17 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
               className="px-4 py-2 rounded-lg font-medium text-white"
               style={{ backgroundColor: trendColor }}
             >
-              {summary.summary_data.emotionalTrend}
+              {EMOTIONAL_TREND_LABELS[summary.summary_data.emotionalTrend] || summary.summary_data.emotionalTrend}
             </div>
             <p className="text-sm text-ceramic-text-secondary">{trendDescription}</p>
           </div>
+
+          {/* Trend justification — explains WHY the trend is what it is */}
+          {summary.summary_data.trendJustification && (
+            <p className="mt-2 text-sm text-ceramic-text-secondary italic">
+              {summary.summary_data.trendJustification}
+            </p>
+          )}
         </div>
 
         {/* Dominant emotions */}

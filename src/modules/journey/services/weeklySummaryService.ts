@@ -337,8 +337,36 @@ function generateFallbackSummary(moments: Moment[]): WeeklySummaryData {
     created_at: m.created_at,
   }))
 
+  // Compute trend from sentiments
+  const sentiments = moments
+    .map(m => m.sentiment_data?.sentiment)
+    .filter(Boolean) as string[]
+  const positive = sentiments.filter(s => s === 'positive').length
+  const negative = sentiments.filter(s => s === 'negative' || s === 'very_negative').length
+  const total = sentiments.length || 1
+  const posRatio = positive / total
+  const negRatio = negative / total
+
+  let trend: import('../types/weeklySummary').EmotionalTrend = 'stable'
+  let trendJustification = 'Seus momentos apresentaram sentimento predominantemente neutro ou equilibrado esta semana.'
+
+  if (posRatio > 0.6) {
+    trend = 'ascending'
+    trendJustification = `A maioria dos seus momentos (${positive} de ${total}) teve sentimento positivo.`
+  } else if (negRatio > 0.6) {
+    trend = 'descending'
+    const emotionHint = dominantEmotions.length > 0
+      ? ` As emoções predominantes foram: ${dominantEmotions.slice(0, 2).join(', ')}.`
+      : ''
+    trendJustification = `A maioria dos seus momentos (${negative} de ${total}) teve sentimento negativo.${emotionHint}`
+  } else if (positive > 0 && negative > 0 && Math.abs(positive - negative) <= 1) {
+    trend = 'volatile'
+    trendJustification = `Seus momentos alternaram entre positivos (${positive}) e negativos (${negative}), indicando oscilações emocionais.`
+  }
+
   return {
-    emotionalTrend: 'stable',
+    emotionalTrend: trend,
+    trendJustification,
     dominantEmotions,
     keyMoments,
     insights: ['Você registrou ' + moments.length + ' momentos esta semana.'],
@@ -351,7 +379,8 @@ function generateFallbackSummary(moments: Moment[]): WeeklySummaryData {
  */
 function generateEmptyWeekSummary(): WeeklySummaryData {
   return {
-    emotionalTrend: 'neutral',
+    emotionalTrend: 'stable',
+    trendJustification: 'Nenhum momento foi registrado esta semana para avaliar a tendência emocional.',
     dominantEmotions: [],
     keyMoments: [],
     insights: [
