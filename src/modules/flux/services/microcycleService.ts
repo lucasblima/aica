@@ -124,10 +124,10 @@ export class MicrocycleService {
         return { data: null, error: new Error('User not authenticated') };
       }
 
-      // Calculate end_date (3 weeks from start_date)
+      // Calculate end_date (4 weeks from start_date, matches DB constraint end_date - start_date = 27)
       const startDate = new Date(input.start_date);
       const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 20); // 3 weeks - 1 day
+      endDate.setDate(endDate.getDate() + 27);
 
       const { data, error } = await supabase
         .from('microcycles')
