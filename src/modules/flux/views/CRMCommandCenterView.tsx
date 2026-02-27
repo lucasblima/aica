@@ -1132,11 +1132,11 @@ export default function CRMCommandCenterView() {
                     />
                   </div>
 
-                  {/* Payment status badge — #463 */}
+                  {/* Payment status badge — #463, repositioned below status badge (#530) */}
                   {(() => {
                     const pd = getPaymentData(athlete);
                     return (
-                      <div className="absolute top-3 right-3 z-20">
+                      <div className="absolute top-12 right-3 z-20">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             pd.payment_status === 'paid'

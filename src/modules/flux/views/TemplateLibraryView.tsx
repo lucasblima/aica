@@ -185,6 +185,12 @@ export default function TemplateLibraryView() {
   };
 
   const handleToggleFavorite = async (template: WorkoutTemplate) => {
+    // Guard: only the owner can favorite their own templates (RLS blocks PATCH on others)
+    if (user && template.user_id !== user.id) {
+      console.warn('[TemplateLibraryView] Cannot favorite community template — not owner');
+      return;
+    }
+
     const newFavorite = !template.is_favorite;
 
     // Optimistic update — reflect change immediately in UI
@@ -456,22 +462,31 @@ function TemplateCard({
         <GripVertical className="w-5 h-5 text-ceramic-text-secondary" />
       </div>
 
-      {/* Favorite Button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite(template);
-        }}
-        className="absolute top-3 right-3 p-2 rounded-lg ceramic-inset hover:bg-white/50 transition-colors z-10"
-      >
-        <Star
-          className={`w-4 h-4 ${
-            template.is_favorite
-              ? 'fill-ceramic-warning text-ceramic-warning'
-              : 'text-ceramic-text-secondary'
-          }`}
-        />
-      </button>
+      {/* Favorite Button — only for own templates (RLS blocks PATCH on community templates) */}
+      {(!currentUserId || template.user_id === currentUserId) ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(template);
+          }}
+          className="absolute top-3 right-3 p-2 rounded-lg ceramic-inset hover:bg-white/50 transition-colors z-10"
+        >
+          <Star
+            className={`w-4 h-4 ${
+              template.is_favorite
+                ? 'fill-ceramic-warning text-ceramic-warning'
+                : 'text-ceramic-text-secondary'
+            }`}
+          />
+        </button>
+      ) : (
+        <div
+          className="absolute top-3 right-3 p-2 rounded-lg ceramic-inset opacity-30 cursor-not-allowed z-10"
+          title="Apenas seus próprios templates podem ser favoritados"
+        >
+          <Star className="w-4 h-4 text-ceramic-text-secondary" />
+        </div>
+      )}
 
       {/* Card Content */}
       <div className="p-4 space-y-3">

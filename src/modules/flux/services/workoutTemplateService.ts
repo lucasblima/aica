@@ -193,6 +193,14 @@ export class WorkoutTemplateService {
         .select()
         .maybeSingle();
 
+      // RLS blocks PATCH on templates the user doesn't own — returns null without error
+      if (data === null && !error) {
+        return {
+          data: null,
+          error: new Error('Cannot favorite this template. Only your own templates can be favorited.'),
+        };
+      }
+
       return { data: data ?? null, error };
     } catch (error) {
       console.error('[WorkoutTemplateService] Error toggling favorite:', error);
