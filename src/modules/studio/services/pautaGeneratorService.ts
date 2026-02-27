@@ -62,6 +62,9 @@ export interface GeneratedPauta {
   controversies: Controversy[]
   keyFacts: string[]
   technicalSheet?: TechnicalSheetData
+
+  // Generation feedback
+  stepsFailed: string[]
 }
 
 export interface PautaOutline {
@@ -230,40 +233,134 @@ class PautaGeneratorService {
       throw new Error('Guest name is required to generate pauta')
     }
 
+    const stepsFailed: string[] = []
+
     try {
-      // Step 1: Deep Research (30%)
-      onProgress?.('Researching information about the guest...', 10)
-      const research = await this.performDeepResearch(guestName.trim(), theme?.trim(), sources)
-      onProgress?.('Research complete', 30)
+      // Step 1: Deep Research (0-25%)
+      onProgress?.('Etapa 1/5: Iniciando pesquisa sobre o convidado...', 2)
+      onProgress?.('Etapa 1/5: Consultando fontes de informacao...', 8)
+      let research: Awaited<ReturnType<typeof this.performDeepResearch>>
+      try {
+        research = await this.performDeepResearch(guestName.trim(), theme?.trim(), sources)
+      } catch {
+        stepsFailed.push('Pesquisa')
+        research = {
+          biography: `${guestName} e uma personalidade a ser pesquisada. Informacoes detalhadas estarao disponiveis em breve.`,
+          controversies: [],
+          keyFacts: [
+            `Pesquisa sobre ${guestName}`,
+            theme ? `Tema: ${theme}` : 'Tema a ser definido'
+          ],
+          sourceCitations: [],
+          suggestedTheme: theme || 'Carreira e Trajetoria'
+        }
+      }
+      onProgress?.('Etapa 1/5: Analisando resultados da pesquisa...', 18)
+      onProgress?.('Etapa 1/5: Pesquisa concluida', 25)
 
-      // Step 2: Generate Outline (50%)
-      onProgress?.('Creating pauta structure...', 40)
-      const outline = await this.generateOutline(
-        guestName,
-        theme || research.suggestedTheme,
-        research,
-        style,
-        duration
-      )
-      onProgress?.('Structure created', 50)
+      // Step 2: Generate Outline (25-45%)
+      onProgress?.('Etapa 2/5: Preparando estrutura da pauta...', 28)
+      onProgress?.('Etapa 2/5: Criando roteiro do episodio...', 33)
+      let outline: PautaOutline
+      try {
+        outline = await this.generateOutline(
+          guestName,
+          theme || research.suggestedTheme,
+          research,
+          style,
+          duration
+        )
+      } catch {
+        stepsFailed.push('Estrutura')
+        outline = {
+          title: `Entrevista com ${guestName}: ${theme || research.suggestedTheme}`,
+          introduction: {
+            title: 'Abertura',
+            description: 'Apresentacao do convidado',
+            duration: 5,
+            keyPoints: ['Apresentar convidado', 'Contextualizar tema']
+          },
+          mainSections: [
+            {
+              title: 'Trajetoria',
+              description: 'Historia e carreira',
+              duration: 20,
+              keyPoints: ['Inicio da carreira', 'Momentos marcantes', 'Desafios superados']
+            },
+            {
+              title: 'Atualidade',
+              description: 'Projetos atuais',
+              duration: 20,
+              keyPoints: ['Projetos em andamento', 'Visao de futuro']
+            }
+          ],
+          conclusion: {
+            title: 'Encerramento',
+            description: 'Mensagem final',
+            duration: 5,
+            keyPoints: ['Agradecimentos', 'Proximos passos']
+          }
+        }
+      }
+      onProgress?.('Etapa 2/5: Estrutura criada', 45)
 
-      // Step 3: Generate Questions (75%)
-      onProgress?.('Generating questions...', 60)
-      const questions = await this.generateQuestions(
-        guestName,
-        outline,
-        research,
-        context
-      )
-      onProgress?.('Questions generated', 75)
+      // Step 3: Generate Questions (45-70%)
+      onProgress?.('Etapa 3/5: Elaborando perguntas por categoria...', 48)
+      onProgress?.('Etapa 3/5: Gerando perguntas de abertura e desenvolvimento...', 55)
+      let questions: PautaQuestion[]
+      try {
+        questions = await this.generateQuestions(
+          guestName,
+          outline,
+          research,
+          context
+        )
+      } catch {
+        stepsFailed.push('Perguntas')
+        questions = [
+          {
+            id: 'q1',
+            text: `${guestName}, como voce descreveria sua trajetoria ate aqui?`,
+            category: 'abertura',
+            followUps: ['O que te motivou a seguir esse caminho?'],
+            priority: 'high'
+          },
+          {
+            id: 'q2',
+            text: 'Qual foi o maior desafio que voce enfrentou na carreira?',
+            category: 'desenvolvimento',
+            followUps: ['Como voce superou?', 'O que aprendeu com isso?'],
+            priority: 'high'
+          },
+          {
+            id: 'q3',
+            text: 'O que voce diria para quem esta comecando na area?',
+            category: 'fechamento',
+            followUps: [],
+            priority: 'medium'
+          }
+        ]
+      }
+      onProgress?.('Etapa 3/5: Perguntas geradas', 70)
 
-      // Step 4: Generate Ice Breakers (90%)
-      onProgress?.('Creating ice breaker questions...', 80)
-      const iceBreakers = await this.generateIceBreakers(guestName, research)
-      onProgress?.('Ice breakers created', 90)
+      // Step 4: Generate Ice Breakers (70-88%)
+      onProgress?.('Etapa 4/5: Criando perguntas quebra-gelo...', 73)
+      onProgress?.('Etapa 4/5: Personalizando perguntas leves...', 80)
+      let iceBreakers: string[]
+      try {
+        iceBreakers = await this.generateIceBreakers(guestName, research)
+      } catch {
+        stepsFailed.push('Quebra-gelo')
+        iceBreakers = [
+          `${guestName}, qual foi a ultima coisa que te fez rir?`,
+          'Se pudesse jantar com qualquer pessoa, viva ou morta, quem seria?',
+          'Qual e o seu guilty pleasure?'
+        ]
+      }
+      onProgress?.('Etapa 4/5: Quebra-gelos criados', 88)
 
-      // Step 5: Compile Final Pauta (100%)
-      onProgress?.('Finalizing pauta...', 95)
+      // Step 5: Compile Final Pauta (88-100%)
+      onProgress?.('Etapa 5/5: Compilando pauta final...', 92)
       const pauta = this.compilePauta(
         outline,
         questions,
@@ -271,12 +368,14 @@ class PautaGeneratorService {
         research,
         duration
       )
-      onProgress?.('Complete pauta!', 100)
+      pauta.stepsFailed = stepsFailed
+      onProgress?.('Etapa 5/5: Pauta completa!', 100)
 
       return pauta
     } catch (error) {
       log.error('Error generating pauta:', error)
-      throw error
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido'
+      throw new Error(`Erro na geracao da pauta: ${msg}`)
     }
   }
 
@@ -704,7 +803,8 @@ Return ONLY valid JSON.
       biography: research.biography,
       controversies: research.controversies,
       keyFacts: research.keyFacts,
-      technicalSheet: research.technicalSheet
+      technicalSheet: research.technicalSheet,
+      stepsFailed: []
     }
   }
 

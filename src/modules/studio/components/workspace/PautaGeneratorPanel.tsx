@@ -32,6 +32,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  AlertTriangle,
   FileText,
   Clock,
   Target,
@@ -141,6 +142,24 @@ const CATEGORY_CONFIG: Record<string, {
 };
 
 // ============================================
+// STEP DEFINITIONS
+// ============================================
+
+const GENERATION_STEPS = [
+  { id: 1, label: 'Pesquisa' },
+  { id: 2, label: 'Estrutura' },
+  { id: 3, label: 'Perguntas' },
+  { id: 4, label: 'Quebra-gelo' },
+  { id: 5, label: 'Compilacao' },
+] as const;
+
+/** Parse "Etapa X/5: ..." format and return the step number (1-5), or null */
+function parseStepNumber(stepText: string): number | null {
+  const match = stepText.match(/^Etapa (\d+)\/5/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -226,7 +245,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
     } catch (err) {
       log.error('Error generating pauta:', err);
       setError(err instanceof Error ? err.message : 'Erro ao gerar pauta');
-      setProgress(null);
+      // Keep progress state so the error display can show the last step
     } finally {
       setIsGenerating(false);
     }
@@ -527,29 +546,94 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
 
               {/* Error Display */}
               {error && (
-                <div className="p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-error/30 flex items-start gap-3" role="alert">
-                  <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <p className="text-sm text-ceramic-error">{error}</p>
+                <div className="rounded-xl p-4 bg-ceramic-error/10 border border-ceramic-error/20" role="alert">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <div>
+                      <p className="text-ceramic-error text-sm font-medium">{error}</p>
+                      {progress && (() => {
+                        const failedStep = parseStepNumber(progress.step);
+                        const failedLabel = failedStep ? GENERATION_STEPS[failedStep - 1]?.label : null;
+                        return (
+                          <p className="text-ceramic-text-secondary text-xs mt-1">
+                            {failedLabel
+                              ? `Erro na etapa: ${failedLabel} (${progress.percentage}%)`
+                              : `Ultimo passo: ${progress.step} (${progress.percentage}%)`
+                            }
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Progress */}
-              {progress && (
-                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Loader2 className="w-5 h-5 text-amber-600 animate-spin" aria-hidden="true" />
-                    <span className="text-sm font-medium text-amber-700">{progress.step}</span>
+              {/* Progress with Step Indicator */}
+              {progress && !error && (() => {
+                const currentStep = parseStepNumber(progress.step) || 1;
+                // Strip the "Etapa X/5: " prefix to show just the description
+                const stepDescription = progress.step.replace(/^Etapa \d+\/5:\s*/, '');
+                return (
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+                    {/* Step dots */}
+                    <div className="flex items-center justify-between px-2">
+                      {GENERATION_STEPS.map((step, idx) => {
+                        const isCompleted = step.id < currentStep;
+                        const isCurrent = step.id === currentStep;
+                        return (
+                          <React.Fragment key={step.id}>
+                            <div className="flex flex-col items-center gap-1">
+                              <div
+                                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                                  isCompleted
+                                    ? 'bg-amber-500 text-white'
+                                    : isCurrent
+                                      ? 'bg-amber-500 text-white ring-2 ring-amber-300 ring-offset-1'
+                                      : 'bg-amber-200 text-amber-500'
+                                }`}
+                              >
+                                {isCompleted ? (
+                                  <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                                ) : (
+                                  step.id
+                                )}
+                              </div>
+                              <span className={`text-[10px] leading-tight ${
+                                isCurrent ? 'text-amber-700 font-semibold' : 'text-amber-500'
+                              }`}>
+                                {step.label}
+                              </span>
+                            </div>
+                            {idx < GENERATION_STEPS.length - 1 && (
+                              <div className={`flex-1 h-0.5 mx-1 mb-4 rounded ${
+                                step.id < currentStep ? 'bg-amber-500' : 'bg-amber-200'
+                              }`} />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+
+                    {/* Current action description */}
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-4 h-4 text-amber-600 animate-spin flex-shrink-0" aria-hidden="true" />
+                      <span className="text-sm font-medium text-amber-700">
+                        Etapa {currentStep}/5: {stepDescription}
+                      </span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="h-1.5 bg-amber-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-amber-500 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress.percentage}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-amber-200 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-amber-500 rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress.percentage}%` }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           ) : (
             /* Preview View */
@@ -564,6 +648,21 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                   </p>
                 </div>
               </div>
+
+              {/* Partial data warning */}
+              {generatedPauta.stepsFailed && generatedPauta.stepsFailed.length > 0 && (
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3" role="status">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <p className="font-medium text-amber-700 text-sm">
+                      Pauta gerada com dados parciais
+                    </p>
+                    <p className="text-amber-600 text-xs mt-0.5">
+                      Etapas com fallback: {generatedPauta.stepsFailed.join(', ')}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Metadata */}
               <div className="grid grid-cols-3 gap-4">

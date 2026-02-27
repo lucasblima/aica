@@ -18,7 +18,7 @@
 //   - src/hooks/useContextSource.ts (3-tier priority: event > journey > daily)
 //   - src/services/userAIContextService.ts (AI context data aggregation)
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -34,7 +34,7 @@ import {
     CollisionDetection,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 
 import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '@/services/supabaseClient';
@@ -81,6 +81,20 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useTourAutoStart('atlas-first-visit');
     const isDesktop = useIsDesktop();
     const [mobileMode, setMobileMode] = useState<AgendaMode>('agenda');
+
+    const MOBILE_VIEWS: AgendaMode[] = ['agenda', 'list', 'kanban', 'matrix'];
+    const SWIPE_THRESHOLD = 60;
+    const SWIPE_VELOCITY = 100;
+
+    const handleSwipe = useCallback((_: unknown, info: PanInfo) => {
+      if (isDesktop) return;
+      const currentIndex = MOBILE_VIEWS.indexOf(mobileMode);
+      if (info.offset.x < -SWIPE_THRESHOLD && info.velocity.x < -SWIPE_VELOCITY && currentIndex < MOBILE_VIEWS.length - 1) {
+        setMobileMode(MOBILE_VIEWS[currentIndex + 1]);
+      } else if (info.offset.x > SWIPE_THRESHOLD && info.velocity.x > SWIPE_VELOCITY && currentIndex > 0) {
+        setMobileMode(MOBILE_VIEWS[currentIndex - 1]);
+      }
+    }, [mobileMode, isDesktop]);
 
     // Tick counter — increments every 60s so time-dependent useMemos
     // (nextEvent, restOfDay, nextTwoDaysEvents) recalculate with a fresh `now`.
@@ -1002,11 +1016,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     <AnimatePresence mode="wait">
                         <motion.main
                             key={mobileMode}
+                            drag={isDesktop ? false : "x"}
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={0.15}
+                            dragDirectionLock
+                            onDragEnd={handleSwipe}
                             variants={pageTransitionVariants}
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            className="flex-1 overflow-y-auto px-4 pb-32 pt-6 space-y-6"
+                            className="flex-1 overflow-y-auto px-4 pb-32 pt-6 space-y-6 touch-pan-y"
                         >
                             {mobileMode === 'agenda' ? (
                                 timelineContent

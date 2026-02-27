@@ -959,7 +959,7 @@ function generateSuggestedActions(message: string, rawData: UserContextResult['r
       label: 'Registrar momento',
       icon: 'PenLine',
       module: 'journey',
-      params: { content: message.substring(0, 500), emotion: 'thoughtful', type: 'reflection' },
+      params: { content: message.substring(0, 500), emotion: 'thoughtful', type: 'text' },
     })
   }
 
@@ -2479,7 +2479,7 @@ async function handleExecuteChatAction(
             user_id: userId,
             content: params.content,
             emotion: params.emotion || 'neutral',
-            type: params.type || 'reflection',
+            type: params.type || 'text',
           })
           .select('id, content, emotion')
           .single()
