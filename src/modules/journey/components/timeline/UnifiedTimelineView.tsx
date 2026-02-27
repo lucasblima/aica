@@ -52,7 +52,7 @@ function groupEventsByDay(events: UnifiedEvent[]): DayGroup[] {
   const sortedDates = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a))
 
   sortedDates.forEach((dateKey) => {
-    const date = new Date(dateKey)
+    const date = new Date(dateKey + 'T00:00:00')
     let label: string
 
     if (isToday(date)) {
