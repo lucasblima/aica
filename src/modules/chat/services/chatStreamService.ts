@@ -20,12 +20,17 @@ export interface DoneEvent {
   usage?: { input: number; output: number }
 }
 
+export interface AgentDetectedEvent {
+  type: 'agent_detected'
+  agent: string
+}
+
 export interface ErrorEvent {
   type: 'error'
   message: string
 }
 
-export type StreamEvent = TokenEvent | DoneEvent | ErrorEvent
+export type StreamEvent = TokenEvent | DoneEvent | AgentDetectedEvent | ErrorEvent
 
 export async function* streamChat(
   sessionId: string,
