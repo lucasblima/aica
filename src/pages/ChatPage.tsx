@@ -1,15 +1,11 @@
 /**
  * ChatPage — Full-page chat experience
  *
- * Lazy-loaded at /chat route. Full viewport, no PageShell wrapper.
- * Uses useChatEngine for session + streaming state.
+ * Lazy-loaded at /chat route. Renders AicaChatFAB in permanent fullpage mode.
  */
 
-import { useChatEngine } from '@/modules/chat/hooks/useChatEngine'
-import { ChatShell } from '@/modules/chat/components/ChatShell'
+import { AicaChatFAB } from '@/components/features/AicaChatFAB'
 
 export default function ChatPage() {
-  const engine = useChatEngine()
-
-  return <ChatShell engine={engine} />
+  return <AicaChatFAB mode="fullpage" />
 }
