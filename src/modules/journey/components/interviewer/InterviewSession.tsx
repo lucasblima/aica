@@ -1,6 +1,8 @@
+// TODO (#514 Phase 2): Full adaptive interviewer with dynamic question branching
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ArrowLeft, Pause, SkipForward } from 'lucide-react'
+import { GeminiClient } from '@/lib/gemini'
 import { useInterviewer } from '../../hooks/useInterviewer'
 import type { InterviewAnswer, InterviewQuestion } from '../../types/interviewer'
 import {
@@ -42,6 +44,9 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
   const [levelUpName, setLevelUpName] = useState<string | null>(null)
   const [direction, setDirection] = useState(1)
   const [confettiFired, setConfettiFired] = useState(false)
+  const [adaptiveInsight, setAdaptiveInsight] = useState<string | null>(null)
+  const [showingInsight, setShowingInsight] = useState(false)
+  const [loadingInsight, setLoadingInsight] = useState(false)
 
   const slideVariants = {
     enter: (d: number) => ({ x: d * 300, opacity: 0 }),
@@ -105,6 +110,38 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
       if (result.cp_result?.leveled_up) {
         setLevelUpName(result.cp_result.level_name)
         setTimeout(() => setLevelUpName(null), 3000)
+      }
+
+      // Generate adaptive insight (non-blocking to interview flow)
+      setLoadingInsight(true)
+      try {
+        const client = GeminiClient.getInstance()
+        const insightResult = await client.call({
+          action: 'generate',
+          payload: {
+            prompt: `Voce e AICA, assistente de autoconhecimento. O usuario respondeu "${JSON.stringify(localAnswer)}" para a pergunta "${currentQuestion.question_text}". Gere um insight breve e encorajador (1 frase curta) em portugues sobre o que essa resposta revela. Seja caloroso e perspicaz.`,
+            maxTokens: 100,
+          },
+          model: 'fast',
+        })
+        if (insightResult?.result) {
+          const insightText = typeof insightResult.result === 'string'
+            ? insightResult.result
+            : insightResult.result?.text || insightResult.result?.response
+          if (insightText) {
+            setAdaptiveInsight(insightText)
+            setShowingInsight(true)
+            setTimeout(() => {
+              setShowingInsight(false)
+              setAdaptiveInsight(null)
+            }, 4000)
+          }
+        }
+      } catch (err) {
+        // Silently fail — adaptive insights are optional
+        console.warn('Adaptive insight generation failed:', err)
+      } finally {
+        setLoadingInsight(false)
       }
 
       // Reset local answer for next question
@@ -245,6 +282,36 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
             >
               {renderQuestion(currentQuestion, localAnswer, setLocalAnswer)}
             </QuestionCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Adaptive AI insight */}
+      <AnimatePresence>
+        {showingInsight && adaptiveInsight && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-start gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl mx-4 my-2"
+          >
+            <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-ceramic-text-secondary italic">{adaptiveInsight}</p>
+          </motion.div>
+        )}
+        {loadingInsight && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center gap-2 px-4 py-2 mx-4 my-2"
+          >
+            <span className="flex gap-1 text-amber-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+            <span className="text-xs text-ceramic-text-secondary">AICA refletindo...</span>
           </motion.div>
         )}
       </AnimatePresence>

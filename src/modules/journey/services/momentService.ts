@@ -83,11 +83,16 @@ export async function createMoment(
     }
 
     // Update streak in background (fire-and-forget, no UX impact)
-    supabase.rpc('update_moment_streak', {
-      p_user_id: userId
+    supabase.rpc('update_consciousness_streak', {
+      p_user_id: userId,
+      p_interaction_type: 'moment',
     }).then(({ error: streakError }) => {
       if (streakError) {
-        log.error('Error updating streak:', streakError)
+        log.warn('update_consciousness_streak failed, trying legacy:', streakError)
+        supabase.rpc('update_moment_streak', { p_user_id: userId })
+          .then(({ error: legacyErr }) => {
+            if (legacyErr) log.warn('Legacy streak update also failed:', legacyErr)
+          })
       }
     })
 
