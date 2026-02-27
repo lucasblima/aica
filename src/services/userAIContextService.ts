@@ -18,6 +18,20 @@ import { createNamespacedLogger } from '@/lib/logger'
 
 const log = createNamespacedLogger('userAIContextService')
 
+export interface UserPattern {
+  patternType: string
+  description: string
+  confidence: number
+}
+
+export interface LifeCouncilInsight {
+  overallStatus: string
+  headline: string
+  synthesis: string
+  actionItems: string[]
+  createdAt: string
+}
+
 export interface UserAIContext {
   userName: string
   pendingTasks: number
@@ -31,6 +45,8 @@ export interface UserAIContext {
     balance: number
   } | null
   upcomingEvents: Array<{ title: string; startTime: string }> | null
+  patterns: UserPattern[]
+  latestInsight: LifeCouncilInsight | null
 }
 
 // Cache with 5-minute TTL
@@ -58,7 +74,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       .toISOString().split('T')[0]
 
     // Run all queries in parallel
-    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes] = await Promise.all([
+    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes, patternsRes, insightRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('full_name')
@@ -96,6 +112,20 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .select('type, amount')
         .eq('user_id', userId)
         .gte('transaction_date', monthStart),
+      supabase
+        .from('user_patterns')
+        .select('pattern_type, description, confidence')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .gte('confidence', 0.5)
+        .order('confidence', { ascending: false })
+        .limit(5),
+      supabase
+        .from('daily_council_insights')
+        .select('overall_status, headline, synthesis, action_items, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1),
     ])
 
     // TODO: Re-enable when calendar_events table is created
@@ -118,6 +148,26 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       }
     }
 
+    // Map patterns
+    const patterns: UserPattern[] = (patternsRes.data || []).map((p: any) => ({
+      patternType: p.pattern_type,
+      description: p.description,
+      confidence: p.confidence,
+    }))
+
+    // Map latest insight
+    let latestInsight: LifeCouncilInsight | null = null
+    if (insightRes.data?.length) {
+      const ins = insightRes.data[0] as any
+      latestInsight = {
+        overallStatus: ins.overall_status || 'unknown',
+        headline: ins.headline || '',
+        synthesis: ins.synthesis || '',
+        actionItems: Array.isArray(ins.action_items) ? ins.action_items : [],
+        createdAt: ins.created_at,
+      }
+    }
+
     const context: UserAIContext = {
       userName: profileRes.data?.full_name?.split(' ')[0] || 'usuario',
       pendingTasks: pendingTasksRes.count || 0,
@@ -132,6 +182,8 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         title: e.title || 'Sem titulo',
         startTime: e.start_time,
       })),
+      patterns,
+      latestInsight,
     }
 
     // Update cache

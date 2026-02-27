@@ -1,5 +1,5 @@
 import React from 'react'
-import type { UserAIContext } from '@/services/userAIContextService'
+import type { UserAIContext, UserPattern, LifeCouncilInsight } from '@/services/userAIContextService'
 
 interface ChatContextSidebarProps {
   activeModule: string
@@ -63,6 +63,88 @@ function ListCard({ title, items, accentColor }: { title: string; items: string[
   )
 }
 
+const PATTERN_LABELS: Record<string, string> = {
+  productivity: 'Produtividade',
+  emotional: 'Emocional',
+  routine: 'Rotina',
+  social: 'Social',
+  health: 'Saude',
+  learning: 'Aprendizado',
+  trigger: 'Gatilho',
+  strength: 'Forca',
+}
+
+function PatternsCard({ patterns }: { patterns: UserPattern[] }) {
+  if (!patterns.length) return null
+  return (
+    <div className="aica-context-card">
+      <p className="aica-context-card__title text-violet-500">Seus Padroes</p>
+      <ul className="aica-context-card__list">
+        {patterns.map((p, i) => (
+          <li key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {p.description}
+            </span>
+            <span style={{
+              fontSize: 10,
+              padding: '1px 5px',
+              borderRadius: 8,
+              background: p.confidence >= 0.8 ? 'rgba(16,185,129,0.15)' : 'rgba(139,92,246,0.12)',
+              color: p.confidence >= 0.8 ? '#059669' : '#7c3aed',
+              whiteSpace: 'nowrap',
+            }}>
+              {PATTERN_LABELS[p.patternType] || p.patternType} {(p.confidence * 100).toFixed(0)}%
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function InsightCard({ insight }: { insight: LifeCouncilInsight }) {
+  const statusColors: Record<string, string> = {
+    thriving: '#059669',
+    balanced: '#2563eb',
+    strained: '#d97706',
+    burnout_risk: '#dc2626',
+  }
+  const statusLabels: Record<string, string> = {
+    thriving: 'Otimo',
+    balanced: 'Equilibrado',
+    strained: 'Tensionado',
+    burnout_risk: 'Risco',
+  }
+  const color = statusColors[insight.overallStatus] || '#6b7280'
+  const label = statusLabels[insight.overallStatus] || insight.overallStatus
+
+  return (
+    <div className="aica-context-card">
+      <p className="aica-context-card__title text-cyan-600">
+        Insight do Dia
+        <span style={{
+          marginLeft: 6,
+          fontSize: 10,
+          padding: '1px 6px',
+          borderRadius: 8,
+          background: `${color}18`,
+          color,
+        }}>
+          {label}
+        </span>
+      </p>
+      {insight.headline && (
+        <p style={{ fontSize: 12, fontWeight: 500, margin: '4px 0 2px' }}>{insight.headline}</p>
+      )}
+      {insight.actionItems.length > 0 && (
+        <ul className="aica-context-card__list">
+          {insight.actionItems.slice(0, 2).map((item, i) => <li key={i}>{item}</li>)}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function renderCards(module: string, context: UserAIContext): React.ReactNode {
   switch (module) {
     case 'atlas':
@@ -86,7 +168,11 @@ function renderCards(module: string, context: UserAIContext): React.ReactNode {
       )
     case 'journey':
       return (
-        <ListCard title="Momentos Recentes" items={context.recentMoments} accentColor="text-teal-500" />
+        <>
+          <ListCard title="Momentos Recentes" items={context.recentMoments} accentColor="text-teal-500" />
+          {context.latestInsight && <InsightCard insight={context.latestInsight} />}
+          <PatternsCard patterns={context.patterns.filter(p => ['emotional', 'trigger', 'strength'].includes(p.patternType))} />
+        </>
       )
     case 'agenda':
       return (
@@ -107,12 +193,14 @@ function renderCards(module: string, context: UserAIContext): React.ReactNode {
     default: // coordinator overview
       return (
         <>
+          {context.latestInsight && <InsightCard insight={context.latestInsight} />}
           <StatCard title="Tarefas Pendentes" value={context.pendingTasks} label="no Atlas" accentColor="text-blue-500" />
           {context.financeSummary && (
             <StatCard title="Saldo do Mes" value={formatCurrency(context.financeSummary.balance)} accentColor="text-amber-500" />
           )}
           <StatCard title="Momentos" value={context.recentMoments.length} label="registrados recentemente" accentColor="text-teal-500" />
           <StatCard title="Proximos Eventos" value={context.upcomingEvents?.length ?? 0} label="na agenda" accentColor="text-indigo-500" />
+          <PatternsCard patterns={context.patterns} />
         </>
       )
   }
