@@ -12,7 +12,7 @@ import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 import { getUserAIContext } from '@/services/userAIContextService'
-import { streamChat } from '@/modules/chat/services/chatStreamService'
+import { streamChat } from '@/services/chatStreamService'
 import type { ChatAction } from '@/types/chatActions'
 
 export interface DisplayMessage {
