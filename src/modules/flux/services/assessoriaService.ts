@@ -29,12 +29,39 @@ export const assessoriaService = {
   async getAssessoria(): Promise<ConnectionSpace | null> {
     try {
       const ventures = await spaceService.getSpacesByArchetype('ventures');
-      // Primary: match by settings marker; Fallback: match by subtitle (for spaces created before settings fix)
-      const assessoria = ventures.find(
-        (s) => (s.settings && (s.settings as Record<string, unknown>).space_type === ASSESSORIA_MARKER)
-            || s.subtitle === 'Assessoria Esportiva'
+
+      if (ventures.length === 0) {
+        log.debug('No ventures spaces found for user');
+        return null;
+      }
+
+      log.debug('Found ventures spaces:', { count: ventures.length, names: ventures.map(s => s.name) });
+
+      // Primary: match by settings marker
+      const byMarker = ventures.find(
+        (s) => s.settings && (s.settings as Record<string, unknown>).space_type === ASSESSORIA_MARKER
       );
-      return assessoria || null;
+      if (byMarker) return byMarker;
+
+      // Fallback 1: match by subtitle (for spaces created before settings fix)
+      const bySubtitle = ventures.find(
+        (s) => s.subtitle === 'Assessoria Esportiva'
+      );
+      if (bySubtitle) return bySubtitle;
+
+      // Fallback 2: match by name pattern (case-insensitive)
+      const byName = ventures.find(
+        (s) => s.name?.toLowerCase().includes('assessoria')
+      );
+      if (byName) {
+        log.debug('Assessoria matched by name pattern:', byName.id);
+        return byName;
+      }
+
+      log.debug('No assessoria found among ventures:', {
+        ventureIds: ventures.map(s => s.id),
+      });
+      return null;
     } catch (error) {
       log.error('Error fetching assessoria:', { error });
       throw error;

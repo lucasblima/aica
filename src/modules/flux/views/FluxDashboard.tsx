@@ -13,7 +13,8 @@ import { useAthleteActivity } from '../hooks/useAthleteActivity';
 import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
 import { useAssessoriaEsportiva } from '../hooks/useAssessoriaEsportiva';
 import { CreateAssessoriaModal } from '../components/CreateAssessoriaModal';
-import { ArrowLeft, Users, BookOpen, Dumbbell, Briefcase, CheckCircle, X, ExternalLink } from 'lucide-react';
+import { AdminDashboardSection } from '../components/coach/AdminDashboardSection';
+import { ArrowLeft, Users, BookOpen, Dumbbell, Briefcase, CheckCircle, X } from 'lucide-react';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 export default function FluxDashboard() {
@@ -34,7 +35,6 @@ export default function FluxDashboard() {
     hasAssessoria,
     isLoading: assessoriaLoading,
     create: createAssessoria,
-    navigateToAssessoria,
   } = useAssessoriaEsportiva();
   const [showCreateAssessoria, setShowCreateAssessoria] = useState(false);
   const [isCreatingAssessoria, setIsCreatingAssessoria] = useState(false);
@@ -97,11 +97,11 @@ export default function FluxDashboard() {
 
         <div data-tour="flux-header" className="flex items-center gap-4 mb-8">
           <div className="w-16 h-16 ceramic-card flex items-center justify-center">
-            <span className="text-3xl">🏋️</span>
+            <span className="text-3xl">{hasAssessoria ? '🏢' : '🏋️'}</span>
           </div>
           <div>
             <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5">
-              Gestao de Treinos
+              {hasAssessoria ? assessoria!.name : 'Gestao de Treinos'}
             </p>
             <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
               Flux
@@ -163,52 +163,43 @@ export default function FluxDashboard() {
                 <Dumbbell className="w-6 h-6 text-ceramic-success" />
               </div>
             </div>
-            <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">Meus Treinos</h3>
+            <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">Meus proprios treinos</h3>
             <p className="text-sm text-ceramic-text-secondary">
               Portal do atleta
             </p>
           </button>
 
-          {/* Assessoria Esportiva Card */}
-          <button
-            onClick={() => {
-              if (hasAssessoria) {
-                navigateToAssessoria();
-              } else {
-                setShowCreateAssessoria(true);
-              }
-            }}
-            className="bg-white rounded-xl p-6 shadow-sm border border-ceramic-border/30 hover:shadow-md transition-shadow cursor-pointer text-left group relative"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                <Briefcase className="w-6 h-6 text-purple-600" />
+          {/* Assessoria Esportiva Card — hidden after creation (managed via header + Connections) */}
+          {!hasAssessoria && (
+            <button
+              onClick={() => setShowCreateAssessoria(true)}
+              className="bg-white rounded-xl p-6 shadow-sm border border-ceramic-border/30 hover:shadow-md transition-shadow cursor-pointer text-left group relative"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                  <Briefcase className="w-6 h-6 text-purple-600" />
+                </div>
+                {!assessoriaLoading && (
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600">
+                    Criar
+                  </span>
+                )}
               </div>
-              {hasAssessoria && (
-                <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600">
-                  <ExternalLink className="w-3 h-3" />
-                  Abrir
-                </span>
-              )}
-              {!hasAssessoria && !assessoriaLoading && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600">
-                  Criar
-                </span>
-              )}
-            </div>
-            <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">
-              {hasAssessoria ? assessoria!.name : 'Assessoria Esportiva'}
-            </h3>
-            <p className="text-sm text-ceramic-text-secondary">
-              {hasAssessoria
-                ? 'Gerencie sua assessoria no Connections'
-                : 'Configure sua assessoria esportiva'}
-            </p>
-          </button>
+              <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">
+                Assessoria Esportiva
+              </h3>
+              <p className="text-sm text-ceramic-text-secondary">
+                Configure sua assessoria esportiva
+              </p>
+            </button>
+          )}
         </div>
 
         {/* #442: Stats and Novo Atleta button removed — accessed via Painel do Treinador */}
       </div>
+
+      {/* Admin Dashboard Section */}
+      <AdminDashboardSection athletes={allAthletes} />
 
       {/* Activity Toast Notifications */}
       {notifications.length > 0 && (
