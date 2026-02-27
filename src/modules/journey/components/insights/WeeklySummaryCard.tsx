@@ -19,12 +19,24 @@ import {
   LightBulbIcon,
   HeartIcon,
   ArrowTrendingUpIcon,
+  TrophyIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
 } from '@heroicons/react/24/solid'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 interface WeeklySummaryCardProps {
-  summary: WeeklySummary
+  summary: WeeklySummary & {
+    /** Number of active days in the week (0-7). If undefined, activity gate is skipped. */
+    active_days?: number
+    /** CP earned this week */
+    cp_earned_week?: number
+    /** CP earned previous week (for comparison) */
+    cp_earned_prev_week?: number
+    /** Moment count previous week (for comparison) */
+    moments_prev_week?: number
+  }
   onAddReflection?: (summaryId: string, reflection: string) => Promise<void>
 }
 
@@ -85,8 +97,78 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
         </p>
       </div>
 
-      {/* Content */}
+      {/* Minimum activity gate */}
+      {summary.active_days !== undefined && summary.active_days < 5 && (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-sm text-ceramic-text-secondary">
+            Continue registrando momentos para ver seu resumo semanal!
+            Voce precisa de pelo menos 5 dias de atividade.
+          </p>
+          <p className="text-xs text-ceramic-text-secondary">
+            Atividade esta semana: <strong>{summary.active_days}/7 dias</strong>
+          </p>
+        </div>
+      )}
+
+      {/* Content — only show full summary when activity gate passes */}
+      {(summary.active_days === undefined || summary.active_days >= 5) && (
       <div className="p-6 space-y-6">
+        {/* Achievement badge: first complete week (7/7) */}
+        {summary.active_days === 7 && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200/50">
+            <TrophyIcon className="h-5 w-5 text-amber-500 shrink-0" />
+            <p className="text-sm font-medium text-amber-700">
+              Primeira semana completa!
+            </p>
+          </div>
+        )}
+
+        {/* CP earned this week + week-over-week comparison */}
+        {(summary.cp_earned_week !== undefined || summary.moments_prev_week !== undefined) && (
+          <div className="flex flex-wrap gap-4">
+            {summary.cp_earned_week !== undefined && (
+              <div className="flex items-center gap-2">
+                <SparklesIcon className="h-5 w-5 text-amber-500" />
+                <span className="text-sm font-semibold text-ceramic-text-primary">
+                  {summary.cp_earned_week} CP esta semana
+                </span>
+                {/* TODO: cp_earned_prev_week comparison — needs backend to return previous week CP */}
+                {summary.cp_earned_prev_week !== undefined && summary.cp_earned_prev_week > 0 && (
+                  <span className="flex items-center text-xs font-medium">
+                    {summary.cp_earned_week >= summary.cp_earned_prev_week ? (
+                      <ArrowUpIcon className="h-3 w-3 text-ceramic-success mr-0.5" />
+                    ) : (
+                      <ArrowDownIcon className="h-3 w-3 text-ceramic-error mr-0.5" />
+                    )}
+                    <span className={summary.cp_earned_week >= summary.cp_earned_prev_week ? 'text-ceramic-success' : 'text-ceramic-error'}>
+                      vs semana anterior
+                    </span>
+                  </span>
+                )}
+              </div>
+            )}
+            {summary.moments_prev_week !== undefined && summary.summary_data.keyMoments.length > 0 && (
+              <div className="flex items-center gap-1 text-xs font-medium">
+                <span className="text-ceramic-text-secondary">
+                  {summary.summary_data.keyMoments.length} momentos
+                </span>
+                {summary.moments_prev_week > 0 && (
+                  <span className="flex items-center">
+                    {summary.summary_data.keyMoments.length >= summary.moments_prev_week ? (
+                      <ArrowUpIcon className="h-3 w-3 text-ceramic-success mr-0.5" />
+                    ) : (
+                      <ArrowDownIcon className="h-3 w-3 text-ceramic-error mr-0.5" />
+                    )}
+                    <span className={summary.summary_data.keyMoments.length >= summary.moments_prev_week ? 'text-ceramic-success' : 'text-ceramic-error'}>
+                      vs {summary.moments_prev_week}
+                    </span>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Emotional trend */}
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -246,6 +328,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }

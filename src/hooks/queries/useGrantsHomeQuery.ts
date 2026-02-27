@@ -13,19 +13,19 @@ interface GrantsHomeData {
   recentProjects: GrantProject[];
 }
 
-async function fetchGrantsHomeData(): Promise<GrantsHomeData> {
+async function fetchGrantsHomeData(userId: string): Promise<GrantsHomeData> {
   const [activeProjects, upcomingDeadlines, recentProjects] = await Promise.all([
-    countAllActiveProjects(),
-    getUpcomingDeadlines(30),
-    getRecentProjects(2),
+    countAllActiveProjects(userId),
+    getUpcomingDeadlines(userId, 30),
+    getRecentProjects(userId, 2),
   ]);
   return { activeProjects, upcomingDeadlines, recentProjects };
 }
 
-export function useGrantsHomeQuery(enabled = true) {
+export function useGrantsHomeQuery(userId: string | undefined, enabled = true) {
   return useQuery({
     queryKey: queryKeys.grantsHome.all,
-    queryFn: fetchGrantsHomeData,
-    enabled,
+    queryFn: () => fetchGrantsHomeData(userId!),
+    enabled: enabled && !!userId,
   });
 }

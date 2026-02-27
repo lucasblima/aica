@@ -140,7 +140,7 @@ export default function VidaPage({
    };
 
    // Grants Card data via React Query
-   const { data: grantsData } = useGrantsHomeQuery(!!userId);
+   const { data: grantsData } = useGrantsHomeQuery(userId);
    const grantsActiveProjects = grantsData?.activeProjects ?? 0;
    const grantsUpcomingDeadlines = grantsData?.upcomingDeadlines ?? [];
    const grantsRecentProjects = grantsData?.recentProjects ?? [];

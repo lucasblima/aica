@@ -114,8 +114,11 @@ export function JourneyHeroCard({
         >
           <div className="flex items-center gap-2">
             <Flame className="h-4 w-4 text-ceramic-warning" />
+            {/* TODO: current_streak is calculated from user_stats table which primarily tracks
+                moments. Should be expanded on backend to include daily questions, chat interactions,
+                and task completions for a true "all interactions" streak. */}
             <p className="text-xs font-medium text-ceramic-warning">
-              Streak de {resolvedStats!.current_streak} dias! Registre um momento para manter.
+              Streak de {resolvedStats!.current_streak} dias! Continue ativo para manter.
             </p>
           </div>
         </motion.div>

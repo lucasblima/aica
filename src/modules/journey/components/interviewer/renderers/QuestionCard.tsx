@@ -1,7 +1,20 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import type { InterviewQuestion } from '../../../types/interviewer'
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { HelpCircle } from 'lucide-react'
+import type { InterviewQuestion, InterviewCategory } from '../../../types/interviewer'
 import { INTERVIEW_CATEGORY_META } from '../../../types/interviewer'
+
+// TODO (#514): Implement dynamic adaptive interviewer agent — deferred to future sprint
+
+/** Hint text explaining why a question category matters */
+const CATEGORY_HINTS: Record<InterviewCategory, string> = {
+  biografia: 'Conhecer sua historia ajuda a personalizar recomendacoes e entender seu contexto de vida.',
+  anamnese: 'Reconhecer padroes de saude e bem-estar ajuda a identificar o que impacta sua energia e humor.',
+  censo: 'Entender seu contexto socioeconomico permite sugestoes mais relevantes para sua realidade.',
+  preferencias: 'Saber como voce aprende e trabalha permite adaptar a experiencia ao seu estilo.',
+  conexoes: 'Mapear seus relacionamentos ajuda a fortalecer sua rede de apoio e conexoes importantes.',
+  objetivos: 'Refletir sobre metas mantem o foco no que importa e ajuda a acompanhar seu progresso.',
+}
 
 interface QuestionCardProps {
   question: InterviewQuestion
@@ -12,6 +25,7 @@ interface QuestionCardProps {
 
 export function QuestionCard({ question, questionNumber, totalQuestions, children }: QuestionCardProps) {
   const meta = INTERVIEW_CATEGORY_META[question.category]
+  const [showHint, setShowHint] = useState(false)
 
   return (
     <motion.div
@@ -52,6 +66,31 @@ export function QuestionCard({ question, questionNumber, totalQuestions, childre
       <h3 className="text-lg font-semibold text-ceramic-text-primary leading-relaxed">
         {question.question_text}
       </h3>
+
+      {/* Hint: "Por que perguntamos isso?" */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowHint(prev => !prev)}
+          className="flex items-center gap-1.5 text-xs text-ceramic-text-secondary hover:text-ceramic-info transition-colors"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+          Por que perguntamos isso?
+        </button>
+        <AnimatePresence>
+          {showHint && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mt-2 text-xs text-ceramic-text-secondary leading-relaxed pl-5"
+            >
+              {CATEGORY_HINTS[question.category]}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Renderer slot */}
       {children}
