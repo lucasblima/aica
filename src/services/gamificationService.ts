@@ -1031,7 +1031,7 @@ export async function getLeaderboard(limit: number = 100): Promise<LeaderboardEn
 
     return (data || []).map((stat, index) => ({
       rank: index + 1,
-      user_name: stat.user.name,
+      user_name: stat.user?.name || 'Anonymous',
       level: stat.level,
       total_xp: stat.total_xp,
       badges_count: stat.total_badges,
