@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
@@ -251,6 +251,17 @@ export function AicaChatFAB({
                 title={isExpanded ? 'Reduzir' : 'Expandir'}
               >
                 {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <button
+                className="aica-fab-header__action"
+                onClick={() => {
+                  navigate('/chat')
+                  handleClose()
+                }}
+                aria-label="Abrir chat completo"
+                title="Chat completo"
+              >
+                <ArrowUpRight size={16} />
               </button>
             </>
           )}
