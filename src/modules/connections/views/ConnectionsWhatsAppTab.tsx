@@ -492,7 +492,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
 
           {/* CTA button */}
           <a
-            href="/vida"
+            href="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-ceramic-accent text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform"
           >
             <Sparkles className="w-5 h-5" />

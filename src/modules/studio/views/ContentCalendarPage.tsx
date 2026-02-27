@@ -126,7 +126,7 @@ export default function ContentCalendarPage() {
 
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-      <HeaderGlobal title="Calendario de Conteudo" subtitle="STUDIO" onLogoClick={() => navigate('/vida')} />
+      <HeaderGlobal title="Calendario de Conteudo" subtitle="STUDIO" onLogoClick={() => navigate('/')} />
 
       <main className="flex-1 overflow-y-auto px-4 sm:px-6 pb-32 pt-4">
         {/* Month Navigation */}

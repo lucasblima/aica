@@ -142,7 +142,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
         subtitle="PODCAST COPILOT"
         userEmail={userEmail}
         onLogout={onLogout}
-        onLogoClick={() => navigate('/vida')}
+        onLogoClick={() => navigate('/')}
       />
 
       {/* Main Content Area */}
