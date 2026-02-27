@@ -31,7 +31,6 @@ const log = createNamespacedLogger('AppRouter');
 // This improves First Contentful Paint (FCP) and Time to Interactive (TTI)
 
 // Core Views - Frequently accessed, loaded lazily
-const Home = lazy(() => import('../pages/Home'));
 const VidaPage = lazy(() => import('../pages/VidaPage'));
 const AgendaView = lazy(() => import('../views/AgendaView').then(m => ({ default: m.AgendaView })));
 
@@ -223,8 +222,8 @@ export function AppRouter() {
 
    // Sync view state with URL location
    useEffect(() => {
-      if (location.pathname === '/vida') {
-         setCurrentView('vida-new');
+      if (location.pathname === '/' || location.pathname === '/vida') {
+         setCurrentView('vida');
       } else if (location.pathname.startsWith('/connections')) {
          setCurrentView('connections');
       }
@@ -236,8 +235,6 @@ export function AppRouter() {
          navigate('/connections');
       } else if (view === 'contacts') {
          navigate('/contacts');
-      } else if (view === 'vida-new') {
-         navigate('/vida');
       } else {
          // For non-router views, navigate to root and set state
          if (location.pathname !== '/') {
@@ -392,28 +389,8 @@ export function AppRouter() {
 
 
    // ==================== MINHA VIDA VIEW ====================
-   // Uses the updated Home component from src/pages/Home.tsx with Ceramic Design System
+   // VidaPage is the homepage — rendered at both / and /vida
    const renderVida = () => (
-      userId ? (
-         <Home
-            userId={userId}
-            userEmail={userEmail}
-            associations={associations}
-            lifeAreas={lifeAreas}
-            onLogout={() => supabase.auth.signOut()}
-            onNavigateToView={setCurrentView}
-            onNavigateToAICost={() => setCurrentView('ai-cost')}
-            onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
-            onOpenAssociation={handleOpenAssociation}
-            onSelectArchetype={handleSelectArchetype}
-            onCreateAssociation={handleCreateAssociation}
-         />
-      ) : <CeramicLoadingState variant="page" />
-   );
-
-   // ==================== VIDA PAGE (REDESIGNED) ====================
-   // Uses VidaPage with inline chat hero — validation at /vida before replacing Home
-   const renderVidaPage = () => (
       userId ? (
          <VidaPage
             userId={userId}
@@ -560,7 +537,6 @@ export function AppRouter() {
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
             <AnimatePresence mode="wait">
             {currentView === 'vida' && <motion.div key="vida" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderVida()}</motion.div>}
-            {currentView === 'vida-new' && <motion.div key="vida-new" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderVidaPage()}</motion.div>}
             {currentView === 'agenda' && <motion.div key="agenda" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Agenda" />}>{renderAgenda()}</ErrorBoundary></motion.div>}
             {currentView === 'connections' && <motion.div key="connections" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Connections" />}>{renderConnections()}</ErrorBoundary></motion.div>}
             {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>{renderStudio()}</ErrorBoundary></motion.div>}
@@ -633,8 +609,8 @@ export function AppRouter() {
             )}
 
             {/* Aica Chat FAB - Floating button for quick AI access */}
-            {/* On /vida, FAB button is hidden but drawer stays functional via CustomEvent from VidaChatHero (#391) */}
-            {isAuthenticated && <AicaChatFAB position="bottom-left" bottomOffset={shouldShowGlobalNav ? 80 : 16} hideButton={currentView === 'vida-new'} />}
+            {/* On home page, FAB button is hidden but drawer stays functional via CustomEvent from VidaChatHero (#391) */}
+            {isAuthenticated && <AicaChatFAB position="bottom-left" bottomOffset={shouldShowGlobalNav ? 80 : 16} hideButton={currentView === 'vida'} />}
 
             {/* Notification Toast Container */}
             <NotificationContainer />
@@ -870,13 +846,13 @@ export function AppRouter() {
                <Route path="/liferpg" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGMainView /></ErrorBoundary></ProtectedRoute>} />
                <Route path="/liferpg/:personaId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGDetailView /></ErrorBoundary></ProtectedRoute>} />
 
-               {/* Home - ViewState-driven main app */}
+               {/* Home - VidaPage (central hub) */}
                <Route
                   path="/"
                   element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
                />
 
-               {/* Vida Page - Central hub (WIP, future default) */}
+               {/* Vida alias - same as / for backward compatibility */}
                <Route
                   path="/vida"
                   element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
