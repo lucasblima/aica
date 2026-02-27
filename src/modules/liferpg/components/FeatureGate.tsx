@@ -81,13 +81,14 @@ export function FeatureGate({ featureId, children, className = '' }: FeatureGate
           {displayName}
         </h4>
 
-        {/* Unlock message */}
+        {/* Progress info */}
         <p className="text-xs text-ceramic-text-secondary">
-          Desbloqueie no N\u00EDvel {unlockLevel}
+          Voce tem <span className="font-semibold text-amber-600">{currentPoints.toLocaleString()} CP</span> — precisa de{' '}
+          <span className="font-semibold">{targetXP.toLocaleString()}</span> para o Nivel {unlockLevel}
         </p>
 
         {/* Progress bar */}
-        <div className="w-full max-w-[200px]">
+        <div className="w-full max-w-[220px]">
           <div className="w-full h-2 bg-ceramic-border rounded-full overflow-hidden">
             <motion.div
               className="h-full rounded-full bg-amber-400"
@@ -96,8 +97,15 @@ export function FeatureGate({ featureId, children, className = '' }: FeatureGate
               transition={{ duration: 0.8, ease: 'easeOut' }}
             />
           </div>
-          <p className="text-xs text-ceramic-text-secondary mt-1.5">
+          <p className="text-[11px] text-ceramic-text-secondary mt-1.5">
             Faltam {xpRemaining.toLocaleString()} CP
+          </p>
+        </div>
+
+        {/* Explanation and tips */}
+        <div className="w-full pt-2 border-t border-ceramic-border/50 space-y-1.5">
+          <p className="text-[11px] text-ceramic-text-secondary leading-relaxed">
+            Ganhe Pontos de Consciencia (CP) para desbloquear! Registre momentos, responda perguntas diarias e use o chat.
           </p>
         </div>
       </div>

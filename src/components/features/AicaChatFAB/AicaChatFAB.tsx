@@ -6,8 +6,8 @@
  * Supports expand to fullscreen with context sidebar.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
@@ -20,6 +20,31 @@ import type { ChatAction } from '@/types/chatActions'
 import { useChatContextData } from '@/hooks/useChatContextData'
 import { ChatContextSidebar } from './ChatContextSidebar'
 import './AicaChatFAB.css'
+
+/** Progressive thinking indicator shown as an assistant message while AI is responding */
+function AicaThinkingIndicator() {
+  const [phase, setPhase] = useState(0)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPhase(1), 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const label = useMemo(() => {
+    return phase === 0 ? 'Pensando...' : 'Gerando resposta...'
+  }, [phase])
+
+  return (
+    <div className="aica-fab-message aica-fab-message--assistant">
+      <div className="aica-fab-thinking">
+        <span className="aica-fab-thinking__label">{label}</span>
+        <span className="typing-dots" aria-hidden="true">
+          <span /><span /><span />
+        </span>
+      </div>
+    </div>
+  )
+}
 
 interface AicaChatFABProps {
   position?: 'bottom-right' | 'bottom-left'
@@ -399,9 +424,7 @@ export function AicaChatFAB({
                 ))}
 
                 {isLoading && (
-                  <div className="aica-fab-message aica-fab-message--assistant">
-                    <Loader2 size={16} className="aica-fab-loading-icon" />
-                  </div>
+                  <AicaThinkingIndicator />
                 )}
 
                 {error && (

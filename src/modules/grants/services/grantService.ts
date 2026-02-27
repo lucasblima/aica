@@ -241,12 +241,10 @@ export async function deleteOpportunity(id: string): Promise<void> {
  * @throws Error se a busca falhar
  */
 export async function getUpcomingDeadlines(
+  userId: string,
   daysAhead: number = 30
 ): Promise<GrantDeadline[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Usuário não autenticado')
-
     const today = new Date()
     const futureDate = new Date()
     futureDate.setDate(today.getDate() + daysAhead)
@@ -254,7 +252,7 @@ export async function getUpcomingDeadlines(
     const { data: opportunities, error: oppError } = await supabase
       .from('grant_opportunities')
       .select('id, title, submission_deadline')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .not('status', 'in', '("closed","archived")')
       .gte('submission_deadline', today.toISOString())
       .lte('submission_deadline', futureDate.toISOString())
@@ -266,7 +264,7 @@ export async function getUpcomingDeadlines(
     const { data: projects, error: projError } = await supabase
       .from('grant_projects')
       .select('opportunity_id, id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .in('status', ['draft', 'briefing', 'generating', 'review'])
 
     if (projError) throw projError
@@ -1139,15 +1137,12 @@ export async function countActiveProjects(opportunityId: string): Promise<number
  * @returns Número total de projetos ativos
  * @throws Error se a contagem falhar
  */
-export async function countAllActiveProjects(): Promise<number> {
+export async function countAllActiveProjects(userId: string): Promise<number> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Usuário não autenticado')
-
     const { count, error } = await supabase
       .from('grant_projects')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .is('archived_at', null)
 
     if (error) throw error
@@ -1165,18 +1160,15 @@ export async function countAllActiveProjects(): Promise<number> {
  * @returns Lista de projetos recentes
  * @throws Error se a busca falhar
  */
-export async function getRecentProjects(limit: number = 5): Promise<GrantProject[]> {
+export async function getRecentProjects(userId: string, limit: number = 5): Promise<GrantProject[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Usuário não autenticado')
-
     const { data, error } = await supabase
       .from('grant_projects')
       .select(`
         *,
         opportunity:grant_opportunities(*)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .is('archived_at', null)
       .order('updated_at', { ascending: false })
       .limit(limit)
