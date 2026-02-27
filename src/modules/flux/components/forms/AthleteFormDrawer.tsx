@@ -12,7 +12,7 @@
  * - 3 secoes: Basic Info + Modalities + Health Config
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
 import {
   X,
@@ -34,6 +34,8 @@ import {
   MODALITY_OPTIONS,
   LEVEL_OPTIONS,
 } from '../../hooks/useAthleteForm';
+import UserSearchSection from './UserSearchSection';
+import type { UserSearchResult } from '../../hooks/useUserSearch';
 
 interface AthleteFormDrawerProps {
   mode: 'create' | 'edit';
@@ -65,6 +67,51 @@ export default function AthleteFormDrawer({
     handleSubmit,
     handleClose,
   } = useAthleteForm({ mode, initialData, isOpen, onSave, onClose, autoCloseDelayMs: 1000 });
+
+  // User search state (create mode only)
+  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
+  const [isManualMode, setIsManualMode] = useState(false);
+
+  // Reset user search state when drawer opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      setSelectedUser(null);
+      setIsManualMode(false);
+    }
+  }, [isOpen]);
+
+  const handleUserSelected = useCallback(
+    (user: UserSearchResult) => {
+      setSelectedUser(user);
+      // Auto-fill form fields from selected user
+      if (user.full_name) handleChange('name', user.full_name);
+      if (user.email) handleChange('email', user.email);
+      handleChange('auth_user_id', user.id);
+      handleChange('invitation_status', 'connected');
+    },
+    [handleChange]
+  );
+
+  const handleClearUserSelection = useCallback(() => {
+    setSelectedUser(null);
+    handleChange('name', '');
+    handleChange('email', '');
+    handleChange('auth_user_id', undefined);
+    handleChange('invitation_status', undefined);
+  }, [handleChange]);
+
+  const handleToggleManualMode = useCallback(() => {
+    setIsManualMode((prev) => {
+      const goingToManual = !prev;
+      if (goingToManual) {
+        // Switching to manual: clear any selected user
+        setSelectedUser(null);
+        handleChange('auth_user_id', undefined);
+        handleChange('invitation_status', undefined);
+      }
+      return goingToManual;
+    });
+  }, [handleChange]);
 
   // Invite system state (Drawer-specific)
   const [isSendingInvite, setIsSendingInvite] = useState(false);
@@ -214,6 +261,17 @@ export default function AthleteFormDrawer({
                   </motion.div>
                 )}
 
+                {/* User Search Section (create mode only) */}
+                {mode === 'create' && (
+                  <UserSearchSection
+                    onUserSelected={handleUserSelected}
+                    onClear={handleClearUserSelection}
+                    selectedUser={selectedUser}
+                    isManualMode={isManualMode}
+                    onToggleManualMode={handleToggleManualMode}
+                  />
+                )}
+
                 {/* Section 1: Basic Info */}
                 <div className="ceramic-card overflow-hidden">
                   <button
@@ -247,7 +305,10 @@ export default function AthleteFormDrawer({
                           type="text"
                           value={formData.name}
                           onChange={(e) => handleChange('name', e.target.value)}
-                          className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                          disabled={!!selectedUser}
+                          className={`w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 ${
+                            selectedUser ? 'opacity-60 cursor-not-allowed' : ''
+                          }`}
                           placeholder="Nome completo do atleta"
                         />
                         {errors.name && (
@@ -264,9 +325,9 @@ export default function AthleteFormDrawer({
                           type="email"
                           value={formData.email}
                           onChange={(e) => handleChange('email', e.target.value)}
-                          disabled={initialData?.invitation_status === 'connected'}
+                          disabled={!!selectedUser || initialData?.invitation_status === 'connected'}
                           className={`w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 ${
-                            initialData?.invitation_status === 'connected'
+                            selectedUser || initialData?.invitation_status === 'connected'
                               ? 'opacity-60 cursor-not-allowed'
                               : ''
                           }`}
