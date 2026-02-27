@@ -12,6 +12,7 @@ export { default as TimelineVisual } from './TimelineVisual';
 // Athlete Forms
 export { default as AthleteFormDrawer } from './AthleteFormDrawer';
 export { default as AthleteFormModal } from './AthleteFormModal';
+export { default as UserSearchSection } from './UserSearchSection';
 
 // Form state management
 export { useTemplateForm } from './useTemplateForm';

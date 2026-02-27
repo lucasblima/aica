@@ -162,7 +162,7 @@ export const spaceService = {
         color_theme: data.color_theme || archetypeConfig.color_theme,
         is_active: true,
         is_favorite: false,
-        settings: {}
+        settings: data.settings || {},
       };
 
       const { data: spaceData, error } = await supabase

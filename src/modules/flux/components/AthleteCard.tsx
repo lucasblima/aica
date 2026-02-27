@@ -141,9 +141,10 @@ export function AthleteCard({
 
           {/* Name + Level + Modality */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-bold text-ceramic-text-primary truncate flex items-center gap-1.5">
-              {athlete.name}
-              <ConnectionStatusDot status={athlete.invitation_status} />
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-base font-bold text-ceramic-text-primary truncate">
+                {athlete.name}
+              </h3>
               {/* Status Indicators — #389 */}
               {athlete.financial_status && athlete.financial_status !== 'ok' && (
                 <span
@@ -162,7 +163,7 @@ export function AthleteCard({
                   }
                 />
               )}
-            </h3>
+            </div>
             <div className="mt-1 flex items-center gap-2">
               <LevelBadge level={athlete.level} size="sm" />
               {athlete.modality && (
@@ -173,13 +174,14 @@ export function AthleteCard({
                   {MODALITY_CONFIG[athlete.modality]?.icon}
                 </span>
               )}
+              <ConnectionStatusDot status={athlete.invitation_status} />
             </div>
           </div>
 
           {/* Status Badge */}
           <div
             className={`
-              px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider
+              px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex-shrink-0
               ${statusConfig.color === 'green' ? 'bg-ceramic-success/20 text-ceramic-success' : ''}
               ${statusConfig.color === 'yellow' ? 'bg-ceramic-warning/20 text-ceramic-warning' : ''}
               ${statusConfig.color === 'blue' ? 'bg-ceramic-info/20 text-ceramic-info' : ''}
