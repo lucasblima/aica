@@ -409,28 +409,11 @@ async function getUserContext(userId: string): Promise<UserContext> {
       mentalHealthFlags.push('overwhelm')
     }
 
-    // 2. Fetch áreas críticas (áreas com problemas bloqueados)
-    const { data: userAreas } = await supabase
-      .from('user_areas')
-      .select('id, name, status, is_critical')
-      .eq('user_id', userId)
+    // 2. Critical areas — user_areas table not yet created (future feature)
+    const criticalAreas: UserContext['criticalAreas'] = []
 
-    const criticalAreas = (userAreas || [])
-      .filter(a => a.is_critical)
-      .map(a => ({
-        areaId: a.id,
-        areaName: a.name,
-        severity: a.status === 'critical' ? 'high' : 'medium',
-        isBlocking: true,
-      }))
-
-    // 3. Fetch trilhas ativas
-    const { data: activeJourneys } = await supabase
-      .from('user_journeys')
-      .select('area_id, journey_type, completion_percentage')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .limit(5)
+    // 3. Active journeys — user_journeys table not yet created (future feature)
+    const activeJourneys: Array<{ area_id: string; journey_type: string; completion_percentage: number }> = []
 
     // 4. Fetch respostas recentes a perguntas (últimos 7 dias)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -953,23 +936,14 @@ export async function saveDailyResponse(
 
 /**
  * Registra métrica de uso (para otimização de custos)
+ * NOTE: gemini_api_logs table was never created. Usage is now tracked
+ * via aiUsageTrackingService (ai_usage_logs table). This function is
+ * kept as a no-op for backward compatibility.
  */
 export async function logDailyQuestionUsage(
-  userId: string,
-  source: 'ai' | 'journey' | 'pool',
-  responseTime: number
+  _userId: string,
+  _source: 'ai' | 'journey' | 'pool',
+  _responseTime: number
 ): Promise<void> {
-  try {
-    await supabase.from('gemini_api_logs').insert({
-      user_id: userId,
-      action: 'daily_question',
-      model: source === 'ai' ? 'gemini-2.5-flash' : 'fallback',
-      tokens_used: 0, // Será preenchido pelo backend
-      response_time_ms: responseTime,
-      status: 'success',
-      created_at: new Date().toISOString(),
-    })
-  } catch (error) {
-    log.error('Error logging usage:', error)
-  }
+  // No-op: usage tracked via trackAIUsage() in generateAIDrivenQuestion()
 }
