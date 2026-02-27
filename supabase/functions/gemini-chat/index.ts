@@ -2574,6 +2574,134 @@ serve(async (req) => {
           result = chatResult
           break
         }
+        case 'chat_aica_stream': {
+          // SSE streaming variant of chat_aica — reuses same logic, streams tokens
+          const supabaseAdminStream = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+
+          const streamMessage = payload?.message
+          if (!streamMessage) throw new Error('Mensagem e obrigatoria')
+
+          const streamModule = payload?.module || 'coordinator'
+
+          // Build user context (same as handleLegacyChat)
+          let streamUserContext = ''
+          let streamRawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
+          if (userId && supabaseAdminStream) {
+            try {
+              const ctxResult = await buildUserContext(supabaseAdminStream, userId, streamModule)
+              streamUserContext = ctxResult.contextString
+              streamRawData = ctxResult.rawData
+            } catch (e) {
+              console.warn('[chat_aica_stream] Failed to build context:', (e as Error).message)
+            }
+          }
+
+          // Build system prompt (same as handleLegacyChat)
+          const streamModel = genAI.getGenerativeModel({
+            model: MODELS.fast,
+            generationConfig: { temperature: 0.7, topP: 0.95, topK: 40, maxOutputTokens: 4096 },
+          })
+
+          let streamSystemPrompt = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
+Voce ajuda o usuario com produtividade, organizacao e bem-estar.
+Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
+
+          if (payload?.systemPrompt) streamSystemPrompt = payload.systemPrompt
+
+          const nowStream = new Date()
+          const todayStream = nowStream.toISOString().split('T')[0]
+          const dowStream = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][nowStream.getDay()]
+          const tomorrowStream = new Date(nowStream.getTime() + 86400000).toISOString().split('T')[0]
+
+          streamSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${todayStream} (${dowStream})\n- Amanha: ${tomorrowStream}\n- Horario: ${nowStream.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} (BRT)`
+
+          if (streamUserContext) {
+            streamSystemPrompt += `\n\n## Dados Reais do Usuario\n${streamUserContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- NUNCA pergunte qual e a data atual — voce JA SABE a data (veja acima)\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Liste dados em formato organizado (bullet points) quando houver multiplos itens\n- Se nao tiver dados suficientes, sugira acoes concretas`
+          }
+
+          const streamHistory = payload?.history?.map((msg: any) => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }],
+          })) || []
+
+          let streamFinalMessage = streamMessage
+          if (payload?.context) streamFinalMessage = `Contexto:\n${payload.context}\n\nPergunta: ${streamMessage}`
+
+          const streamChat = streamModel.startChat({
+            history: [
+              { role: 'user', parts: [{ text: `Sistema: ${streamSystemPrompt}` }] },
+              { role: 'model', parts: [{ text: 'Entendido! Tenho acesso aos seus dados e vou dar respostas personalizadas.' }] },
+              ...streamHistory,
+            ],
+          })
+
+          // Stream the response via SSE
+          const streamResult = await streamChat.sendMessageStream(streamFinalMessage)
+
+          const sseStream = new ReadableStream({
+            async start(controller) {
+              const encoder = new TextEncoder()
+              let fullText = ''
+
+              try {
+                for await (const chunk of streamResult.stream) {
+                  const chunkText = chunk.text()
+                  if (chunkText) {
+                    fullText += chunkText
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', content: chunkText })}\n\n`))
+                  }
+                }
+
+                // Generate suggested actions (same as handleLegacyChat)
+                const streamActions = generateSuggestedActions(streamMessage, streamRawData)
+
+                // Get usage metadata
+                const response = await streamResult.response
+                const usageMeta = response.usageMetadata
+
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                  type: 'done',
+                  fullText,
+                  agent: 'aica_coordinator',
+                  actions: streamActions,
+                  usage: { input: usageMeta?.promptTokenCount || 0, output: usageMeta?.candidatesTokenCount || 0 },
+                })}\n\n`))
+              } catch (streamError) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                  type: 'error',
+                  message: (streamError as Error).message || 'Erro no streaming',
+                })}\n\n`))
+              } finally {
+                controller.close()
+              }
+            },
+          })
+
+          // Fire-and-forget: log interaction
+          if (userId && supabaseAdminStream) {
+            supabaseAdminStream.rpc('log_interaction', {
+              p_user_id: userId,
+              p_action: 'chat_aica_stream',
+              p_module: streamModule,
+              p_model: MODELS.fast,
+              p_tokens_in: 0,
+              p_tokens_out: 0,
+            }).catch((err: any) => {
+              console.warn(`[chat_aica_stream] Failed to log interaction: ${err.message}`)
+            })
+          }
+
+          return new Response(sseStream, {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache',
+              'Connection': 'keep-alive',
+            },
+          })
+        }
         case 'analyze_content_realtime':
           result = await handleAnalyzeContentRealtime(genAI, payload)
           break

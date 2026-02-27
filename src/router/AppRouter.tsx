@@ -80,6 +80,9 @@ const IntensityCalculatorView = lazy(() => import('../modules/flux/views/Intensi
 const CRMCommandCenterView = lazy(() => import('../modules/flux/views/CRMCommandCenterView').then(m => ({ default: m.default })));
 const ParQFormView = lazy(() => import('../modules/flux/views/ParQFormView').then(m => ({ default: m.default })));
 
+// Chat Module - Full-page chat experience
+const ChatPage = lazy(() => import('../pages/ChatPage'));
+
 // Google Hub Module - Google Calendar integration dashboard
 const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ default: m.GoogleHubPage })));
 
@@ -881,6 +884,9 @@ export function AppRouter() {
                   path="/vida"
                   element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
                />
+
+               {/* Chat Module - Full-page chat */}
+               <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
 
                {/* 404 Not Found - Catch all unknown routes */}
                <Route path="*" element={<NotFoundPage />} />
