@@ -81,7 +81,6 @@ export interface SystemHealth {
 
 export type ViewState =
   | 'vida'
-  | 'vida-new'
   | 'agenda'
   | 'connections'
   | 'studio'

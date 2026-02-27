@@ -146,7 +146,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
         subtitle="PODCAST COPILOT"
         userEmail={userEmail}
         onLogout={onLogout}
-        onLogoClick={() => navigate('/vida')}
+        onLogoClick={() => navigate('/')}
       />
 
       {/* Main Content */}
