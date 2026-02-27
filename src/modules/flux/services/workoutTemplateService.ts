@@ -169,6 +169,17 @@ export class WorkoutTemplateService {
    */
   static async deleteTemplate(id: string): Promise<{ error: any }> {
     try {
+      // Log warning if deleting prescribed template
+      const { data: templateData } = await supabase
+        .from('workout_templates')
+        .select('usage_count, name')
+        .eq('id', id)
+        .single();
+
+      if (templateData && templateData.usage_count > 0) {
+        console.warn(`[WorkoutTemplateService] Deleting prescribed template "${templateData.name}" (usage_count: ${templateData.usage_count})`);
+      }
+
       const { error } = await supabase.from('workout_templates').delete().eq('id', id);
 
       return { error };
@@ -399,6 +410,17 @@ export class WorkoutTemplateService {
   ): Promise<{ data: WorkoutTemplate | null; error: any }> {
     try {
       const { id, ...updates } = input;
+
+      // Check if template has been prescribed (usage_count > 0)
+      const { data: existing } = await supabase
+        .from('workout_templates')
+        .select('usage_count')
+        .eq('id', id)
+        .single();
+
+      if (existing && existing.usage_count > 0) {
+        return { data: null, error: new Error('Este exercicio foi prescrito e nao pode ser editado. Duplique-o para criar uma versao editavel.') };
+      }
 
       const dbUpdates: Record<string, any> = {
         ...updates,

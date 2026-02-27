@@ -2,8 +2,8 @@
  * TemplateLibraryView - Biblioteca de Templates de Treino
  *
  * Tela 1 do Flow Module: Grid filtrável de templates com drag support,
- * quick actions (duplicate/delete/favorite), e criação de novos templates.
- * #458: Templates are immutable — no edit action. Only clone + delete (own only).
+ * quick actions (edit/duplicate/delete/favorite), e criação de novos templates.
+ * #538: Own templates can be edited (if usage_count === 0). Prescribed templates are locked.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -18,6 +18,8 @@ import {
   X,
   ArrowLeft,
   User as UserIcon,
+  Pencil,
+  Lock,
 } from 'lucide-react';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
 import { useWorkoutTemplates } from '../hooks';
@@ -85,8 +87,7 @@ export default function TemplateLibraryView() {
   const { templateId } = useParams();
   const location = useLocation();
 
-  // Determine mode based on URL
-  // #458: Edit mode removed — templates are immutable. Edit URLs redirect to list.
+  // Determine mode based on URL (edit is state-driven via handleEdit, not URL-driven)
   const mode: 'create' | 'list' = location.pathname.includes('/new')
     ? 'create'
     : 'list';
@@ -103,21 +104,25 @@ export default function TemplateLibraryView() {
   const [draggedTemplate, setDraggedTemplate] = useState<WorkoutTemplate | null>(null);
   const [isModalOpen, setModalOpen] = useState(mode !== 'list');
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
+  const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
 
   // Apply filters
   useEffect(() => {
     applyFilters();
   }, [templates, filters]);
 
-  // #458: Redirect legacy /edit URLs to list (templates are immutable)
+  // Sync drawer state with URL mode
   useEffect(() => {
     if (location.pathname.includes('/edit')) {
+      // Legacy /edit URLs redirect to list — editing is now state-driven via card actions
       navigate('/flux/templates', { replace: true });
       return;
     }
     if (mode === 'list') {
-      setEditingTemplate(null);
-      setModalOpen(false);
+      // Only reset if drawer isn't being opened by handleEdit (state-driven)
+      if (!editingTemplate) {
+        setModalOpen(false);
+      }
     } else if (mode === 'create') {
       setEditingTemplate(null);
       setModalOpen(true);
@@ -131,8 +136,15 @@ export default function TemplateLibraryView() {
   };
 
   const handleModalSave = (template: WorkoutTemplate) => {
-    // Optimistic update — prepend new template to grid (#458: no edit path)
-    setFilteredTemplates((prev) => [template, ...prev]);
+    if (editingTemplate) {
+      // Edit mode — update the existing template in the grid
+      setFilteredTemplates((prev) =>
+        prev.map((t) => (t.id === template.id ? template : t))
+      );
+    } else {
+      // Create mode — prepend new template to grid
+      setFilteredTemplates((prev) => [template, ...prev]);
+    }
 
     // Also refresh from DB to ensure consistency with real-time subscription
     refresh();
@@ -186,10 +198,14 @@ export default function TemplateLibraryView() {
 
   const handleToggleFavorite = async (template: WorkoutTemplate) => {
     // Guard: only the owner can favorite their own templates (RLS blocks PATCH on others)
-    if (user && template.user_id !== user.id) {
+    if (!user || template.user_id !== user.id) {
       console.warn('[TemplateLibraryView] Cannot favorite community template — not owner');
       return;
     }
+
+    // Debounce: prevent rapid-fire clicks
+    if (favoritingIds.has(template.id)) return;
+    setFavoritingIds((prev) => new Set(prev).add(template.id));
 
     const newFavorite = !template.is_favorite;
 
@@ -198,18 +214,24 @@ export default function TemplateLibraryView() {
       prev.map((t) => (t.id === template.id ? { ...t, is_favorite: newFavorite } : t))
     );
 
-    const { error: toggleError } = await WorkoutTemplateService.toggleFavorite(template.id, newFavorite);
-    if (toggleError) {
-      console.error('[TemplateLibraryView] Favorite toggle failed, reverting:', toggleError);
-      // Revert optimistic update on failure
-      setFilteredTemplates((prev) =>
-        prev.map((t) => (t.id === template.id ? { ...t, is_favorite: template.is_favorite } : t))
-      );
+    try {
+      const { error: toggleError } = await WorkoutTemplateService.toggleFavorite(template.id, newFavorite);
+      if (toggleError) {
+        console.error('[TemplateLibraryView] Favorite toggle failed, reverting:', toggleError);
+        // Revert optimistic update on failure
+        setFilteredTemplates((prev) =>
+          prev.map((t) => (t.id === template.id ? { ...t, is_favorite: template.is_favorite } : t))
+        );
+      }
+      // Always refresh from DB to ensure is_favorite state stays in sync
+      await refresh();
+    } finally {
+      setFavoritingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(template.id);
+        return next;
+      });
     }
-    // Always refresh from DB to ensure is_favorite state stays in sync
-    // This is critical: the DB is the source of truth for favorites,
-    // not local state. The refresh ensures consistency after toggling.
-    await refresh();
   };
 
   const handleDuplicate = async (template: WorkoutTemplate) => {
@@ -218,7 +240,10 @@ export default function TemplateLibraryView() {
   };
 
   const handleDelete = async (template: WorkoutTemplate) => {
-    if (!confirm(`Deletar template "${template.name}"?`)) return;
+    const message = template.usage_count > 0
+      ? `Este exercicio foi prescrito para ${template.usage_count} treino(s). Deletar removera o vinculo. Deseja continuar?`
+      : `Deletar template "${template.name}"?`;
+    if (!confirm(message)) return;
 
     const { error: deleteError } = await WorkoutTemplateService.deleteTemplate(template.id);
     if (deleteError) {
@@ -226,6 +251,11 @@ export default function TemplateLibraryView() {
     }
     // Always refresh to sync UI with DB state
     await refresh();
+  };
+
+  const handleEdit = (template: WorkoutTemplate) => {
+    setEditingTemplate(template);
+    setModalOpen(true);
   };
 
   const handleDragStart = (template: WorkoutTemplate) => {
@@ -397,11 +427,13 @@ export default function TemplateLibraryView() {
                 template={template}
                 currentUserId={user?.id}
                 onToggleFavorite={handleToggleFavorite}
+                onEdit={handleEdit}
                 onDuplicate={handleDuplicate}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 isDragging={draggedTemplate?.id === template.id}
+                favoritingId={favoritingIds.has(template.id)}
               />
             ))}
           </div>
@@ -409,9 +441,8 @@ export default function TemplateLibraryView() {
       </div>
 
       {/* Template Form Drawer */}
-      {/* #458: Always create mode — templates are immutable */}
       <TemplateFormDrawer
-        mode="create"
+        mode={editingTemplate ? 'edit' : 'create'}
         initialData={editingTemplate || undefined}
         isOpen={isModalOpen}
         onClose={handleModalClose}
@@ -429,22 +460,26 @@ interface TemplateCardProps {
   template: WorkoutTemplate;
   currentUserId?: string;
   onToggleFavorite: (template: WorkoutTemplate) => void;
+  onEdit?: (template: WorkoutTemplate) => void;
   onDuplicate: (template: WorkoutTemplate) => void;
   onDelete: (template: WorkoutTemplate) => void;
   onDragStart: (template: WorkoutTemplate) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  favoritingId?: boolean;
 }
 
 function TemplateCard({
   template,
   currentUserId,
   onToggleFavorite,
+  onEdit,
   onDuplicate,
   onDelete,
   onDragStart,
   onDragEnd,
   isDragging,
+  favoritingId,
 }: TemplateCardProps) {
   const modalityConfig = MODALITY_CONFIG[template.modality as TrainingModality];
 
@@ -463,13 +498,16 @@ function TemplateCard({
       </div>
 
       {/* Favorite Button — only for own templates (RLS blocks PATCH on community templates) */}
-      {(!currentUserId || template.user_id === currentUserId) ? (
+      {(currentUserId && template.user_id === currentUserId) ? (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite(template);
           }}
-          className="absolute top-3 right-3 p-2 rounded-lg ceramic-inset hover:bg-white/50 transition-colors z-10"
+          disabled={favoritingId}
+          className={`absolute top-3 right-3 p-2 rounded-lg ceramic-inset hover:bg-white/50 transition-colors z-10 ${
+            favoritingId ? 'opacity-50 cursor-wait' : ''
+          }`}
         >
           <Star
             className={`w-4 h-4 ${
@@ -602,8 +640,30 @@ function TemplateCard({
           )}
         </div>
 
-        {/* Actions — #458: Templates are immutable (no Edit button) */}
+        {/* Actions */}
         <div className="flex items-center gap-2 pt-2 border-t border-ceramic-text-secondary/10">
+          {/* Edit — only for own templates that have NOT been prescribed */}
+          {currentUserId && template.user_id === currentUserId && !(template.usage_count > 0) && onEdit && (
+            <button
+              onClick={() => onEdit(template)}
+              className="flex items-center justify-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+              <span className="text-xs font-medium text-ceramic-text-primary">Editar</span>
+            </button>
+          )}
+
+          {/* Lock badge — prescribed templates cannot be edited */}
+          {currentUserId && template.user_id === currentUserId && template.usage_count > 0 && (
+            <div
+              className="flex items-center gap-1 px-2 py-2 text-ceramic-text-secondary"
+              title="Prescrito — nao pode ser editado"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-medium">Prescrito</span>
+            </div>
+          )}
+
           <button
             onClick={() => onDuplicate(template)}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-colors"
