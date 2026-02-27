@@ -58,7 +58,11 @@ export function useAssessoriaEsportiva(): UseAssessoriaEsportivaReturn {
     try {
       setError(null);
       const space = await assessoriaService.createAssessoria(input);
+      // Optimistic update: set local state immediately so UI reflects creation
+      // without needing a re-fetch (avoids race condition where re-fetch
+      // happens before data is fully committed)
       setAssessoria(space);
+      log.debug('Assessoria created and state updated:', space.id);
       return space;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erro ao criar assessoria');
