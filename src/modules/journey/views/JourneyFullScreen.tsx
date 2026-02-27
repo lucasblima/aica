@@ -198,14 +198,16 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   }, [activeTab, summary, isLoadingSummary, refreshSummary])
 
   // Initialize File Search: immediately on desktop (inline), or on search tab on mobile
+  // Guard: only initialize when we have a userId to avoid ensureCorpus errors
   useEffect(() => {
+    if (!user?.id) return
     const isDesktop = window.innerWidth >= 1024
     if (isDesktop || activeTab === 'search') {
       initializeFileSearch().catch((err) => {
         log.warn('File search initialization failed (non-critical):', err)
       })
     }
-  }, [activeTab, initializeFileSearch])
+  }, [activeTab, initializeFileSearch, user?.id])
 
   // Handle moment creation
   const handleCreateMoment = async (input: CreateMomentInput) => {
