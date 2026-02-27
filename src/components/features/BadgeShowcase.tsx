@@ -67,34 +67,61 @@ export const BadgeShowcase: React.FC<BadgeShowcaseProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | 'all'>('all');
   const [showEarnedOnly, setShowEarnedOnly] = useState(false);
+  const [blackHatEnabled, setBlackHatEnabled] = useState(false);
+  const [blackHatToggling, setBlackHatToggling] = useState(false);
 
-  // Fetch badges
-  useEffect(() => {
+  // Fetch badges and Black Hat preference
+  const fetchData = async () => {
     if (!user?.id) return;
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const [badgesData, statsData] = await Promise.all([
-          badgeEvaluationService.evaluateAllBadges(user.id),
-          badgeEvaluationService.getBadgeStats(user.id),
-        ]);
+    try {
+      const [badgesData, statsData] = await Promise.all([
+        badgeEvaluationService.evaluateAllBadges(user.id),
+        badgeEvaluationService.getBadgeStats(user.id),
+      ]);
 
-        setBadges(badgesData);
-        setStats(statsData);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erro ao carregar badges';
-        setError(message);
-        console.error('[BadgeShowcase] Error:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setBadges(badgesData);
+      setStats(statsData);
 
+      // Read Black Hat preference from the badges data
+      // If any black_hat badge has can_earn=true, the setting is enabled
+      const hasBlackHatEnabled = badgesData.some(
+        (b) => b.hat_type === 'black_hat' && b.can_earn
+      );
+      setBlackHatEnabled(hasBlackHatEnabled);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao carregar badges';
+      setError(message);
+      console.error('[BadgeShowcase] Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [user?.id]);
+
+  // Handle Black Hat toggle
+  const handleBlackHatToggle = async () => {
+    if (!user?.id || blackHatToggling) return;
+
+    setBlackHatToggling(true);
+    try {
+      const newValue = !blackHatEnabled;
+      await badgeEvaluationService.toggleBlackHatBadges(user.id, newValue);
+      setBlackHatEnabled(newValue);
+      // Refresh badges to reflect the new setting
+      await fetchData();
+    } catch (err) {
+      console.error('[BadgeShowcase] Error toggling Black Hat:', err);
+    } finally {
+      setBlackHatToggling(false);
+    }
+  };
 
   // Filter badges
   const filteredBadges = badges.filter(badge => {
@@ -200,6 +227,27 @@ export const BadgeShowcase: React.FC<BadgeShowcaseProps> = ({
             />
             <span>Apenas conquistados</span>
           </label>
+
+          {/* Black Hat Badges Toggle */}
+          <div className="black-hat-toggle">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={blackHatEnabled}
+              aria-label="Ativar badges de desafio (Black Hat)"
+              className={`toggle-switch ${blackHatEnabled ? 'active' : ''} ${blackHatToggling ? 'loading' : ''}`}
+              onClick={handleBlackHatToggle}
+              disabled={blackHatToggling}
+            >
+              <span className="toggle-knob" />
+            </button>
+            <div className="black-hat-label">
+              <span className="black-hat-title">Badges de Desafio (Black Hat)</span>
+              <span className="black-hat-description">
+                Ativa badges que criam urgência e desafios de tempo. Desativado por padrão.
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
