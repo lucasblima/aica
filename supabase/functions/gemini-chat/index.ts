@@ -768,11 +768,11 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
       }
     }
 
-    // Fetch Life Council insights for coordinator proactive guidance
-    if (module === 'coordinator') {
+    // Fetch Life Council insights for coordinator and journey agents
+    if (module === 'coordinator' || module === 'journey') {
       const { data: councilInsights } = await supabaseAdmin
         .from('daily_council_insights')
-        .select('insight_type, content, action_items, created_at')
+        .select('insight_type, content, action_items, overall_status, headline, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(3)
@@ -781,13 +781,64 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
         contextParts.push(`\n### Insights do Life Council (últimos ${councilInsights.length})`)
         councilInsights.forEach((insight: any) => {
           const date = new Date(insight.created_at).toLocaleDateString('pt-BR')
-          contextParts.push(`- [${date}] ${insight.insight_type}: ${typeof insight.content === 'string' ? insight.content.substring(0, 200) : JSON.stringify(insight.content).substring(0, 200)}`)
+          const status = insight.overall_status ? ` [${insight.overall_status}]` : ''
+          const headline = insight.headline ? ` — ${insight.headline}` : ''
+          contextParts.push(`- [${date}]${status}${headline} ${insight.insight_type}: ${typeof insight.content === 'string' ? insight.content.substring(0, 200) : JSON.stringify(insight.content).substring(0, 200)}`)
           if (insight.action_items?.length) {
             insight.action_items.slice(0, 2).forEach((item: string) => {
               contextParts.push(`  · Ação: ${item}`)
             })
           }
         })
+      }
+    }
+
+    // Fetch user behavioral patterns for personalized responses (all modules)
+    {
+      const { data: patterns } = await supabaseAdmin
+        .from('user_patterns')
+        .select('pattern_type, description, confidence, evidence_count, last_observed')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .gte('confidence', 0.5)
+        .order('confidence', { ascending: false })
+        .limit(5)
+
+      if (patterns?.length) {
+        contextParts.push(`\n### Padrões Comportamentais do Usuário (${patterns.length})`)
+        contextParts.push(`Use estes padrões para personalizar suas respostas:`)
+        patterns.forEach((p: any) => {
+          const lastSeen = p.last_observed ? new Date(p.last_observed).toLocaleDateString('pt-BR') : 'N/A'
+          contextParts.push(`- [${p.pattern_type}] ${p.description} (confiança: ${(p.confidence * 100).toFixed(0)}%, evidências: ${p.evidence_count || 0}, visto: ${lastSeen})`)
+        })
+      }
+    }
+
+    // Fetch weekly summary for coordinator and journey
+    if (module === 'coordinator' || module === 'journey') {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      const { data: weeklySummaries } = await supabaseAdmin
+        .from('weekly_summaries')
+        .select('summary_data, week_start, week_end, created_at')
+        .eq('user_id', userId)
+        .gte('created_at', weekAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (weeklySummaries?.length) {
+        const ws = weeklySummaries[0]
+        const data = typeof ws.summary_data === 'string' ? JSON.parse(ws.summary_data) : ws.summary_data
+        if (data) {
+          contextParts.push(`\n### Resumo Semanal (${ws.week_start || ''} a ${ws.week_end || ''})`)
+          if (data.emotionalTrend) contextParts.push(`- Tendência emocional: ${data.emotionalTrend}`)
+          if (data.dominantEmotions?.length) contextParts.push(`- Emoções dominantes: ${data.dominantEmotions.join(', ')}`)
+          if (data.insights?.length) {
+            data.insights.slice(0, 3).forEach((insight: string) => {
+              contextParts.push(`- Insight: ${insight}`)
+            })
+          }
+          if (data.suggestedFocus) contextParts.push(`- Foco sugerido: ${data.suggestedFocus}`)
+        }
       }
     }
 

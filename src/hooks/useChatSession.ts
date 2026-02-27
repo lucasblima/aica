@@ -161,6 +161,8 @@ export function useChatSession(): UseChatSessionReturn {
             completedTasksToday: ctx.completedTasksToday,
             activeGrants: ctx.activeGrants,
             upcomingEpisodes: ctx.upcomingEpisodes,
+            patterns: ctx.patterns,
+            latestInsight: ctx.latestInsight,
           }
         }
       } catch {
