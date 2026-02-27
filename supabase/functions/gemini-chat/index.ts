@@ -2637,8 +2637,25 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
             ],
           })
 
-          // Stream the response via SSE
-          const streamResult = await streamChat.sendMessageStream(streamFinalMessage)
+          // Try streaming first, fall back to non-streaming if it fails
+          let streamResult: any
+          try {
+            streamResult = await streamChat.sendMessageStream(streamFinalMessage)
+          } catch (streamInitError) {
+            // sendMessageStream failed — fall back to non-streaming response
+            console.warn('[chat_aica_stream] sendMessageStream failed, falling back:', (streamInitError as Error).message)
+            const nonStreamResult = await streamChat.sendMessage(streamFinalMessage)
+            const nonStreamText = nonStreamResult.response.text()
+            const fallbackActions = generateSuggestedActions(streamMessage, streamRawData)
+            const fallbackUsage = nonStreamResult.response.usageMetadata
+            return new Response(JSON.stringify({
+              success: true,
+              text: nonStreamText,
+              agent: 'aica_coordinator',
+              suggestedActions: fallbackActions,
+              usage: { input: fallbackUsage?.promptTokenCount || 0, output: fallbackUsage?.candidatesTokenCount || 0 },
+            }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          }
 
           const sseStream = new ReadableStream({
             async start(controller) {
@@ -2654,12 +2671,17 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
                   }
                 }
 
-                // Generate suggested actions (same as handleLegacyChat)
+                // Generate suggested actions
                 const streamActions = generateSuggestedActions(streamMessage, streamRawData)
 
-                // Get usage metadata
-                const response = await streamResult.response
-                const usageMeta = response.usageMetadata
+                // Get usage metadata safely
+                let usageMeta: any = null
+                try {
+                  const response = await streamResult.response
+                  usageMeta = response?.usageMetadata
+                } catch {
+                  // usageMetadata not available — skip
+                }
 
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({
                   type: 'done',

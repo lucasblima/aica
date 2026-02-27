@@ -78,23 +78,15 @@ export function useChatEngine(): UseChatEngineReturn {
       let currentSession = chatSession.session
       if (!currentSession) {
         currentSession = await chatService.createSession(userId, trimmed.slice(0, 60))
-        // Trigger session list refresh by creating a new session through sendMessage
-        // But we need the session for saving messages, so we proceed with our own
       }
 
-      // Optimistic user message — append to chatSession's message list via sendMessage's
-      // mechanism isn't available, so we save directly and let the UI show streamedText
-      const savedUserMsg = await chatService.saveMessage({
+      // Save user message to DB
+      await chatService.saveMessage({
         sessionId: currentSession.id,
         userId,
         content: trimmed,
         direction: 'inbound',
       })
-
-      // We need to add the user message to the displayed messages.
-      // Since chatSession.messages is managed by useChatSession, we append via
-      // a reload after streaming completes. For now the user sees their input
-      // in the ChatInput and the assistant streaming text below.
 
       // Build history from current messages
       const history = [...chatSession.messages, { role: 'user' as const, content: trimmed }]
@@ -128,12 +120,26 @@ export function useChatEngine(): UseChatEngineReturn {
           throw new Error('Stream ended without done event')
         }
       } catch {
-        // Fallback to non-streaming: delete the saved user message first
-        // (sendMessage will save its own), then delegate
-        // Note: we can't easily delete the saved msg, so just fall back.
-        // The duplicate user message will be minor — sendMessage will add another.
-        await chatSession.sendMessage(trimmed)
-        return
+        // Streaming failed — fallback to non-streaming via gemini-chat directly
+        // (NOT agent-proxy, which returns 401)
+        const fallbackResult = await supabase.functions.invoke('gemini-chat', {
+          body: {
+            action: 'chat_aica',
+            payload: {
+              message: trimmed,
+              session_id: currentSession.id,
+              history,
+            },
+          },
+        })
+        if (fallbackResult.data?.text) {
+          fullText = fallbackResult.data.text
+          agent = fallbackResult.data.agent
+          actions = fallbackResult.data.suggestedActions || []
+          usage = fallbackResult.data.usage
+        } else {
+          throw new Error(fallbackResult.data?.error || 'Falha ao enviar mensagem')
+        }
       }
 
       // Save assistant message to DB
@@ -142,20 +148,41 @@ export function useChatEngine(): UseChatEngineReturn {
         userId,
         content: fullText,
         direction: 'outbound',
-        modelUsed: 'gemini-2.5-flash-stream',
+        modelUsed: 'gemini-2.5-flash',
         tokensInput: usage?.input,
         tokensOutput: usage?.output,
       })
 
       // Reload session messages to sync state (includes both user + assistant msgs)
-      // This is simpler than manually managing parallel state
       if (currentSession.id) {
         await chatSession.switchSession(currentSession.id)
       }
     } catch (err) {
-      // If streaming entirely fails, fall back to non-streaming
+      // If everything fails, fall back to non-streaming via gemini-chat
       try {
-        await chatSession.sendMessage(trimmed)
+        const { data: { session: authRetry } } = await supabase.auth.getSession()
+        if (authRetry?.user?.id) {
+          const lastResort = await supabase.functions.invoke('gemini-chat', {
+            body: {
+              action: 'chat_aica',
+              payload: { message: trimmed, history: [] },
+            },
+          })
+          if (lastResort.data?.text) {
+            // Save and reload
+            const sess = chatSession.session
+            if (sess) {
+              await chatService.saveMessage({
+                sessionId: sess.id,
+                userId: authRetry.user.id,
+                content: lastResort.data.text,
+                direction: 'outbound',
+                modelUsed: 'gemini-2.5-flash',
+              })
+              await chatSession.switchSession(sess.id)
+            }
+          }
+        }
       } catch {
         // Both paths failed — error is shown by useChatSession
       }
