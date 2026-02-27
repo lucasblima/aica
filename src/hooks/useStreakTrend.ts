@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import {
   StreakStatus,
   StreakTrend,
@@ -191,10 +191,16 @@ export function useStreakTrend(options: UseStreakTrendOptions = {}): UseStreakTr
     }
   }, [user?.id, fetchStatus]);
 
-  // Auto-fetch on mount
+  // Auto-fetch on mount + auto-record daily activity on login
   useEffect(() => {
     if (autoFetch && user?.id) {
       fetchStatus();
+
+      // Auto-record daily activity on login (any authenticated session = active day)
+      // recordDailyActivity() already deduplicates — safe to call on every mount
+      streakRecoveryService.recordDailyActivity(user.id).catch(() => {
+        // Non-critical: streak recording failure shouldn't block UI
+      });
     }
   }, [autoFetch, user?.id, fetchStatus]);
 
