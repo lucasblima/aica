@@ -308,21 +308,14 @@ export async function getCPLeaderboard(
 ): Promise<{ rank: number; userName: string; totalCP: number }[]> {
   try {
     const { data, error } = await supabase
-      .from('user_stats')
-      .select(`
-        user_id,
-        consciousness_points,
-        user:users(name)
-      `)
-      .order('consciousness_points->total_cp', { ascending: false })
-      .limit(limit);
+      .rpc('get_cp_leaderboard', { p_limit: limit });
 
     if (error) throw error;
 
-    return (data || []).map((entry, index) => ({
-      rank: index + 1,
-      userName: (entry.user as any)?.name || 'Anonymous',
-      totalCP: (entry.consciousness_points as CPBalance)?.total_cp || 0,
+    return (data || []).map((entry: { rank: number; user_name: string; total_cp: number }) => ({
+      rank: entry.rank,
+      userName: entry.user_name || 'Anonymous',
+      totalCP: entry.total_cp || 0,
     }));
   } catch (error) {
     log.error('Error getting CP leaderboard', { error });

@@ -122,6 +122,13 @@ export function useConsciousnessPoints(
     } finally {
       setIsLoading(false);
     }
+
+    // Check weekly bonus (silent, non-blocking)
+    try {
+      await consciousnessPointsService.checkWeeklyBonus(user.id);
+    } catch {
+      // Weekly bonus check is non-critical
+    }
   }, [user?.id, includeHistory, historyLimit]);
 
   // Award CP

@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient';
+import { addXP } from '@/services/gamificationService';
 import { createNamespacedLogger } from '@/lib/logger';
 import type {
   BadgeDefinition,
@@ -179,13 +180,13 @@ async function evaluateCondition(
     }
 
     case 'tasks_priority': {
-      // Query tasks by priority
+      // Query work_items by priority
       const { count } = await supabase
-        .from('tasks')
+        .from('work_items')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('priority', condition.priority)
-        .eq('status', 'completed');
+        .not('completed_at', 'is', null);
 
       const completed = count || 0;
       const progress = Math.min(100, (completed / condition.count) * 100);
@@ -218,10 +219,10 @@ async function evaluateCondition(
 
     case 'journal_entries': {
       const { count } = await supabase
-        .from('life_events')
+        .from('moments')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('event_type', 'journal_entry');
+        .eq('moment_type', 'journal');
 
       const entries = count || 0;
       const progress = Math.min(100, (entries / condition.count) * 100);
@@ -234,10 +235,10 @@ async function evaluateCondition(
 
     case 'mood_checks': {
       const { count } = await supabase
-        .from('life_events')
+        .from('moments')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .in('event_type', ['mood_check', 'check_in', 'reflection']);
+        .in('moment_type', ['check_in', 'reflection', 'emotion']);
 
       const checks = count || 0;
       const progress = Math.min(100, (checks / condition.count) * 100);
@@ -282,14 +283,14 @@ async function evaluateCondition(
     }
 
     case 'focus_sessions': {
-      // Query focus sessions from life_events or a focus table
+      // Query focus sessions from moments table
       const minMinutes = condition.min_minutes || 0;
       const { count } = await supabase
-        .from('life_events')
+        .from('moments')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('event_type', 'focus_session')
-        .gte('metadata->duration_minutes', minMinutes);
+        .eq('moment_type', 'focus_session')
+        .gte('metadata->>duration_minutes', minMinutes);
 
       const sessions = count || 0;
       const progress = Math.min(100, (sessions / condition.count) * 100);
@@ -401,17 +402,14 @@ async function awardBadge(
       // Check if already earned (duplicate key)
       if (insertError.code === '23505') {
         log.info('Badge already earned:', badge.id);
-        return { success: false, error: 'Badge already earned' };
+        return { success: false, xpAwarded: 0, cpAwarded: 0, error: 'Badge already earned' };
       }
       throw insertError;
     }
 
     // Award XP
     if (badge.xp_reward > 0) {
-      await supabase.rpc('add_xp', {
-        p_user_id: userId,
-        p_xp_amount: badge.xp_reward,
-      });
+      await addXP(userId, badge.xp_reward);
     }
 
     // Award CP (only for White Hat badges)
