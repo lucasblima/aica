@@ -114,15 +114,15 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .gte('transaction_date', monthStart),
       supabase
         .from('user_patterns')
-        .select('pattern_type, description, confidence')
+        .select('pattern_type, description, confidence_score')
         .eq('user_id', userId)
         .eq('is_active', true)
-        .gte('confidence', 0.5)
-        .order('confidence', { ascending: false })
+        .gte('confidence_score', 0.5)
+        .order('confidence_score', { ascending: false })
         .limit(5),
       supabase
         .from('daily_council_insights')
-        .select('overall_status, headline, synthesis, action_items, created_at')
+        .select('overall_status, headline, synthesis, actions, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1),
@@ -152,7 +152,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
     const patterns: UserPattern[] = (patternsRes.data || []).map((p: any) => ({
       patternType: p.pattern_type,
       description: p.description,
-      confidence: p.confidence,
+      confidence: p.confidence_score,
     }))
 
     // Map latest insight
@@ -163,7 +163,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         overallStatus: ins.overall_status || 'unknown',
         headline: ins.headline || '',
         synthesis: ins.synthesis || '',
-        actionItems: Array.isArray(ins.action_items) ? ins.action_items : [],
+        actionItems: Array.isArray(ins.actions) ? ins.actions : [],
         createdAt: ins.created_at,
       }
     }
