@@ -111,6 +111,9 @@ export type GeminiAction =
   // Chat Action Buttons
   | 'execute_chat_action'
 
+  // Generic generation (adaptive insights, etc.)
+  | 'generate'
+
 /**
  * Request base para chamadas ao Gemini
  */
