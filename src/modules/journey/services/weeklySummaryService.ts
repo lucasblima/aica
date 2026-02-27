@@ -38,21 +38,26 @@ export async function generateWeeklySummary(
   weekNumber: number
 ): Promise<WeeklySummary> {
   try {
-    // Check if summary already exists — return cached to avoid unnecessary Gemini call
-    const existing = await getWeeklySummary(userId, year, weekNumber)
-    if (existing) {
-      log.debug('Weekly summary already exists, returning cached')
-      return existing
-    }
-
     // Get week date range
     const { start, end } = getWeekDateRange(year, weekNumber)
+
+    // Check if summary already exists
+    const existing = await getWeeklySummary(userId, year, weekNumber)
 
     // Fetch moments for this week
     const moments = await getMoments(userId, {
       startDate: start,
       endDate: end,
     })
+
+    // Return cached summary only if it has real data OR there are still no moments
+    // This prevents a stale empty summary from persisting after user starts capturing
+    const existingData = existing?.summary_data as WeeklySummaryData | undefined
+    const cachedHasContent = existingData && existingData.keyMoments.length > 0
+    if (existing && (cachedHasContent || moments.length === 0)) {
+      log.debug('Weekly summary cache hit (has content or still no moments)')
+      return existing
+    }
 
     // Generate summary using Gemini (handles empty case gracefully)
     const summaryData = moments.length === 0
