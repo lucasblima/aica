@@ -35,6 +35,8 @@ export interface AthleteFormData {
   requires_cardio_exam: boolean;
   requires_clearance_cert: boolean;
   allow_parq_onboarding: boolean;
+  auth_user_id?: string;
+  invitation_status?: 'none' | 'pending' | 'connected';
 }
 
 export interface AthleteFormErrors {
@@ -63,7 +65,7 @@ export interface UseAthleteFormReturn {
   isLoadingProfiles: boolean;
   isFormValid: boolean;
   errorCount: number;
-  handleChange: (field: keyof AthleteFormData, value: string | boolean) => void;
+  handleChange: (field: keyof AthleteFormData, value: string | boolean | undefined) => void;
   handleModalityToggle: (modality: TrainingModality) => void;
   handleLevelChange: (modality: TrainingModality, level: SimpleAthleteLevel) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
@@ -113,6 +115,8 @@ export function useAthleteForm({
         requires_cardio_exam: initialData.requires_cardio_exam || false,
         requires_clearance_cert: initialData.requires_clearance_cert || false,
         allow_parq_onboarding: initialData.allow_parq_onboarding || false,
+        auth_user_id: initialData.auth_user_id,
+        invitation_status: initialData.invitation_status,
       };
     }
     return {
@@ -123,6 +127,8 @@ export function useAthleteForm({
       requires_cardio_exam: false,
       requires_clearance_cert: false,
       allow_parq_onboarding: false,
+      auth_user_id: undefined,
+      invitation_status: undefined,
     };
   }, [initialData]);
 
@@ -179,7 +185,7 @@ export function useAthleteForm({
   }, [mode, initialData?.id, isOpen]);
 
   const handleChange = useCallback(
-    (field: keyof AthleteFormData, value: string | boolean) => {
+    (field: keyof AthleteFormData, value: string | boolean | undefined) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       setIsDirty(true);
       setErrors((prev) => {
@@ -282,6 +288,10 @@ export function useAthleteForm({
           requires_clearance_cert: formData.requires_clearance_cert,
           allow_parq_onboarding: formData.allow_parq_onboarding,
           modalityLevels: formData.modalityLevels,
+          ...(formData.auth_user_id && {
+            auth_user_id: formData.auth_user_id,
+            invitation_status: formData.invitation_status || 'connected',
+          }),
         };
 
         await onSave(athleteData);

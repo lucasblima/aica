@@ -22,6 +22,8 @@ export interface CreateAthleteInput {
   ftp?: number;
   pace_threshold?: string;
   swim_css?: string;
+  auth_user_id?: string;
+  invitation_status?: 'none' | 'pending' | 'connected';
 }
 
 export interface UpdateAthleteInput extends Partial<CreateAthleteInput> {
@@ -149,14 +151,21 @@ export class AthleteService {
       }
 
       // 2. Create athlete with platform_contact_id
+      const insertData: Record<string, unknown> = {
+        ...input,
+        user_id: userData.user.id,
+        status: input.status || 'active',
+        platform_contact_id: platformContactId,
+      };
+
+      // Set linked_at when connecting to an existing AICA user
+      if (input.auth_user_id && input.invitation_status === 'connected') {
+        insertData.linked_at = new Date().toISOString();
+      }
+
       const { data, error } = await supabase
         .from('athletes')
-        .insert({
-          ...input,
-          user_id: userData.user.id,
-          status: input.status || 'active',
-          platform_contact_id: platformContactId,
-        })
+        .insert(insertData)
         .select()
         .single();
 
