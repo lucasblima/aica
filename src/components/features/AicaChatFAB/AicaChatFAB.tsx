@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/services/supabaseClient'
 import { useChatSession } from '@/hooks/useChatSession'
 import type { DisplayMessage } from '@/hooks/useChatSession'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
@@ -88,6 +89,9 @@ export function AicaChatFAB({
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
 
+  // Track whether streak has been updated this session (fire once per chat session)
+  const streakUpdatedRef = useRef(false)
+
   // Ref to hold pending message from external event (VidaChatHero)
   const pendingMessageRef = useRef<string | null>(null)
 
@@ -144,6 +148,30 @@ export function AicaChatFAB({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
+
+  // Update consciousness streak once per chat session after first AI response
+  useEffect(() => {
+    if (streakUpdatedRef.current) return
+    const hasAssistantMessage = messages.some(m => m.role === 'assistant')
+    if (!hasAssistantMessage) return
+
+    streakUpdatedRef.current = true
+    supabase.auth.getSession().then(({ data: { session: authSession } }) => {
+      const userId = authSession?.user?.id
+      if (!userId) return
+      supabase.rpc('update_consciousness_streak', {
+        p_user_id: userId,
+        p_interaction_type: 'chat',
+      }).then(({ error }) => {
+        if (error) console.warn('Chat streak update failed:', error)
+      })
+    })
+  }, [messages])
+
+  // Reset streak tracking when session changes
+  useEffect(() => {
+    streakUpdatedRef.current = false
+  }, [session?.id])
 
   // Focus input when drawer opens
   useEffect(() => {
