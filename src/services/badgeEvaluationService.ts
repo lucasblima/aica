@@ -290,7 +290,7 @@ async function evaluateCondition(
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('moment_type', 'focus_session')
-        .gte('metadata->duration_minutes', minMinutes);
+        .gte('metadata->>duration_minutes', minMinutes);
 
       const sessions = count || 0;
       const progress = Math.min(100, (sessions / condition.count) * 100);
