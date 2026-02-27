@@ -622,13 +622,20 @@ async function awardConsciousnessPoints(
  */
 async function updateUserStreak(userId: string, momentId: string) {
   try {
-    const { data, error } = await supabase.rpc('update_moment_streak', {
+    const { data, error } = await supabase.rpc('update_consciousness_streak', {
       p_user_id: userId,
+      p_interaction_type: 'moment',
     })
 
     if (error) {
-      log.error('[momentPersistenceService] Error updating streak:', error)
-      return { current_streak: 0, longest_streak: 0, streak_bonus_awarded: false }
+      // Fallback to legacy function if new one not deployed yet
+      log.warn('[momentPersistenceService] update_consciousness_streak failed, trying legacy:', error)
+      const { data: legacyData, error: legacyErr } = await supabase.rpc('update_moment_streak', { p_user_id: userId })
+      if (legacyErr) {
+        log.error('[momentPersistenceService] Legacy streak update also failed:', legacyErr)
+        return { current_streak: 0, longest_streak: 0, streak_bonus_awarded: false }
+      }
+      return legacyData || { current_streak: 0, longest_streak: 0, streak_bonus_awarded: false }
     }
 
     return data || { current_streak: 0, longest_streak: 0, streak_bonus_awarded: false }
