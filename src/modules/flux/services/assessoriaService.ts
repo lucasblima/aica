@@ -29,8 +29,10 @@ export const assessoriaService = {
   async getAssessoria(): Promise<ConnectionSpace | null> {
     try {
       const ventures = await spaceService.getSpacesByArchetype('ventures');
+      // Primary: match by settings marker; Fallback: match by subtitle (for spaces created before settings fix)
       const assessoria = ventures.find(
-        (s) => s.settings && (s.settings as Record<string, unknown>).space_type === ASSESSORIA_MARKER
+        (s) => (s.settings && (s.settings as Record<string, unknown>).space_type === ASSESSORIA_MARKER)
+            || s.subtitle === 'Assessoria Esportiva'
       );
       return assessoria || null;
     } catch (error) {
