@@ -1,7 +1,8 @@
 /**
  * useChatSession - Session lifecycle hook for Aica Chat
  *
- * Wraps chatService (persistence) + GeminiClient (AI calls via ADK agent-proxy).
+ * Wraps chatService (persistence) + streaming via chatStreamService + GeminiClient fallback.
+ * Streaming is tried first; on failure falls back to agent-proxy (ADK).
  * NEVER calls supabase.auth.refreshSession() — uses getSession() only.
  */
 
@@ -11,6 +12,7 @@ import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 import { getUserAIContext } from '@/services/userAIContextService'
+import { streamChat } from '@/modules/chat/services/chatStreamService'
 import type { ChatAction } from '@/types/chatActions'
 
 export interface DisplayMessage {
@@ -28,6 +30,8 @@ export interface UseChatSessionReturn {
   sessions: ChatSession[]
   messages: DisplayMessage[]
   isLoading: boolean
+  isStreaming: boolean
+  streamedText: string
   error: string | null
   limitReached: boolean
   limitInfo: InteractionLimitResult | null
@@ -54,6 +58,8 @@ export function useChatSession(): UseChatSessionReturn {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamedText, setStreamedText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [limitReached, setLimitReached] = useState(false)
   const [limitInfo, setLimitInfo] = useState<InteractionLimitResult | null>(null)
@@ -92,6 +98,53 @@ export function useChatSession(): UseChatSessionReturn {
     return authSession.user.id
   }, [])
 
+  /**
+   * Try streaming via chatStreamService (SSE).
+   * Returns { text, agent, actions, usage } or throws on failure.
+   */
+  const tryStreaming = useCallback(async (
+    sessionId: string,
+    message: string,
+    history: Array<{ role: string; content: string }>,
+    context?: Record<string, unknown>,
+  ): Promise<{
+    text: string
+    agent: string
+    actions: ChatAction[]
+    usage?: { input: number; output: number }
+  }> => {
+    setIsStreaming(true)
+    setStreamedText('')
+
+    let fullText = ''
+    let agent = 'aica_coordinator'
+    let actions: ChatAction[] = []
+    let usage: { input: number; output: number } | undefined
+
+    for await (const event of streamChat(sessionId, message, history, context)) {
+      if (event.type === 'token') {
+        fullText += event.content
+        setStreamedText(fullText)
+      } else if (event.type === 'done') {
+        fullText = event.fullText || fullText
+        agent = event.agent || 'aica_coordinator'
+        actions = Array.isArray(event.actions) ? event.actions as ChatAction[] : []
+        usage = event.usage
+      } else if (event.type === 'agent_detected') {
+        agent = event.agent
+        setActiveAgent(event.agent)
+      } else if (event.type === 'error') {
+        throw new Error(event.message)
+      }
+    }
+
+    if (!fullText) {
+      throw new Error('Empty streaming response')
+    }
+
+    return { text: fullText, agent, actions, usage }
+  }, [])
+
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
@@ -101,7 +154,7 @@ export function useChatSession(): UseChatSessionReturn {
     setIsLoading(true)
 
     try {
-      // Check interaction limit before calling ADK (fail-open)
+      // Check interaction limit before calling AI (fail-open)
       try {
         const limit = await checkInteractionLimit()
         setLimitInfo(limit)
@@ -150,7 +203,7 @@ export function useChatSession(): UseChatSessionReturn {
         )
       )
 
-      // Get user context for ADK agents (best-effort)
+      // Get user context for AI (best-effort)
       let userContext: Record<string, unknown> | undefined
       try {
         const ctx = await getUserAIContext()
@@ -174,45 +227,91 @@ export function useChatSession(): UseChatSessionReturn {
         .slice(-10)
         .map(m => ({ role: m.role, content: m.content }))
 
-      // Call ADK via agent-proxy
-      const client = GeminiClient.getInstance()
-      const response = await client.call({
-        action: 'agent_chat',
-        payload: {
-          message: trimmed,
-          session_id: currentSession.id,
+      let finalText: string
+      let respondingAgent = 'aica_coordinator'
+      let responseActions: ChatAction[] = []
+      let tokensInput: number | undefined
+      let tokensOutput: number | undefined
+      let modelUsed = 'gemini-chat-stream'
+
+      // Strategy: try streaming first, fallback to agent-proxy
+      try {
+        const streamResult = await tryStreaming(
+          currentSession.id,
+          trimmed,
           history,
-          context: userContext,
-        },
-      })
+          userContext,
+        )
+        finalText = streamResult.text
+        respondingAgent = streamResult.agent
+        responseActions = streamResult.actions
+        tokensInput = streamResult.usage?.input
+        tokensOutput = streamResult.usage?.output
+      } catch {
+        // Streaming failed — fallback to agent-proxy (ADK)
+        setIsStreaming(false)
+        setStreamedText('')
+        modelUsed = 'adk-agent-proxy'
 
-      const result = response?.result
-      const responseText = result?.response || result || 'Desculpe, nao consegui gerar uma resposta.'
-      const finalText = typeof responseText === 'string' ? responseText : JSON.stringify(responseText)
-      const respondingAgent: string = result?.agent || 'aica_coordinator'
-      const sources: Array<{ title: string; url: string }> = result?.sources || []
+        const client = GeminiClient.getInstance()
+        const response = await client.call({
+          action: 'agent_chat',
+          payload: {
+            message: trimmed,
+            session_id: currentSession.id,
+            history,
+            context: userContext,
+          },
+        })
 
-      // Parse suggested actions from response
-      const responseActions: ChatAction[] = Array.isArray(result?.actions)
-        ? result.actions
-        : []
+        const result = response?.result
+        const responseText = result?.response || result || 'Desculpe, nao consegui gerar uma resposta.'
+        finalText = typeof responseText === 'string' ? responseText : JSON.stringify(responseText)
+        respondingAgent = result?.agent || 'aica_coordinator'
+        const sources: Array<{ title: string; url: string }> = result?.sources || []
+        responseActions = Array.isArray(result?.actions) ? result.actions : []
+        tokensInput = response?.tokensUsed?.input
+        tokensOutput = response?.tokensUsed?.output
 
-      // Save assistant message to DB
+        // Save and append (non-streaming path keeps sources)
+        const savedAssistantMsg = await chatService.saveMessage({
+          sessionId: currentSession.id,
+          userId,
+          content: finalText,
+          direction: 'outbound',
+          modelUsed,
+          tokensInput,
+          tokensOutput,
+        })
+
+        setMessages(prev => [...prev, {
+          ...chatMsgToDisplay(savedAssistantMsg),
+          agent: respondingAgent,
+          actions: responseActions,
+          sources,
+        }])
+        setActiveAgent(respondingAgent)
+        return // early return — non-streaming path handled above
+      }
+
+      // Streaming succeeded — clear streaming state, save to DB, append final message
+      setIsStreaming(false)
+      setStreamedText('')
+
       const savedAssistantMsg = await chatService.saveMessage({
         sessionId: currentSession.id,
         userId,
         content: finalText,
         direction: 'outbound',
-        modelUsed: 'adk-agent-proxy',
-        tokensInput: response?.tokensUsed?.input,
-        tokensOutput: response?.tokensUsed?.output,
+        modelUsed,
+        tokensInput,
+        tokensOutput,
       })
 
       setMessages(prev => [...prev, {
         ...chatMsgToDisplay(savedAssistantMsg),
         agent: respondingAgent,
         actions: responseActions,
-        sources,
       }])
       setActiveAgent(respondingAgent)
     } catch (err) {
@@ -220,8 +319,10 @@ export function useChatSession(): UseChatSessionReturn {
       setError(message)
     } finally {
       setIsLoading(false)
+      setIsStreaming(false)
+      setStreamedText('')
     }
-  }, [session, messages, isLoading, getUserId])
+  }, [session, messages, isLoading, getUserId, tryStreaming])
 
   const createNewSession = useCallback(() => {
     setSession(null)
@@ -266,6 +367,8 @@ export function useChatSession(): UseChatSessionReturn {
     sessions,
     messages,
     isLoading,
+    isStreaming,
+    streamedText,
     error,
     limitReached,
     limitInfo,

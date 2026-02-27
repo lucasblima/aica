@@ -2576,6 +2576,7 @@ serve(async (req) => {
         }
         case 'chat_aica_stream': {
           // SSE streaming variant of chat_aica — reuses same logic, streams tokens
+          // Phase 3: Now detects user intent module and uses module-specific system prompts
           const supabaseAdminStream = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
             auth: { autoRefreshToken: false, persistSession: false },
           })
@@ -2583,7 +2584,28 @@ serve(async (req) => {
           const streamMessage = payload?.message
           if (!streamMessage) throw new Error('Mensagem e obrigatoria')
 
-          const streamModule = payload?.module || 'coordinator'
+          // Phase 3: Detect module via intent classification (fast, low tokens)
+          let streamModule = payload?.module || 'coordinator'
+          let detectedAgent = 'aica_coordinator'
+
+          if (!payload?.module) {
+            try {
+              const classifyResult = await handleClassifyIntent(
+                { message: streamMessage, history: payload?.history },
+                Deno.env.get('GEMINI_API_KEY')!
+              )
+              if (classifyResult.success && classifyResult.classification) {
+                const cls = classifyResult.classification
+                if (cls.confidence >= 0.6 && cls.module !== 'coordinator' && VALID_AGENTS.includes(cls.module)) {
+                  streamModule = cls.module
+                  detectedAgent = `aica_${cls.module}`
+                  console.log(`[chat_aica_stream] Detected module: ${cls.module} (confidence: ${cls.confidence})`)
+                }
+              }
+            } catch (e) {
+              console.warn('[chat_aica_stream] Intent classification failed, staying on coordinator:', (e as Error).message)
+            }
+          }
 
           // Build user context (same as handleLegacyChat)
           let streamUserContext = ''
@@ -2598,15 +2620,19 @@ serve(async (req) => {
             }
           }
 
-          // Build system prompt (same as handleLegacyChat)
+          // Build system prompt — use module-specific prompt if detected
+          const agentConfig = AGENT_SYSTEM_PROMPTS[streamModule] || AGENT_SYSTEM_PROMPTS.coordinator
           const streamModel = genAI.getGenerativeModel({
             model: MODELS.fast,
-            generationConfig: { temperature: 0.7, topP: 0.95, topK: 40, maxOutputTokens: 4096 },
+            generationConfig: {
+              temperature: agentConfig.temperature,
+              topP: 0.95,
+              topK: 40,
+              maxOutputTokens: agentConfig.maxOutputTokens,
+            },
           })
 
-          let streamSystemPrompt = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
-Voce ajuda o usuario com produtividade, organizacao e bem-estar.
-Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
+          let streamSystemPrompt = agentConfig.prompt
 
           if (payload?.systemPrompt) streamSystemPrompt = payload.systemPrompt
 
@@ -2651,7 +2677,7 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
             return new Response(JSON.stringify({
               success: true,
               text: nonStreamText,
-              agent: 'aica_coordinator',
+              agent: detectedAgent,
               suggestedActions: fallbackActions,
               usage: { input: fallbackUsage?.promptTokenCount || 0, output: fallbackUsage?.candidatesTokenCount || 0 },
             }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -2663,6 +2689,11 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
               let fullText = ''
 
               try {
+                // Phase 3: Emit agent_detected early so frontend can show badge during streaming
+                if (detectedAgent !== 'aica_coordinator') {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'agent_detected', agent: detectedAgent })}\n\n`))
+                }
+
                 for await (const chunk of streamResult.stream) {
                   const chunkText = chunk.text()
                   if (chunkText) {
@@ -2686,7 +2717,7 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({
                   type: 'done',
                   fullText,
-                  agent: 'aica_coordinator',
+                  agent: detectedAgent,
                   actions: streamActions,
                   usage: { input: usageMeta?.promptTokenCount || 0, output: usageMeta?.candidatesTokenCount || 0 },
                 })}\n\n`))
