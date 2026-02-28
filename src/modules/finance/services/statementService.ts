@@ -25,6 +25,20 @@ const STORAGE_BUCKET = 'finance-statements';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 // =====================================================
+// PDF Validation
+// =====================================================
+
+/**
+ * Validate PDF file by checking magic bytes signature.
+ * Prevents MIME type spoofing — file.type is client-controlled and untrusted.
+ */
+async function validatePDFFile(file: File): Promise<boolean> {
+  const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+  const signature = String.fromCharCode(...header);
+  return signature.startsWith('%PDF-');
+}
+
+// =====================================================
 // Statement Service
 // =====================================================
 
@@ -148,6 +162,12 @@ export const statementService = {
 
     if (file.type !== 'application/pdf') {
       throw new Error('Tipo de arquivo invalido. Apenas PDF e aceito.');
+    }
+
+    // Validate PDF magic bytes to prevent MIME type spoofing
+    const isValidPDF = await validatePDFFile(file);
+    if (!isValidPDF) {
+      throw new Error('Arquivo nao e um PDF valido');
     }
 
     const timestamp = Date.now();
