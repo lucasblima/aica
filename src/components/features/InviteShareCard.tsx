@@ -8,8 +8,9 @@
  * the grid pattern of StudioCard/ConnectionsCard in Home.tsx.
  */
 
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Ticket } from 'lucide-react';
+import { Ticket, Copy, Check } from 'lucide-react';
 import { useInviteSystem } from '@/hooks/useInviteSystem';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 
@@ -19,7 +20,17 @@ interface InviteShareCardProps {
 }
 
 export function InviteShareCard({ compact = true, onClick }: InviteShareCardProps) {
-  const { availableCount, stats, loading, conversionRate, pendingCount } = useInviteSystem();
+  const { availableCount, stats, loading, conversionRate, pendingCount, copyLink } = useInviteSystem();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const success = await copyLink();
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [copyLink]);
 
   const accepted = stats?.total_accepted ?? 0;
 
@@ -52,13 +63,28 @@ export function InviteShareCard({ compact = true, onClick }: InviteShareCardProp
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
             )}
           </div>
-          {availableCount > 0 && (
-            <div className="ceramic-inset px-2 py-0.5 rounded-full">
-              <span className="text-[10px] font-bold text-amber-600">
-                {availableCount}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-1">
+            {availableCount > 0 && (
+              <button
+                onClick={handleCopyLink}
+                className="ceramic-inset p-1 rounded-full hover:bg-white/40 transition-colors"
+                title={copied ? 'Link copiado!' : 'Copiar link de convite'}
+              >
+                {copied ? (
+                  <Check className="w-3 h-3 text-ceramic-success" />
+                ) : (
+                  <Copy className="w-3 h-3 text-amber-500" />
+                )}
+              </button>
+            )}
+            {availableCount > 0 && (
+              <div className="ceramic-inset px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-amber-600">
+                  {availableCount}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         <p className="text-xs text-ceramic-text-secondary line-clamp-1">
