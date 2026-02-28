@@ -13,6 +13,7 @@ import {
 import { createNamespacedLogger } from '@/lib/logger';
 import { getTransactionsByDateRange } from '../services/financeService';
 import type { FinanceTransaction } from '../types';
+import { CATEGORY_LABELS, formatCurrency } from '../constants';
 
 const log = createNamespacedLogger('MonthComparisonView');
 
@@ -23,27 +24,6 @@ const log = createNamespacedLogger('MonthComparisonView');
 interface MonthComparisonViewProps {
   userId: string;
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  housing: 'Moradia',
-  food: 'Alimentacao',
-  transport: 'Transporte',
-  health: 'Saude',
-  education: 'Educacao',
-  entertainment: 'Entretenimento',
-  shopping: 'Compras',
-  salary: 'Salario',
-  freelance: 'Freelance',
-  investment: 'Investimento',
-  transfer: 'Transferencia',
-  bills: 'Contas',
-  subscription: 'Assinatura',
-  travel: 'Viagem',
-  personal_care: 'Cuidados Pessoais',
-  pets: 'Pets',
-  gifts: 'Presentes',
-  other: 'Outros',
-};
 
 const MONTH_NAMES = [
   'Janeiro',
@@ -59,13 +39,6 @@ const MONTH_NAMES = [
   'Novembro',
   'Dezembro',
 ];
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
 
 const formatPercentage = (value: number): string => {
   const sign = value > 0 ? '+' : '';
@@ -348,7 +321,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
     return (
       <span
         className={`flex items-center gap-1 text-xs font-medium ${
-          isPositive ? 'text-emerald-600' : 'text-red-500'
+          isPositive ? 'text-ceramic-success' : 'text-ceramic-error'
         }`}
       >
         {isUp ? (
@@ -407,7 +380,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
         {/* Income */}
         <div className="ceramic-card p-4">
           <div className="flex items-center gap-2 mb-2">
-            <ArrowUpCircle className="w-4 h-4 text-emerald-500" />
+            <ArrowUpCircle className="w-4 h-4 text-ceramic-success" />
             <span className="text-xs font-medium text-ceramic-text-secondary uppercase tracking-wider">
               Receitas
             </span>
@@ -417,7 +390,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
               <p className="text-[10px] text-ceramic-text-secondary">
                 {monthLabel(monthA)}
               </p>
-              <p className="text-sm font-bold text-emerald-600">
+              <p className="text-sm font-bold text-ceramic-success">
                 {formatCurrency(summaryA.income)}
               </p>
             </div>
@@ -425,7 +398,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
               <p className="text-[10px] text-ceramic-text-secondary">
                 {monthLabel(monthB)}
               </p>
-              <p className="text-sm font-bold text-emerald-600/70">
+              <p className="text-sm font-bold text-ceramic-success/70">
                 {formatCurrency(summaryB.income)}
               </p>
             </div>
@@ -436,7 +409,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
         {/* Expenses */}
         <div className="ceramic-card p-4">
           <div className="flex items-center gap-2 mb-2">
-            <ArrowDownCircle className="w-4 h-4 text-red-500" />
+            <ArrowDownCircle className="w-4 h-4 text-ceramic-error" />
             <span className="text-xs font-medium text-ceramic-text-secondary uppercase tracking-wider">
               Despesas
             </span>
@@ -446,7 +419,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
               <p className="text-[10px] text-ceramic-text-secondary">
                 {monthLabel(monthA)}
               </p>
-              <p className="text-sm font-bold text-red-500">
+              <p className="text-sm font-bold text-ceramic-error">
                 {formatCurrency(summaryA.expenses)}
               </p>
             </div>
@@ -454,7 +427,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
               <p className="text-[10px] text-ceramic-text-secondary">
                 {monthLabel(monthB)}
               </p>
-              <p className="text-sm font-bold text-red-500/70">
+              <p className="text-sm font-bold text-ceramic-error/70">
                 {formatCurrency(summaryB.expenses)}
               </p>
             </div>
@@ -477,7 +450,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
               </p>
               <p
                 className={`text-sm font-bold ${
-                  summaryA.balance >= 0 ? 'text-emerald-600' : 'text-red-500'
+                  summaryA.balance >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'
                 }`}
               >
                 {formatCurrency(summaryA.balance)}
@@ -489,7 +462,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
               </p>
               <p
                 className={`text-sm font-bold ${
-                  summaryB.balance >= 0 ? 'text-emerald-600/70' : 'text-red-500/70'
+                  summaryB.balance >= 0 ? 'text-ceramic-success/70' : 'text-ceramic-error/70'
                 }`}
               >
                 {formatCurrency(summaryB.balance)}
@@ -563,7 +536,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
                 <span className="text-xs text-ceramic-text-primary">{h.label}</span>
                 <span
                   className={`text-xs font-bold ${
-                    h.isPositive ? 'text-emerald-600' : 'text-red-500'
+                    h.isPositive ? 'text-ceramic-success' : 'text-ceramic-error'
                   }`}
                 >
                   {h.value}

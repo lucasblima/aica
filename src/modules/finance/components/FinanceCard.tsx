@@ -85,11 +85,20 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
     };
 
     if (loading) {
+        if (compact) {
+            return (
+                <div className="ceramic-card p-3 min-h-[100px] animate-pulse space-y-2">
+                    <div className="h-4 bg-ceramic-cool rounded w-1/3" />
+                    <div className="h-6 bg-ceramic-cool rounded w-2/3" />
+                    <div className="h-3 bg-ceramic-cool rounded w-1/2" />
+                </div>
+            );
+        }
         return (
-            <div className={`ceramic-card animate-pulse ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px] h-full'}`}>
+            <div className="ceramic-card animate-pulse p-5 min-h-[180px] h-full">
                 <div className="h-4 bg-ceramic-cool rounded w-20 mb-3"></div>
-                <div className={`bg-ceramic-cool rounded w-28 mb-2 ${compact ? 'h-6' : 'h-10'}`}></div>
-                {!compact && <div className="h-3 bg-ceramic-cool rounded w-16"></div>}
+                <div className="h-10 bg-ceramic-cool rounded w-28 mb-2"></div>
+                <div className="h-3 bg-ceramic-cool rounded w-16"></div>
             </div>
         );
     }
@@ -144,7 +153,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
 
                 {/* Balance — smaller */}
                 <div className="flex-1 flex items-center justify-center relative z-10">
-                    <p className={`text-lg font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
+                    <p className={`text-lg font-black text-ceramic-text-primary ${getBalanceColor(summary.currentBalance)}`}>
                         {formatCurrency(summary.currentBalance)}
                     </p>
                 </div>
@@ -192,7 +201,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
                 <p className="text-[9px] text-ceramic-text-secondary mb-2 uppercase tracking-wider font-medium">
                     Saldo Atual
                 </p>
-                <p className={`text-2xl md:text-3xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
+                <p className={`text-2xl md:text-3xl font-black text-ceramic-text-primary ${getBalanceColor(summary.currentBalance)}`}>
                     {formatCurrency(summary.currentBalance)}
                 </p>
             </div>

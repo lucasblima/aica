@@ -55,6 +55,10 @@ export async function createGoal(
     category?: string | null;
   }
 ): Promise<FinanceGoal> {
+  if (!goal.target_amount || goal.target_amount <= 0) {
+    throw new Error('Meta deve ter valor positivo');
+  }
+
   try {
     const { data, error } = await supabase
       .from('finance_goals')
