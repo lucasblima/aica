@@ -5,7 +5,8 @@ import { ArrowLeft } from 'lucide-react';
 /**
  * TermsOfServicePage Component
  *
- * Displays the terms of service for the Aica application.
+ * Displays the Terms of Service v2.0 for the Aica application.
+ * Covers payments, AI services, invite program, and international compliance.
  * Required for legal compliance and user agreement.
  */
 export function TermsOfServicePage() {
@@ -30,150 +31,213 @@ export function TermsOfServicePage() {
       {/* Main Content */}
       <main className="max-w-[900px] mx-auto px-6 md:px-8 py-12">
         <h1 className="text-4xl md:text-5xl font-bold text-[#2B1B17] mb-4">
-          Termos de Serviço
+          Termos de Servico
         </h1>
         <p className="text-sm text-[#5C554B] mb-8">
-          Última atualização: 17 de fevereiro de 2026
+          Ultima atualizacao: 28 de fevereiro de 2026
         </p>
 
         <div className="prose prose-slate max-w-none space-y-8">
-          {/* Introduction */}
+          {/* 1. Aceitacao dos Termos */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">1. Aceitação dos Termos</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">1. Aceitacao dos Termos</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Bem-vindo a AICA! Estes Termos de Servico (&quot;Termos&quot;) constituem um acordo legal entre voce
-              (&quot;Usuario&quot;, &quot;voce&quot; ou &quot;seu&quot;) e{' '}
-              <strong>Comtxae Educacao Cultura e Tecnologia Ltda.</strong> (CNPJ 20.260.474/0001-80),
-              com sede na Rua Marques de Sao Vicente, 95 / 404 (&quot;AICA&quot;, &quot;nos&quot;, &quot;nosso&quot; ou &quot;nossa&quot;),
-              e regem seu acesso e uso da plataforma AICA Life OS, incluindo todos os recursos,
-              ferramentas e servicos disponibilizados.
+              Estes Termos de Servico (&quot;Termos&quot;) constituem um acordo legal vinculante entre voce
+              (&quot;Usuario&quot;, &quot;voce&quot; ou &quot;seu&quot;) e <strong>Comtxae Educacao Cultura e Tecnologia Ltda.</strong>{' '}
+              (&quot;Aica&quot;, &quot;nos&quot;, &quot;nosso&quot; ou &quot;nossa&quot;), e regem seu acesso e uso da plataforma AICA Life OS,
+              incluindo todos os modulos, funcionalidades, APIs e servicos relacionados.
+            </p>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Ao criar uma conta, acessar ou utilizar a Aica, voce declara ter lido, compreendido e
+              concordado integralmente com estes Termos e com nossa{' '}
+              <a href="/privacy" className="text-ceramic-info hover:underline">
+                Politica de Privacidade
+              </a>
+              . Caso nao concorde com qualquer disposicao, voce deve interromper imediatamente o uso
+              da plataforma.
             </p>
             <p className="text-[#5C554B] leading-relaxed">
-              Ao criar uma conta, acessar ou usar a Aica, você concorda em cumprir estes Termos e nossa
-              Política de Privacidade. Se você não concorda com estes Termos, não use nossos serviços.
+              Estes Termos aplicam-se a todos os usuarios, incluindo visitantes, usuarios registrados
+              e assinantes de planos pagos.
             </p>
           </section>
 
-          {/* Service Description */}
+          {/* 2. Descricao dos Servicos */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">2. Descrição do Serviço</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">2. Descricao dos Servicos</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica é uma plataforma de gestão de vida e produtividade que oferece:
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>Gestão de tarefas e projetos pessoais e profissionais</li>
-              <li>Integração com calendários e ferramentas de produtividade</li>
-              <li>Insights personalizados através de inteligência artificial</li>
-              <li>Módulos especializados (finanças, conexões, jornada pessoal, etc.)</li>
-              <li>Ferramentas de autoconhecimento e crescimento pessoal</li>
-              <li>Recursos de podcast e copilot de conteúdo</li>
-            </ul>
-            <p className="text-[#5C554B] leading-relaxed mt-4">
-              A Aica está atualmente em fase beta, o que significa que novos recursos estão sendo
-              desenvolvidos e melhorias contínuas estão sendo implementadas.
-            </p>
-          </section>
-
-          {/* Account Registration */}
-          <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">3. Cadastro e Conta de Usuário</h2>
-
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.1. Requisitos</h3>
-            <p className="text-[#5C554B] leading-relaxed mb-4">
-              Para usar a Aica, você deve:
+              A Aica e um Sistema Operacional de Vida Integral (&quot;AICA Life OS&quot;) que integra
+              produtividade pessoal e profissional atraves dos seguintes modulos:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li>Ter pelo menos 18 anos de idade</li>
-              <li>Fornecer informações precisas e completas durante o cadastro</li>
-              <li>Manter suas informações de conta atualizadas</li>
-              <li>Ser responsável por manter a confidencialidade de sua senha</li>
+              <li>
+                <strong>Atlas</strong> &mdash; Gestao de tarefas com Matriz de Eisenhower e sincronizacao
+                bidirecional com Google Calendar
+              </li>
+              <li>
+                <strong>Jornada</strong> &mdash; Reflexao pessoal, registro de momentos e perguntas diarias
+                para autoconhecimento
+              </li>
+              <li>
+                <strong>Rede</strong> &mdash; CRM pessoal com organizacao de contatos por contexto e
+                relacionamento
+              </li>
+              <li>
+                <strong>Captacao</strong> &mdash; Descoberta de oportunidades de financiamento e editais
+                com assistencia de IA
+              </li>
+              <li>
+                <strong>Studio</strong> &mdash; Producao de podcasts com gestao de convidados e roteiros
+                assistidos por IA
+              </li>
+              <li>
+                <strong>Financeiro</strong> &mdash; Gestao de transacoes financeiras pessoais e profissionais
+              </li>
             </ul>
-
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.2. Segurança da Conta</h3>
-            <p className="text-[#5C554B] leading-relaxed mb-4">
-              Você é responsável por:
+            <p className="text-[#5C554B] leading-relaxed">
+              A Aica podera adicionar, modificar ou descontinuar modulos e funcionalidades a qualquer
+              momento, mediante aviso previo de <strong>30 (trinta) dias</strong> para alteracoes
+              significativas.
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>Todas as atividades que ocorram em sua conta</li>
-              <li>Notificar-nos imediatamente sobre qualquer uso não autorizado</li>
-              <li>Não compartilhar suas credenciais com terceiros</li>
-            </ul>
           </section>
 
-          {/* User Conduct */}
+          {/* 3. Conta de Usuario */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">4. Conduta do Usuário</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">3. Conta de Usuario</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Ao usar a Aica, você concorda em NÃO:
+              Para utilizar a Aica, voce deve:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li>Ter pelo menos <strong>18 (dezoito) anos</strong> de idade</li>
+              <li>Fornecer informacoes precisas, completas e atualizadas durante o cadastro</li>
+              <li>Manter a seguranca e confidencialidade de sua senha e credenciais de acesso</li>
+              <li>Notificar-nos imediatamente sobre qualquer uso nao autorizado de sua conta</li>
+            </ul>
+            <p className="text-[#5C554B] leading-relaxed">
+              Voce e integralmente responsavel por todas as atividades realizadas em sua conta,
+              incluindo acoes de terceiros que acessem sua conta por falha na protecao de suas
+              credenciais. A Aica nao se responsabiliza por perdas decorrentes de acesso nao
+              autorizado quando causado por negligencia do Usuario na guarda de suas credenciais.
+            </p>
+          </section>
+
+          {/* 4. Conduta do Usuario */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">4. Conduta do Usuario</h2>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Ao utilizar a Aica, voce concorda em NAO:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>Violar qualquer lei ou regulamento aplicável</li>
-              <li>Infringir direitos de propriedade intelectual de terceiros</li>
-              <li>Fazer engenharia reversa, descompilar ou desmontar a plataforma</li>
-              <li>Usar a plataforma para fins ilegais ou não autorizados</li>
-              <li>Tentar obter acesso não autorizado a sistemas ou dados</li>
-              <li>Distribuir vírus, malware ou código malicioso</li>
-              <li>Fazer scraping ou coleta automatizada de dados sem permissão</li>
-              <li>Interferir no funcionamento adequado da plataforma</li>
-              <li>Representar falsamente sua identidade ou afiliação</li>
-              <li>Assediar, abusar ou prejudicar outros usuários</li>
+              <li>Violar qualquer lei, regulamento ou norma aplicavel, nacional ou internacional</li>
+              <li>Infringir direitos de propriedade intelectual, marcas, patentes ou direitos autorais de terceiros</li>
+              <li>Realizar engenharia reversa, descompilar, desmontar ou tentar extrair o codigo-fonte da plataforma</li>
+              <li>Tentar obter acesso nao autorizado a sistemas, redes, contas ou dados da Aica ou de terceiros</li>
+              <li>Distribuir virus, malware, ransomware, spyware ou qualquer codigo malicioso</li>
+              <li>Fazer scraping, crawling ou coleta automatizada de dados sem autorizacao expressa por escrito</li>
+              <li>Utilizar a plataforma para fins ilegais, fraudulentos ou nao autorizados</li>
+              <li>Assediar, abusar, ameacar, difamar ou prejudicar outros usuarios</li>
+              <li>Representar falsamente sua identidade, afiliacao ou vinculo com qualquer pessoa ou entidade</li>
+              <li>Interferir no funcionamento adequado da plataforma ou sobrecarregar intencionalmente nossos servidores</li>
             </ul>
           </section>
 
-          {/* Intellectual Property */}
+          {/* 5. Propriedade Intelectual */}
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">5. Propriedade Intelectual</h2>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.1. Propriedade da Aica</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A plataforma Aica, incluindo todo o código-fonte, design, funcionalidades, conteúdo,
-              marcas registradas, logotipos e outros materiais, são de propriedade exclusiva da Aica
-              ou de seus licenciadores e são protegidos por leis de propriedade intelectual.
+              A plataforma AICA Life OS, incluindo todo o codigo-fonte, design, arquitetura,
+              funcionalidades, conteudo, marcas registradas, logotipos, identidade visual e demais
+              materiais, sao de propriedade exclusiva da Comtxae Educacao Cultura e Tecnologia Ltda.
+              ou de seus licenciadores e sao protegidos pelas leis brasileiras e tratados
+              internacionais de propriedade intelectual.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.2. Seu Conteúdo</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.2. Seu Conteudo</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Você retém todos os direitos sobre o conteúdo que cria na plataforma (tarefas, notas,
-              momentos, etc.). Ao usar a Aica, você nos concede uma licença limitada para:
+              Voce retem todos os direitos sobre o conteudo que cria, insere ou armazena na
+              plataforma (tarefas, notas, momentos, reflexoes, dados financeiros, etc.). Ao utilizar
+              a Aica, voce nos concede uma licenca <strong>limitada, nao exclusiva e revogavel</strong>{' '}
+              para:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>Armazenar e processar seu conteúdo para fornecer os serviços</li>
-              <li>Fazer backup e manter cópias de segurança</li>
-              <li>Usar dados agregados e anonimizados para melhorar a plataforma</li>
+              <li>Armazenar, processar e exibir seu conteudo para prestacao dos servicos</li>
+              <li>Realizar backups e manter copias de seguranca para protecao dos dados</li>
+              <li>Utilizar dados agregados e anonimizados para fins de analise e melhoria da plataforma</li>
+            </ul>
+            <p className="text-[#5C554B] leading-relaxed mt-4">
+              Esta licenca e automaticamente revogada quando voce exclui seu conteudo ou encerra sua conta.
+            </p>
+          </section>
+
+          {/* 6. Servicos de Inteligencia Artificial */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Servicos de Inteligencia Artificial</h2>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A Aica utiliza a Google Gemini API para fornecer funcionalidades de inteligencia
+              artificial, incluindo insights personalizados, sugestoes de produtividade, analise de
+              padroes e assistencia em diversas tarefas dos modulos.
+            </p>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Ao utilizar os recursos de IA, voce reconhece e concorda que:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
+              <li>
+                As recomendacoes de IA <strong>nao constituem aconselhamento profissional</strong>{' '}
+                (medico, psicologico, financeiro, juridico ou de qualquer outra natureza)
+              </li>
+              <li>
+                Os resultados gerados por IA podem conter imprecisoes, erros ou informacoes
+                desatualizadas
+              </li>
+              <li>
+                Voce e integralmente responsavel por suas decisoes e acoes baseadas em recomendacoes
+                de IA
+              </li>
+              <li>
+                A Aica nao garante resultados especificos decorrentes do uso de recursos de IA
+              </li>
+              <li>
+                Voce pode desabilitar funcionalidades de IA a qualquer momento nas configuracoes da
+                plataforma
+              </li>
+              <li>
+                Seus dados processados pela IA nao sao utilizados para treinar modelos de terceiros
+              </li>
             </ul>
           </section>
 
-          {/* AI Services */}
+          {/* 7. Integracoes com Terceiros */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Serviços de Inteligência Artificial</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Integracoes com Terceiros</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica utiliza tecnologias de IA para fornecer insights e recomendações personalizadas:
+              A Aica oferece integracoes com os seguintes servicos de terceiros:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>As sugestões de IA são baseadas em seus dados e padrões de uso</li>
-              <li>Os insights de IA são fornecidos "como estão" e podem conter imprecisões</li>
-              <li>Você é responsável por suas decisões baseadas em recomendações de IA</li>
-              <li>Não garantimos resultados específicos do uso de recursos de IA</li>
-              <li>Você pode optar por desabilitar recursos de IA a qualquer momento</li>
-            </ul>
-          </section>
 
-          {/* Third-Party Integrations */}
-          <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Integrações de Terceiros</h2>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.1. Google Calendar</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica permite integração com serviços de terceiros, incluindo Google Calendar, Gmail e Google Drive:
+              A integracao com Google Calendar utiliza o escopo <code className="bg-[#F8F7F5] px-1.5 py-0.5 rounded text-sm">calendar.events</code>{' '}
+              para sincronizacao bidirecional &mdash; leitura de eventos existentes e criacao de
+              novos eventos a partir de tarefas e compromissos gerenciados nos modulos Atlas e Flux.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.2. Telegram</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A integracao com Telegram permite receber notificacoes e interagir com a plataforma
+              atraves de mensagens.
+            </p>
+
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Em relacao a todas as integracoes com terceiros:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>Você é responsável por seus relacionamentos com esses provedores</li>
-              <li>Não somos responsáveis pelos serviços ou políticas de terceiros</li>
-              <li>Revise os termos e políticas dos serviços que você conecta</li>
-              <li>Você pode revogar integrações a qualquer momento nas configurações</li>
-              <li>A integração com Google Calendar utiliza o escopo <code>calendar.events</code> para sincronização bidirecional — leitura e criação de eventos a partir de tarefas e compromissos</li>
-              <li>A integração com Gmail utiliza o escopo <code>gmail.modify</code> — leitura e organização de mensagens (arquivar, etiquetar, marcar como lido, mover para lixeira), sem envio de emails</li>
-              <li>A integração com Google Drive utiliza o escopo <code>drive</code> — leitura e organização de arquivos (renomear, mover, enviar para lixeira, criar pastas)</li>
-              <li>Gmail e Drive são integrações opcionais ativadas individualmente pelo usuário (consentimento incremental)</li>
-              <li>O uso de dados do Google está em conformidade com a{' '}
+              <li>Cada integracao e ativada individualmente pelo usuario (consentimento incremental)</li>
+              <li>Voce pode revogar qualquer integracao a qualquer momento nas configuracoes da plataforma</li>
+              <li>A Aica nao se responsabiliza pela disponibilidade, seguranca ou politicas dos servicos de terceiros</li>
+              <li>Voce deve revisar os termos e politicas dos servicos que escolher conectar</li>
+              <li>
+                O uso de dados do Google esta em conformidade com a{' '}
                 <a
                   href="https://developers.google.com/terms/api-services-user-data-policy"
                   target="_blank"
@@ -182,193 +246,289 @@ export function TermsOfServicePage() {
                 >
                   Google API Services User Data Policy
                 </a>
+                , incluindo os requisitos de Uso Limitado (Limited Use)
               </li>
             </ul>
           </section>
 
-          {/* Payment Terms */}
+          {/* 8. Termos de Pagamento */}
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">8. Termos de Pagamento</h2>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">8.1. Planos e Preços</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">8.1. Planos e Precos</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica pode oferecer diferentes planos de assinatura (gratuitos e pagos). Durante a fase
-              beta, recursos premium podem estar disponíveis gratuitamente.
+              A Aica oferece os seguintes planos de assinatura:
+            </p>
+            <div className="overflow-x-auto mb-4">
+              <table className="w-full border-collapse text-sm text-[#5C554B]">
+                <thead>
+                  <tr className="border-b border-[#E8E6E0]">
+                    <th className="text-left py-3 pr-4 font-semibold text-[#2B1B17]">Plano</th>
+                    <th className="text-left py-3 pr-4 font-semibold text-[#2B1B17]">Valor</th>
+                    <th className="text-left py-3 font-semibold text-[#2B1B17]">Recursos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-[#E8E6E0]">
+                    <td className="py-3 pr-4">Gratuito</td>
+                    <td className="py-3 pr-4">R$ 0,00</td>
+                    <td className="py-3">Funcionalidades basicas de todos os modulos</td>
+                  </tr>
+                  <tr className="border-b border-[#E8E6E0]">
+                    <td className="py-3 pr-4">Pro</td>
+                    <td className="py-3 pr-4">R$ 39,90/mes</td>
+                    <td className="py-3">Todos os modulos com IA completa e integrações avancadas</td>
+                  </tr>
+                  <tr className="border-b border-[#E8E6E0]">
+                    <td className="py-3 pr-4">Teams</td>
+                    <td className="py-3 pr-4">R$ 149,00/mes</td>
+                    <td className="py-3">Pro + colaboracao em equipe e gestao compartilhada</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 pr-4">Consultoria</td>
+                    <td className="py-3 pr-4">Sob demanda</td>
+                    <td className="py-3">Implementacao personalizada e suporte dedicado</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">8.2. Metodos de Pagamento</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Aceitamos os seguintes metodos de pagamento: cartao de credito/debito, PIX e Boleto
+              Bancario. As assinaturas pagas sao cobradas antecipadamente no inicio de cada ciclo
+              de faturamento.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">8.2. Cobrança</h3>
-            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li>Assinaturas pagas são cobradas antecipadamente</li>
-              <li>Você autoriza cobranças recorrentes em seu método de pagamento</li>
-              <li>Preços estão sujeitos a alterações com aviso prévio de 30 dias</li>
-            </ul>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">8.3. Renovacao e Cancelamento</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              As assinaturas sao renovadas automaticamente ao final de cada ciclo, salvo cancelamento
+              pelo Usuario. Voce pode cancelar sua assinatura a qualquer momento atraves das
+              configuracoes da plataforma. O cancelamento entra em vigor ao final do ciclo de
+              faturamento vigente, mantendo o acesso ate essa data. Precos estao sujeitos a
+              alteracoes com aviso previo de 30 (trinta) dias.
+            </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">8.3. Reembolsos</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">8.4. Politica de Reembolso</h3>
             <p className="text-[#5C554B] leading-relaxed">
-              Reembolsos são fornecidos de acordo com nossa política de reembolso. Entre em contato
-              com o suporte se tiver problemas com cobranças.
+              Em conformidade com o Art. 49 do Codigo de Defesa do Consumidor (CDC), o Usuario tem
+              direito ao reembolso integral em ate <strong>7 (sete) dias corridos</strong> a partir
+              da contratacao. Solicitacoes devem ser realizadas atraves do e-mail{' '}
+              <a href="mailto:contato@aica.guru" className="text-ceramic-info hover:underline">
+                contato@aica.guru
+              </a>{' '}
+              ou das configuracoes da plataforma.
             </p>
           </section>
 
-          {/* Beta Service */}
+          {/* 9. Programa de Convites */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">9. Serviço Beta</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">9. Programa de Convites</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica está atualmente em fase beta. Isso significa:
+              A Aica pode disponibilizar um programa de convites que permite aos usuarios convidar
+              terceiros para a plataforma. Em relacao ao programa de convites:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>O serviço pode conter bugs ou instabilidades</li>
-              <li>Recursos podem ser adicionados, modificados ou removidos</li>
-              <li>Pode haver interrupções ocasionais no serviço</li>
-              <li>Fazemos backup regular, mas você deve manter cópias próprias de dados críticos</li>
-              <li>Seu feedback é essencial para melhorarmos a plataforma</li>
+              <li>O numero de convites disponiveis e limitado e definido pela Aica</li>
+              <li>O convidante deve obter consentimento previo do destinatario antes de enviar o convite</li>
+              <li>Convites sao pessoais e intransferiveis</li>
+              <li>Convites nao possuem valor monetario e nao podem ser comercializados</li>
+              <li>A Aica reserva-se o direito de descontinuar o programa de convites a qualquer momento</li>
+              <li>O uso indevido do programa (spam, convites nao solicitados) pode resultar em suspensao da conta</li>
             </ul>
           </section>
 
-          {/* Disclaimers */}
+          {/* 10. Disponibilidade e Suporte */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">10. Isenções de Responsabilidade</h2>
-
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">10.1. Serviço "Como Está"</h3>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">10. Disponibilidade e Suporte</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica é fornecida "como está" e "conforme disponível", sem garantias de qualquer tipo,
-              expressas ou implícitas. Não garantimos que o serviço será ininterrupto, seguro ou livre de erros.
-            </p>
-
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">10.2. Não Somos Profissionais Licenciados</h3>
-            <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica não fornece aconselhamento médico, psicológico, financeiro, jurídico ou profissional.
-              Os insights e recomendações são apenas para fins informativos. Consulte profissionais
-              qualificados para decisões importantes.
-            </p>
-
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">10.3. Limitação de Responsabilidade</h3>
-            <p className="text-[#5C554B] leading-relaxed">
-              Na extensão máxima permitida por lei, a Aica não será responsável por quaisquer danos
-              indiretos, incidentais, especiais, consequenciais ou punitivos, incluindo perda de lucros,
-              dados ou goodwill, resultantes do uso ou incapacidade de usar nossos serviços.
-            </p>
-          </section>
-
-          {/* Data and Privacy */}
-          <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">11. Dados e Privacidade</h2>
-            <p className="text-[#5C554B] leading-relaxed mb-4">
-              Seu uso da Aica também é regido por nossa Política de Privacidade, que descreve como
-              coletamos, usamos e protegemos suas informações pessoais. Recomendamos que você leia
-              nossa Política de Privacidade cuidadosamente.
-            </p>
-            <p className="text-[#5C554B] leading-relaxed">
-              Estamos comprometidos com a proteção de seus dados de acordo com a LGPD (Lei Geral de
-              Proteção de Dados - Lei nº 13.709/2018).
-            </p>
-          </section>
-
-          {/* Account Termination */}
-          <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">12. Suspensão e Encerramento</h2>
-
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">12.1. Por Você</h3>
-            <p className="text-[#5C554B] leading-relaxed mb-4">
-              Você pode encerrar sua conta a qualquer momento através das configurações da plataforma
-              ou entrando em contato com o suporte. Ao encerrar sua conta, você perderá acesso aos
-              seus dados.
-            </p>
-
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">12.2. Por Nós</h3>
-            <p className="text-[#5C554B] leading-relaxed mb-4">
-              Reservamos o direito de suspender ou encerrar sua conta se você:
+              A Aica se empenha em manter a plataforma disponivel <strong>24 horas por dia,
+              7 dias por semana</strong>. No entanto, interrupcoes programadas ou nao programadas
+              podem ocorrer para fins de manutencao, atualizacao ou por motivos de forca maior.
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>Violar estes Termos de Serviço</li>
-              <li>Usar a plataforma de maneira prejudicial ou abusiva</li>
-              <li>Fornecer informações falsas ou enganosas</li>
-              <li>Não pagar taxas devidas (se aplicável)</li>
+              <li>Manutencoes programadas serao comunicadas com antecedencia minima de <strong>24 horas</strong></li>
+              <li>Suporte por e-mail disponivel em{' '}
+                <a href="mailto:contato@aica.guru" className="text-ceramic-info hover:underline">
+                  contato@aica.guru
+                </a>
+              </li>
+              <li>Prazo de resposta para usuarios do plano gratuito: ate <strong>48 horas uteis</strong></li>
+              <li>Prazo de resposta para usuarios de planos pagos: ate <strong>24 horas uteis</strong></li>
             </ul>
           </section>
 
-          {/* Changes to Terms */}
+          {/* 11. Limitacao de Responsabilidade */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">13. Modificações dos Termos</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">11. Limitacao de Responsabilidade</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Podemos atualizar estes Termos de Serviço periodicamente. Quando fizermos alterações
-              significativas, notificaremos você através de:
+              A plataforma e fornecida <strong>&quot;COMO ESTA&quot;</strong> e{' '}
+              <strong>&quot;CONFORME DISPONIVEL&quot;</strong>, sem garantias de qualquer natureza,
+              expressas ou implicitas. Na extensao maxima permitida pela legislacao aplicavel, a
+              Aica nao sera responsavel por:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li>Aviso na plataforma</li>
-              <li>E-mail para o endereço cadastrado</li>
-              <li>Atualização da data "Última atualização" no topo desta página</li>
+              <li>Danos indiretos, incidentais, especiais, consequenciais ou punitivos</li>
+              <li>Perda de dados, lucros cessantes ou interrupcao de negocios</li>
+              <li>Decisoes tomadas com base em recomendacoes geradas por IA</li>
+              <li>Indisponibilidade de servicos de terceiros integrados (Google Calendar, Telegram)</li>
+              <li>Imprecisoes, erros ou omissoes em conteudo gerado por inteligencia artificial</li>
+            </ul>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A responsabilidade total da Aica perante o Usuario, por qualquer causa e
+              independentemente da forma da acao, esta limitada ao <strong>maior valor entre:
+              (a) o total de pagamentos realizados pelo Usuario nos ultimos 12 (doze) meses; ou
+              (b) R$ 500,00 (quinhentos reais)</strong>.
+            </p>
+            <p className="text-[#5C554B] leading-relaxed">
+              Esta limitacao nao afeta os direitos irrenunciaveis do consumidor previstos no Codigo
+              de Defesa do Consumidor (CDC) e na legislacao aplicavel.
+            </p>
+          </section>
+
+          {/* 12. Suspensao e Encerramento */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">12. Suspensao e Encerramento</h2>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">12.1. Encerramento pelo Usuario</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Voce pode encerrar sua conta a qualquer momento atraves das configuracoes da
+              plataforma ou entrando em contato com o suporte em{' '}
+              <a href="mailto:contato@aica.guru" className="text-ceramic-info hover:underline">
+                contato@aica.guru
+              </a>
+              . Apos o encerramento, seus dados serao removidos conforme nossa politica de retencao
+              de dados descrita na{' '}
+              <a href="/privacy" className="text-ceramic-info hover:underline">
+                Politica de Privacidade
+              </a>
+              .
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">12.2. Suspensao ou Encerramento pela Aica</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A Aica podera suspender ou encerrar sua conta mediante aviso previo de{' '}
+              <strong>15 (quinze) dias</strong>, exceto em casos de violacoes graves (fraude, acesso
+              nao autorizado, atividades ilegais), nos quais a suspensao podera ser imediata.
+              Motivos incluem:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
+              <li>Violacao destes Termos de Servico</li>
+              <li>Uso da plataforma de maneira prejudicial, abusiva ou fraudulenta</li>
+              <li>Fornecimento de informacoes falsas ou enganosas</li>
+              <li>Inadimplencia em relacao a planos pagos</li>
+              <li>Determinacao judicial ou administrativa</li>
+            </ul>
+          </section>
+
+          {/* 13. Modificacoes dos Termos */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">13. Modificacoes dos Termos</h2>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A Aica podera modificar estes Termos periodicamente. Alteracoes significativas serao
+              comunicadas com antecedencia minima de <strong>30 (trinta) dias</strong> atraves de:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li>Notificacao por e-mail para o endereco cadastrado</li>
+              <li>Aviso destacado na plataforma (in-app)</li>
+              <li>Atualizacao da data &quot;Ultima atualizacao&quot; no topo desta pagina</li>
             </ul>
             <p className="text-[#5C554B] leading-relaxed">
-              Seu uso continuado da Aica após as alterações constitui aceitação dos novos termos.
-              Se você não concorda com as alterações, deve parar de usar nossos serviços.
+              Caso voce nao concorde com as modificacoes, voce devera interromper o uso da
+              plataforma, solicitar a exclusao de sua conta e, se aplicavel, tera direito ao
+              reembolso proporcional ao periodo nao utilizado de sua assinatura.
             </p>
           </section>
 
-          {/* Dispute Resolution */}
+          {/* 14. Resolucao de Disputas */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">14. Resolução de Disputas</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">14. Resolucao de Disputas</h2>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">14.1. Lei Aplicável</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">14.1. Lei Aplicavel</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Estes Termos são regidos pelas leis da República Federativa do Brasil.
+              Estes Termos sao regidos pelas leis da Republica Federativa do Brasil. Para usuarios
+              residentes na Uniao Europeia/Espaco Economico Europeu (UE/EEE), os direitos conferidos
+              pela legislacao local de protecao ao consumidor permanecem preservados. Para residentes
+              na California (EUA), os direitos conferidos pela CCPA/CPRA sao igualmente preservados.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">14.2. Foro</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">14.2. Resolucao Informal</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Qualquer disputa decorrente destes Termos será resolvida nos tribunais competentes
-              do Brasil.
+              Antes de iniciar qualquer procedimento formal, as partes se comprometem a buscar
+              resolucao amigavel da disputa. O Usuario devera entrar em contato atraves do e-mail{' '}
+              <a href="mailto:contato@aica.guru" className="text-ceramic-info hover:underline">
+                contato@aica.guru
+              </a>
+              , e a Aica tera o prazo de <strong>30 (trinta) dias</strong> para responder e buscar
+              uma solucao.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">14.3. Resolução Informal</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">14.3. Foro</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Fica eleito o foro da <strong>comarca do Rio de Janeiro, Estado do Rio de Janeiro</strong>,
+              para dirimir quaisquer controversias oriundas destes Termos, ressalvado o direito do
+              consumidor de optar pelo foro de seu domicilio, conforme Art. 101 do CDC.
+            </p>
             <p className="text-[#5C554B] leading-relaxed">
-              Antes de iniciar qualquer procedimento formal, encorajamos você a entrar em contato
-              conosco para tentar resolver a disputa de forma amigável.
+              Para usuarios internacionais, a Aica oferece a opcao de mediacao online como
+              alternativa para resolucao de disputas.
             </p>
           </section>
 
-          {/* General Provisions */}
+          {/* 15. Disposicoes Gerais */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">15. Disposições Gerais</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">15. Disposicoes Gerais</h2>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">15.1. Acordo Completo</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Estes Termos, juntamente com nossa Política de Privacidade, constituem o acordo completo
-              entre você e a Aica.
+              Estes Termos, juntamente com a{' '}
+              <a href="/privacy" className="text-ceramic-info hover:underline">
+                Politica de Privacidade
+              </a>
+              , constituem o acordo completo entre voce e a Aica, substituindo quaisquer acordos
+              anteriores, escritos ou verbais.
             </p>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">15.2. Divisibilidade</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Se qualquer disposição destes Termos for considerada inválida, as demais disposições
-              permanecerão em pleno vigor e efeito.
+              Se qualquer disposicao destes Termos for considerada invalida ou inexequivel por
+              autoridade competente, as demais disposicoes permanecerao em pleno vigor e efeito.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">15.3. Renúncia</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">15.3. Renuncia</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A falha em fazer cumprir qualquer disposição destes Termos não constitui renúncia
-              desse direito.
+              A falha ou atraso no exercicio de qualquer direito previsto nestes Termos nao
+              constitui renuncia a esse direito, podendo ser exercido a qualquer momento.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">15.4. Cessão</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">15.4. Cessao</h3>
             <p className="text-[#5C554B] leading-relaxed">
-              Você não pode transferir ou ceder seus direitos sob estes Termos sem nosso consentimento
-              prévio por escrito. Podemos transferir nossos direitos a qualquer momento.
+              Voce nao podera transferir ou ceder seus direitos e obrigacoes sob estes Termos sem
+              o consentimento previo por escrito da Aica. A Aica podera transferir seus direitos
+              e obrigacoes mediante notificacao previa ao Usuario.
             </p>
           </section>
 
-          {/* Contact */}
+          {/* 16. Contato */}
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">16. Contato</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Se você tiver dúvidas sobre estes Termos de Serviço, entre em contato conosco:
+              Para duvidas, solicitacoes ou reclamacoes relacionadas a estes Termos de Servico,
+              entre em contato conosco:
             </p>
             <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6 space-y-2">
-              <p className="text-[#5C554B]"><strong>Razao Social:</strong> Comtxae Educacao Cultura e Tecnologia Ltda.</p>
-              <p className="text-[#5C554B]"><strong>CNPJ:</strong> 20.260.474/0001-80</p>
-              <p className="text-[#5C554B]"><strong>Endereco:</strong> Rua Marques de Sao Vicente, 95 / 404</p>
-              <p className="text-[#5C554B]"><strong>Encarregado de Dados (DPO):</strong> Lucas Boscacci Pereira Lima da Silva</p>
-              <p className="text-[#5C554B]"><strong>E-mail do DPO:</strong> lucas@comtxae.com</p>
-              <p className="text-[#5C554B]"><strong>E-mail geral:</strong> contato@aica.guru</p>
+              <p className="text-[#5C554B]">
+                <strong>E-mail geral:</strong>{' '}
+                <a href="mailto:contato@aica.guru" className="text-ceramic-info hover:underline">
+                  contato@aica.guru
+                </a>
+              </p>
+              <p className="text-[#5C554B]">
+                <strong>Encarregado de Dados (DPO):</strong>{' '}
+                <a href="mailto:dpo@aica.life" className="text-ceramic-info hover:underline">
+                  dpo@aica.life
+                </a>
+              </p>
             </div>
           </section>
 
@@ -376,9 +536,12 @@ export function TermsOfServicePage() {
           <section className="mt-8 pt-8 border-t border-[#E8E6E0]">
             <div className="bg-ceramic-info/10 border border-ceramic-info/30 rounded-lg p-6">
               <p className="text-sm text-ceramic-info leading-relaxed">
-                <strong>Importante:</strong> Ao usar a Aica, você reconhece que leu, compreendeu e
-                concorda em cumprir estes Termos de Serviço e nossa Política de Privacidade. Se você
-                não concorda com estes termos, não use nossos serviços.
+                <strong>Importante:</strong> Ao usar a Aica, voce confirma que leu, compreendeu e
+                concorda com estes Termos de Servico e nossa{' '}
+                <a href="/privacy" className="text-ceramic-info hover:underline font-medium">
+                  Politica de Privacidade
+                </a>
+                . Se voce nao concorda com estes termos, nao utilize nossos servicos.
               </p>
             </div>
           </section>
@@ -389,7 +552,7 @@ export function TermsOfServicePage() {
       <footer className="bg-[#F8F7F5] border-t border-[#E8E6E0] py-8 mt-16">
         <div className="max-w-[900px] mx-auto px-6 md:px-8 text-center">
           <p className="text-sm text-[#5C554B]">
-            © {new Date().getFullYear()} Aica. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} Comtxae Educacao Cultura e Tecnologia Ltda. Todos os direitos reservados.
           </p>
         </div>
       </footer>

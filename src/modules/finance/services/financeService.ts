@@ -169,7 +169,11 @@ export async function getBurnRate(userId: string): Promise<BurnRateData> {
             const lastMonth = expenses[expenses.length - 1];
             const previousMonth = expenses[expenses.length - 2];
 
-            percentageChange = ((lastMonth - previousMonth) / previousMonth) * 100;
+            if (previousMonth === 0) {
+                percentageChange = lastMonth > 0 ? 100 : 0;
+            } else {
+                percentageChange = ((lastMonth - previousMonth) / previousMonth) * 100;
+            }
 
             if (percentageChange > 5) {
                 trend = 'increasing';

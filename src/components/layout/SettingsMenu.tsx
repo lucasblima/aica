@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Settings, LogOut, DollarSign, FileSearch, Crown, LayoutGrid, Ticket, Gift } from 'lucide-react';
+import { Settings, LogOut, DollarSign, FileSearch, Crown, LayoutGrid, Ticket, Gift, Shield, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -266,6 +266,43 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                 </span>
                             </button>
                         )}
+
+                        {/* Legal Section Divider */}
+                        <div className="px-2 my-1">
+                            <div className="h-px bg-gradient-to-r from-transparent via-[#D9CBB6] to-transparent opacity-50"></div>
+                        </div>
+
+                        {/* Privacy Policy */}
+                        <button
+                            onClick={() => {
+                                navigate('/privacy-policy');
+                                setIsOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                        >
+                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Shield className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-info" />
+                            </div>
+                            <span className="font-bold text-sm transition-colors">
+                                Privacidade
+                            </span>
+                        </button>
+
+                        {/* Terms of Service */}
+                        <button
+                            onClick={() => {
+                                navigate('/terms');
+                                setIsOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                        >
+                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <FileText className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-info" />
+                            </div>
+                            <span className="font-bold text-sm transition-colors">
+                                Termos de Servico
+                            </span>
+                        </button>
 
                         {/* Logout Button */}
                         <button

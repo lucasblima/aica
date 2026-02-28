@@ -81,8 +81,14 @@ export async function getRecurringSummary(
 
     if (error) throw error;
 
-    const txList = data || [];
+    const MAX_TRANSACTIONS = 10000;
+    let txList = data || [];
     if (txList.length === 0) return [];
+
+    if (txList.length > MAX_TRANSACTIONS) {
+      log.warn(`[Recurring] ${txList.length} transactions exceeds cap, using most recent ${MAX_TRANSACTIONS}`);
+      txList = txList.slice(0, MAX_TRANSACTIONS);
+    }
 
     // Group by normalized description
     const groups = new Map<string, { amounts: number[]; lastDate: string }>();

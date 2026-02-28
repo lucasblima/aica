@@ -90,6 +90,19 @@ export async function getMonthlyDigest(
       }
     }
 
+    // Validate response shape before using
+    if (!data?.digest && !data?.error) {
+      log.error('[DigestService] Invalid response shape from Edge Function:', data)
+      return {
+        success: false,
+        digest: null,
+        month: month || 0,
+        year: year || 0,
+        monthName: '',
+        error: 'Resposta invalida do servico de digest',
+      }
+    }
+
     const response = data as DigestResponse
 
     // Cache successful results
