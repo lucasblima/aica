@@ -414,8 +414,9 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleDelete(account.id)}
-                        className="px-2 py-1 text-[10px] rounded bg-ceramic-error/10 text-ceramic-error font-medium hover:bg-ceramic-error/20 transition-colors"
+                        className="flex items-center px-2 py-1 text-[10px] rounded bg-ceramic-error/10 text-ceramic-error font-medium hover:bg-ceramic-error/20 transition-colors"
                       >
+                        <Trash2 className="w-3 h-3 mr-1" />
                         Confirmar
                       </button>
                       <button

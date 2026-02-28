@@ -398,8 +398,32 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
     }
   };
 
-  const getStatusIcon = () => {
-    return <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />;
+  const getStageColor = (stage: string): string => {
+    switch (stage) {
+      case 'complete':
+      case 'completed':
+      case 'success':
+        return 'text-ceramic-success';
+      case 'error':
+      case 'failed':
+        return 'text-ceramic-error';
+      case 'categorizing':
+      case 'processing':
+        return 'text-ceramic-warning';
+      default:
+        return 'text-ceramic-info';
+    }
+  };
+
+  const getStatusIcon = (stage?: string) => {
+    const color = getStageColor(stage || '');
+    if (stage === 'complete' || stage === 'completed' || stage === 'success') {
+      return <CheckCircle className={`w-4 h-4 ${color}`} />;
+    }
+    if (stage === 'error' || stage === 'failed') {
+      return <AlertCircle className={`w-4 h-4 ${color}`} />;
+    }
+    return <Loader2 className={`w-4 h-4 ${color} animate-spin`} />;
   };
 
   /**
@@ -415,7 +439,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          {getStatusIcon()}
+          {getStatusIcon(fileWithMeta.progress?.stage)}
           <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300">
             {displayMessage}
           </p>
