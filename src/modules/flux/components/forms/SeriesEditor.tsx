@@ -413,6 +413,8 @@ function IntervalInput({
 }) {
   // Determine step for distance based on modality
   const distStep = modality === 'swimming' ? 25 : 100;
+  // Strength athletes are stationary — interval is time-only (#554)
+  const showDistanceToggle = modality !== 'strength';
 
   const distDisplayValue = intervalDistUnit === 'km' ? distanceMeters / 1000 : distanceMeters;
   const distDisplayStep = intervalDistUnit === 'km' ? 0.1 : distStep;
@@ -422,11 +424,15 @@ function IntervalInput({
     onDistanceChange(inMeters);
   };
 
+  // For strength, force time mode
+  const effectiveMode = showDistanceToggle ? intervalMode : 'time';
+
   return (
     <div>
       <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Intervalo</label>
 
-      {/* Mode toggle */}
+      {/* Mode toggle — hidden for strength (#554) */}
+      {showDistanceToggle && (
       <div className="flex gap-2 mb-2">
         <button
           type="button"
@@ -453,9 +459,10 @@ function IntervalInput({
           Distância
         </button>
       </div>
+      )}
 
       {/* Time mode */}
-      {intervalMode === 'time' ? (
+      {effectiveMode === 'time' ? (
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <input
@@ -907,13 +914,6 @@ function StrengthFields({ series, onUpdate }: { series: StrengthSeries; onUpdate
           <span className="text-xs text-ceramic-text-secondary font-medium">kg</span>
         </div>
       </div>
-      {/* Distance for strength exercises like farmer's walks, sled pushes (#454) */}
-      <DistanceInput
-        label="Distância (opcional)"
-        meters={series.distance_meters || 0}
-        onChange={(meters) => onUpdate({ distance_meters: meters } as Partial<StrengthSeries>)}
-        stepMeters={10}
-      />
     </>
   );
 }
