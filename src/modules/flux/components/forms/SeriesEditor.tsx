@@ -258,17 +258,6 @@ function DistanceInput({
         <div className="flex rounded-lg overflow-hidden border border-ceramic-text-secondary/20">
           <button
             type="button"
-            onClick={() => setDisplayUnit('m')}
-            className={`px-2.5 py-1.5 text-xs font-medium transition-all ${
-              displayUnit === 'm'
-                ? 'bg-ceramic-accent text-white'
-                : 'bg-white/50 text-ceramic-text-secondary hover:bg-white/80'
-            }`}
-          >
-            M
-          </button>
-          <button
-            type="button"
             onClick={() => setDisplayUnit('km')}
             className={`px-2.5 py-1.5 text-xs font-medium transition-all ${
               displayUnit === 'km'
@@ -276,7 +265,18 @@ function DistanceInput({
                 : 'bg-white/50 text-ceramic-text-secondary hover:bg-white/80'
             }`}
           >
-            Km
+            km
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayUnit('m')}
+            className={`px-2.5 py-1.5 text-xs font-medium transition-all ${
+              displayUnit === 'm'
+                ? 'bg-ceramic-accent text-white'
+                : 'bg-white/50 text-ceramic-text-secondary hover:bg-white/80'
+            }`}
+          >
+            m
           </button>
         </div>
       </div>
@@ -497,17 +497,6 @@ function IntervalInput({
           <div className="flex rounded-lg overflow-hidden border border-ceramic-text-secondary/20">
             <button
               type="button"
-              onClick={() => onDistUnitChange('m')}
-              className={`px-2.5 py-1.5 text-xs font-medium transition-all ${
-                intervalDistUnit === 'm'
-                  ? 'bg-ceramic-accent text-white'
-                  : 'bg-white/50 text-ceramic-text-secondary hover:bg-white/80'
-              }`}
-            >
-              M
-            </button>
-            <button
-              type="button"
               onClick={() => onDistUnitChange('km')}
               className={`px-2.5 py-1.5 text-xs font-medium transition-all ${
                 intervalDistUnit === 'km'
@@ -515,7 +504,18 @@ function IntervalInput({
                   : 'bg-white/50 text-ceramic-text-secondary hover:bg-white/80'
               }`}
             >
-              Km
+              km
+            </button>
+            <button
+              type="button"
+              onClick={() => onDistUnitChange('m')}
+              className={`px-2.5 py-1.5 text-xs font-medium transition-all ${
+                intervalDistUnit === 'm'
+                  ? 'bg-ceramic-accent text-white'
+                  : 'bg-white/50 text-ceramic-text-secondary hover:bg-white/80'
+              }`}
+            >
+              m
             </button>
           </div>
         </div>
@@ -686,15 +686,23 @@ function SwimmingFields({ series, onUpdate }: { series: SwimmingSeries; onUpdate
 // ============================================================================
 
 function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: (u: Partial<CyclingSeries>) => void }) {
+  const [estimationType, setEstimationType] = useState<'speed' | 'power'>('speed');
   const isTime = series.work_unit === 'time';
 
-  // Duration in min/seg for time mode
-  const durationMin = isTime && series.unit_detail === 'minutes'
-    ? Math.floor(series.work_value)
-    : isTime ? Math.floor(series.work_value / 60) : 0;
-  const durationSec = isTime && series.unit_detail === 'minutes'
-    ? 0
-    : isTime ? Math.round(series.work_value % 60) : 0;
+  // Convert work_value to h/min/seg for time mode (#545)
+  const totalSeconds = isTime && series.unit_detail === 'minutes'
+    ? series.work_value * 60
+    : isTime && series.unit_detail === 'seconds'
+      ? series.work_value
+      : 0;
+  const durationHours = Math.floor(totalSeconds / 3600);
+  const durationMin = Math.floor((totalSeconds % 3600) / 60);
+  const durationSec = Math.round(totalSeconds % 60);
+
+  const updateTimeFromParts = (h: number, m: number, s: number) => {
+    const total = h * 3600 + m * 60 + s;
+    onUpdate({ work_value: total, unit_detail: 'seconds' });
+  };
 
   // For distance mode: read cycling duration from extra fields (#427)
   const cyclingSeries = series as CyclingSeries;
@@ -709,7 +717,7 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => onUpdate({ work_unit: 'time', unit_detail: 'minutes' })}
+            onClick={() => onUpdate({ work_value: 0, work_unit: 'time', unit_detail: 'minutes' })}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
               isTime
                 ? 'bg-ceramic-accent text-white'
@@ -721,7 +729,7 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
           </button>
           <button
             type="button"
-            onClick={() => onUpdate({ work_unit: 'distance', unit_detail: 'meters' })}
+            onClick={() => onUpdate({ work_value: 0, work_unit: 'distance', unit_detail: 'meters' })}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
               !isTime
                 ? 'bg-ceramic-accent text-white'
@@ -734,17 +742,48 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
         </div>
       </div>
 
-      {/* Time mode: only DurationInput. Distance mode: only DistanceInput + duration (#453) */}
+      {/* Time mode: h + min + seg (#545). Distance mode: only DistanceInput + duration (#453) */}
       {isTime && (
-        <DurationInput
-          label="Duração"
-          minutes={durationMin}
-          seconds={durationSec}
-          onMinutesChange={(min) => onUpdate({ work_value: min, unit_detail: 'minutes' })}
-          onSecondsChange={(sec) => {
-            onUpdate({ work_value: durationMin * 60 + sec, unit_detail: 'seconds' });
-          }}
-        />
+        <div>
+          <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Duração</label>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={durationHours}
+                onChange={(e) => updateTimeFromParts(parseInt(e.target.value) || 0, durationMin, durationSec)}
+                className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+              />
+              <span className="text-xs text-ceramic-text-secondary font-medium">h</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                value={durationMin}
+                onChange={(e) => updateTimeFromParts(durationHours, Math.min(59, parseInt(e.target.value) || 0), durationSec)}
+                className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+              />
+              <span className="text-xs text-ceramic-text-secondary font-medium">min</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                value={durationSec}
+                onChange={(e) => updateTimeFromParts(durationHours, durationMin, Math.min(59, parseInt(e.target.value) || 0))}
+                className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+              />
+              <span className="text-xs text-ceramic-text-secondary font-medium">seg</span>
+            </div>
+          </div>
+        </div>
       )}
       {!isTime && (
         <>
@@ -764,6 +803,68 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
             onHoursChange={(h) => onUpdate({ cycling_duration_hours: h } as Partial<CyclingSeries>)}
             onMinutesChange={(m) => onUpdate({ cycling_duration_minutes: m } as Partial<CyclingSeries>)}
           />
+
+          {/* Estimated Speed/Power (#548) */}
+          <div>
+            <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Estimativas (opcional)</label>
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setEstimationType('speed')}
+                className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  estimationType === 'speed'
+                    ? 'bg-ceramic-accent text-white'
+                    : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
+                }`}
+              >
+                Velocidade (km/h)
+              </button>
+              <button
+                type="button"
+                onClick={() => setEstimationType('power')}
+                className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  estimationType === 'power'
+                    ? 'bg-ceramic-accent text-white'
+                    : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
+                }`}
+              >
+                Potência (W)
+              </button>
+            </div>
+            {estimationType === 'speed' ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={series.estimated_speed_kmh || ''}
+                  onChange={(e) => onUpdate({
+                    estimated_speed_kmh: parseFloat(e.target.value) || 0,
+                    estimated_power_watts: undefined,
+                  } as Partial<CyclingSeries>)}
+                  placeholder="0"
+                  className="w-28 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+                />
+                <span className="text-xs text-ceramic-text-secondary font-medium">km/h</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="5"
+                  value={series.estimated_power_watts || ''}
+                  onChange={(e) => onUpdate({
+                    estimated_power_watts: parseInt(e.target.value) || 0,
+                    estimated_speed_kmh: undefined,
+                  } as Partial<CyclingSeries>)}
+                  placeholder="0"
+                  className="w-28 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+                />
+                <span className="text-xs text-ceramic-text-secondary font-medium">W</span>
+              </div>
+            )}
+          </div>
         </>
       )}
 

@@ -219,8 +219,8 @@ export default function TemplateFormDrawer({
               </button>
             </div>
 
-            {/* Timeline Visual — sticky above form (#465) */}
-            {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
+            {/* Timeline Visual — sticky above form (#465), hidden for strength (#551) */}
+            {formData.modality !== 'strength' && formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
               <div className="px-6 py-3 border-b border-ceramic-text-secondary/10 bg-ceramic-base/95 backdrop-blur-sm">
                 <TimelineVisual series={formData.exercise_structure.series} />
               </div>
