@@ -144,7 +144,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
 
                 {/* Balance — smaller */}
                 <div className="flex-1 flex items-center justify-center relative z-10">
-                    <p className={`text-lg font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
+                    <p className={`text-lg font-black text-ceramic-text-primary ${getBalanceColor(summary.currentBalance)}`}>
                         {formatCurrency(summary.currentBalance)}
                     </p>
                 </div>
@@ -192,7 +192,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
                 <p className="text-[9px] text-ceramic-text-secondary mb-2 uppercase tracking-wider font-medium">
                     Saldo Atual
                 </p>
-                <p className={`text-2xl md:text-3xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
+                <p className={`text-2xl md:text-3xl font-black text-ceramic-text-primary ${getBalanceColor(summary.currentBalance)}`}>
                     {formatCurrency(summary.currentBalance)}
                 </p>
             </div>

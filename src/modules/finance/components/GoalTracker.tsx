@@ -27,8 +27,8 @@ const formatCurrency = (value: number) =>
 const getProgressColor = (pct: number): string => {
   if (pct >= 100) return 'var(--color-ceramic-success, #22c55e)';
   if (pct >= 80) return 'var(--color-ceramic-success, #22c55e)';
-  if (pct >= 50) return '#3B82F6';
-  return '#F59E0B';
+  if (pct >= 50) return 'var(--color-ceramic-info, #3B82F6)';
+  return 'var(--color-ceramic-accent, #D97706)'; // amber accent
 };
 
 const getDaysRemaining = (deadline: string | null): string | null => {

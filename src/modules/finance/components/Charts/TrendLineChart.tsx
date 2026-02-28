@@ -253,9 +253,8 @@ export const TrendLineChart: React.FC<TrendLineChartProps> = ({ data }) => {
                 width={120}
                 height={36}
                 rx={6}
-                fill="white"
+                className="fill-ceramic-base text-ceramic-border"
                 stroke="currentColor"
-                className="text-ceramic-border"
                 strokeWidth={0.5}
                 filter="url(#shadow)"
               />

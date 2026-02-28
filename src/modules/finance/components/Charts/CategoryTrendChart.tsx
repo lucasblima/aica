@@ -138,9 +138,8 @@ export const CategoryTrendChart: React.FC<CategoryTrendChartProps> = ({
                       width={80}
                       height={20}
                       rx={4}
-                      fill="white"
+                      className="fill-ceramic-base text-ceramic-border"
                       stroke="currentColor"
-                      className="text-ceramic-border"
                       strokeWidth={0.5}
                     />
                     <text

@@ -124,7 +124,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
                 </span>
                 <span
                   className={`text-xs font-medium ${
-                    tx.type === 'income' ? 'text-emerald-600' : 'text-red-500'
+                    tx.type === 'income' ? 'text-ceramic-success' : 'text-ceramic-error'
                   }`}
                 >
                   {formatCurrency(Math.abs(tx.amount))}
