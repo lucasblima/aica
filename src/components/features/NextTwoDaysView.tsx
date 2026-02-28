@@ -217,7 +217,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
       : event.skipped || event.isCompleted
         ? 'opacity-50'
         : isPast && !event.isTask
-          ? 'opacity-50'
+          ? 'opacity-60 grayscale-[30%] border-l-4 border-ceramic-text-tertiary/30'
           : isHappening
             ? 'ring-2 ring-amber-400/60 bg-amber-50/30'
             : '';
@@ -327,10 +327,10 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
               {formatTime(event.startTime)}
             </span>
 
-            {/* "Passou" label for past calendar events */}
+            {/* "Encerrado" badge for past calendar events */}
             {!completing && isPast && !event.isTask && !event.skipped && (
-              <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary/50">
-                Passou
+              <span className="flex-shrink-0 text-[10px] font-bold text-ceramic-text-tertiary bg-ceramic-cool px-1.5 py-0.5 rounded">
+                Encerrado
               </span>
             )}
 

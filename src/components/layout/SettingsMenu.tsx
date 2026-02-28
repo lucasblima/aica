@@ -27,6 +27,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     onOpenProfile
 }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [avatarError, setAvatarError] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
