@@ -17,6 +17,15 @@ import type {
   AccountType,
 } from '../types'
 
+interface ParsedGeminiTransaction {
+    date: string;
+    description: string;
+    amount: number | string;
+    type: 'income' | 'expense';
+    balance?: number | string;
+    category?: string;
+}
+
 // Configure PDF.js worker - use local worker for reliability
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
@@ -196,12 +205,12 @@ export class PDFProcessingService {
         openingBalance: Number(parsed.openingBalance) || 0,
         closingBalance: Number(parsed.closingBalance) || 0,
         currency: parsed.currency || 'BRL',
-        transactions: (parsed.transactions || []).map((t: any) => ({
+        transactions: (parsed.transactions || []).map((t: ParsedGeminiTransaction) => ({
           date: t.date,
           description: t.description,
-          amount: Number(t.amount),
+          amount: Number(t.amount) || 0,
           type: t.type,
-          balance: 0,
+          balance: t.balance != null ? Number(t.balance) : 0,
           suggestedCategory: t.category || 'other'
         })),
         piiSanitized: false
