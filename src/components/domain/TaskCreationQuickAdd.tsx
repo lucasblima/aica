@@ -166,12 +166,15 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
   const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    const eventKeywords = /\b(reuni[ãa]o|evento|marcar|agendar|compromisso|encontro|call|meeting)\b/i;
+    const detectedType: TaskType = eventKeywords.test(title) ? 'event' : 'task';
     await createTask({
       title: title.trim(),
       priority: previewPriority,
       due_date: previewDueDate || undefined,
       scheduled_time: previewScheduledTime || undefined,
       estimated_duration: previewDuration ? parseInt(previewDuration) : undefined,
+      task_type: detectedType,
     });
   };
 

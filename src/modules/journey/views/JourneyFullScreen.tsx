@@ -4,7 +4,7 @@
  * Mobile: Tab-based navigation (Atividades, Insights, Busca, Entrevista)
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -163,6 +163,9 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { moments, create: createMoment } = useMoments()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary({ immediate: true })
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestionAI()
+
+  // Track answered question IDs to prevent re-displaying the same question after refresh
+  const answeredIdsRef = useRef<Set<string>>(new Set())
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, newLevel, qualityFeedback, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
@@ -184,6 +187,18 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   } = useJourneyFileSearch({ userId: user?.id, autoLoad: false })
 
   const hasIndexedMoments = documents.length > 0
+
+  // Safety net: if refreshQuestion returns a question we already answered, skip it
+  useEffect(() => {
+    if (question && !isLoadingQuestion && answeredIdsRef.current.has(question.id)) {
+      log.debug('Skipping already-answered question returned by refresh', { questionId: question.id })
+      // Small delay to avoid rapid re-fetch loops; skipQuestion fetches a new question
+      const timer = setTimeout(() => {
+        skipQuestion()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [question, isLoadingQuestion, skipQuestion])
 
   // Fetch weekly summary — eager on desktop (always visible), lazy on mobile (insights tab)
   useEffect(() => {
@@ -278,6 +293,9 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   // Handle question answer
   const handleAnswerQuestion = async (questionId: string, responseText: string) => {
     try {
+      // Track this question as answered BEFORE the async call to prevent race conditions
+      answeredIdsRef.current.add(questionId)
+
       const result = await answerQuestion(responseText)
 
       // Trigger CP animation
@@ -301,12 +319,12 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       refreshStats()
 
       // Fetch next question after delay to show success feedback.
-      // Safe because getDailyQuestion now returns null (not a re-served answered question)
-      // when no unanswered questions exist, so no infinite loop.
       setTimeout(() => {
         refreshQuestion()
       }, 2000)
     } catch (error) {
+      // Remove from answered set on failure so the user can retry
+      answeredIdsRef.current.delete(questionId)
       log.error('Error answering question:', error)
       // Re-throw to let the card component handle UI state
       throw error
