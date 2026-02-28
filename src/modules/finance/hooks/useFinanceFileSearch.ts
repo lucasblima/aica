@@ -259,7 +259,11 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
     async (query: string, resultCount: number = 5): Promise<FileSearchResult[]> => {
       try {
         if (!corpus) {
-          throw new Error('Nenhum corpus disponível. Indexe um statement primeiro.');
+          log.warn('[FileSearch] Corpus null, attempting re-creation');
+          await ensureCorpus();
+        }
+        if (!corpus) {
+          throw new Error('Nao foi possivel criar o corpus de busca');
         }
 
         const results = await baseHook.search({
@@ -274,7 +278,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
         throw error;
       }
     },
-    [corpus, baseHook]
+    [corpus, baseHook, ensureCorpus]
   );
 
   /**
@@ -460,6 +464,9 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
     loadStatements,
     removeStatement,
     hasIndexedStatements,
+
+    // Corpus management
+    ensureCorpus,
 
     // Ações do base hook (se necessário)
     clearSearchResults: baseHook.clearSearchResults,

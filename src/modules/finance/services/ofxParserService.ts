@@ -60,6 +60,7 @@ export function parseOFX(content: string, fileName: string): CSVParseResult {
  */
 function extractTransactions(content: string): ParsedTransaction[] {
   const transactions: ParsedTransaction[] = [];
+  let skippedCount = 0;
 
   // Match all STMTTRN blocks
   const stmtTrnRegex = /<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|(?=<STMTTRN>|<\/BANKTRANLIST>))/gi;
@@ -73,7 +74,11 @@ function extractTransactions(content: string): ParsedTransaction[] {
     const name = extractTag(block, 'NAME') || extractTag(block, 'MEMO') || '';
     const memo = extractTag(block, 'MEMO') || '';
 
-    if (!dtPosted || !trnAmt) continue;
+    if (!dtPosted || !trnAmt) {
+      skippedCount++;
+      log.warn(`[OFX] Skipped transaction: missing ${!dtPosted ? 'date' : 'amount'}`);
+      continue;
+    }
 
     const amount = parseFloat(trnAmt);
     const description = name || memo;
@@ -84,6 +89,10 @@ function extractTransactions(content: string): ParsedTransaction[] {
       amount: Math.abs(amount),
       type: amount >= 0 ? 'income' : 'expense',
     });
+  }
+
+  if (skippedCount > 0) {
+    log.warn(`[OFX] Total skipped: ${skippedCount} transactions with missing data`);
   }
 
   // Sort by date ascending
