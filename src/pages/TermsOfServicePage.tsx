@@ -41,9 +41,12 @@ export function TermsOfServicePage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">1. Aceitação dos Termos</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Bem-vindo à Aica! Estes Termos de Serviço ("Termos") constituem um acordo legal entre você
-              ("Usuário", "você" ou "seu") e a Aica ("nós", "nosso" ou "nossa") e regem seu acesso e uso
-              da plataforma Aica, incluindo todos os recursos, ferramentas e serviços disponibilizados.
+              Bem-vindo a AICA! Estes Termos de Servico (&quot;Termos&quot;) constituem um acordo legal entre voce
+              (&quot;Usuario&quot;, &quot;voce&quot; ou &quot;seu&quot;) e{' '}
+              <strong>Comtxae Educacao Cultura e Tecnologia Ltda.</strong> (CNPJ 20.260.474/0001-80),
+              com sede na Rua Marques de Sao Vicente, 95 / 404 (&quot;AICA&quot;, &quot;nos&quot;, &quot;nosso&quot; ou &quot;nossa&quot;),
+              e regem seu acesso e uso da plataforma AICA Life OS, incluindo todos os recursos,
+              ferramentas e servicos disponibilizados.
             </p>
             <p className="text-[#5C554B] leading-relaxed">
               Ao criar uma conta, acessar ou usar a Aica, você concorda em cumprir estes Termos e nossa
@@ -359,8 +362,13 @@ export function TermsOfServicePage() {
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Se você tiver dúvidas sobre estes Termos de Serviço, entre em contato conosco:
             </p>
-            <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6">
-              <p className="text-[#5C554B]"><strong>E-mail:</strong> contato@aica.guru</p>
+            <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6 space-y-2">
+              <p className="text-[#5C554B]"><strong>Razao Social:</strong> Comtxae Educacao Cultura e Tecnologia Ltda.</p>
+              <p className="text-[#5C554B]"><strong>CNPJ:</strong> 20.260.474/0001-80</p>
+              <p className="text-[#5C554B]"><strong>Endereco:</strong> Rua Marques de Sao Vicente, 95 / 404</p>
+              <p className="text-[#5C554B]"><strong>Encarregado de Dados (DPO):</strong> Lucas Boscacci Pereira Lima da Silva</p>
+              <p className="text-[#5C554B]"><strong>E-mail do DPO:</strong> lucas@comtxae.com</p>
+              <p className="text-[#5C554B]"><strong>E-mail geral:</strong> contato@aica.guru</p>
             </div>
           </section>
 

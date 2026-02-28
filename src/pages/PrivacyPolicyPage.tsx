@@ -41,9 +41,11 @@ export function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">1. Introdução</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica ("nós", "nosso" ou "nossa") está comprometida em proteger sua privacidade.
-              Esta Política de Privacidade explica como coletamos, usamos, divulgamos e protegemos
-              suas informações pessoais quando você utiliza nossa plataforma de gestão de vida e produtividade.
+              A AICA Life OS (&quot;AICA&quot;, &quot;nos&quot;, &quot;nosso&quot; ou &quot;nossa&quot;), operada por{' '}
+              <strong>Comtxae Educacao Cultura e Tecnologia Ltda.</strong> (CNPJ 20.260.474/0001-80),
+              esta comprometida em proteger sua privacidade. Esta Politica de Privacidade explica como
+              coletamos, usamos, divulgamos e protegemos suas informacoes pessoais quando voce utiliza
+              nossa plataforma de gestao de vida e produtividade.
             </p>
             <p className="text-[#5C554B] leading-relaxed">
               Ao usar a Aica, você concorda com a coleta e uso de informações de acordo com esta política.
@@ -382,8 +384,13 @@ export function PrivacyPolicyPage() {
               Se você tiver dúvidas sobre esta Política de Privacidade ou sobre como tratamos seus dados pessoais,
               entre em contato conosco:
             </p>
-            <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6">
-              <p className="text-[#5C554B]"><strong>E-mail:</strong> contato@aica.guru</p>
+            <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6 space-y-2">
+              <p className="text-[#5C554B]"><strong>Razao Social:</strong> Comtxae Educacao Cultura e Tecnologia Ltda.</p>
+              <p className="text-[#5C554B]"><strong>CNPJ:</strong> 20.260.474/0001-80</p>
+              <p className="text-[#5C554B]"><strong>Endereco:</strong> Rua Marques de Sao Vicente, 95 / 404</p>
+              <p className="text-[#5C554B]"><strong>Encarregado de Dados (DPO):</strong> Lucas Boscacci Pereira Lima da Silva</p>
+              <p className="text-[#5C554B]"><strong>E-mail do DPO:</strong> lucas@comtxae.com</p>
+              <p className="text-[#5C554B]"><strong>E-mail geral:</strong> contato@aica.guru</p>
             </div>
           </section>
 
