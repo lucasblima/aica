@@ -96,8 +96,14 @@ export class FinanceAgentService {
       const income = txns.filter((t) => t.type === 'income')
       const expenses = txns.filter((t) => t.type === 'expense')
 
-      const totalIncome = income.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
-      const totalExpenses = expenses.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+      const totalIncome = income.reduce((sum, t) => {
+          const amt = Number(t.amount);
+          return sum + (Number.isFinite(amt) ? Math.abs(amt) : 0);
+      }, 0)
+      const totalExpenses = expenses.reduce((sum, t) => {
+          const amt = Number(t.amount);
+          return sum + (Number.isFinite(amt) ? Math.abs(amt) : 0);
+      }, 0)
 
       // Calculate category totals
       const categoryTotals = expenses.reduce((acc, t) => {
@@ -168,7 +174,9 @@ export class FinanceAgentService {
         model: 'fast' // Finance chat uses fast model for quick responses
       })
 
-      const assistantMessage = response.result || 'Desculpe, nao consegui processar sua pergunta.'
+      const assistantMessage = (response && typeof response.result === 'string' && response.result.trim())
+          ? response.result
+          : 'Desculpe, nao consegui processar sua pergunta. Tente reformular.'
       const responseTimeMs = Date.now() - startTime
 
       // Save conversation to database
