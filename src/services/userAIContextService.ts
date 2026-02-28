@@ -24,11 +24,13 @@ export interface UserPattern {
   confidence: number
 }
 
+export type ActionItem = string | { action: string; module: string; priority: string }
+
 export interface LifeCouncilInsight {
   overallStatus: string
   headline: string
   synthesis: string
-  actionItems: string[]
+  actionItems: ActionItem[]
   createdAt: string
 }
 

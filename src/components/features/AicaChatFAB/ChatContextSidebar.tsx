@@ -138,7 +138,9 @@ function InsightCard({ insight }: { insight: LifeCouncilInsight }) {
       )}
       {insight.actionItems.length > 0 && (
         <ul className="aica-context-card__list">
-          {insight.actionItems.slice(0, 2).map((item, i) => <li key={i}>{item}</li>)}
+          {insight.actionItems.slice(0, 2).map((item, i) => (
+            <li key={i}>{typeof item === 'string' ? item : item.action}</li>
+          ))}
         </ul>
       )}
     </div>
