@@ -312,16 +312,23 @@ export const statementService = {
 
     // Use upsert to handle duplicate transactions gracefully
     // When a transaction with the same hash_id exists, ignore it (keep the first occurrence)
-    const { error } = await supabase
+    const { data: upsertResult, error } = await supabase
       .from('finance_transactions')
       .upsert(transactionRecords, {
         onConflict: 'hash_id',
         ignoreDuplicates: true, // Keep existing transaction, don't update
-      });
+      })
+      .select('id');
 
     if (error) {
       log.error('[statementService] Save transactions error:', error);
       throw new Error('Erro ao salvar transacoes');
+    }
+
+    const insertedCount = upsertResult?.length || 0;
+    const skippedCount = transactionRecords.length - insertedCount;
+    if (skippedCount > 0) {
+      log.info(`[statementService] Transactions: ${insertedCount} inserted, ${skippedCount} duplicates skipped for statement ${statementId}`);
     }
 
     log.debug(`[statementService] Saved/updated ${transactionRecords.length} transactions for statement ${statementId}`);
@@ -426,7 +433,7 @@ export const statementService = {
         .select('id')
         .eq('user_id', userId)
         .eq('file_hash', fileHash)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         throw new Error('Este extrato já foi importado anteriormente.');
