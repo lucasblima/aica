@@ -21,7 +21,7 @@ export async function getAllTimeSummary(userId: string): Promise<FinanceSummary>
         // Fetch ALL transactions for user
         const { data: transactions, error: txError } = await supabase
             .from('finance_transactions')
-            .select('*')
+            .select('type, amount')
             .eq('user_id', userId);
 
         if (txError) throw txError;

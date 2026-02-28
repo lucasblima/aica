@@ -40,6 +40,11 @@ export async function createAccount(
   }
 ): Promise<FinanceAccount> {
   try {
+    if (account.color && !/^#[0-9A-Fa-f]{6}$/.test(account.color)) {
+      log.warn('[AccountService] Invalid color format, using default');
+      account.color = '#F59E0B';
+    }
+
     const { data, error } = await supabase
       .from('finance_accounts')
       .insert({
