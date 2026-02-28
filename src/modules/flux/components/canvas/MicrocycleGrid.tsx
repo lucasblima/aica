@@ -63,11 +63,11 @@ interface MicrocycleGridProps {
 
 const WEEKDAYS_SHORT = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] as const;
 
-const WEEK_LABELS: Record<number, string> = {
-  1: 'Base',
-  2: 'Progressao',
-  3: 'Intensidade',
-  4: 'Recuperacao',
+const MODALITY_ICONS: Record<string, string> = {
+  swimming: '\u{1F3CA}',
+  running: '\u{1F3C3}',
+  cycling: '\u{1F6B4}',
+  strength: '\u{1F4AA}',
 };
 
 /**
@@ -149,6 +149,7 @@ interface WorkoutPillProps {
 
 const WorkoutPill: React.FC<WorkoutPillProps> = ({ workout, onClick }) => {
   const style = MODALITY_PILL_STYLES[workout.modality];
+  const icon = MODALITY_ICONS[workout.modality] || '\u{1F3CB}\u{FE0F}';
 
   return (
     <motion.button
@@ -161,7 +162,7 @@ const WorkoutPill: React.FC<WorkoutPillProps> = ({ workout, onClick }) => {
         color: style.text,
       }}
     >
-      {workout.name}
+      {icon} {workout.name} <span className="opacity-70">{workout.duration}&prime;</span>
     </motion.button>
   );
 };
@@ -284,8 +285,6 @@ const WeekStrip: React.FC<WeekStripProps> = ({
     [workouts]
   );
 
-  const label = WEEK_LABELS[weekNumber] || `Semana ${weekNumber}`;
-
   return (
     <motion.div
       variants={staggerItem}
@@ -308,9 +307,6 @@ const WeekStrip: React.FC<WeekStripProps> = ({
           <h3 className="text-sm font-bold text-ceramic-text-primary">
             Semana {weekNumber}
           </h3>
-          <span className="text-[10px] font-medium text-ceramic-text-tertiary uppercase tracking-wider">
-            {label}
-          </span>
           {absoluteWeek && (
             <span className="text-[9px] font-medium text-ceramic-text-tertiary">
               ({getPeriodizationLabel(absoluteWeek)})

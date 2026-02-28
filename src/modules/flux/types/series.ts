@@ -120,6 +120,8 @@ export interface CyclingSeries extends SeriesBase {
   zone: IntensityZone;
   cycling_duration_hours?: number; // Hours when in distance mode
   cycling_duration_minutes?: number; // Minutes when in distance mode
+  estimated_speed_kmh?: number; // Estimated speed in km/h (distance mode)
+  estimated_power_watts?: number; // Estimated power in watts (distance mode)
 }
 
 /**
