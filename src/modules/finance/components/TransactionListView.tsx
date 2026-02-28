@@ -20,6 +20,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { useTransactions } from '../hooks/useTransactions';
 import type { FinanceTransaction, TransactionFilters, TransactionCategory } from '../types';
 import { TRANSACTION_CATEGORIES } from '../types';
+import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
 
 const log = createNamespacedLogger('TransactionListView');
 
@@ -31,55 +32,6 @@ interface TransactionListViewProps {
   userId: string;
   onClose?: () => void;
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  housing: 'Moradia',
-  food: 'Alimentacao',
-  transport: 'Transporte',
-  health: 'Saude',
-  education: 'Educacao',
-  entertainment: 'Entretenimento',
-  shopping: 'Compras',
-  salary: 'Salario',
-  freelance: 'Freelance',
-  investment: 'Investimento',
-  transfer: 'Transferencia',
-  bills: 'Contas',
-  subscription: 'Assinatura',
-  travel: 'Viagem',
-  personal_care: 'Cuidados Pessoais',
-  pets: 'Pets',
-  gifts: 'Presentes',
-  other: 'Outros',
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  housing: 'bg-blue-100 text-blue-700',
-  food: 'bg-orange-100 text-orange-700',
-  transport: 'bg-purple-100 text-purple-700',
-  health: 'bg-red-100 text-red-700',
-  education: 'bg-indigo-100 text-indigo-700',
-  entertainment: 'bg-pink-100 text-pink-700',
-  shopping: 'bg-amber-100 text-amber-700',
-  salary: 'bg-emerald-100 text-emerald-700',
-  freelance: 'bg-teal-100 text-teal-700',
-  investment: 'bg-cyan-100 text-cyan-700',
-  transfer: 'bg-gray-100 text-gray-700',
-  bills: 'bg-rose-100 text-rose-700',
-  subscription: 'bg-violet-100 text-violet-700',
-  travel: 'bg-sky-100 text-sky-700',
-  personal_care: 'bg-fuchsia-100 text-fuchsia-700',
-  pets: 'bg-lime-100 text-lime-700',
-  gifts: 'bg-yellow-100 text-yellow-700',
-  other: 'bg-stone-100 text-stone-700',
-};
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
 
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr + 'T00:00:00');
@@ -332,7 +284,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
               setCategoryFilter('');
               setSearchTerm('');
             }}
-            className="px-3 py-1.5 rounded-full text-xs font-medium text-ceramic-error hover:bg-red-50 transition-colors"
+            className="px-3 py-1.5 rounded-full text-xs font-medium text-ceramic-error hover:bg-ceramic-error/10 transition-colors"
           >
             Limpar filtros
           </button>
