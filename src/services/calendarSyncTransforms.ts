@@ -35,6 +35,61 @@ function makeExtendedProperties(module: SyncModule, entityId: string) {
   };
 }
 
+/**
+ * Add minutes to a HH:MM time string arithmetically (no Date objects).
+ * Returns { dateStr, hour, min } where dateStr may advance if crossing midnight.
+ */
+function addMinutesToTime(
+  baseDateStr: string,
+  startHour: number,
+  startMin: number,
+  durationMin: number
+): { dateStr: string; hour: string; min: string } {
+  const totalMin = startHour * 60 + startMin + durationMin;
+  const dayOverflow = Math.floor(totalMin / (24 * 60));
+  const remaining = ((totalMin % (24 * 60)) + 24 * 60) % (24 * 60);
+  const endH = Math.floor(remaining / 60);
+  const endM = remaining % 60;
+
+  let dateStr = baseDateStr;
+  if (dayOverflow > 0) {
+    const d = new Date(baseDateStr + 'T12:00:00');
+    d.setDate(d.getDate() + dayOverflow);
+    dateStr = d.toISOString().split('T')[0];
+  }
+
+  return {
+    dateStr,
+    hour: endH.toString().padStart(2, '0'),
+    min: endM.toString().padStart(2, '0'),
+  };
+}
+
+/**
+ * Extract HH:MM from a scheduled_time value.
+ *
+ * The DB column is TIMESTAMPTZ. The app saves local time as a naive ISO string
+ * (e.g. "2026-02-28T14:00:00") which PostgreSQL interprets as UTC. When read back
+ * it returns "2026-02-28T14:00:00+00:00". The digits before the timezone suffix
+ * represent the user's intended local time, so we extract them directly from the
+ * string to avoid a UTC→local conversion that would shift the time.
+ */
+function extractLocalHHMM(scheduledTime: string): { hour: string; min: string } {
+  if (scheduledTime.includes('T')) {
+    const timePart = scheduledTime.split('T')[1];
+    const parts = timePart.split(':');
+    return {
+      hour: parts[0].padStart(2, '0'),
+      min: (parts[1] || '00').padStart(2, '0'),
+    };
+  }
+  const parts = scheduledTime.split(':');
+  return {
+    hour: parts[0].padStart(2, '0'),
+    min: (parts[1] || '00').padStart(2, '0'),
+  };
+}
+
 // ─── Flux: Workout Slots ──────────────────────────────────────
 
 export interface FluxSlotData {
@@ -54,7 +109,7 @@ export function fluxSlotToGoogleEvent(
 ): GoogleCalendarEventInput | null {
   if (!slot.start_time) return null;
 
-  const baseDate = new Date(microcycleStartDate + 'T00:00:00');
+  const baseDate = new Date(microcycleStartDate + 'T12:00:00');
   const dayOffset = (slot.week_number - 1) * 7 + (slot.day_of_week - 1);
   const eventDate = new Date(baseDate);
   eventDate.setDate(eventDate.getDate() + dayOffset);
@@ -65,10 +120,7 @@ export function fluxSlotToGoogleEvent(
   const startMin = (timeParts[1] || '00').padStart(2, '0');
 
   const durationMin = slot.duration || 60;
-  const endDate = new Date(`${dateStr}T${startHour}:${startMin}:00`);
-  endDate.setMinutes(endDate.getMinutes() + durationMin);
-  const endHour = endDate.getHours().toString().padStart(2, '0');
-  const endMin = endDate.getMinutes().toString().padStart(2, '0');
+  const end = addMinutesToTime(dateStr, parseInt(startHour), parseInt(startMin), durationMin);
 
   const tz = getUserTimezone();
   const label = slot.modality
@@ -84,7 +136,7 @@ export function fluxSlotToGoogleEvent(
     summary: label,
     description: descParts.join('\n'),
     start: { dateTime: `${dateStr}T${startHour}:${startMin}:00`, timeZone: tz },
-    end: { dateTime: `${dateStr}T${endHour}:${endMin}:00`, timeZone: tz },
+    end: { dateTime: `${end.dateStr}T${end.hour}:${end.min}:00`, timeZone: tz },
     colorId: CALENDAR_COLORS.flux,
     extendedProperties: makeExtendedProperties('flux', slot.id),
   };
@@ -110,26 +162,13 @@ export function atlasTaskToGoogleEvent(task: AtlasTaskData): GoogleCalendarEvent
 
   // If scheduled_time is set, create a timed event; otherwise create an all-day event
   if (task.scheduled_time) {
-    // scheduled_time can be HH:MM or a full timestamptz — normalize to HH:MM
-    let startHour: string;
-    let startMin: string;
-    if (task.scheduled_time.includes('T')) {
-      // Full timestamptz: extract local HH:MM
-      const d = new Date(task.scheduled_time);
-      startHour = d.getHours().toString().padStart(2, '0');
-      startMin = d.getMinutes().toString().padStart(2, '0');
-    } else {
-      const timeParts = task.scheduled_time.split(':');
-      startHour = timeParts[0].padStart(2, '0');
-      startMin = (timeParts[1] || '00').padStart(2, '0');
-    }
+    // Extract HH:MM from the string directly — avoids UTC→local shift from Date constructor.
+    // The DB stores TIMESTAMPTZ but the app saves naive local time as UTC, so the digits
+    // in the ISO string represent the user's intended local time.
+    const { hour: startHour, min: startMin } = extractLocalHHMM(task.scheduled_time);
 
     const durationMin = task.estimated_duration || 60;
-    const endDate = new Date(`${task.due_date}T${startHour}:${startMin}:00`);
-    endDate.setMinutes(endDate.getMinutes() + durationMin);
-    const endHour = endDate.getHours().toString().padStart(2, '0');
-    const endMin = endDate.getMinutes().toString().padStart(2, '0');
-    const endDateStr = endDate.toISOString().split('T')[0];
+    const end = addMinutesToTime(task.due_date!, parseInt(startHour), parseInt(startMin), durationMin);
 
     const tz = getUserTimezone();
 
@@ -137,7 +176,7 @@ export function atlasTaskToGoogleEvent(task: AtlasTaskData): GoogleCalendarEvent
       summary: `[Tarefa] ${task.title}`,
       description,
       start: { dateTime: `${task.due_date}T${startHour}:${startMin}:00`, timeZone: tz },
-      end: { dateTime: `${endDateStr}T${endHour}:${endMin}:00`, timeZone: tz },
+      end: { dateTime: `${end.dateStr}T${end.hour}:${end.min}:00`, timeZone: tz },
       colorId: CALENDAR_COLORS.atlas,
       extendedProperties: makeExtendedProperties('atlas', task.id),
     };
@@ -172,11 +211,7 @@ export function studioEpisodeToGoogleEvent(episode: StudioEpisodeData): GoogleCa
   const duration = episode.duration_minutes || 90;
   const guestLabel = episode.guest_name ? ` c/ ${episode.guest_name}` : '';
 
-  const startTime = `${episode.scheduled_date}T10:00:00`;
-  const endDate = new Date(startTime);
-  endDate.setMinutes(endDate.getMinutes() + duration);
-  const endHour = endDate.getHours().toString().padStart(2, '0');
-  const endMin = endDate.getMinutes().toString().padStart(2, '0');
+  const end = addMinutesToTime(episode.scheduled_date!, 10, 0, duration);
 
   const descParts: string[] = [];
   if (episode.guest_name) descParts.push(`Convidado: ${episode.guest_name}`);
@@ -186,8 +221,8 @@ export function studioEpisodeToGoogleEvent(episode: StudioEpisodeData): GoogleCa
   return {
     summary: `[Podcast] ${episode.title}${guestLabel}`,
     description: descParts.join('\n'),
-    start: { dateTime: startTime, timeZone: tz },
-    end: { dateTime: `${episode.scheduled_date}T${endHour}:${endMin}:00`, timeZone: tz },
+    start: { dateTime: `${episode.scheduled_date}T10:00:00`, timeZone: tz },
+    end: { dateTime: `${end.dateStr}T${end.hour}:${end.min}:00`, timeZone: tz },
     colorId: CALENDAR_COLORS.studio,
     extendedProperties: makeExtendedProperties('studio', episode.id),
   };

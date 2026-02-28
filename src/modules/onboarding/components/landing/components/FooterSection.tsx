@@ -24,7 +24,7 @@ export function FooterSection() {
               Legal
             </h4>
             <a
-              href="/privacy"
+              href="/privacy-policy"
               className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
             >
               Privacidade
