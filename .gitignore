@@ -85,3 +85,4 @@ gha-creds-*.json
 
 # Supabase temp
 supabase/.temp/
+.worktrees/
