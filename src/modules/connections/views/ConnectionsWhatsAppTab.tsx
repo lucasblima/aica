@@ -58,6 +58,7 @@ import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion';
 import { useWhatsAppGamification } from '../hooks/useWhatsAppGamification';
 import { useConsciousnessPoints } from '@/hooks/useConsciousnessPoints';
 import { supabase } from '@/services/supabaseClient';
+import TelegramLinkCard from '../components/telegram/TelegramLinkCard';
 import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('ConnectionsWhatsAppTab');
 
@@ -505,7 +506,10 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
 
   // ── Import Tab ──
   const renderImportTab = () => (
-    <WhatsAppExportUpload />
+    <div className="space-y-6">
+      <WhatsAppExportUpload />
+      <TelegramLinkCard />
+    </div>
   );
 
   // ── Contacts Tab ──
