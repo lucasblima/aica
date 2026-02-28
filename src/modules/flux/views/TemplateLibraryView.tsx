@@ -72,6 +72,39 @@ const ZONE_PILL_COLORS: Record<string, string> = {
   Z5: 'bg-red-600',
 };
 
+/** Format work value for display on library cards */
+function formatWorkValue(value: number, unit: string, unitDetail?: string): string {
+  if (unit === 'seconds' || unitDetail === 'seconds') {
+    const h = Math.floor(value / 3600);
+    const m = Math.floor((value % 3600) / 60);
+    const s = Math.round(value % 60);
+    const parts: string[] = [];
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}min`);
+    if (s > 0 && h === 0) parts.push(`${s}s`);
+    return parts.join(' ') || '0s';
+  }
+  if (unit === 'minutes' || unitDetail === 'minutes') {
+    const h = Math.floor(value / 60);
+    const m = Math.round(value % 60);
+    if (h > 0 && m > 0) return `${h}h ${m}min`;
+    if (h > 0) return `${h}h`;
+    return `${m}min`;
+  }
+  if (unit === 'meters' || unitDetail === 'meters') {
+    if (value >= 1000) return `${(value / 1000).toFixed(1).replace('.0', '')}km`;
+    return `${value}m`;
+  }
+  if (unit === 'time') {
+    // Cycling time mode - delegate to detail
+    return formatWorkValue(value, unitDetail || 'minutes');
+  }
+  if (unit === 'distance') {
+    return formatWorkValue(value, unitDetail || 'meters');
+  }
+  return `${value}`;
+}
+
 /** Extract unique zones from V2 exercise_structure */
 function getUniqueZones(es: any): string[] {
   if (!es?.series || !Array.isArray(es.series)) return [];
@@ -105,6 +138,7 @@ export default function TemplateLibraryView() {
   const [isModalOpen, setModalOpen] = useState(mode !== 'list');
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
+  const [groupByModality, setGroupByModality] = useState(false);
 
   // Apply filters
   useEffect(() => {
@@ -356,19 +390,33 @@ export default function TemplateLibraryView() {
             </div>
           </div>
 
-          {/* Favorites Toggle + Clear */}
+          {/* Favorites Toggle + Group by Modality + Clear */}
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.favorites_only || false}
-                onChange={(e) => handleFilterChange('favorites_only', e.target.checked || undefined)}
-                className="w-4 h-4 rounded border-ceramic-text-secondary/20"
-              />
-              <span className="text-sm font-medium text-ceramic-text-primary">
-                Apenas favoritos
-              </span>
-            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.favorites_only || false}
+                  onChange={(e) => handleFilterChange('favorites_only', e.target.checked || undefined)}
+                  className="w-4 h-4 rounded border-ceramic-text-secondary/20"
+                />
+                <span className="text-sm font-medium text-ceramic-text-primary">
+                  Apenas favoritos
+                </span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={groupByModality}
+                  onChange={(e) => setGroupByModality(e.target.checked)}
+                  className="w-4 h-4 rounded border-ceramic-text-secondary/20"
+                />
+                <span className="text-sm font-medium text-ceramic-text-primary">
+                  Agrupar por modalidade
+                </span>
+              </label>
+            </div>
 
             {activeFiltersCount > 0 && (
               <button
@@ -418,6 +466,42 @@ export default function TemplateLibraryView() {
               <Plus className="w-4 h-4" />
               <span className="font-medium">Criar Exercício</span>
             </button>
+          </div>
+        ) : groupByModality ? (
+          <div className="space-y-8">
+            {(['swimming', 'running', 'cycling', 'strength', 'walking'] as TrainingModality[])
+              .map((mod) => {
+                const modTemplates = filteredTemplates.filter((t) => t.modality === mod);
+                if (modTemplates.length === 0) return null;
+                const config = MODALITY_CONFIG[mod];
+                return (
+                  <div key={mod}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-xl">{config?.icon}</span>
+                      <h3 className="text-lg font-bold text-ceramic-text-primary">{config?.label}</h3>
+                      <span className="text-sm text-ceramic-text-secondary">({modTemplates.length})</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {modTemplates.map((template) => (
+                        <TemplateCard
+                          key={template.id}
+                          template={template}
+                          currentUserId={user?.id}
+                          onToggleFavorite={handleToggleFavorite}
+                          onEdit={handleEdit}
+                          onDuplicate={handleDuplicate}
+                          onDelete={handleDelete}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
+                          isDragging={draggedTemplate?.id === template.id}
+                          favoritingId={favoritingIds.has(template.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+              .filter(Boolean)}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -587,12 +671,10 @@ function TemplateCard({
                 </span>
                 <span className="line-clamp-2">
                   {es.series.map((s: any) => {
-                    if (s.reps) return `${s.reps} rep`;
-                    if (s.distance_meters) return `${s.distance_meters}m`;
-                    if (s.work_value) {
-                      const unit = s.work_unit === 'minutes' ? 'min' : s.work_unit === 'seconds' ? 's' : 'm';
-                      return `${s.work_value}${unit}`;
-                    }
+                    if (s.exercise_name) return s.exercise_name;
+                    if (s.reps) return `${s.reps} rep${s.load_kg ? ` ${s.load_kg}kg` : ''}`;
+                    if (s.distance_meters) return formatWorkValue(s.distance_meters, 'meters');
+                    if (s.work_value) return formatWorkValue(s.work_value, s.work_unit, s.unit_detail);
                     return 'série';
                   }).join(' + ')}
                 </span>
