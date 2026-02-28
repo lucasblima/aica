@@ -149,8 +149,8 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
             >
               {file ? (
                 <div className="space-y-4">
-                  <div className="inline-block p-4 bg-ceramic-warning/10 rounded-full">
-                    <FileText className="w-8 h-8 text-ceramic-warning" />
+                  <div className="inline-block p-4 bg-ceramic-success/10 rounded-full">
+                    <FileText className="w-8 h-8 text-ceramic-success" />
                   </div>
                   <div>
                     <p className="font-medium text-ceramic-text-primary">{file.name}</p>

@@ -155,7 +155,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('free')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'free'
-              ? 'bg-gradient-to-r from-ceramic-success to-ceramic-success/80 text-white shadow-md'
+              ? 'bg-ceramic-success text-white shadow-md'
               : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
@@ -166,7 +166,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('category')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'category'
-              ? 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80 text-white shadow-md'
+              ? 'bg-ceramic-warning text-white shadow-md'
               : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
@@ -177,7 +177,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('merchant')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'merchant'
-              ? 'bg-gradient-to-r from-ceramic-accent to-ceramic-accent/80 text-white shadow-md'
+              ? 'bg-ceramic-accent text-white shadow-md'
               : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
@@ -188,7 +188,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('anomalies')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'anomalies'
-              ? 'bg-gradient-to-r from-ceramic-error to-ceramic-error/80 text-white shadow-md'
+              ? 'bg-ceramic-error text-white shadow-md'
               : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
@@ -199,7 +199,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('patterns')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'patterns'
-              ? 'bg-gradient-to-r from-ceramic-info to-ceramic-info/80 text-white shadow-md'
+              ? 'bg-ceramic-info text-white shadow-md'
               : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
@@ -301,7 +301,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
               disabled={isSearching || (!query.trim() && searchMode !== 'anomalies') || !hasStatements}
               className={`
                 px-4 py-2
-                bg-gradient-to-br from-ceramic-success to-ceramic-success/80
+                bg-ceramic-success
                 text-white font-medium text-sm
                 rounded-xl
                 transition-all duration-200
@@ -415,7 +415,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
                       <div className="flex items-center gap-1.5">
                         <div className="w-16 h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-ceramic-success to-ceramic-success/80 rounded-full"
+                            className="h-full bg-ceramic-success rounded-full"
                             style={{ width: `${result.score * 100}%` }}
                           />
                         </div>
@@ -451,7 +451,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="p-8 bg-gradient-to-br from-ceramic-success/10 to-ceramic-success/5 border border-ceramic-success/20 rounded-xl"
+          className="p-8 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl"
         >
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 text-ceramic-success animate-spin" />

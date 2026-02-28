@@ -84,7 +84,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="ceramic-concave w-8 h-8 rounded-lg flex items-center justify-center">
-              <Tag className="w-4 h-4 text-amber-500" />
+              <Tag className="w-4 h-4 text-ceramic-accent" />
             </div>
             <h3 className="text-base font-bold text-ceramic-text-primary">
               Recategorizar
@@ -147,7 +147,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
           <select
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            className="w-full text-sm ceramic-inset px-3 py-2.5 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-transparent"
+            className="w-full text-sm ceramic-inset px-3 py-2.5 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/30 bg-transparent"
           >
             {TRANSACTION_CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -163,8 +163,8 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
             <div
               className={`shrink-0 w-5 h-5 rounded flex items-center justify-center mt-0.5 transition-colors ${
                 applySimilar
-                  ? 'bg-amber-500 text-white'
-                  : 'ceramic-inset group-hover:ring-2 group-hover:ring-amber-500/20'
+                  ? 'bg-ceramic-accent text-white'
+                  : 'ceramic-inset group-hover:ring-2 group-hover:ring-ceramic-accent/20'
               }`}
               onClick={() => setApplySimilar(!applySimilar)}
             >
@@ -189,7 +189,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
             log.info('AI suggestion requested for:', primaryDescription);
           }}
         >
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <Sparkles className="w-3.5 h-3.5 text-ceramic-accent" />
           Sugerir categoria com IA
         </button>
 
@@ -214,7 +214,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs bg-ceramic-accent hover:bg-ceramic-accent-dark text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

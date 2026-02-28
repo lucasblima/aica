@@ -155,7 +155,7 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({ userId }) => {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent text-white text-xs font-medium hover:bg-amber-600 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent text-white text-xs font-medium hover:bg-ceramic-accent-dark transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Adicionar meta
