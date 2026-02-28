@@ -42,7 +42,7 @@ import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
 
 const log = createNamespacedLogger('AgendaView');
-import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, AgendaModeToggle, TaskListView, TaskKanbanView, TaskFilterBar } from '../components';
+import { DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, AgendaModeToggle, TaskListView, TaskKanbanView, TaskFilterBar } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
 import { CompletedTasksSection } from '../components/domain/CompletedTasksSection';
 import { useTaskCompletion } from '../hooks/useTaskCompletion';
@@ -82,7 +82,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const isDesktop = useIsDesktop();
     const [mobileMode, setMobileMode] = useState<AgendaMode>('agenda');
 
-    const MOBILE_VIEWS: AgendaMode[] = ['agenda', 'list', 'kanban', 'matrix'];
+    const MOBILE_VIEWS: AgendaMode[] = ['agenda', 'list', 'kanban'];
     const SWIPE_THRESHOLD = 60;
     const SWIPE_VELOCITY = 100;
 
@@ -936,26 +936,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         </>
     );
 
-    // Wrapper for PriorityMatrix onComplete: accepts Task, extracts id
-    const handleCompleteTaskFromMatrix = (task: Task) => handleTaskComplete(task.id);
-
-    // Matrix content (used in both desktop right panel and mobile organizar mode)
-    const matrixContent = (
-        <div className="w-full" data-tour="eisenhower-matrix">
-            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
-                Matriz de Prioridades
-            </h2>
-            <PriorityMatrix
-                userId={userId}
-                tasks={matrixTasks}
-                isLoading={isLoading}
-                onRefresh={loadAllTasks}
-                compact={!isDesktop}
-                onComplete={handleCompleteTaskFromMatrix}
-                onTaskDeleted={loadCompletedToday}
-            />
-        </div>
-    );
+    // Wrapper for task completion: accepts Task, extracts id
+    const handleCompleteTaskFromList = (task: Task) => handleTaskComplete(task.id);
 
     return (
         <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
@@ -999,18 +981,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onDragEnd={handleDragEnd}
             >
                 {mobileMode === 'agenda' && isDesktop ? (
-                    /* ======== DESKTOP AGENDA: side-by-side layout ======== */
-                    <div className="flex-1 flex overflow-hidden">
-                        {/* LEFT: Timeline — constrained width */}
-                        <main className="w-[55%] min-w-[380px] overflow-y-auto px-6 pb-32 pt-6 space-y-6">
-                            {timelineContent}
-                        </main>
-
-                        {/* RIGHT: Matrix — takes remaining space */}
-                        <aside className="flex-1 min-w-[420px] overflow-y-auto border-l border-ceramic-text-secondary/10 px-5 py-6">
-                            {matrixContent}
-                        </aside>
-                    </div>
+                    /* ======== DESKTOP AGENDA: full-width timeline ======== */
+                    <main className="flex-1 overflow-y-auto px-6 pb-32 pt-6 space-y-6">
+                        {timelineContent}
+                    </main>
                 ) : (
                     /* ======== ALL OTHER MODES: full-width content ======== */
                     <AnimatePresence mode="wait">
@@ -1031,7 +1005,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                 timelineContent
                             ) : (
                                 <>
-                                    {/* Filter bar — visible in list/kanban/matrix modes */}
+                                    {/* Filter bar — visible in list/kanban modes */}
                                     <TaskFilterBar
                                         filters={taskFilters}
                                         taskCounts={taskCounts}
@@ -1049,7 +1023,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                         <TaskListView
                                             tasks={filteredTasks}
                                             onOpenTask={(task) => log.debug('Open task:', task.id)}
-                                            onCompleteTask={handleCompleteTaskFromMatrix}
+                                            onCompleteTask={handleCompleteTaskFromList}
                                             isLoading={isLoading}
                                         />
                                     )}
@@ -1058,13 +1032,12 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                         <TaskKanbanView
                                             tasks={filteredTasks}
                                             onOpenTask={(task) => log.debug('Open task:', task.id)}
-                                            onCompleteTask={handleCompleteTaskFromMatrix}
+                                            onCompleteTask={handleCompleteTaskFromList}
                                             onMoveTask={handleMoveTask}
                                             isLoading={isLoading}
                                         />
                                     )}
 
-                                    {mobileMode === 'matrix' && matrixContent}
                                 </>
                             )}
                         </motion.main>
