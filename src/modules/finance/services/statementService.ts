@@ -71,7 +71,8 @@ export const statementService = {
       .from('finance_statements')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     if (error) {
       log.error('[statementService] Get statements error:', error);
