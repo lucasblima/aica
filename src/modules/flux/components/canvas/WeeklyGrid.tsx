@@ -90,14 +90,11 @@ const INTENSITY_LABELS: Record<string, string> = {
   high: 'Intenso',
 };
 
-const WEEK_FOCUS_LABELS: Record<number, string> = {
-  1: 'Base',
-  2: 'Progressao',
-  3: 'Recuperacao',
-};
-
-const PHASE_LABEL = (weekNumber: number): string => {
-  return WEEK_FOCUS_LABELS[weekNumber] || `Semana ${weekNumber}`;
+const MODALITY_ICONS: Record<string, string> = {
+  swimming: '\u{1F3CA}',
+  running: '\u{1F3C3}',
+  cycling: '\u{1F6B4}',
+  strength: '\u{1F4AA}',
 };
 
 // ============================================
@@ -174,6 +171,7 @@ interface PositionedWorkoutCardProps {
 const PositionedWorkoutCard = React.forwardRef<HTMLDivElement, PositionedWorkoutCardProps>(
   ({ workout, onClick, onDelete }, ref) => {
   const colors = MODALITY_COLORS[workout.modality] || MODALITY_COLORS.running;
+  const icon = MODALITY_ICONS[workout.modality] || '\u{1F3CB}\u{FE0F}';
   const top = workout.start_time ? timeToY(workout.start_time) : 0;
   const height = durationToHeight(workout.duration);
   const endTime = workout.start_time ? addMinutesToTime(workout.start_time, workout.duration) : '';
@@ -217,7 +215,7 @@ const PositionedWorkoutCard = React.forwardRef<HTMLDivElement, PositionedWorkout
             className="text-[11px] font-semibold leading-tight line-clamp-2"
             style={{ color: colors.text }}
           >
-            {workout.name}
+            {icon} {workout.name}
           </h5>
           <div className="flex items-center gap-0.5 flex-shrink-0">
             {onDelete && (
@@ -540,11 +538,8 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
               <Calendar className="w-4 h-4 text-[#7B8FA2]" />
             </div>
             <div>
-              <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                Semana {weekNumber}
-              </p>
               <h2 className="text-base font-bold text-ceramic-text-primary">
-                {PHASE_LABEL(weekNumber)}
+                Semana {weekNumber}
               </h2>
             </div>
           </div>
