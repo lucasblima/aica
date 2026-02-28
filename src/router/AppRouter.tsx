@@ -114,6 +114,7 @@ const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => 
 // Legal Pages - Rarely accessed
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
+const StatusPage = lazy(() => import('../pages/StatusPage').then(m => ({ default: m.StatusPage })));
 
 
 const ProfilePage = lazy(() => import('../views/ProfilePage').then(m => ({ default: m.ProfilePage })));
@@ -678,6 +679,12 @@ export function AppRouter() {
                <Route
                   path="/terms"
                   element={<TermsOfServicePage />}
+               />
+
+               {/* Service Status - Public route */}
+               <Route
+                  path="/status"
+                  element={<StatusPage />}
                />
 
                {/* Presentation Demo - Public route for testing Issue #117 */}
