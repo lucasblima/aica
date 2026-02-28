@@ -27,7 +27,7 @@ interface ParsedGeminiTransaction {
 }
 
 // Configure PDF.js worker - use local worker for reliability
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
+pdfjsLib.GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL || '/'}pdf.worker.min.mjs`
 
 // =====================================================
 // Progress Callback Types

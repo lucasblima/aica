@@ -35,6 +35,13 @@ export function exportToCSV(
   transactions: FinanceTransaction[],
   filename: string = 'transacoes.csv'
 ): void {
+  const MAX_EXPORT_ROWS = 50000;
+  let txToExport = transactions;
+  if (txToExport.length > MAX_EXPORT_ROWS) {
+    log.warn(`[Export] ${txToExport.length} rows exceeds limit, truncating to ${MAX_EXPORT_ROWS}`);
+    txToExport = txToExport.slice(0, MAX_EXPORT_ROWS);
+  }
+
   const headers = [
     'Data',
     'Descricao',
@@ -44,7 +51,7 @@ export function exportToCSV(
     'Recorrente',
   ];
 
-  const rows = transactions.map((tx) => [
+  const rows = txToExport.map((tx) => [
     tx.transaction_date,
     `"${(tx.description || '').replace(/"/g, '""')}"`,
     tx.amount.toFixed(2),

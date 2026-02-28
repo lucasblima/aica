@@ -64,9 +64,17 @@ export async function importFromDrive(
     };
   } catch (err) {
     log.error(TAG, 'Import error:', err);
+    const message = err instanceof Error ? err.message : 'Erro desconhecido';
+    const isAuth = message.includes('401') || message.toLowerCase().includes('auth') || message.toLowerCase().includes('unauthorized');
+    const isNetwork = message.toLowerCase().includes('fetch') || message.toLowerCase().includes('network') || message.toLowerCase().includes('timeout');
+
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Erro ao importar arquivo.',
+      error: isAuth
+        ? 'Sessao expirada. Reconecte o Google Drive.'
+        : isNetwork
+          ? 'Erro de conexao. Tente novamente.'
+          : `Erro ao importar: ${message}`,
     };
   }
 }

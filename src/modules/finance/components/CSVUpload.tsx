@@ -143,14 +143,14 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
               onDragOver={handleDragOver}
               className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
                 file
-                  ? 'border-ceramic-warning bg-ceramic-info/10'
+                  ? 'border-ceramic-success bg-ceramic-success/10'
                   : 'border-ceramic-border hover:border-ceramic-border bg-ceramic-base'
               }`}
             >
               {file ? (
                 <div className="space-y-4">
-                  <div className="inline-block p-4 bg-ceramic-warning/10 rounded-full">
-                    <FileText className="w-8 h-8 text-ceramic-warning" />
+                  <div className="inline-block p-4 bg-ceramic-success/10 rounded-full">
+                    <FileText className="w-8 h-8 text-ceramic-success" />
                   </div>
                   <div>
                     <p className="font-medium text-ceramic-text-primary">{file.name}</p>

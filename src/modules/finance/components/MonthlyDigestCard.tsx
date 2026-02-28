@@ -117,6 +117,12 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
         {error && (
           <div className="ceramic-inset p-3 bg-ceramic-error/5">
             <p className="text-xs text-ceramic-error">{error}</p>
+            <button
+              onClick={handleGenerate}
+              className="mt-2 text-sm text-ceramic-info hover:underline"
+            >
+              Tentar novamente
+            </button>
           </div>
         )}
 

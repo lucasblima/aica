@@ -3,6 +3,7 @@ import { X, Tag, Loader2, Sparkles, CheckSquare } from 'lucide-react';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { FinanceTransaction, TransactionCategory } from '../types';
 import { TRANSACTION_CATEGORIES } from '../types';
+import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
 
 const log = createNamespacedLogger('RecategorizeModal');
 
@@ -15,55 +16,6 @@ interface RecategorizeModalProps {
   onClose: () => void;
   onSave: (updates: Array<{ id: string; category: string }>) => Promise<void>;
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  housing: 'Moradia',
-  food: 'Alimentacao',
-  transport: 'Transporte',
-  health: 'Saude',
-  education: 'Educacao',
-  entertainment: 'Entretenimento',
-  shopping: 'Compras',
-  salary: 'Salario',
-  freelance: 'Freelance',
-  investment: 'Investimento',
-  transfer: 'Transferencia',
-  bills: 'Contas',
-  subscription: 'Assinatura',
-  travel: 'Viagem',
-  personal_care: 'Cuidados Pessoais',
-  pets: 'Pets',
-  gifts: 'Presentes',
-  other: 'Outros',
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  housing: 'bg-blue-100 text-blue-700',
-  food: 'bg-orange-100 text-orange-700',
-  transport: 'bg-purple-100 text-purple-700',
-  health: 'bg-red-100 text-red-700',
-  education: 'bg-indigo-100 text-indigo-700',
-  entertainment: 'bg-pink-100 text-pink-700',
-  shopping: 'bg-amber-100 text-amber-700',
-  salary: 'bg-emerald-100 text-emerald-700',
-  freelance: 'bg-teal-100 text-teal-700',
-  investment: 'bg-cyan-100 text-cyan-700',
-  transfer: 'bg-gray-100 text-gray-700',
-  bills: 'bg-rose-100 text-rose-700',
-  subscription: 'bg-violet-100 text-violet-700',
-  travel: 'bg-sky-100 text-sky-700',
-  personal_care: 'bg-fuchsia-100 text-fuchsia-700',
-  pets: 'bg-lime-100 text-lime-700',
-  gifts: 'bg-yellow-100 text-yellow-700',
-  other: 'bg-stone-100 text-stone-700',
-};
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
 
 export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
   transactions,
@@ -132,7 +84,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="ceramic-concave w-8 h-8 rounded-lg flex items-center justify-center">
-              <Tag className="w-4 h-4 text-amber-500" />
+              <Tag className="w-4 h-4 text-ceramic-accent" />
             </div>
             <h3 className="text-base font-bold text-ceramic-text-primary">
               Recategorizar
@@ -172,7 +124,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
                 </span>
                 <span
                   className={`text-xs font-medium ${
-                    tx.type === 'income' ? 'text-emerald-600' : 'text-red-500'
+                    tx.type === 'income' ? 'text-ceramic-success' : 'text-ceramic-error'
                   }`}
                 >
                   {formatCurrency(Math.abs(tx.amount))}
@@ -195,7 +147,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
           <select
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            className="w-full text-sm ceramic-inset px-3 py-2.5 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-transparent"
+            className="w-full text-sm ceramic-inset px-3 py-2.5 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/30 bg-transparent"
           >
             {TRANSACTION_CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -211,8 +163,8 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
             <div
               className={`shrink-0 w-5 h-5 rounded flex items-center justify-center mt-0.5 transition-colors ${
                 applySimilar
-                  ? 'bg-amber-500 text-white'
-                  : 'ceramic-inset group-hover:ring-2 group-hover:ring-amber-500/20'
+                  ? 'bg-ceramic-accent text-white'
+                  : 'ceramic-inset group-hover:ring-2 group-hover:ring-ceramic-accent/20'
               }`}
               onClick={() => setApplySimilar(!applySimilar)}
             >
@@ -237,7 +189,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
             log.info('AI suggestion requested for:', primaryDescription);
           }}
         >
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <Sparkles className="w-3.5 h-3.5 text-ceramic-accent" />
           Sugerir categoria com IA
         </button>
 
@@ -262,7 +214,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs bg-ceramic-accent hover:bg-ceramic-accent-dark text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

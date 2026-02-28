@@ -250,7 +250,7 @@ export const DriveFilePicker: React.FC<DriveFilePickerProps> = ({
             <div className="flex items-center gap-1 text-[10px] text-ceramic-text-secondary">
               <span className="ceramic-inset px-2 py-0.5 rounded">CSV</span>
               <span className="ceramic-inset px-2 py-0.5 rounded">Sheets</span>
-              <span className="ceramic-inset px-2 py-0.5 rounded text-ceramic-text-secondary/50">PDF em breve</span>
+              <span className="ceramic-inset px-2 py-0.5 rounded text-ceramic-text-secondary/50 opacity-50 cursor-not-allowed">PDF em breve</span>
             </div>
           </div>
         </div>

@@ -433,11 +433,21 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
    * Auto-load ao montar (se autoLoad=true)
    */
   useEffect(() => {
+    let isMounted = true;
+
     if (autoLoad && (userId || statementId)) {
-      ensureCorpus().catch((error) => {
-        log.warn('[useFinanceFileSearch] Auto-load failed:', error);
+      ensureCorpus().then((result) => {
+        if (isMounted) {
+          setCorpus(result);
+        }
+      }).catch((error) => {
+        if (isMounted) {
+          log.warn('[useFinanceFileSearch] Auto-load failed:', error);
+        }
       });
     }
+
+    return () => { isMounted = false; };
   }, [autoLoad, userId, statementId, ensureCorpus]);
 
   return {

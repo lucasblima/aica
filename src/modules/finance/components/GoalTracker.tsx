@@ -27,8 +27,8 @@ const formatCurrency = (value: number) =>
 const getProgressColor = (pct: number): string => {
   if (pct >= 100) return 'var(--color-ceramic-success, #22c55e)';
   if (pct >= 80) return 'var(--color-ceramic-success, #22c55e)';
-  if (pct >= 50) return '#3B82F6';
-  return '#F59E0B';
+  if (pct >= 50) return 'var(--color-ceramic-info, #3B82F6)';
+  return 'var(--color-ceramic-accent, #D97706)'; // amber accent
 };
 
 const getDaysRemaining = (deadline: string | null): string | null => {
@@ -155,7 +155,7 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({ userId }) => {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent text-white text-xs font-medium hover:bg-amber-600 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent text-white text-xs font-medium hover:bg-ceramic-accent-dark transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Adicionar meta
