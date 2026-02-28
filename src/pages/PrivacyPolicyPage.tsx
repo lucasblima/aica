@@ -278,7 +278,7 @@ export function PrivacyPolicyPage() {
                     <td className="border border-[#E8E6E0] px-4 py-3">Supabase</td>
                     <td className="border border-[#E8E6E0] px-4 py-3">Todos os dados da plataforma</td>
                     <td className="border border-[#E8E6E0] px-4 py-3">Banco de dados, autenticacao, armazenamento</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">EUA</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Brasil (Sao Paulo)</td>
                   </tr>
                   <tr className="bg-[#F8F7F5]">
                     <td className="border border-[#E8E6E0] px-4 py-3">Google Cloud</td>
@@ -352,8 +352,11 @@ export function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">9. Transferencia Internacional de Dados</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Seus dados podem ser transferidos para e processados em servidores localizados fora do Brasil,
-              especialmente nos Estados Unidos, onde estao hospedados nossos provedores de infraestrutura.
+              Seus dados primarios sao armazenados e processados em servidores localizados no Brasil
+              (Sao Paulo), onde estao hospedados nosso banco de dados (Supabase) e servidor de aplicacao
+              (Google Cloud Run). Alguns dados podem ser transferidos para servidores nos Estados Unidos
+              para processamento por servicos auxiliares, como inteligencia artificial (Google Gemini API)
+              e autenticacao (Google OAuth).
             </p>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Para garantir a protecao adequada dos seus dados em transferencias internacionais, adotamos

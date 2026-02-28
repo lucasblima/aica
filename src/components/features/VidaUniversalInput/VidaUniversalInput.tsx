@@ -11,13 +11,14 @@
  * 4. Quick chips allow explicit action selection
  */
 
-import { useRef } from 'react'
+import { useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mic, MicOff, Send, ClipboardList, CalendarPlus,
   Sparkles, MessageCircle, CheckCircle2, Loader2, AlertCircle,
 } from 'lucide-react'
 import { useVidaInputActions, type ActionType } from './useVidaInputActions'
+import { DailyQuestionsCarousel } from './DailyQuestionsCarousel'
 
 const ACTION_ICONS: Record<string, typeof ClipboardList> = {
   clipboard: ClipboardList,
@@ -70,8 +71,20 @@ export function VidaUniversalInput() {
   const isSuccess = actionStatus === 'success'
   const isError = actionStatus === 'error'
 
+  const handleSelectQuestion = useCallback((text: string) => {
+    setInput(text)
+    inputRef.current?.focus()
+  }, [setInput])
+
   return (
     <div className="ceramic-card overflow-hidden">
+      {/* Daily Questions Carousel — above input */}
+      {!input.trim() && (
+        <div className="px-3 pt-3 pb-1">
+          <DailyQuestionsCarousel onSelectQuestion={handleSelectQuestion} />
+        </div>
+      )}
+
       {/* Success / Error flash */}
       <AnimatePresence>
         {isSuccess && (
