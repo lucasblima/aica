@@ -27,6 +27,7 @@ const MODULE_ROUTES: Record<string, string> = {
   connections: '/connections',
   eraforge: '/eraforge',
   flux: '/flux',
+  telegram: '/connections',
 };
 
 const FILTER_OPTIONS: { key: FilterMode; label: string; icon: React.ReactNode }[] = [
