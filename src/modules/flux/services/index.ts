@@ -51,3 +51,27 @@ export type {
 // Cross-module bridges
 export { createTrainingMoment, recordWorkoutCompletion } from './fluxJourneyBridge';
 export { createMicrocycleTask, completeMicrocycleTask } from './fluxAtlasBridge';
+
+// Fatigue modeling (Sprint 6 — Training Science)
+export {
+  computeEMA,
+  computeCTL,
+  computeATL,
+  computeTSB,
+  computeTrainingLoad,
+  classifyFatigueRisk,
+  computeACWR,
+  assessReadiness,
+  computeSessionRPE,
+  computeFluxDomainScore,
+  storeStressEntry,
+  updateAthleteReadiness,
+  getStressHistory,
+} from './fatigueModeling';
+export type {
+  DailyStressEntry,
+  TrainingLoadMetrics,
+  FatigueRisk,
+  ReadinessAssessment,
+  StressHistoryRow,
+} from './fatigueModeling';

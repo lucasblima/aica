@@ -37,6 +37,9 @@ export * from './presentationPrompts';
 export * from './presentationContentGenerator';
 export * from './presentationContentSchemas';
 
+// Researcher Scoring (Issue #575 - Sprint 6)
+export * from './researcherScoring';
+
 // Utilities
 export * from './briefingAIService';
 // Note: pdfService.ts is deprecated - use processEdital from @/services/edgeFunctionService instead

@@ -4,9 +4,9 @@ export function FooterSection() {
   return (
     <footer className="border-t border-ceramic-text-secondary/10 bg-ceramic-cool mt-16">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           {/* Col 1: Logo + Tagline */}
-          <div className="flex flex-col items-center md:items-start gap-3">
+          <div className="flex flex-col items-center sm:items-start gap-3">
             <div className="flex items-center gap-3">
               <Logo variant="default" width={32} />
               <span className="font-black text-xl text-ceramic-text-primary tracking-tighter">
@@ -18,8 +18,21 @@ export function FooterSection() {
             </p>
           </div>
 
-          {/* Col 2: Links */}
-          <div className="flex flex-col items-center gap-3">
+          {/* Col 2: Plataforma */}
+          <div className="flex flex-col items-center sm:items-start gap-3">
+            <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-1">
+              Plataforma
+            </h4>
+            <a
+              href="/status"
+              className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
+            >
+              Status dos Serviços
+            </a>
+          </div>
+
+          {/* Col 3: Legal */}
+          <div className="flex flex-col items-center sm:items-start gap-3">
             <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-1">
               Legal
             </h4>
@@ -37,8 +50,8 @@ export function FooterSection() {
             </a>
           </div>
 
-          {/* Col 3: Contact */}
-          <div className="flex flex-col items-center md:items-end gap-3">
+          {/* Col 4: Contato */}
+          <div className="flex flex-col items-center sm:items-start md:items-end gap-3">
             <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-1">
               Contato
             </h4>

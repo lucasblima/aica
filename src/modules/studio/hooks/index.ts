@@ -53,3 +53,13 @@ export type { UsePodcastFileSearchOptions, PodcastSearchContext } from './usePod
 // ============================================
 
 export type { UseSavedPautaResult } from './useSavedPauta';
+
+// ============================================
+// SCIENTIFIC SCORING (SPRINT 6)
+// ============================================
+
+export { useGuestScoring } from './useGuestScoring';
+export type { UseGuestScoringResult, StoredGuestScore } from './useGuestScoring';
+
+export { useNarrativeAnalysis } from './useNarrativeAnalysis';
+export type { UseNarrativeAnalysisResult } from './useNarrativeAnalysis';

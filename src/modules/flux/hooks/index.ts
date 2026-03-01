@@ -57,3 +57,10 @@ export type {
   SubmitExerciseFeedbackInput,
   SubmitWeeklyFeedbackInput,
 } from './useAthleteFeedback';
+
+// Training Science (Sprint 6 — Fatigue Modeling)
+export { useTrainingLoad } from './useTrainingLoad';
+export type { UseTrainingLoadOptions, UseTrainingLoadReturn } from './useTrainingLoad';
+
+export { useAthleteReadiness } from './useAthleteReadiness';
+export type { UseAthleteReadinessOptions, UseAthleteReadinessReturn } from './useAthleteReadiness';
