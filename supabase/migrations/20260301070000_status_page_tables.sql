@@ -19,9 +19,13 @@ CREATE TABLE IF NOT EXISTS public.service_incidents (
 
 ALTER TABLE public.service_incidents ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Authenticated users can read incidents"
-  ON public.service_incidents FOR SELECT
-  USING (auth.role() = 'authenticated');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can read incidents') THEN
+    CREATE POLICY "Authenticated users can read incidents"
+      ON public.service_incidents FOR SELECT
+      USING (auth.role() = 'authenticated');
+  END IF;
+END $$;
 
 -- 2. Service Changelog
 CREATE TABLE IF NOT EXISTS public.service_changelog (
@@ -37,9 +41,13 @@ CREATE TABLE IF NOT EXISTS public.service_changelog (
 
 ALTER TABLE public.service_changelog ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Authenticated users can read changelog"
-  ON public.service_changelog FOR SELECT
-  USING (auth.role() = 'authenticated');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can read changelog') THEN
+    CREATE POLICY "Authenticated users can read changelog"
+      ON public.service_changelog FOR SELECT
+      USING (auth.role() = 'authenticated');
+  END IF;
+END $$;
 
 -- 3. Roadmap Items
 CREATE TABLE IF NOT EXISTS public.roadmap_items (
@@ -57,11 +65,15 @@ CREATE TABLE IF NOT EXISTS public.roadmap_items (
 
 ALTER TABLE public.roadmap_items ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Authenticated users can read roadmap"
-  ON public.roadmap_items FOR SELECT
-  USING (auth.role() = 'authenticated');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can read roadmap') THEN
+    CREATE POLICY "Authenticated users can read roadmap"
+      ON public.roadmap_items FOR SELECT
+      USING (auth.role() = 'authenticated');
+  END IF;
+END $$;
 
 -- Indexes
-CREATE INDEX idx_service_incidents_started_at ON public.service_incidents(started_at DESC);
-CREATE INDEX idx_service_changelog_date ON public.service_changelog(date DESC);
-CREATE INDEX idx_roadmap_items_status ON public.roadmap_items(status);
+CREATE INDEX IF NOT EXISTS idx_service_incidents_started_at ON public.service_incidents(started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_service_changelog_date ON public.service_changelog(date DESC);
+CREATE INDEX IF NOT EXISTS idx_roadmap_items_status ON public.roadmap_items(status);
