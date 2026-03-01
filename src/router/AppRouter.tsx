@@ -681,10 +681,10 @@ export function AppRouter() {
                   element={<TermsOfServicePage />}
                />
 
-               {/* Service Status - Public route */}
+               {/* Service Status - Protected route (issue #599) */}
                <Route
                   path="/status"
-                  element={<StatusPage />}
+                  element={<ProtectedRoute><StatusPage /></ProtectedRoute>}
                />
 
                {/* Presentation Demo - Public route for testing Issue #117 */}
