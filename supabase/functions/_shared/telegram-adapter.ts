@@ -43,6 +43,7 @@ interface TelegramChat {
 
 interface TelegramMessage {
   message_id: number;
+  message_thread_id?: number;
   from?: TelegramUser;
   chat: TelegramChat;
   date: number;
@@ -68,6 +69,13 @@ interface TelegramMessage {
     offset: number;
     length: number;
   }>;
+  // Forum topic service messages (should be silently ignored)
+  forum_topic_created?: unknown;
+  forum_topic_edited?: unknown;
+  forum_topic_closed?: unknown;
+  forum_topic_reopened?: unknown;
+  general_forum_topic_hidden?: unknown;
+  general_forum_topic_unhidden?: unknown;
 }
 
 interface TelegramCallbackQuery {
@@ -126,7 +134,19 @@ export class TelegramAdapter implements ChannelAdapter {
     return null;
   }
 
-  private normalizeMessage(updateId: number, msg: TelegramMessage): UnifiedMessage {
+  private normalizeMessage(updateId: number, msg: TelegramMessage): UnifiedMessage | null {
+    // Skip forum topic service messages (topic created/edited/closed/reopened)
+    if (
+      msg.forum_topic_created !== undefined ||
+      msg.forum_topic_edited !== undefined ||
+      msg.forum_topic_closed !== undefined ||
+      msg.forum_topic_reopened !== undefined ||
+      msg.general_forum_topic_hidden !== undefined ||
+      msg.general_forum_topic_unhidden !== undefined
+    ) {
+      return null;
+    }
+
     const isCommand = msg.entities?.some(e => e.type === 'bot_command' && e.offset === 0) || false;
 
     let contentType: UnifiedMessage['content']['type'] = 'text';
@@ -170,6 +190,7 @@ export class TelegramAdapter implements ChannelAdapter {
         chatId: String(msg.chat.id),
         type: msg.chat.type,
         title: msg.chat.title,
+        messageThreadId: msg.message_thread_id ? String(msg.message_thread_id) : undefined,
       },
       content: {
         type: contentType,
@@ -232,6 +253,10 @@ export class TelegramAdapter implements ChannelAdapter {
       body.reply_to_message_id = Number(message.replyToMessageId);
     }
 
+    if (message.messageThreadId) {
+      body.message_thread_id = Number(message.messageThreadId);
+    }
+
     // Build reply_markup
     if (message.inlineKeyboard) {
       body.reply_markup = this.buildInlineKeyboardMarkup(message.inlineKeyboard);
@@ -266,12 +291,16 @@ export class TelegramAdapter implements ChannelAdapter {
     }
   }
 
-  async sendTypingAction(chatId: string): Promise<void> {
+  async sendTypingAction(chatId: string, messageThreadId?: string): Promise<void> {
     try {
-      await this.callApi('sendChatAction', {
+      const body: Record<string, unknown> = {
         chat_id: chatId,
         action: 'typing',
-      });
+      };
+      if (messageThreadId) {
+        body.message_thread_id = Number(messageThreadId);
+      }
+      await this.callApi('sendChatAction', body);
     } catch (error) {
       // Typing action failure is non-critical
       console.warn(`[telegram-adapter] sendChatAction failed: ${(error as Error).message}`);

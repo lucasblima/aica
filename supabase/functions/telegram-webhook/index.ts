@@ -101,19 +101,20 @@ async function logMessage(
 }
 
 // ============================================================================
-// HELPER: Send text response
+// HELPER: Send text response (auto-threads to Forum topic if present)
 // ============================================================================
 
 async function reply(
   tg: TelegramAdapter,
-  chatId: string,
+  msg: UnifiedMessage,
   text: string,
   options?: Partial<OutboundMessage>,
 ): Promise<void> {
   await tg.sendMessage({
-    chatId,
+    chatId: msg.chat.chatId,
     text,
     parseMode: 'HTML',
+    messageThreadId: msg.chat.messageThreadId,
     ...options,
   })
 }
@@ -127,7 +128,7 @@ async function handleStart(
   msg: UnifiedMessage,
 ): Promise<void> {
   const name = msg.sender.firstName || 'usuario'
-  await reply(tg, msg.chat.chatId, [
+  await reply(tg, msg, [
     `Ola, <b>${name}</b>! 👋`,
     '',
     'Eu sou a <b>AICA</b> — seu Sistema Operacional de Vida Integrada.',
@@ -146,7 +147,7 @@ async function handleHelp(
   tg: TelegramAdapter,
   msg: UnifiedMessage,
 ): Promise<void> {
-  await reply(tg, msg.chat.chatId, [
+  await reply(tg, msg, [
     '<b>Comandos disponiveis:</b>',
     '',
     '/start — Boas-vindas e instrucoes',
@@ -183,7 +184,7 @@ async function handleStatus(
 
   if (data && data.length > 0) {
     const user = data[0]
-    await reply(tg, msg.chat.chatId, [
+    await reply(tg, msg, [
       '✅ <b>Conta vinculada</b>',
       '',
       `Usuario: @${user.telegram_username || 'N/A'}`,
@@ -192,7 +193,7 @@ async function handleStatus(
       'Use /desvincular para remover a vinculacao.',
     ].join('\n'))
   } else {
-    await reply(tg, msg.chat.chatId, [
+    await reply(tg, msg, [
       '❌ <b>Conta nao vinculada</b>',
       '',
       'Para vincular, acesse aica.guru → Conexoes → Telegram',
@@ -211,7 +212,7 @@ async function handleVincular(
   const { data: existingLink } = await supabase
     .rpc('get_telegram_user', { p_telegram_id: telegramIdCheck })
   if (existingLink && existingLink.length > 0) {
-    await reply(tg, msg.chat.chatId,
+    await reply(tg, msg,
       '✅ Sua conta ja esta vinculada! Use /status para ver detalhes ou /desvincular para remover.'
     )
     return
@@ -220,7 +221,7 @@ async function handleVincular(
   const code = msg.content.commandArgs?.trim().toUpperCase()
 
   if (!code || code.length !== 6) {
-    await reply(tg, msg.chat.chatId, [
+    await reply(tg, msg, [
       '⚠️ Use o formato: <code>/vincular CODIGO</code>',
       '',
       'O codigo tem 6 caracteres e pode ser gerado em:',
@@ -234,7 +235,7 @@ async function handleVincular(
     .rpc('get_telegram_link_by_code', { p_code: code })
 
   if (!linkData || linkData.length === 0) {
-    await reply(tg, msg.chat.chatId,
+    await reply(tg, msg,
       '❌ Codigo invalido ou expirado. Gere um novo codigo em aica.guru → Conexoes → Telegram.'
     )
     return
@@ -252,14 +253,14 @@ async function handleVincular(
   })
 
   if (!linkId) {
-    await reply(tg, msg.chat.chatId,
+    await reply(tg, msg,
       '❌ Erro ao vincular conta. Tente novamente ou entre em contato com o suporte.'
     )
     return
   }
 
   // Send LGPD consent request
-  await reply(tg, msg.chat.chatId, [
+  await reply(tg, msg, [
     '✅ <b>Conta vinculada com sucesso!</b>',
     '',
     'Para usar a AICA pelo Telegram, preciso da sua autorizacao:',
@@ -292,11 +293,11 @@ async function handleDesvincular(
   const { data } = await supabase.rpc('get_telegram_user', { p_telegram_id: telegramId })
 
   if (!data || data.length === 0) {
-    await reply(tg, msg.chat.chatId, '❌ Sua conta nao esta vinculada.')
+    await reply(tg, msg, '❌ Sua conta nao esta vinculada.')
     return
   }
 
-  await reply(tg, msg.chat.chatId, [
+  await reply(tg, msg, [
     '⚠️ <b>Tem certeza que deseja desvincular sua conta AICA?</b>',
     '',
     'Voce deixara de receber notificacoes e nao podera usar comandos.',
@@ -314,7 +315,7 @@ async function handlePrivacidade(
   tg: TelegramAdapter,
   msg: UnifiedMessage,
 ): Promise<void> {
-  await reply(tg, msg.chat.chatId, [
+  await reply(tg, msg, [
     '🔒 <b>Privacidade e Protecao de Dados (LGPD)</b>',
     '',
     'A AICA segue a Lei Geral de Protecao de Dados (LGPD).',
@@ -349,7 +350,7 @@ async function handleMeusDados(
     .rpc('get_telegram_user', { p_telegram_id: telegramId })
 
   if (!userData || userData.length === 0) {
-    await reply(tg, msg.chat.chatId,
+    await reply(tg, msg,
       '❌ Conta nao vinculada. Seus dados serao exportados apos vincular sua conta.'
     )
     return
@@ -368,7 +369,7 @@ async function handleMeusDados(
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userData[0].user_id)
 
-  await reply(tg, msg.chat.chatId, [
+  await reply(tg, msg, [
     '📋 <b>Seus dados na AICA (Telegram)</b>',
     '',
     `<b>Telegram ID:</b> ${telegramId}`,
@@ -391,11 +392,11 @@ async function handleApagarDados(
   const { data } = await supabase.rpc('get_telegram_user', { p_telegram_id: telegramId })
 
   if (!data || data.length === 0) {
-    await reply(tg, msg.chat.chatId, '❌ Conta nao vinculada. Nao ha dados para excluir.')
+    await reply(tg, msg, '❌ Conta nao vinculada. Nao ha dados para excluir.')
     return
   }
 
-  await reply(tg, msg.chat.chatId, [
+  await reply(tg, msg, [
     '⚠️ <b>Solicitar exclusao de dados</b>',
     '',
     'Isso ira apagar:',
@@ -441,7 +442,7 @@ async function handleCallbackQuery(
       p_telegram_id: telegramId,
       p_scope: ['messages', 'notifications', 'ai_processing'],
     })
-    await reply(tg, msg.chat.chatId, [
+    await reply(tg, msg, [
       '✅ <b>Consentimento registrado!</b>',
       '',
       'Agora voce pode interagir com a AICA pelo Telegram.',
@@ -449,7 +450,7 @@ async function handleCallbackQuery(
     ].join('\n'))
 
   } else if (data.startsWith('consent_reject:')) {
-    await reply(tg, msg.chat.chatId, [
+    await reply(tg, msg, [
       '❌ Consentimento recusado.',
       '',
       'Sua conta permanece vinculada, mas a AICA nao processara',
@@ -462,12 +463,12 @@ async function handleCallbackQuery(
       .from('user_telegram_links')
       .update({ status: 'unlinked', updated_at: new Date().toISOString() })
       .eq('telegram_id', telegramId)
-    await reply(tg, msg.chat.chatId,
+    await reply(tg, msg,
       '✅ Conta desvinculada. Use /start se quiser vincular novamente.'
     )
 
   } else if (data === 'unlink_cancel') {
-    await reply(tg, msg.chat.chatId, '👍 Operacao cancelada. Sua conta permanece vinculada.')
+    await reply(tg, msg, '👍 Operacao cancelada. Sua conta permanece vinculada.')
 
   } else if (data.startsWith('delete_data_confirm:')) {
     // Resolve user_id from telegram_id for data deletion
@@ -479,7 +480,7 @@ async function handleCallbackQuery(
       await supabase.from('telegram_conversations').delete().eq('user_id', userId)
       await supabase.from('user_telegram_links').delete().eq('telegram_id', telegramId)
     }
-    await reply(tg, msg.chat.chatId, [
+    await reply(tg, msg, [
       '✅ <b>Dados excluidos com sucesso.</b>',
       '',
       'Seus dados do Telegram foram removidos da AICA.',
@@ -487,7 +488,7 @@ async function handleCallbackQuery(
     ].join('\n'))
 
   } else if (data === 'delete_data_cancel') {
-    await reply(tg, msg.chat.chatId, '👍 Operacao cancelada. Seus dados permanecem intactos.')
+    await reply(tg, msg, '👍 Operacao cancelada. Seus dados permanecem intactos.')
 
   // Phase 2: Module interaction callbacks
   } else if (data.startsWith('task_priority:')) {
@@ -510,7 +511,7 @@ async function handleCallbackQuery(
           urgent: 'Urgente',
           neither: 'Normal',
         }
-        await reply(tg, msg.chat.chatId,
+        await reply(tg, msg,
           `✅ Prioridade atualizada para: <b>${priorityLabels[priority] || priority}</b>`
         )
       }
@@ -530,7 +531,7 @@ async function handleCallbackQuery(
           .update({ category })
           .eq('id', txId)
           .eq('user_id', userId)
-        await reply(tg, msg.chat.chatId,
+        await reply(tg, msg,
           `✅ Categoria atualizada para: <b>${category}</b>`
         )
       }
@@ -553,7 +554,7 @@ async function handleCallbackQuery(
             source: 'telegram',
           })
         const moodEmojis: Record<number, string> = { 1: '😔', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' }
-        await reply(tg, msg.chat.chatId,
+        await reply(tg, msg,
           `✅ Humor registrado: ${moodEmojis[score]} ${score}/5`
         )
       }
@@ -598,7 +599,7 @@ async function routeCommand(
       await handleApagarDados(tg, msg, supabase)
       return 'apagar_dados'
     default:
-      await reply(tg, msg.chat.chatId,
+      await reply(tg, msg,
         `Comando desconhecido: <code>${command}</code>\nUse /help para ver os comandos disponiveis.`
       )
       return 'unknown_command'
@@ -661,7 +662,7 @@ serve(async (req) => {
       // 6. Route by message type
       if (message.content.type === 'command') {
         // Send typing indicator
-        await tg.sendTypingAction(message.chat.chatId)
+        await tg.sendTypingAction(message.chat.chatId, message.chat.messageThreadId)
 
         result.command = await routeCommand(tg, message, supabase)
         result.processed = true
@@ -672,11 +673,11 @@ serve(async (req) => {
 
       } else if (message.content.type === 'text') {
         // Phase 2: AI-powered natural language processing
-        await tg.sendTypingAction(message.chat.chatId)
+        await tg.sendTypingAction(message.chat.chatId, message.chat.messageThreadId)
 
         if (!aicaUserId) {
           // User not linked — prompt to link first
-          await reply(tg, message.chat.chatId, [
+          await reply(tg, message, [
             '❌ Para usar a AICA, vincule sua conta primeiro.',
             '',
             'Acesse <b>aica.guru</b> → Conexoes → Telegram',
@@ -687,7 +688,7 @@ serve(async (req) => {
           // Check LGPD consent before AI processing
           const consentGiven = userData?.[0]?.consent_given
           if (!consentGiven) {
-            await reply(tg, message.chat.chatId, [
+            await reply(tg, message, [
               '⚠️ Preciso da sua autorizacao para processar mensagens com IA.',
               '',
               'Use /privacidade para ver a politica de dados.',
@@ -715,7 +716,7 @@ serve(async (req) => {
               keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
             }
 
-            await reply(tg, message.chat.chatId, aiResult.reply, keyboard)
+            await reply(tg, message, aiResult.reply, keyboard)
             result.action = aiResult.action
             result.processed = true
 
@@ -736,10 +737,10 @@ serve(async (req) => {
 
       } else if (message.content.type === 'voice') {
         // Phase 2: Voice message processing via Gemini multimodal
-        await tg.sendTypingAction(message.chat.chatId)
+        await tg.sendTypingAction(message.chat.chatId, message.chat.messageThreadId)
 
         if (!aicaUserId) {
-          await reply(tg, message.chat.chatId, [
+          await reply(tg, message, [
             '❌ Para usar a AICA, vincule sua conta primeiro.',
             '',
             'Acesse <b>aica.guru</b> → Conexoes → Telegram',
@@ -749,7 +750,7 @@ serve(async (req) => {
         } else {
           const consentGiven = userData?.[0]?.consent_given
           if (!consentGiven) {
-            await reply(tg, message.chat.chatId, [
+            await reply(tg, message, [
               '⚠️ Preciso da sua autorizacao para processar mensagens com IA.',
               '',
               'Use /privacidade para ver a politica de dados.',
@@ -763,7 +764,7 @@ serve(async (req) => {
             })
             result.processed = true
           } else if (!message.content.voiceFileId) {
-            await reply(tg, message.chat.chatId,
+            await reply(tg, message,
               '❌ Nao consegui processar o audio. Tente enviar novamente.'
             )
             result.processed = false
@@ -781,7 +782,7 @@ serve(async (req) => {
                 keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
               }
 
-              await reply(tg, message.chat.chatId, aiResult.reply, keyboard)
+              await reply(tg, message, aiResult.reply, keyboard)
               result.action = aiResult.action
               result.processed = true
 
@@ -797,7 +798,7 @@ serve(async (req) => {
               )
             } catch (voiceErr) {
               console.error(`[telegram-webhook] Voice processing error: ${(voiceErr as Error).message}`)
-              await reply(tg, message.chat.chatId,
+              await reply(tg, message,
                 '❌ Desculpe, tive um problema ao processar o audio. Tente enviar uma mensagem de texto.'
               )
               result.processed = false
@@ -807,7 +808,7 @@ serve(async (req) => {
 
       } else {
         // Unsupported message type
-        await reply(tg, message.chat.chatId,
+        await reply(tg, message,
           'Este tipo de mensagem ainda nao e suportado. Use /help para ver os comandos.'
         )
         result.processed = false

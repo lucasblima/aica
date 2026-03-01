@@ -40,6 +40,8 @@ export interface UnifiedMessage {
     chatId: string;
     type: 'private' | 'group' | 'supergroup' | 'channel';
     title?: string;
+    /** Forum topic thread ID (Telegram Topics / threaded groups) */
+    messageThreadId?: string;
   };
 
   /** Message content */
@@ -109,6 +111,9 @@ export interface OutboundMessage {
   /** Reply to a specific message */
   replyToMessageId?: string;
 
+  /** Forum topic thread ID (replies go to this topic instead of General) */
+  messageThreadId?: string;
+
   /** Disable link previews */
   disableLinkPreview?: boolean;
 }
@@ -157,7 +162,7 @@ export interface ChannelAdapter {
   sendMessage(message: OutboundMessage): Promise<SendResult>;
 
   /** Send a typing/action indicator */
-  sendTypingAction(chatId: string): Promise<void>;
+  sendTypingAction(chatId: string, messageThreadId?: string): Promise<void>;
 
   /** Get capabilities of this channel */
   getCapabilities(): ChannelCapabilities;
