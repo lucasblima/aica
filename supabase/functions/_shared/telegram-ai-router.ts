@@ -352,7 +352,6 @@ async function executeLogExpense(
       description: String(params.description).substring(0, 200),
       category: params.category || 'outros',
       transaction_date: params.date || today,
-      source: 'telegram',
       type: 'expense',
     })
     .select('id, amount, category')
@@ -375,17 +374,21 @@ async function executeLogMood(
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
   const score = Math.min(5, Math.max(1, Number(params.score)));
 
+  const emotionText = Array.isArray(params.emotions)
+    ? (params.emotions as string[]).join(', ')
+    : '';
+
   const { data, error } = await supabase
     .from('moments')
     .insert({
       user_id: userId,
       type: 'mood',
       content: String(params.note || '').substring(0, 200),
-      mood_score: score,
-      emotions: params.emotions || [],
-      source: 'telegram',
+      quality_score: score,
+      emotion: emotionText,
+      tags: ['telegram'],
     })
-    .select('id, mood_score')
+    .select('id, quality_score')
     .single();
 
   if (error) throw new Error(`Erro ao registrar humor: ${error.message}`);
@@ -399,38 +402,23 @@ async function executeLogMood(
 }
 
 async function executeCreateEvent(
-  supabase: SupabaseClient,
-  userId: string,
+  _supabase: SupabaseClient,
+  _userId: string,
   params: Record<string, unknown>,
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
-  // Assume BRT (-03:00) as default timezone for AICA users
-  const startTime = params.time ? `${params.date}T${params.time}:00-03:00` : `${params.date}T09:00:00-03:00`;
-  const durationMinutes = Number(params.duration_minutes) || 60;
-
-  // Calculate end time
-  const startDate = new Date(startTime);
-  const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
-
-  const { data, error } = await supabase
-    .from('calendar_events')
-    .insert({
-      user_id: userId,
-      title: params.title,
-      description: params.description || null,
-      start_time: startDate.toISOString(),
-      end_time: endDate.toISOString(),
-      source: 'telegram',
-    })
-    .select('id, title, start_time')
-    .single();
-
-  if (error) throw new Error(`Erro ao criar evento: ${error.message}`);
-
-  const timeStr = params.time || '09:00';
+  // calendar_events table doesn't exist — AICA uses Google Calendar as source of truth.
+  // Return a helpful message instead of crashing.
+  const timeStr = params.time || '';
+  const dateStr = params.date || 'a data solicitada';
 
   return {
-    reply: `Evento criado: "<b>${params.title}</b>" em ${params.date} as ${timeStr} (${durationMinutes}min).`,
-    data: data || {},
+    reply: [
+      `📅 Para criar o evento "<b>${params.title}</b>"${timeStr ? ` as ${timeStr}` : ''} em ${dateStr}:`,
+      '',
+      'Acesse <b>aica.guru</b> → Agenda para sincronizar com seu Google Calendar.',
+      'A criacao de eventos pelo Telegram estara disponivel em breve!',
+    ].join('\n'),
+    data: {},
   };
 }
 
@@ -450,18 +438,7 @@ async function executeGetDailySummary(
     .order('created_at', { ascending: false })
     .limit(5);
 
-  // Fetch today's events (filter by date range)
-  const { data: events } = await supabase
-    .from('calendar_events')
-    .select('title, start_time')
-    .eq('user_id', userId)
-    .gte('start_time', `${today}T00:00:00-03:00`)
-    .lte('start_time', `${today}T23:59:59-03:00`)
-    .order('start_time', { ascending: true })
-    .limit(5);
-
   const taskCount = tasks?.length || 0;
-  const eventCount = events?.length || 0;
 
   const lines = [`<b>Resumo do dia (${today}):</b>`, ''];
 
@@ -475,20 +452,11 @@ async function executeGetDailySummary(
   }
 
   lines.push('');
-
-  if (eventCount > 0) {
-    lines.push(`📅 <b>${eventCount} evento(s):</b>`);
-    for (const event of events || []) {
-      const time = event.start_time ? new Date(String(event.start_time)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-      lines.push(`  • ${time} — ${event.title}`);
-    }
-  } else {
-    lines.push('📅 Nenhum evento agendado.');
-  }
+  lines.push('📅 Para ver seus eventos, acesse aica.guru → Agenda.');
 
   return {
     reply: lines.join('\n'),
-    data: { tasks: taskCount, events: eventCount },
+    data: { tasks: taskCount },
   };
 }
 
@@ -533,7 +501,7 @@ async function executeGetBudgetStatus(
 
   const formatBRL = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  const lines = [`<b>Status financeiro (${month}):</b>`, ''];
+  const lines = [`<b>Status financeiro (${monthStr}):</b>`, ''];
   lines.push(`💰 Receitas: ${formatBRL(totalIncome)}`);
   lines.push(`💸 Despesas: ${formatBRL(totalExpenses)}`);
   lines.push(`📊 Saldo: ${formatBRL(totalIncome - totalExpenses)}`);
