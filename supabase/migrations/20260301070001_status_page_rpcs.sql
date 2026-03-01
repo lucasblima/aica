@@ -3,6 +3,12 @@
 -- Issue #599
 -- ============================================
 
+-- Drop existing functions to handle return type changes
+DROP FUNCTION IF EXISTS public.get_overall_service_status();
+DROP FUNCTION IF EXISTS public.get_public_incidents();
+DROP FUNCTION IF EXISTS public.get_public_changelog(INTEGER);
+DROP FUNCTION IF EXISTS public.get_roadmap_items();
+
 -- 1. get_overall_service_status
 CREATE OR REPLACE FUNCTION public.get_overall_service_status()
 RETURNS TEXT
