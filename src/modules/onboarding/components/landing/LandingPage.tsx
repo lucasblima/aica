@@ -168,7 +168,7 @@ export function LandingPage() {
 
       <main id="main">
         {/* ── 1. Hero (Chaos shards + Forja OS card) ── */}
-        <HeroSection />
+        <HeroSection onOpenLogin={handleOpenLogin} />
 
         {/* ── 2. Interactive Modules ("A Prateleira do Ateliê") ── */}
         <div id="modules">
