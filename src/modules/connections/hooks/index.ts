@@ -28,6 +28,16 @@ export type {
 
 export { useContactSearch } from './useContactSearch';
 
+// Network Science hooks (Sprint 4)
+export { useRelationshipScore } from './useRelationshipScore';
+export type { UseRelationshipScoreReturn } from './useRelationshipScore';
+
+export { useNetworkMetrics } from './useNetworkMetrics';
+export type { UseNetworkMetricsReturn } from './useNetworkMetrics';
+
+export { useDunbarLayers } from './useDunbarLayers';
+export type { UseDunbarLayersReturn } from './useDunbarLayers';
+
 // Re-export types for convenience
 export type {
   ConnectionSpace,
