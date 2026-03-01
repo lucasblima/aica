@@ -14,11 +14,6 @@
 // LANDING PAGE
 // =============================================================================
 export { LandingPage } from './components/landing';
-export {
-  ChaosPanel,
-  OrderPanel,
-  ProcessingPipeline,
-} from './components/landing';
 
 // =============================================================================
 // WHATSAPP ONBOARDING FLOW
