@@ -44,6 +44,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_scientific_model_registry_updated_at ON scientific_model_registry;
 CREATE TRIGGER trg_scientific_model_registry_updated_at
   BEFORE UPDATE ON scientific_model_registry
   FOR EACH ROW
@@ -52,6 +53,7 @@ CREATE TRIGGER trg_scientific_model_registry_updated_at
 -- Public read access (no user_id -- catalog is shared)
 ALTER TABLE scientific_model_registry ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can read model registry" ON scientific_model_registry;
 CREATE POLICY "Anyone can read model registry"
   ON scientific_model_registry FOR SELECT
   TO authenticated
@@ -84,10 +86,12 @@ CREATE INDEX IF NOT EXISTS idx_sal_user_model ON score_attribution_log(user_id, 
 
 ALTER TABLE score_attribution_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users read own attribution logs" ON score_attribution_log;
 CREATE POLICY "Users read own attribution logs"
   ON score_attribution_log FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users insert own attribution logs" ON score_attribution_log;
 CREATE POLICY "Users insert own attribution logs"
   ON score_attribution_log FOR INSERT
   WITH CHECK (auth.uid() = user_id);
@@ -120,10 +124,12 @@ CREATE INDEX IF NOT EXISTS idx_ls_user_recent ON life_scores(user_id, computed_a
 
 ALTER TABLE life_scores ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users read own life scores" ON life_scores;
 CREATE POLICY "Users read own life scores"
   ON life_scores FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users insert own life scores" ON life_scores;
 CREATE POLICY "Users insert own life scores"
   ON life_scores FOR INSERT
   WITH CHECK (auth.uid() = user_id);
@@ -152,6 +158,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_user_domain_weights_updated_at ON user_domain_weights;
 CREATE TRIGGER trg_user_domain_weights_updated_at
   BEFORE UPDATE ON user_domain_weights
   FOR EACH ROW
@@ -159,6 +166,7 @@ CREATE TRIGGER trg_user_domain_weights_updated_at
 
 ALTER TABLE user_domain_weights ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own domain weights" ON user_domain_weights;
 CREATE POLICY "Users manage own domain weights"
   ON user_domain_weights FOR ALL
   USING (auth.uid() = user_id);
