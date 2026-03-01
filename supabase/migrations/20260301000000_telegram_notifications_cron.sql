@@ -81,7 +81,7 @@ BEGIN
   -- Log the acknowledgment (update the notification metadata)
   UPDATE scheduled_notifications
   SET
-    message_variables = message_variables || jsonb_build_object(
+    message_variables = COALESCE(message_variables, '{}'::jsonb) || jsonb_build_object(
       'ack_action', p_action,
       'ack_at', now()::text
     ),
@@ -102,39 +102,30 @@ CREATE OR REPLACE FUNCTION handle_telegram_mood_response(
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  -- Insert a quick mood entry into moments (the active mood-tracking table)
+  -- Insert a mood entry into moments (aligned with telegram-ai-router.ts pattern)
   INSERT INTO moments (
     user_id,
     type,
     content,
-    emotion,
-    sentiment_data,
+    mood_score,
+    source,
+    emotions,
     tags,
     created_at
   ) VALUES (
     p_user_id,
-    'text',
+    'mood',
     'Check-in via Telegram',
-    CASE p_mood_score
+    p_mood_score,
+    'telegram',
+    ARRAY[CASE p_mood_score
       WHEN 5 THEN 'muito_feliz'
       WHEN 4 THEN 'feliz'
       WHEN 3 THEN 'neutro'
       WHEN 2 THEN 'triste'
       WHEN 1 THEN 'muito_triste'
       ELSE 'neutro'
-    END,
-    jsonb_build_object(
-      'score', p_mood_score::numeric / 5.0,
-      'source', 'telegram_checkin',
-      'label', CASE p_mood_score
-        WHEN 5 THEN 'muito_feliz'
-        WHEN 4 THEN 'feliz'
-        WHEN 3 THEN 'neutro'
-        WHEN 2 THEN 'triste'
-        WHEN 1 THEN 'muito_triste'
-        ELSE 'neutro'
-      END
-    ),
+    END]::text[],
     ARRAY['telegram', 'mood_checkin'],
     now()
   );

@@ -503,6 +503,7 @@ async function handleCallbackQuery(
           .from('work_items')
           .update({ priority })
           .eq('id', taskId)
+          .eq('user_id', userId)
         const priorityLabels: Record<string, string> = {
           urgent_important: 'Urgente + Importante',
           important: 'Importante',
@@ -528,6 +529,7 @@ async function handleCallbackQuery(
           .from('finance_transactions')
           .update({ category })
           .eq('id', txId)
+          .eq('user_id', userId)
         await reply(tg, msg.chat.chatId,
           `✅ Categoria atualizada para: <b>${category}</b>`
         )

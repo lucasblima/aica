@@ -19,18 +19,23 @@ import { withHealthTracking } from "./health-tracker.ts";
 // TYPES
 // ============================================================================
 
+type QueryResult<T = Record<string, unknown>> = Promise<{ data: T | null; error: { message: string } | null }>;
+type QueryArrayResult<T = Record<string, unknown>> = Promise<{ data: T[] | null; error: { message: string } | null }>;
+
+interface QueryBuilder {
+  eq: (col: string, val: unknown) => QueryBuilder;
+  gte: (col: string, val: unknown) => QueryBuilder;
+  lte: (col: string, val: unknown) => QueryBuilder;
+  order: (col: string, opts: Record<string, unknown>) => QueryBuilder;
+  limit: (n: number) => QueryArrayResult;
+  single: () => QueryResult;
+}
+
 type SupabaseClient = {
   from: (table: string) => {
-    insert: (data: Record<string, unknown>) => { select: (cols?: string) => { single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }> } };
-    select: (cols?: string) => {
-      eq: (col: string, val: unknown) => {
-        order: (col: string, opts: Record<string, unknown>) => {
-          limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
-        };
-        single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
-      };
-    };
-    update: (data: Record<string, unknown>) => { eq: (col: string, val: unknown) => Promise<{ error: { message: string } | null }> };
+    insert: (data: Record<string, unknown>) => { select: (cols?: string) => { single: () => QueryResult } };
+    select: (cols?: string) => QueryBuilder;
+    update: (data: Record<string, unknown>) => QueryBuilder;
   };
   rpc: (name: string, params?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
@@ -398,7 +403,8 @@ async function executeCreateEvent(
   userId: string,
   params: Record<string, unknown>,
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
-  const startTime = params.time ? `${params.date}T${params.time}:00` : `${params.date}T09:00:00`;
+  // Assume BRT (-03:00) as default timezone for AICA users
+  const startTime = params.time ? `${params.date}T${params.time}:00-03:00` : `${params.date}T09:00:00-03:00`;
   const durationMinutes = Number(params.duration_minutes) || 60;
 
   // Calculate end time
@@ -444,11 +450,13 @@ async function executeGetDailySummary(
     .order('created_at', { ascending: false })
     .limit(5);
 
-  // Fetch today's events
+  // Fetch today's events (filter by date range)
   const { data: events } = await supabase
     .from('calendar_events')
     .select('title, start_time')
     .eq('user_id', userId)
+    .gte('start_time', `${today}T00:00:00-03:00`)
+    .lte('start_time', `${today}T23:59:59-03:00`)
     .order('start_time', { ascending: true })
     .limit(5);
 
@@ -490,15 +498,21 @@ async function executeGetBudgetStatus(
   params: Record<string, unknown>,
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
   const now = new Date();
-  const month = params.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const startDate = `${month}-01`;
-  const endDate = `${month}-31`;
+  const monthStr = String(params.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+  const startDate = `${monthStr}-01`;
 
-  // Fetch transactions for the month
+  // Calculate actual last day of the month (avoids day-31 errors for short months)
+  const [year, m] = monthStr.split('-').map(Number);
+  const lastDay = new Date(year, m, 0).getDate();
+  const endDate = `${monthStr}-${String(lastDay).padStart(2, '0')}`;
+
+  // Fetch transactions for the month (filtered by date range)
   const { data: transactions } = await supabase
     .from('finance_transactions')
     .select('amount, category, type')
     .eq('user_id', userId)
+    .gte('transaction_date', startDate)
+    .lte('transaction_date', endDate)
     .order('transaction_date', { ascending: false })
     .limit(100);
 
