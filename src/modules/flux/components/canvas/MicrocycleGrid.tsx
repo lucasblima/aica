@@ -383,7 +383,7 @@ export const MicrocycleGrid: React.FC<MicrocycleGridProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[11px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-            Ciclos
+            Resumo do Mes
           </p>
           <h2 className="text-lg font-bold text-ceramic-text-primary">
             {microcycle.title}

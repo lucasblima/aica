@@ -5,7 +5,7 @@
  * Returns an AsyncGenerator yielding TokenEvent | DoneEvent | ErrorEvent.
  */
 
-import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 
 export interface TokenEvent {
   type: 'token'
@@ -32,16 +32,21 @@ export interface ErrorEvent {
 
 export type StreamEvent = TokenEvent | DoneEvent | AgentDetectedEvent | ErrorEvent
 
+/** Metadata for interview-mode CTA triggers */
+export interface InterviewMeta {
+  type: 'interview_start'
+  intent: string
+}
+
 export async function* streamChat(
   sessionId: string,
   message: string,
   history: Array<{ role: string; content: string }>,
   context?: Record<string, unknown>,
+  interview?: InterviewMeta,
 ): AsyncGenerator<StreamEvent> {
   // Get auth token
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { session } = await getCachedSession()
   if (!session?.access_token) throw new Error('Not authenticated')
 
   const supabaseUrl =
@@ -65,6 +70,7 @@ export async function* streamChat(
         session_id: sessionId,
         history,
         context,
+        ...(interview ? { interview } : {}),
       },
     }),
   })

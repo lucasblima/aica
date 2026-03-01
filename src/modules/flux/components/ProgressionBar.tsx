@@ -16,6 +16,7 @@ export function ProgressionBar({
   completedWorkouts,
   totalWorkouts,
 }: ProgressionBarProps) {
+  // TODO: Backend calculation for progress line is incorrect — see issue #605
   const progressPercentage = (currentWeek / totalWeeks) * 100;
 
   // Consistência color logic
