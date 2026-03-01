@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -8,31 +8,40 @@ import {
   Clock,
   Tag,
 } from 'lucide-react';
+import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState, CeramicErrorState } from '@/components/ui';
 
 // ==================== TYPES ====================
 
 type OverallStatus = 'operational' | 'degraded' | 'outage';
 type Severity = 'outage' | 'degraded' | 'maintenance';
-type ChangeType = 'feat' | 'fix' | 'infra' | 'docs';
+type ChangeType = 'feat' | 'fix' | 'improvement' | 'security' | 'infra' | 'docs' | 'perf';
 
 interface Incident {
-  date: string;
+  id: string;
   title: string;
   description: string;
   severity: Severity;
-  duration: string;
-  resolved: boolean;
+  started_at: string;
+  resolved_at: string | null;
+  duration_minutes: number | null;
+  affected_module: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ChangelogEntry {
+  id: string;
   date: string;
-  type: ChangeType;
+  change_type: ChangeType;
   description: string;
+  source: string;
+  commit_sha: string | null;
+  pr_number: number | null;
+  created_at: string;
 }
 
 // ==================== STATUS CONFIG ====================
-
-const CURRENT_STATUS: OverallStatus = 'operational';
 
 const STATUS_CONFIG: Record<
   OverallStatus,
@@ -40,23 +49,23 @@ const STATUS_CONFIG: Record<
 > = {
   operational: {
     label: 'Todos os sistemas operacionais',
-    color: 'text-[#6B7B5C]',
-    bgColor: 'bg-[#F0F4EC]',
-    borderColor: 'border-[#6B7B5C]',
+    color: 'text-ceramic-success',
+    bgColor: 'bg-ceramic-success/10',
+    borderColor: 'border-ceramic-success',
     icon: CheckCircle2,
   },
   degraded: {
     label: 'Degradacao parcial do servico',
-    color: 'text-[#C4883A]',
-    bgColor: 'bg-[#FFF8F0]',
-    borderColor: 'border-[#C4883A]',
+    color: 'text-ceramic-warning',
+    bgColor: 'bg-ceramic-warning/10',
+    borderColor: 'border-ceramic-warning',
     icon: AlertTriangle,
   },
   outage: {
     label: 'Interrupcao do servico',
-    color: 'text-[#9B4D3A]',
-    bgColor: 'bg-[#FDF0ED]',
-    borderColor: 'border-[#9B4D3A]',
+    color: 'text-ceramic-error',
+    bgColor: 'bg-ceramic-error/10',
+    borderColor: 'border-ceramic-error',
     icon: XCircle,
   },
 };
@@ -67,18 +76,18 @@ const SEVERITY_CONFIG: Record<
 > = {
   outage: {
     label: 'Queda',
-    dotColor: 'bg-[#9B4D3A]',
-    textColor: 'text-[#9B4D3A]',
+    dotColor: 'bg-ceramic-error',
+    textColor: 'text-ceramic-error',
   },
   degraded: {
     label: 'Degradacao',
-    dotColor: 'bg-[#C4883A]',
-    textColor: 'text-[#C4883A]',
+    dotColor: 'bg-ceramic-warning',
+    textColor: 'text-ceramic-warning',
   },
   maintenance: {
     label: 'Manutencao',
-    dotColor: 'bg-[#6B7B5C]',
-    textColor: 'text-[#6B7B5C]',
+    dotColor: 'bg-ceramic-success',
+    textColor: 'text-ceramic-success',
   },
 };
 
@@ -86,139 +95,14 @@ const CHANGE_TYPE_CONFIG: Record<
   ChangeType,
   { label: string; bgColor: string; textColor: string }
 > = {
-  feat: { label: 'Novo', bgColor: 'bg-amber-100', textColor: 'text-amber-700' },
-  fix: { label: 'Correcao', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
+  feat: { label: 'Novidade', bgColor: 'bg-amber-100', textColor: 'text-amber-700' },
+  fix: { label: 'Correcao', bgColor: 'bg-ceramic-error/10', textColor: 'text-ceramic-error' },
+  improvement: { label: 'Melhoria', bgColor: 'bg-ceramic-info/10', textColor: 'text-ceramic-info' },
+  security: { label: 'Seguranca', bgColor: 'bg-rose-100', textColor: 'text-rose-700' },
   infra: { label: 'Infra', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
-  docs: { label: 'Docs', bgColor: 'bg-gray-100', textColor: 'text-[#5C554B]' },
+  docs: { label: 'Documentacao', bgColor: 'bg-ceramic-cool', textColor: 'text-ceramic-text-secondary' },
+  perf: { label: 'Performance', bgColor: 'bg-emerald-100', textColor: 'text-emerald-700' },
 };
-
-// ==================== STATIC DATA ====================
-
-const INCIDENTS: Incident[] = [
-  {
-    date: '2026-02-27',
-    title: 'Latencia elevada no modulo Finance',
-    description:
-      'Processamento de extratos bancarios apresentou lentidao devido a alta carga no parsing de arquivos OFX. Otimizacoes de error handling foram aplicadas.',
-    severity: 'degraded',
-    duration: '2h 15min',
-    resolved: true,
-  },
-  {
-    date: '2026-02-25',
-    title: 'Manutencao programada — Migracao de seguranca Finance',
-    description:
-      'Aplicacao de 50 correcoes de seguranca, UI e backend no modulo Finance. Servico ficou brevemente indisponivel durante a migracao.',
-    severity: 'maintenance',
-    duration: '45min',
-    resolved: true,
-  },
-  {
-    date: '2026-02-22',
-    title: 'Offset de 3 horas no Google Calendar',
-    description:
-      'Eventos sincronizados do Google Calendar exibiam horarios com 3 horas de diferenca devido a tratamento incorreto de fuso horario. Correcao aplicada na sincronizacao.',
-    severity: 'degraded',
-    duration: '1 dia',
-    resolved: true,
-  },
-  {
-    date: '2026-02-18',
-    title: 'Crash no Chat ao enviar mensagens longas',
-    description:
-      'O componente de chat (AicaChatFAB) falhava ao processar respostas extensas da IA. Correcao aplicada no parser de JSON do Gemini.',
-    severity: 'outage',
-    duration: '4h',
-    resolved: true,
-  },
-  {
-    date: '2026-02-14',
-    title: 'Manutencao programada — Biblioteca de exercicios Flux',
-    description:
-      'Atualizacao massiva na biblioteca de exercicios do modulo Flux com correcao de 15 issues. Servico de treinos indisponivel durante o deploy.',
-    severity: 'maintenance',
-    duration: '1h 30min',
-    resolved: true,
-  },
-];
-
-const CHANGELOG: ChangelogEntry[] = [
-  {
-    date: '2026-02-28',
-    type: 'feat',
-    description: 'Carrossel de perguntas diarias na pagina Vida + correcoes de infra na politica de privacidade',
-  },
-  {
-    date: '2026-02-28',
-    type: 'fix',
-    description: 'Auditoria completa do modulo Finance — 50 correcoes em UI, backend e seguranca',
-  },
-  {
-    date: '2026-02-27',
-    type: 'fix',
-    description: 'Melhoria no tratamento de erros no processamento de extratos, OFX, digest e busca',
-  },
-  {
-    date: '2026-02-25',
-    type: 'fix',
-    description: 'Correcao do offset de 3 horas no fuso horario da sincronizacao com Google Calendar',
-  },
-  {
-    date: '2026-02-24',
-    type: 'docs',
-    description: 'Reescrita completa da Politica de Privacidade e Termos de Servico v2.0',
-  },
-  {
-    date: '2026-02-23',
-    type: 'fix',
-    description: 'Resolucao de 3 bugs — crash no Chat e campos de distancia no Flux',
-  },
-  {
-    date: '2026-02-22',
-    type: 'fix',
-    description: 'Correcao de 6 bugs em Layout, Agenda e Journey',
-  },
-  {
-    date: '2026-02-20',
-    type: 'fix',
-    description: 'Resolucao de 9 issues na biblioteca de exercicios do Flux',
-  },
-  {
-    date: '2026-02-18',
-    type: 'fix',
-    description: 'Correcao de 6 issues na biblioteca de exercicios do Flux',
-  },
-  {
-    date: '2026-02-16',
-    type: 'fix',
-    description: 'Correcao de badges, favoritos, assessoria e dashboard admin no Flux',
-  },
-  {
-    date: '2026-02-15',
-    type: 'fix',
-    description: 'Correcao de badge overlap, display de assessoria e selecao de usuario no Flux',
-  },
-  {
-    date: '2026-02-14',
-    type: 'feat',
-    description: 'Novo modulo de biblioteca de exercicios com filtros e favoritos',
-  },
-  {
-    date: '2026-02-12',
-    type: 'infra',
-    description: 'Atualizacao do pipeline de deploy com validacao de staging obrigatoria',
-  },
-  {
-    date: '2026-02-10',
-    type: 'feat',
-    description: 'Portal do atleta — visualizacao de treinos em modo leitura para atletas',
-  },
-  {
-    date: '2026-02-08',
-    type: 'infra',
-    description: 'Adicao do .worktrees/ ao .gitignore para suporte a worktrees do Claude Code',
-  },
-];
 
 // ==================== HELPERS ====================
 
@@ -231,21 +115,400 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function formatDateShort(dateStr: string): string {
+  const date = new Date(dateStr + 'T12:00:00');
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  });
+}
+
+function formatDuration(minutes: number | null): string {
+  if (!minutes) return '';
+  if (minutes < 60) return `${minutes}min`;
+  const hours = Math.floor(minutes / 60);
+  const remaining = minutes % 60;
+  if (remaining === 0) return `${hours}h`;
+  return `${hours}h ${remaining}min`;
+}
+
+// ==================== 24H TIMELINE ====================
+
+const SLOT_COUNT = 48;
+const SLOT_DURATION_MS = 30 * 60 * 1000;
+
+type SlotStatus = 'operational' | 'degraded' | 'outage';
+
+interface TimelineSlot {
+  start: Date;
+  end: Date;
+  status: SlotStatus;
+  incident: Incident | null;
+}
+
+interface MidnightMarker {
+  position: number;
+  label: string;
+}
+
+function computeTimelineSlots(incidents: Incident[], now: Date): TimelineSlot[] {
+  const slots: TimelineSlot[] = [];
+
+  for (let i = SLOT_COUNT - 1; i >= 0; i--) {
+    const slotEnd = new Date(now.getTime() - i * SLOT_DURATION_MS);
+    const slotStart = new Date(slotEnd.getTime() - SLOT_DURATION_MS);
+
+    let worstStatus: SlotStatus = 'operational';
+    let worstIncident: Incident | null = null;
+
+    for (const incident of incidents) {
+      const incStart = new Date(incident.started_at);
+      const incEnd = incident.resolved_at ? new Date(incident.resolved_at) : now;
+
+      if (incStart < slotEnd && incEnd > slotStart) {
+        const severity = incident.severity === 'outage' ? 'outage' : 'degraded';
+        if (severity === 'outage' || (severity === 'degraded' && worstStatus === 'operational')) {
+          worstStatus = severity;
+          worstIncident = incident;
+        }
+      }
+    }
+
+    slots.push({ start: slotStart, end: slotEnd, status: worstStatus, incident: worstIncident });
+  }
+
+  return slots;
+}
+
+function computeMidnightMarkers(now: Date): MidnightMarker[] {
+  const timelineStart = now.getTime() - SLOT_COUNT * SLOT_DURATION_MS;
+  const timelineEnd = now.getTime();
+  const totalDuration = timelineEnd - timelineStart;
+  const markers: MidnightMarker[] = [];
+
+  const startDate = new Date(timelineStart);
+  const d = new Date(startDate);
+  d.setHours(0, 0, 0, 0);
+  if (d.getTime() <= timelineStart) d.setDate(d.getDate() + 1);
+
+  while (d.getTime() < timelineEnd) {
+    const position = ((d.getTime() - timelineStart) / totalDuration) * 100;
+    const dayLabel = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    markers.push({ position, label: dayLabel });
+    d.setDate(d.getDate() + 1);
+  }
+
+  return markers;
+}
+
+function formatSlotTime(date: Date): string {
+  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+const SLOT_COLORS: Record<SlotStatus, string> = {
+  operational: 'bg-ceramic-success',
+  degraded: 'bg-ceramic-warning',
+  outage: 'bg-ceramic-error',
+};
+
+const SLOT_LABELS: Record<SlotStatus, string> = {
+  operational: 'Operacional',
+  degraded: 'Degradado',
+  outage: 'Interrompido',
+};
+
+function TimelineRow({
+  label,
+  slots,
+  midnightMarkers,
+  isLast,
+}: {
+  label: string;
+  slots: TimelineSlot[];
+  midnightMarkers: MidnightMarker[];
+  isLast: boolean;
+}) {
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<'above' | 'below'>('above');
+
+  const handleMouseEnter = (index: number, e: React.MouseEvent) => {
+    setActiveSlot(index);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setTooltipPos(rect.top < 120 ? 'below' : 'above');
+  };
+
+  const activeData = activeSlot !== null ? slots[activeSlot] : null;
+
+  return (
+    <div className={`flex items-center gap-0 ${!isLast ? 'mb-2' : ''}`}>
+      <span className="text-[11px] text-ceramic-text-secondary shrink-0 w-28 text-right mr-3 truncate" title={label}>
+        {label}
+      </span>
+
+      <div className="relative flex-1 flex gap-[1.5px]">
+        {slots.map((slot, i) => (
+          <div
+            key={i}
+            className={`relative h-7 flex-1 rounded-[2px] ${SLOT_COLORS[slot.status]} transition-opacity cursor-pointer ${
+              activeSlot !== null && activeSlot !== i ? 'opacity-40' : 'opacity-100'
+            }`}
+            onMouseEnter={(e) => handleMouseEnter(i, e)}
+            onMouseLeave={() => setActiveSlot(null)}
+            role="img"
+            aria-label={`${formatSlotTime(slot.start)} – ${formatSlotTime(slot.end)}: ${SLOT_LABELS[slot.status]}`}
+          />
+        ))}
+
+        {midnightMarkers.map((marker, i) => (
+          <div
+            key={`midnight-${i}`}
+            className="absolute top-0 bottom-0 w-px bg-ceramic-text-secondary/30 pointer-events-none z-10"
+            style={{ left: `${marker.position}%` }}
+          />
+        ))}
+
+        {activeData && activeSlot !== null && (
+          <div
+            className={`absolute z-50 pointer-events-none ${
+              tooltipPos === 'above' ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
+            style={{
+              left: `${((activeSlot + 0.5) / SLOT_COUNT) * 100}%`,
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <div className="bg-ceramic-text-primary text-ceramic-base text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+              <p className="font-semibold">
+                {formatSlotTime(activeData.start)} – {formatSlotTime(activeData.end)}
+              </p>
+              <p className={`mt-0.5 ${
+                activeData.status === 'operational' ? 'text-green-300' :
+                activeData.status === 'degraded' ? 'text-yellow-300' : 'text-red-300'
+              }`}>
+                {SLOT_LABELS[activeData.status]}
+              </p>
+              {activeData.incident && (
+                <p className="mt-0.5 text-ceramic-border max-w-[220px] truncate">
+                  {activeData.incident.title}
+                </p>
+              )}
+            </div>
+            <div
+              className={`absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-[5px] border-x-transparent ${
+                tooltipPos === 'above'
+                  ? 'top-full border-t-[5px] border-t-ceramic-text-primary'
+                  : 'bottom-full border-b-[5px] border-b-ceramic-text-primary'
+              }`}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatusTimeline24h({ incidents }: { incidents: Incident[] }) {
+  const now = useMemo(() => new Date(), []);
+  const midnightMarkers = useMemo(() => computeMidnightMarkers(now), [now]);
+
+  const generalSlots = useMemo(() => computeTimelineSlots(incidents, now), [incidents, now]);
+
+  const moduleRows = useMemo(() => {
+    const moduleMap = new Map<string, Incident[]>();
+    for (const inc of incidents) {
+      if (inc.affected_module) {
+        const existing = moduleMap.get(inc.affected_module) || [];
+        existing.push(inc);
+        moduleMap.set(inc.affected_module, existing);
+      }
+    }
+    return Array.from(moduleMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([moduleName, moduleIncidents]) => ({
+        label: moduleName,
+        slots: computeTimelineSlots(moduleIncidents, now),
+      }));
+  }, [incidents, now]);
+
+  return (
+    <div className="mt-6">
+      {/* Time axis labels */}
+      <div className="flex items-center gap-0 mb-1">
+        <span className="shrink-0 w-28 mr-3" />
+        <div className="relative flex-1 h-4">
+          <span className="absolute left-0 text-[10px] text-ceramic-text-secondary font-medium">
+            24h
+          </span>
+          {midnightMarkers.map((marker, i) => (
+            <span
+              key={`day-label-${i}`}
+              className="absolute text-[10px] text-ceramic-text-secondary font-medium -translate-x-1/2"
+              style={{ left: `${marker.position}%` }}
+            >
+              {marker.label}
+            </span>
+          ))}
+          <span className="absolute right-0 text-[10px] text-ceramic-text-secondary font-medium">
+            agora
+          </span>
+        </div>
+      </div>
+
+      {/* General row */}
+      <TimelineRow
+        label="Plataforma AICA"
+        slots={generalSlots}
+        midnightMarkers={midnightMarkers}
+        isLast={moduleRows.length === 0}
+      />
+
+      {/* Module-specific rows */}
+      {moduleRows.map((row, i) => (
+        <TimelineRow
+          key={row.label}
+          label={row.label}
+          slots={row.slots}
+          midnightMarkers={midnightMarkers}
+          isLast={i === moduleRows.length - 1}
+        />
+      ))}
+
+      {/* Legend */}
+      <div className="flex items-center gap-5 mt-3 ml-[124px]">
+        <span className="inline-flex items-center gap-1.5 text-[10px] text-ceramic-text-secondary">
+          <span className="w-2.5 h-2.5 rounded-sm bg-ceramic-success" />
+          Operacional
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-[10px] text-ceramic-text-secondary">
+          <span className="w-2.5 h-2.5 rounded-sm bg-ceramic-warning" />
+          Degradado
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-[10px] text-ceramic-text-secondary">
+          <span className="w-2.5 h-2.5 rounded-sm bg-ceramic-error" />
+          Interrompido
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ==================== GROUPED CHANGELOG ====================
+
+function groupChangelogByDate(entries: ChangelogEntry[]): Map<string, ChangelogEntry[]> {
+  const groups = new Map<string, ChangelogEntry[]>();
+  for (const entry of entries) {
+    const existing = groups.get(entry.date) || [];
+    existing.push(entry);
+    groups.set(entry.date, existing);
+  }
+  return groups;
+}
+
 // ==================== COMPONENT ====================
 
 export function StatusPage() {
   const navigate = useNavigate();
-  const status = STATUS_CONFIG[CURRENT_STATUS];
+
+  const [overallStatus, setOverallStatus] = useState<OverallStatus>('operational');
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [statusRes, incidentsRes, changelogRes] = await Promise.all([
+        supabase.rpc('get_overall_service_status'),
+        supabase.rpc('get_public_incidents'),
+        supabase.rpc('get_public_changelog', { p_limit: 30 }),
+      ]);
+
+      if (statusRes.error) throw statusRes.error;
+      if (incidentsRes.error) throw incidentsRes.error;
+      if (changelogRes.error) throw changelogRes.error;
+
+      setOverallStatus((statusRes.data as OverallStatus) || 'operational');
+      setIncidents((incidentsRes.data as Incident[]) || []);
+      setChangelog((changelogRes.data as ChangelogEntry[]) || []);
+    } catch (err) {
+      console.error('[StatusPage] Failed to fetch status data:', err);
+      setError('Status indisponivel no momento.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const changelogGroups = useMemo(() => groupChangelogByDate(changelog), [changelog]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ceramic-base">
+        <header className="sticky top-0 z-40 bg-ceramic-base border-b border-ceramic-border">
+          <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
+            <button
+              onClick={() => navigate('/landing')}
+              className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-info rounded-lg p-2"
+              aria-label="Voltar para a pagina inicial"
+            >
+              <ArrowLeft size={20} />
+              <span className="text-sm font-medium">Voltar</span>
+            </button>
+          </div>
+        </header>
+        <main className="max-w-[900px] mx-auto px-6 md:px-8 py-12">
+          <CeramicLoadingState variant="page" message="Verificando status dos servicos..." />
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-ceramic-base">
+        <header className="sticky top-0 z-40 bg-ceramic-base border-b border-ceramic-border">
+          <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
+            <button
+              onClick={() => navigate('/landing')}
+              className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-info rounded-lg p-2"
+              aria-label="Voltar para a pagina inicial"
+            >
+              <ArrowLeft size={20} />
+              <span className="text-sm font-medium">Voltar</span>
+            </button>
+          </div>
+        </header>
+        <main className="max-w-[900px] mx-auto px-6 md:px-8 py-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-ceramic-text-primary mb-8">
+            Status do Servico
+          </h1>
+          <CeramicErrorState
+            title="Status indisponivel"
+            message={error}
+            onRetry={fetchData}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  const status = STATUS_CONFIG[overallStatus];
   const StatusIcon = status.icon;
 
   return (
     <div className="min-h-screen bg-ceramic-base">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-ceramic-base border-b border-[#E8E6E0]">
+      <header className="sticky top-0 z-40 bg-ceramic-base border-b border-ceramic-border">
         <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
           <button
             onClick={() => navigate('/landing')}
-            className="flex items-center gap-2 text-[#5C554B] hover:text-[#2B1B17] transition-colors focus:outline-none focus:ring-2 focus:ring-[#6B9EFF] rounded-lg p-2"
+            className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-info rounded-lg p-2"
             aria-label="Voltar para a pagina inicial"
           >
             <ArrowLeft size={20} />
@@ -256,124 +519,137 @@ export function StatusPage() {
 
       {/* Main Content */}
       <main className="max-w-[900px] mx-auto px-6 md:px-8 py-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-[#2B1B17] mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-ceramic-text-primary mb-4">
           Status do Servico
         </h1>
-        <p className="text-sm text-[#5C554B] mb-8">
+        <p className="text-sm text-ceramic-text-secondary mb-8">
           Ultima atualizacao: {formatDate(new Date().toISOString().split('T')[0])}
         </p>
 
-        {/* Status Banner */}
-        <div
-          className={`${status.bgColor} ${status.borderColor} border rounded-xl p-6 flex items-center gap-4 mb-12`}
-        >
-          <StatusIcon size={32} className={status.color} />
-          <div>
-            <p className={`text-lg font-semibold ${status.color}`}>
-              {status.label}
-            </p>
-            <p className="text-sm text-[#5C554B] mt-1">
-              Monitoramento continuo de todos os modulos da plataforma AICA.
-            </p>
+        {/* Status Banner + 24h Timeline */}
+        <div className={`${status.bgColor} ${status.borderColor} border rounded-xl p-6 mb-12`}>
+          <div className="flex items-center gap-4">
+            <StatusIcon size={32} className={status.color} />
+            <div>
+              <p className={`text-lg font-semibold ${status.color}`}>
+                {status.label}
+              </p>
+              <p className="text-sm text-ceramic-text-secondary mt-1">
+                Monitoramento continuo de todos os modulos da plataforma AICA.
+              </p>
+            </div>
           </div>
+          <StatusTimeline24h incidents={incidents} />
         </div>
 
-        {/* Incidents Timeline */}
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold text-[#2B1B17] mb-6">
-            Incidentes Recentes
-          </h2>
-          <div className="space-y-4">
-            {INCIDENTS.map((incident, idx) => {
-              const severityCfg = SEVERITY_CONFIG[incident.severity];
-              return (
-                <div
-                  key={idx}
-                  className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-xl p-6"
-                >
-                  <div className="flex flex-wrap items-center gap-3 mb-3">
-                    {/* Severity badge */}
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium">
-                      <span
-                        className={`w-2 h-2 rounded-full ${severityCfg.dotColor}`}
-                      />
-                      <span className={severityCfg.textColor}>
-                        {severityCfg.label}
+        {/* Incidents — only if there are active incidents */}
+        {incidents.length > 0 && (
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold text-ceramic-text-primary mb-6">
+              Incidentes Recentes
+            </h2>
+            <div className="space-y-4">
+              {incidents.map((incident) => {
+                const severityCfg = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.degraded;
+                return (
+                  <div
+                    key={incident.id}
+                    className="bg-ceramic-cool border border-ceramic-border rounded-xl p-6"
+                  >
+                    <div className="flex flex-wrap items-center gap-3 mb-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+                        <span className={`w-2 h-2 rounded-full ${severityCfg.dotColor}`} />
+                        <span className={severityCfg.textColor}>{severityCfg.label}</span>
                       </span>
-                    </span>
-                    {/* Date */}
-                    <span className="text-xs text-[#5C554B]">
-                      {formatDate(incident.date)}
-                    </span>
+                      <span className="text-xs text-ceramic-text-secondary">
+                        {formatDate(incident.started_at.split('T')[0])}
+                      </span>
+                      {incident.affected_module && (
+                        <span className="text-xs text-ceramic-text-secondary bg-ceramic-cool border border-ceramic-border rounded-full px-2 py-0.5">
+                          {incident.affected_module}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base font-semibold text-ceramic-text-primary mb-2">
+                      {incident.title}
+                    </h3>
+                    <p className="text-sm text-ceramic-text-secondary leading-relaxed mb-3">
+                      {incident.description}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-ceramic-text-secondary">
+                      {incident.duration_minutes && (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock size={14} />
+                          {formatDuration(incident.duration_minutes)}
+                        </span>
+                      )}
+                      {incident.resolved_at ? (
+                        <span className="inline-flex items-center gap-1 text-ceramic-success">
+                          <CheckCircle2 size={14} />
+                          Resolvido
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-ceramic-warning">
+                          <AlertTriangle size={14} />
+                          Em andamento
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-base font-semibold text-[#2B1B17] mb-2">
-                    {incident.title}
-                  </h3>
-                  <p className="text-sm text-[#5C554B] leading-relaxed mb-3">
-                    {incident.description}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-[#5C554B]">
-                    <span className="inline-flex items-center gap-1">
-                      <Clock size={14} />
-                      {incident.duration}
-                    </span>
-                    {incident.resolved ? (
-                      <span className="inline-flex items-center gap-1 text-[#6B7B5C]">
-                        <CheckCircle2 size={14} />
-                        Resolvido
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[#C4883A]">
-                        <AlertTriangle size={14} />
-                        Em andamento
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-        {/* Changelog */}
+        {/* Changelog — grouped by date */}
         <section>
-          <h2 className="text-2xl font-bold text-[#2B1B17] mb-6">
+          <h2 className="text-2xl font-bold text-ceramic-text-primary mb-6">
             Registro de Alteracoes
           </h2>
-          <div className="space-y-3">
-            {CHANGELOG.map((entry, idx) => {
-              const typeCfg = CHANGE_TYPE_CONFIG[entry.type];
-              return (
-                <div
-                  key={idx}
-                  className="flex items-start gap-4 py-3 border-b border-[#E8E6E0] last:border-b-0"
-                >
-                  {/* Date */}
-                  <span className="text-xs text-[#5C554B] whitespace-nowrap pt-0.5 w-24 shrink-0">
-                    {formatDate(entry.date)}
-                  </span>
-                  {/* Type badge */}
-                  <span
-                    className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${typeCfg.bgColor} ${typeCfg.textColor} shrink-0`}
-                  >
-                    <Tag size={12} />
-                    {typeCfg.label}
-                  </span>
-                  {/* Description */}
-                  <p className="text-sm text-[#5C554B] leading-relaxed">
-                    {entry.description}
-                  </p>
+          {changelog.length === 0 ? (
+            <p className="text-sm text-ceramic-text-secondary">
+              Nenhuma alteracao registrada ainda.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {Array.from(changelogGroups.entries()).map(([date, entries]) => (
+                <div key={date}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-sm font-semibold text-ceramic-text-primary">
+                      {formatDateShort(date)}
+                    </span>
+                    <div className="flex-1 h-px bg-ceramic-border" />
+                  </div>
+                  <div className="space-y-2 pl-2">
+                    {entries.map((entry) => {
+                      const typeCfg = CHANGE_TYPE_CONFIG[entry.change_type] || CHANGE_TYPE_CONFIG.fix;
+                      return (
+                        <div key={entry.id} className="flex items-start gap-3">
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${typeCfg.bgColor} ${typeCfg.textColor} shrink-0 mt-0.5`}
+                          >
+                            <Tag size={12} />
+                            {typeCfg.label}
+                          </span>
+                          <p className="text-sm text-ceramic-text-secondary leading-relaxed">
+                            {entry.description}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#F8F7F5] border-t border-[#E8E6E0] py-8 mt-16">
+      <footer className="bg-ceramic-cool border-t border-ceramic-border py-8 mt-16">
         <div className="max-w-[900px] mx-auto px-6 md:px-8 text-center">
-          <p className="text-sm text-[#5C554B]">
+          <p className="text-sm text-ceramic-text-secondary">
             &copy; {new Date().getFullYear()} AICA Life OS - Comtxae Educacao
             Cultura e Tecnologia Ltda. Todos os direitos reservados.
           </p>
