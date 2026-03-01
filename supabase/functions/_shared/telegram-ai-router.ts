@@ -24,8 +24,15 @@ type QueryArrayResult<T = Record<string, unknown>> = Promise<{ data: T[] | null;
 
 interface QueryBuilder {
   eq: (col: string, val: unknown) => QueryBuilder;
+  neq: (col: string, val: unknown) => QueryBuilder;
+  gt: (col: string, val: unknown) => QueryBuilder;
   gte: (col: string, val: unknown) => QueryBuilder;
+  lt: (col: string, val: unknown) => QueryBuilder;
   lte: (col: string, val: unknown) => QueryBuilder;
+  ilike: (col: string, val: string) => QueryBuilder;
+  is: (col: string, val: unknown) => QueryBuilder;
+  not: (col: string, op: string, val: unknown) => QueryBuilder;
+  or: (filter: string) => QueryBuilder;
   order: (col: string, opts: Record<string, unknown>) => QueryBuilder;
   limit: (n: number) => QueryArrayResult;
   single: () => QueryResult;
@@ -204,6 +211,104 @@ const FUNCTION_DECLARATIONS = [
       },
     },
   },
+  // --- Atlas: Task Management (expanded) ---
+  {
+    name: 'complete_task',
+    description: 'Marca uma tarefa como concluida no modulo Atlas. Use quando o usuario disser que terminou, concluiu, completou ou fez uma tarefa.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        task_title: { type: 'STRING', description: 'Titulo ou parte do titulo da tarefa a ser concluida' },
+      },
+      required: ['task_title'],
+    },
+  },
+  {
+    name: 'list_tasks_by_priority',
+    description: 'Lista tarefas filtradas por prioridade (Eisenhower Matrix). Use quando o usuario perguntar "tarefas urgentes", "o que e prioritario", "lista de tarefas", ou pedir tarefas por importancia.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        priority: {
+          type: 'STRING',
+          description: 'Filtro de prioridade (opcional, sem filtro retorna todas pendentes)',
+          enum: ['urgent_important', 'important', 'urgent', 'neither'],
+        },
+        limit: { type: 'NUMBER', description: 'Numero maximo de tarefas (default: 10)' },
+      },
+    },
+  },
+  {
+    name: 'get_overdue_tasks',
+    description: 'Lista tarefas atrasadas (vencidas). Use quando o usuario perguntar "o que esta atrasado?", "tarefas vencidas", "deadlines perdidos".',
+    parameters: { type: 'OBJECT', properties: {} },
+  },
+  // --- Connections: Relationship Intelligence ---
+  {
+    name: 'search_contact',
+    description: 'Busca informacoes sobre um contato na rede de conexoes. Use quando o usuario perguntar "quem e Joao?", "como esta Maria?", informacoes sobre uma pessoa, ou pedir dossie de um contato.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        name: { type: 'STRING', description: 'Nome ou parte do nome do contato' },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'list_at_risk_contacts',
+    description: 'Lista contatos que precisam de atencao (relacionamento em risco). Use quando o usuario perguntar "quem precisa de atencao?", "relacionamentos em risco", "com quem nao falo ha tempo".',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        limit: { type: 'NUMBER', description: 'Numero de contatos (default: 5)' },
+      },
+    },
+  },
+  // --- Gamification & Journey ---
+  {
+    name: 'check_streak_status',
+    description: 'Verifica o streak de consistencia do usuario (sistema compassivo 47/50 dias). Use quando o usuario perguntar "como esta meu streak?", "minha consistencia", "quantos dias seguidos?".',
+    parameters: { type: 'OBJECT', properties: {} },
+  },
+  {
+    name: 'check_gamification_stats',
+    description: 'Verifica pontos de consciencia (CP), posicao no ranking e nivel. Use quando o usuario perguntar "quantos pontos tenho?", "meu CP", "ranking", "meu nivel".',
+    parameters: { type: 'OBJECT', properties: {} },
+  },
+  // --- Flux: Coach & Athletes ---
+  {
+    name: 'get_athlete_overview',
+    description: 'Visao geral dos atletas: aderencia, status, modalidade. Para coaches. Use quando o usuario perguntar sobre atletas, aderencia, performance.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        athlete_name: { type: 'STRING', description: 'Nome do atleta (opcional, sem nome retorna todos)' },
+      },
+    },
+  },
+  {
+    name: 'list_athlete_alerts',
+    description: 'Lista alertas ativos dos atletas (fadiga, aderencia baixa, risco de lesao). Para coaches. Use quando perguntar "alertas?", "atleta em risco", "problemas nos treinos".',
+    parameters: { type: 'OBJECT', properties: {} },
+  },
+  // --- Studio: Podcast ---
+  {
+    name: 'get_latest_episodes',
+    description: 'Lista episodios recentes do podcast (Studio). Use quando o usuario perguntar sobre episodios, gravacoes, podcast, convidados.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        limit: { type: 'NUMBER', description: 'Numero de episodios (default: 5)' },
+      },
+    },
+  },
+  // --- Grants: Opportunities ---
+  {
+    name: 'get_open_opportunities',
+    description: 'Lista editais e oportunidades de captacao com prazos abertos (Grants). Use quando o usuario perguntar sobre editais, oportunidades, prazos de submissao, captacao.',
+    parameters: { type: 'OBJECT', properties: {} },
+  },
 ];
 
 // ============================================================================
@@ -220,10 +325,15 @@ function buildSystemPrompt(userName: string): string {
     'Seja conciso nas respostas (max 3-4 frases para conversa casual).',
     '',
     'Modulos disponiveis:',
-    '- Atlas: tarefas, to-dos, atividades',
+    '- Atlas: tarefas, concluir tarefas, prioridades, tarefas atrasadas',
     '- Finance: gastos, despesas, orcamento, status financeiro',
     '- Journey: humor, sentimentos, momentos, analise emocional, diario',
-    '- Agenda: eventos, reunioes, compromissos (via Google Calendar no app)',
+    '- Connections: contatos, relacionamentos, dossie, quem precisa de atencao',
+    '- Gamificacao: streak, pontos CP, XP, nivel, ranking',
+    '- Flux: atletas, aderencia, alertas (para coaches)',
+    '- Studio: episodios de podcast, gravacoes, convidados',
+    '- Grants: editais abertos, oportunidades, prazos',
+    '- Agenda: eventos, reunioes (via Google Calendar no app)',
     '',
     `Data de hoje: ${today}.`,
     `Nome do usuario: ${userName}.`,
@@ -674,6 +784,515 @@ async function executeGetMomentsSummary(
   };
 }
 
+// ---- Atlas expanded ----
+
+async function executeCompleteTask(
+  supabase: SupabaseClient,
+  userId: string,
+  params: Record<string, unknown>,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const searchTitle = String(params.task_title).toLowerCase();
+
+  // Fetch pending tasks to find best match
+  const { data: tasks } = await supabase
+    .from('work_items')
+    .select('id, title, priority')
+    .eq('user_id', userId)
+    .eq('status', 'todo')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (!tasks || tasks.length === 0) {
+    return { reply: 'Nenhuma tarefa pendente encontrada.', data: {} };
+  }
+
+  // Find best match by title (case-insensitive contains)
+  const match = tasks.find((t: Record<string, unknown>) =>
+    String(t.title).toLowerCase().includes(searchTitle),
+  ) || tasks.find((t: Record<string, unknown>) =>
+    searchTitle.includes(String(t.title).toLowerCase().substring(0, 10)),
+  );
+
+  if (!match) {
+    const suggestions = tasks.slice(0, 3).map((t: Record<string, unknown>) => `  • ${t.title}`).join('\n');
+    return {
+      reply: `Nao encontrei tarefa com "${params.task_title}". Tarefas pendentes:\n${suggestions}`,
+      data: {},
+    };
+  }
+
+  const { error } = await supabase
+    .from('work_items')
+    .update({ is_completed: true, status: 'done', completed_at: new Date().toISOString() })
+    .eq('id', match.id)
+    .eq('user_id', userId)
+    .single();
+
+  if (error) throw new Error(`Erro ao concluir tarefa: ${error.message}`);
+
+  return {
+    reply: `Tarefa concluida: "<b>${match.title}</b>" ✅`,
+    data: { taskId: match.id },
+  };
+}
+
+async function executeListTasksByPriority(
+  supabase: SupabaseClient,
+  userId: string,
+  params: Record<string, unknown>,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const limit = Math.min(20, Number(params.limit) || 10);
+
+  let query = supabase
+    .from('work_items')
+    .select('title, priority, due_date, category')
+    .eq('user_id', userId)
+    .eq('status', 'todo');
+
+  if (params.priority) {
+    query = query.eq('priority', params.priority);
+  }
+
+  const { data: tasks } = await query
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (!tasks || tasks.length === 0) {
+    return { reply: params.priority
+      ? `Nenhuma tarefa "${params.priority}" pendente.`
+      : 'Nenhuma tarefa pendente.', data: {} };
+  }
+
+  const priorityEmojis: Record<string, string> = {
+    urgent_important: '🔴', important: '🟡', urgent: '🟠', neither: '⚪',
+  };
+
+  const lines = [`<b>Tarefas pendentes (${tasks.length}):</b>`, ''];
+  for (const t of tasks) {
+    const emoji = priorityEmojis[String(t.priority)] || '📋';
+    const due = t.due_date ? ` (vence ${t.due_date})` : '';
+    lines.push(`${emoji} ${t.title}${due}`);
+  }
+
+  return { reply: lines.join('\n'), data: { count: tasks.length } };
+}
+
+async function executeGetOverdueTasks(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: tasks } = await supabase
+    .from('work_items')
+    .select('title, priority, due_date')
+    .eq('user_id', userId)
+    .eq('status', 'todo')
+    .lt('due_date', today)
+    .order('due_date', { ascending: true })
+    .limit(15);
+
+  if (!tasks || tasks.length === 0) {
+    return { reply: 'Nenhuma tarefa atrasada! 🎉', data: {} };
+  }
+
+  const lines = [`<b>⚠️ ${tasks.length} tarefa(s) atrasada(s):</b>`, ''];
+  for (const t of tasks) {
+    const daysLate = Math.ceil((Date.now() - new Date(t.due_date).getTime()) / 86400000);
+    lines.push(`  • ${t.title} — <i>${daysLate} dia(s) de atraso</i>`);
+  }
+
+  return { reply: lines.join('\n'), data: { count: tasks.length } };
+}
+
+// ---- Connections: Relationship Intelligence ----
+
+async function executeSearchContact(
+  supabase: SupabaseClient,
+  userId: string,
+  params: Record<string, unknown>,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const searchName = String(params.name);
+
+  const { data: contacts } = await supabase
+    .from('contact_network')
+    .select('id, name, whatsapp_name, relationship_type, health_score, sentiment_trend, dossier_summary, dossier_topics, dossier_pending_items, last_interaction_at, interaction_count')
+    .eq('user_id', userId)
+    .ilike('name', `%${searchName}%`)
+    .limit(5);
+
+  if (!contacts || contacts.length === 0) {
+    // Try whatsapp_name
+    const { data: wContacts } = await supabase
+      .from('contact_network')
+      .select('id, name, whatsapp_name, relationship_type, health_score, sentiment_trend, dossier_summary, dossier_topics, dossier_pending_items, last_interaction_at, interaction_count')
+      .eq('user_id', userId)
+      .ilike('whatsapp_name', `%${searchName}%`)
+      .limit(5);
+
+    if (!wContacts || wContacts.length === 0) {
+      return { reply: `Nenhum contato encontrado com "${searchName}".`, data: {} };
+    }
+    return formatContactResult(wContacts);
+  }
+
+  return formatContactResult(contacts);
+}
+
+function formatContactResult(
+  contacts: Array<Record<string, unknown>>,
+): { reply: string; data: Record<string, unknown> } {
+  if (contacts.length === 1) {
+    const c = contacts[0];
+    const name = c.name || c.whatsapp_name || 'Desconhecido';
+    const healthEmoji = Number(c.health_score || 0) >= 70 ? '💚' :
+      Number(c.health_score || 0) >= 40 ? '💛' : '❤️‍🩹';
+
+    const lines = [`<b>${name}</b>`, ''];
+    if (c.relationship_type) lines.push(`👤 ${c.relationship_type}`);
+    if (c.health_score != null) lines.push(`${healthEmoji} Saude do relacionamento: <b>${c.health_score}/100</b>`);
+    if (c.sentiment_trend) lines.push(`📈 Tendencia: ${c.sentiment_trend}`);
+    if (c.interaction_count) lines.push(`💬 ${c.interaction_count} interacoes`);
+    if (c.last_interaction_at) {
+      const days = Math.ceil((Date.now() - new Date(String(c.last_interaction_at)).getTime()) / 86400000);
+      lines.push(`🕐 Ultimo contato: ${days} dia(s) atras`);
+    }
+    if (c.dossier_summary) {
+      lines.push('');
+      lines.push(`<b>Resumo:</b> ${String(c.dossier_summary).substring(0, 300)}`);
+    }
+    if (Array.isArray(c.dossier_pending_items) && c.dossier_pending_items.length > 0) {
+      lines.push('');
+      lines.push('<b>Pendencias:</b>');
+      for (const item of c.dossier_pending_items.slice(0, 3)) {
+        lines.push(`  • ${item}`);
+      }
+    }
+
+    return { reply: lines.join('\n'), data: { contactId: c.id } };
+  }
+
+  // Multiple results
+  const lines = [`<b>${contacts.length} contato(s) encontrado(s):</b>`, ''];
+  for (const c of contacts) {
+    const name = c.name || c.whatsapp_name || 'Desconhecido';
+    const healthEmoji = Number(c.health_score || 0) >= 70 ? '💚' :
+      Number(c.health_score || 0) >= 40 ? '💛' : '❤️‍🩹';
+    lines.push(`${healthEmoji} <b>${name}</b> — ${c.relationship_type || 'contato'}${c.health_score != null ? ` (${c.health_score}/100)` : ''}`);
+  }
+
+  return { reply: lines.join('\n'), data: { count: contacts.length } };
+}
+
+async function executeListAtRiskContacts(
+  supabase: SupabaseClient,
+  userId: string,
+  params: Record<string, unknown>,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const limit = Math.min(10, Number(params.limit) || 5);
+
+  const { data: contacts } = await supabase
+    .from('contact_network')
+    .select('name, whatsapp_name, health_score, sentiment_trend, last_interaction_at, interaction_count')
+    .eq('user_id', userId)
+    .not('health_score', 'is', null)
+    .lte('health_score', 50)
+    .order('health_score', { ascending: true })
+    .limit(limit);
+
+  if (!contacts || contacts.length === 0) {
+    return { reply: 'Nenhum contato em risco! Seus relacionamentos estao saudaveis. 💚', data: {} };
+  }
+
+  const lines = [`<b>❤️‍🩹 Contatos que precisam de atencao:</b>`, ''];
+  for (const c of contacts) {
+    const name = c.name || c.whatsapp_name || 'Desconhecido';
+    const days = c.last_interaction_at
+      ? Math.ceil((Date.now() - new Date(String(c.last_interaction_at)).getTime()) / 86400000)
+      : null;
+    lines.push(`  • <b>${name}</b> — saude ${c.health_score}/100${days ? ` (${days}d sem contato)` : ''}`);
+  }
+  lines.push('');
+  lines.push('💡 Que tal enviar uma mensagem para alguem da lista?');
+
+  return { reply: lines.join('\n'), data: { count: contacts.length } };
+}
+
+// ---- Gamification & Streak ----
+
+async function executeCheckStreakStatus(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const { data, error } = await supabase.rpc('get_streak_trend_stats', { p_user_id: userId });
+
+  if (error || !data) {
+    return { reply: 'Ainda nao ha dados de streak. Continue usando a AICA diariamente!', data: {} };
+  }
+
+  // RPC returns array with single row
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { reply: 'Ainda nao ha dados de streak. Continue usando a AICA diariamente!', data: {} };
+  }
+
+  const trend = row.current_trend || 0;
+  const pct = row.trend_percentage || 0;
+  const quality = row.trend_quality || 'needs_attention';
+  const graceRemaining = row.grace_periods_remaining ?? 4;
+  const isRecovering = row.is_recovering || false;
+  const recoveryProgress = row.recovery_progress || 0;
+
+  const qualityLabels: Record<string, string> = {
+    excellent: '🌟 Excelente!',
+    good: '💪 Bom!',
+    moderate: '👍 Moderado',
+    needs_attention: '⚠️ Precisa de atencao',
+  };
+
+  const lines = ['<b>🔥 Streak de Consistencia:</b>', ''];
+  lines.push(`📊 <b>${trend}/50 dias</b> (${pct}%)`);
+  lines.push(`${qualityLabels[quality] || quality}`);
+  lines.push(`🛡️ Grace periods restantes: ${graceRemaining}/4`);
+
+  if (isRecovering) {
+    lines.push(`🔄 Em recuperacao: ${recoveryProgress}% concluido`);
+  }
+
+  if (pct >= 90) lines.push('\n🏆 Voce esta arrasando! Continue assim!');
+  else if (pct >= 70) lines.push('\n💪 Otimo ritmo! Mantenha a consistencia.');
+  else lines.push('\n💡 Cada dia conta. Use a AICA hoje para manter seu streak!');
+
+  return { reply: lines.join('\n'), data: { trend, percentage: pct, quality } };
+}
+
+async function executeCheckGamificationStats(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  // Query user_stats for CP data
+  const { data: stats } = await supabase
+    .from('user_stats')
+    .select('consciousness_points, experience_points, level')
+    .eq('user_id', userId)
+    .single();
+
+  if (!stats) {
+    return { reply: 'Seus dados de gamificacao ainda estao sendo calculados. Continue usando a AICA!', data: {} };
+  }
+
+  const cp = stats.consciousness_points as Record<string, unknown> | null;
+  const totalCp = Number(cp?.total_cp || 0);
+  const lifetimeCp = Number(cp?.lifetime_cp || 0);
+  const xp = Number(stats.experience_points || 0);
+  const level = Number(stats.level || 1);
+
+  const lines = ['<b>🎮 Suas Estatisticas:</b>', ''];
+  lines.push(`🧠 Pontos de Consciencia: <b>${totalCp} CP</b>`);
+  if (lifetimeCp > totalCp) lines.push(`   (${lifetimeCp} CP acumulados ao longo do tempo)`);
+  lines.push(`⭐ Experiencia: <b>${xp} XP</b>`);
+  lines.push(`📈 Nivel: <b>${level}</b>`);
+
+  // XP for next level (exponential: 1000 * 1.15^level)
+  const xpForNext = Math.round(1000 * Math.pow(1.15, level));
+  const xpProgress = Math.min(100, Math.round((xp / xpForNext) * 100));
+  lines.push(`\n🎯 Proximo nivel: ${xpProgress}% (${xp}/${xpForNext} XP)`);
+
+  // Try to get leaderboard position
+  try {
+    const { data: leaderboard } = await supabase.rpc('get_cp_leaderboard', { p_limit: 20 });
+    if (Array.isArray(leaderboard)) {
+      const myRank = leaderboard.find((r: Record<string, unknown>) => r.user_id === userId);
+      if (myRank) {
+        lines.push(`\n🏆 Ranking: #${myRank.rank} no leaderboard`);
+      }
+    }
+  } catch {
+    // Leaderboard lookup failed — not critical
+  }
+
+  return { reply: lines.join('\n'), data: { totalCp, xp, level } };
+}
+
+// ---- Flux: Coach & Athletes ----
+
+async function executeGetAthleteOverview(
+  supabase: SupabaseClient,
+  userId: string,
+  params: Record<string, unknown>,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const { data, error } = await supabase.rpc('get_athletes_with_adherence', { p_user_id: userId });
+
+  if (error || !data || !Array.isArray(data) || data.length === 0) {
+    return { reply: 'Nenhum atleta cadastrado no Flux.', data: {} };
+  }
+
+  let athletes = data as Array<Record<string, unknown>>;
+
+  // Filter by name if provided
+  if (params.athlete_name) {
+    const search = String(params.athlete_name).toLowerCase();
+    athletes = athletes.filter((a) => String(a.name).toLowerCase().includes(search));
+    if (athletes.length === 0) {
+      return { reply: `Nenhum atleta encontrado com "${params.athlete_name}".`, data: {} };
+    }
+  }
+
+  if (athletes.length === 1) {
+    const a = athletes[0];
+    const adherenceEmoji = Number(a.adherence_rate) >= 80 ? '🟢' :
+      Number(a.adherence_rate) >= 50 ? '🟡' : '🔴';
+
+    const lines = [`<b>🏃 ${a.name}</b>`, ''];
+    lines.push(`${adherenceEmoji} Aderencia: <b>${a.adherence_rate}%</b>`);
+    lines.push(`🎯 Modalidade: ${a.modality || 'N/A'}`);
+    lines.push(`📊 Nivel: ${a.level || 'N/A'}`);
+    lines.push(`📋 Status: ${a.status}`);
+    return { reply: lines.join('\n'), data: { athleteId: a.id } };
+  }
+
+  const lines = [`<b>🏃 ${athletes.length} Atleta(s):</b>`, ''];
+  for (const a of athletes) {
+    const adherenceEmoji = Number(a.adherence_rate) >= 80 ? '🟢' :
+      Number(a.adherence_rate) >= 50 ? '🟡' : '🔴';
+    lines.push(`${adherenceEmoji} <b>${a.name}</b> — ${a.adherence_rate}% aderencia (${a.modality || 'N/A'})`);
+  }
+
+  return { reply: lines.join('\n'), data: { count: athletes.length } };
+}
+
+async function executeListAthleteAlerts(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  // Get athletes for this coach first
+  const { data: athleteData } = await supabase
+    .from('athletes')
+    .select('id, name')
+    .eq('user_id', userId)
+    .limit(50);
+
+  if (!athleteData || athleteData.length === 0) {
+    return { reply: 'Nenhum atleta cadastrado.', data: {} };
+  }
+
+  // Get unresolved alerts for these athletes
+  const athleteIds = athleteData.map((a: Record<string, unknown>) => a.id);
+  const athleteMap = new Map(athleteData.map((a: Record<string, unknown>) => [a.id, a.name]));
+
+  // Query alerts - filter unresolved in JS since we can't do complex IN queries with the simplified type
+  const { data: alerts } = await supabase
+    .from('alerts')
+    .select('id, athlete_id, alert_type, severity, message_preview, created_at, resolved_at')
+    .eq('user_id', userId)
+    .is('resolved_at', null)
+    .order('created_at', { ascending: false })
+    .limit(15);
+
+  if (!alerts || alerts.length === 0) {
+    return { reply: 'Nenhum alerta ativo! Todos os atletas estao bem. ✅', data: {} };
+  }
+
+  const severityEmojis: Record<string, string> = {
+    critical: '🔴', high: '🟠', medium: '🟡', low: '🟢',
+  };
+  const typeLabels: Record<string, string> = {
+    adherence_low: 'Aderencia baixa',
+    fatigue_critical: 'Fadiga critica',
+    injury_risk: 'Risco de lesao',
+    missed_workout: 'Treino perdido',
+  };
+
+  const lines = [`<b>⚠️ ${alerts.length} Alerta(s) Ativo(s):</b>`, ''];
+  for (const a of alerts) {
+    const athleteName = athleteMap.get(a.athlete_id) || 'Atleta';
+    const emoji = severityEmojis[String(a.severity)] || '⚠️';
+    const label = typeLabels[String(a.alert_type)] || a.alert_type;
+    lines.push(`${emoji} <b>${athleteName}</b>: ${label}`);
+    if (a.message_preview) lines.push(`   ${String(a.message_preview).substring(0, 80)}`);
+  }
+
+  return { reply: lines.join('\n'), data: { count: alerts.length } };
+}
+
+// ---- Studio: Podcast ----
+
+async function executeGetLatestEpisodes(
+  supabase: SupabaseClient,
+  userId: string,
+  params: Record<string, unknown>,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const limit = Math.min(10, Number(params.limit) || 5);
+
+  const { data: episodes } = await supabase
+    .from('podcast_episodes')
+    .select('title, guest_name, status, scheduled_date, duration_minutes, episode_theme')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (!episodes || episodes.length === 0) {
+    return { reply: 'Nenhum episodio cadastrado no Studio.', data: {} };
+  }
+
+  const statusLabels: Record<string, string> = {
+    draft: '📝 Rascunho', scheduled: '📅 Agendado', recording: '🎙️ Gravando',
+    editing: '✂️ Editando', published: '✅ Publicado', recorded: '🎬 Gravado',
+  };
+
+  const lines = [`<b>🎙️ Ultimos Episodios (${episodes.length}):</b>`, ''];
+  for (const ep of episodes) {
+    const status = statusLabels[String(ep.status)] || ep.status;
+    lines.push(`${status} <b>${ep.title}</b>`);
+    if (ep.guest_name) lines.push(`   👤 Convidado: ${ep.guest_name}`);
+    if (ep.scheduled_date) {
+      const d = new Date(ep.scheduled_date).toLocaleDateString('pt-BR');
+      lines.push(`   📅 ${d}`);
+    }
+  }
+
+  return { reply: lines.join('\n'), data: { count: episodes.length } };
+}
+
+// ---- Grants: Opportunities ----
+
+async function executeGetOpenOpportunities(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const today = new Date().toISOString();
+
+  const { data: opportunities } = await supabase
+    .from('grant_opportunities')
+    .select('title, funding_agency, submission_deadline, min_funding, max_funding, status')
+    .eq('user_id', userId)
+    .gt('submission_deadline', today)
+    .neq('status', 'archived')
+    .order('submission_deadline', { ascending: true })
+    .limit(10);
+
+  if (!opportunities || opportunities.length === 0) {
+    return { reply: 'Nenhum edital aberto no momento.', data: {} };
+  }
+
+  const formatBRL = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const lines = [`<b>📋 Editais Abertos (${opportunities.length}):</b>`, ''];
+  for (const op of opportunities) {
+    const deadline = new Date(op.submission_deadline).toLocaleDateString('pt-BR');
+    const daysLeft = Math.ceil((new Date(op.submission_deadline).getTime() - Date.now()) / 86400000);
+    const urgency = daysLeft <= 7 ? '🔴' : daysLeft <= 30 ? '🟡' : '🟢';
+
+    lines.push(`${urgency} <b>${op.title}</b>`);
+    lines.push(`   🏛️ ${op.funding_agency || 'N/A'}`);
+    if (op.max_funding) lines.push(`   💰 Ate ${formatBRL(Number(op.max_funding))}`);
+    lines.push(`   📅 Prazo: ${deadline} (${daysLeft}d restantes)`);
+    lines.push('');
+  }
+
+  return { reply: lines.join('\n'), data: { count: opportunities.length } };
+}
+
 // Function executor dispatch
 async function executeFunctionCall(
   supabase: SupabaseClient,
@@ -696,6 +1315,28 @@ async function executeFunctionCall(
       return executeGetBudgetStatus(supabase, userId, args);
     case 'get_moments_summary':
       return executeGetMomentsSummary(supabase, userId, args);
+    case 'complete_task':
+      return executeCompleteTask(supabase, userId, args);
+    case 'list_tasks_by_priority':
+      return executeListTasksByPriority(supabase, userId, args);
+    case 'get_overdue_tasks':
+      return executeGetOverdueTasks(supabase, userId);
+    case 'search_contact':
+      return executeSearchContact(supabase, userId, args);
+    case 'list_at_risk_contacts':
+      return executeListAtRiskContacts(supabase, userId, args);
+    case 'check_streak_status':
+      return executeCheckStreakStatus(supabase, userId);
+    case 'check_gamification_stats':
+      return executeCheckGamificationStats(supabase, userId);
+    case 'get_athlete_overview':
+      return executeGetAthleteOverview(supabase, userId, args);
+    case 'list_athlete_alerts':
+      return executeListAthleteAlerts(supabase, userId);
+    case 'get_latest_episodes':
+      return executeGetLatestEpisodes(supabase, userId, args);
+    case 'get_open_opportunities':
+      return executeGetOpenOpportunities(supabase, userId);
     default:
       return {
         reply: `Funcao "${functionName}" nao implementada ainda.`,
