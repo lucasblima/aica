@@ -69,8 +69,10 @@ async function logMessage(
       user_id: userId,
       direction: 'inbound',
       message_type: message.content.type,
-      intent_summary: (message.content.command || message.content.text || message.content.callbackData || '')
-        .substring(0, 200),
+      // LGPD: never store raw text — only command name or message type
+      intent_summary: message.content.command
+        ? message.content.command
+        : `[${message.content.type}]`,
       command: message.content.command || null,
       processing_status: status,
       processing_duration_ms: durationMs || null,
@@ -179,6 +181,17 @@ async function handleVincular(
   msg: UnifiedMessage,
   supabase: SupabaseClient,
 ): Promise<void> {
+  // Check if already linked — prevent repeated consent dialogs
+  const telegramIdCheck = Number(msg.sender.channelUserId)
+  const { data: existingLink } = await supabase
+    .rpc('get_telegram_user', { p_telegram_id: telegramIdCheck })
+  if (existingLink && existingLink.length > 0) {
+    await reply(tg, msg.chat.chatId,
+      '✅ Sua conta ja esta vinculada! Use /status para ver detalhes ou /desvincular para remover.'
+    )
+    return
+  }
+
   const code = msg.content.commandArgs?.trim().toUpperCase()
 
   if (!code || code.length !== 6) {
@@ -394,11 +407,13 @@ async function handleCallbackQuery(
     await tg.answerCallbackQuery!(msg.content.callbackQueryId)
   }
 
+  // SECURITY: Resolve user from telegram_id (trusted), never from callback_data (attacker-controlled)
+  const telegramId = Number(msg.sender.channelUserId)
+
   // Route by callback prefix
   if (data.startsWith('consent_accept:')) {
-    const userId = data.split(':')[1]
     await supabase.rpc('grant_telegram_consent', {
-      p_user_id: userId,
+      p_telegram_id: telegramId,
       p_scope: ['messages', 'notifications', 'ai_processing'],
     })
     await reply(tg, msg.chat.chatId, [
@@ -418,11 +433,10 @@ async function handleCallbackQuery(
     ].join('\n'))
 
   } else if (data.startsWith('unlink_confirm:')) {
-    const userId = data.split(':')[1]
     await supabase
       .from('user_telegram_links')
       .update({ status: 'unlinked', updated_at: new Date().toISOString() })
-      .eq('user_id', userId)
+      .eq('telegram_id', telegramId)
     await reply(tg, msg.chat.chatId,
       '✅ Conta desvinculada. Use /start se quiser vincular novamente.'
     )
@@ -431,11 +445,15 @@ async function handleCallbackQuery(
     await reply(tg, msg.chat.chatId, '👍 Operacao cancelada. Sua conta permanece vinculada.')
 
   } else if (data.startsWith('delete_data_confirm:')) {
-    const userId = data.split(':')[1]
-    // Delete telegram data
-    await supabase.from('telegram_message_log').delete().eq('user_id', userId)
-    await supabase.from('telegram_conversations').delete().eq('user_id', userId)
-    await supabase.from('user_telegram_links').delete().eq('user_id', userId)
+    // Resolve user_id from telegram_id for data deletion
+    const { data: userData } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const userId = userData?.[0]?.user_id
+    if (userId) {
+      await supabase.from('telegram_message_log').delete().eq('user_id', userId)
+      await supabase.from('telegram_conversations').delete().eq('user_id', userId)
+      await supabase.from('user_telegram_links').delete().eq('telegram_id', telegramId)
+    }
     await reply(tg, msg.chat.chatId, [
       '✅ <b>Dados excluidos com sucesso.</b>',
       '',

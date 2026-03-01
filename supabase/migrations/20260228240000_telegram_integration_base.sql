@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS user_telegram_links (
   consent_scope TEXT[] DEFAULT '{}',  -- ['messages', 'notifications', 'ai_processing']
 
   -- Status
-  status TEXT NOT NULL DEFAULT 'unlinked' CHECK (status IN ('active', 'pending', 'paused', 'unlinked')),
+  status TEXT NOT NULL DEFAULT 'unlinked' CHECK (status IN ('linked', 'pending', 'paused', 'unlinked')),
 
   -- Channel preferences
   notification_enabled BOOLEAN DEFAULT TRUE,
@@ -158,7 +158,7 @@ RETURNS TABLE(user_id UUID, telegram_username TEXT, status TEXT, consent_given B
 LANGUAGE sql SECURITY DEFINER AS $$
   SELECT user_id, telegram_username, status, consent_given
   FROM user_telegram_links
-  WHERE telegram_id = p_telegram_id AND status = 'active';
+  WHERE telegram_id = p_telegram_id AND status = 'linked';
 $$;
 
 -- Look up user by link code (for /vincular flow)
@@ -190,7 +190,7 @@ BEGIN
     telegram_id = p_telegram_id,
     telegram_username = p_username,
     telegram_first_name = p_first_name,
-    status = 'active',
+    status = 'linked',
     linked_at = now(),
     link_code = NULL,
     code_expires_at = NULL,
@@ -241,9 +241,9 @@ BEGIN
 END;
 $$;
 
--- Grant consent for Telegram usage
+-- Grant consent for Telegram usage (requires telegram_id to verify ownership)
 CREATE OR REPLACE FUNCTION grant_telegram_consent(
-  p_user_id UUID,
+  p_telegram_id BIGINT,
   p_scope TEXT[]
 )
 RETURNS void
@@ -255,6 +255,6 @@ BEGIN
     consent_timestamp = now(),
     consent_scope = p_scope,
     updated_at = now()
-  WHERE user_id = p_user_id;
+  WHERE telegram_id = p_telegram_id AND status = 'linked';
 END;
 $$;

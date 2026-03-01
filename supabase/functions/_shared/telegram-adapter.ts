@@ -323,7 +323,26 @@ export class TelegramAdapter implements ChannelAdapter {
       return false;
     }
 
-    return secretToken === this.webhookSecret;
+    // Constant-time comparison to prevent timing attacks
+    return this.timingSafeEqual(secretToken, this.webhookSecret);
+  }
+
+  /**
+   * Constant-time string comparison to prevent timing attacks.
+   * Uses byte-level XOR so comparison time is independent of content.
+   */
+  private timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+
+    const encoder = new TextEncoder();
+    const bufA = encoder.encode(a);
+    const bufB = encoder.encode(b);
+
+    let mismatch = 0;
+    for (let i = 0; i < bufA.length; i++) {
+      mismatch |= bufA[i] ^ bufB[i];
+    }
+    return mismatch === 0;
   }
 
   // --------------------------------------------------------------------------

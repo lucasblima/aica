@@ -172,11 +172,15 @@ export function useTelegramLink(): UseTelegramLinkReturn {
         })
         .eq('user_id', user.id)
         .select()
-        .single()
+        .maybeSingle()
 
       if (updateError) throw updateError
 
-      setLinkData(data as TelegramLinkData)
+      if (data) {
+        setLinkData(data as TelegramLinkData)
+      } else {
+        setLinkData(null)
+      }
     } catch (err) {
       log.error('Failed to unlink Telegram:', err)
       setError(err instanceof Error ? err.message : 'Erro ao desvincular')
@@ -196,8 +200,11 @@ export function useTelegramLink(): UseTelegramLinkReturn {
       if (!user || !mounted) return
 
       // Subscribe to changes on user_telegram_links for this user
-      const channel = supabase
-        .channel(`telegram-link-${user.id}`)
+      // Set channelRef BEFORE subscribing to prevent leak on fast unmount
+      const channel = supabase.channel(`telegram-link-${user.id}`)
+      channelRef.current = channel
+
+      channel
         .on(
           'postgres_changes',
           {
@@ -216,8 +223,6 @@ export function useTelegramLink(): UseTelegramLinkReturn {
           }
         )
         .subscribe()
-
-      channelRef.current = channel
     }
 
     setup()
