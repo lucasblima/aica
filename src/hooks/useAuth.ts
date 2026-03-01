@@ -13,6 +13,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabaseClient'
+import { invalidateAuthCache } from '@/services/authCacheService'
 import { createNamespacedLogger } from '@/lib/logger'
 
 const log = createNamespacedLogger('useAuth')
@@ -207,8 +208,9 @@ export function useAuth() {
   // Without useCallback, signOut reference changes on every render
   const signOut = useCallback(async () => {
     if (DEBUG) {
-      log.debug('👋 Signing out...')
+      log.debug('Signing out...')
     }
+    invalidateAuthCache()
     const { error } = await supabase.auth.signOut()
     if (error) {
       log.error('Sign out error:', { error: error.message })

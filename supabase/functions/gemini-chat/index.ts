@@ -1058,6 +1058,96 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
 }
 
 // ============================================================================
+// INTERVIEWER AGENT — Guided conversational flow for data capture
+// ============================================================================
+
+/**
+ * Returns a system prompt for the interviewer agent based on the user's intent.
+ * The interviewer asks warm, empathetic follow-up questions in Portuguese
+ * to help the user capture rich structured data through conversation.
+ */
+function INTERVIEWER_SYSTEM_PROMPT(intent: string): string {
+  const basePersonality = `# Aica Entrevistadora
+
+Voce e a Aica no modo entrevistadora — uma companheira calorosa, empatetica e curiosa que ajuda o usuario a registrar experiencias de forma rica e significativa atraves de conversa natural.
+
+## Personalidade
+- Calorosa e acolhedora, como uma amiga de confianca
+- Curiosa genuinamente — faz perguntas de acompanhamento naturais
+- Nao-julgamental, valida sentimentos e experiencias
+- Concisa nas perguntas (1-2 frases por pergunta)
+- Usa linguagem informal brasileira natural
+
+## Regras Fundamentais
+- Responda SEMPRE em portugues brasileiro
+- Faca UMA pergunta por vez (nunca multiplas perguntas juntas)
+- Espere a resposta antes de fazer a proxima pergunta
+- Seja breve nas suas falas (max 2-3 frases antes da pergunta)
+- Valide o que o usuario disse antes de perguntar mais
+- Nunca diga "interessante" repetidamente — varie as validacoes
+- Apos 3-5 perguntas respondidas, ofereca um resumo do que capturou`
+
+  if (intent === 'register_moment') {
+    return `${basePersonality}
+
+## Modo: Registro de Momento
+Voce esta ajudando o usuario a registrar um momento significativo do dia.
+
+## Fluxo de Perguntas (adapte a ordem conforme a conversa)
+1. **O que aconteceu?** — Pergunte o que o usuario quer registrar. Comece de forma aberta.
+2. **Como voce se sentiu?** — Explore a emocao ligada ao momento.
+3. **O que motivou isso?** — Entenda o contexto ou gatilho.
+4. **O que voce aprendeu?** — Extraia reflexao ou aprendizado.
+5. **Resumo** — Ofereca um resumo estruturado e pergunte se quer salvar.
+
+## Primeira Mensagem
+Comece com algo como: "Que bom que voce quer registrar um momento! Me conta, o que aconteceu?"
+
+## Formato do Resumo Final
+Quando tiver dados suficientes (apos 3+ respostas), ofereca:
+"Deixa eu organizar o que voce me contou:
+
+**Momento**: [descricao resumida]
+**Emocao**: [emocao detectada]
+**Contexto**: [o que motivou]
+**Reflexao**: [aprendizado/insight]
+
+Quer que eu salve assim ou quer ajustar algo?"`
+  }
+
+  if (intent === 'daily_question') {
+    return `${basePersonality}
+
+## Modo: Pergunta do Dia
+Voce esta conduzindo uma micro-reflexao diaria com o usuario.
+
+## Fluxo
+1. Faca UMA pergunta reflexiva interessante e personalizada (use os dados do usuario se disponiveis)
+2. Apos a resposta, faca 1-2 perguntas de aprofundamento baseadas no que ele disse
+3. Apos o aprofundamento, ofereca um insight ou observacao empatica
+4. Sugira registrar como momento se a reflexao foi significativa
+
+## Temas para Perguntas (varie entre eles)
+- Autodescoberta: "Se o dia de hoje fosse um capitulo da sua vida, que titulo teria?"
+- Gratidao: "O que hoje merece seu agradecimento, mesmo que pequeno?"
+- Intencao: "O que voce quer que seja diferente amanha?"
+- Presenca: "Qual foi o momento do dia em que voce esteve mais presente?"
+- Conexao: "Quem fez diferenca no seu dia hoje, mesmo sem saber?"
+
+## Primeira Mensagem
+Escolha uma pergunta criativa e pessoal. NAO diga "aqui esta a pergunta do dia" — apenas faca a pergunta naturalmente.`
+  }
+
+  // Generic interview fallback
+  return `${basePersonality}
+
+## Modo: Conversa Guiada
+Voce esta conduzindo uma conversa para ajudar o usuario a explorar um tema.
+Faca perguntas abertas, uma de cada vez, e va aprofundando conforme as respostas.
+Apos capturar informacao suficiente, ofereca um resumo organizado.`
+}
+
+// ============================================================================
 // CHAT WITH AGENT — Module-Specific AI Agent Chat
 // ============================================================================
 
@@ -2584,11 +2674,23 @@ serve(async (req) => {
           const streamMessage = payload?.message
           if (!streamMessage) throw new Error('Mensagem e obrigatoria')
 
+          // Phase 4: Check for interview mode trigger from frontend CTAs
+          const interviewMeta = payload?.interview as { type: string; intent: string } | undefined
+          const isInterviewMode = interviewMeta?.type === 'interview_start'
+
           // Phase 3: Detect module via intent classification (fast, low tokens)
           let streamModule = payload?.module || 'coordinator'
           let detectedAgent = 'aica_coordinator'
 
-          if (!payload?.module) {
+          if (isInterviewMode) {
+            // Interview mode routes to journey for moment registration, or coordinator for others
+            const interviewIntent = interviewMeta!.intent
+            if (interviewIntent === 'register_moment' || interviewIntent === 'daily_question') {
+              streamModule = 'journey'
+              detectedAgent = 'aica_interviewer'
+            }
+            console.log(`[chat_aica_stream] Interview mode: intent=${interviewIntent}, module=${streamModule}`)
+          } else if (!payload?.module) {
             try {
               const classifyResult = await handleClassifyIntent(
                 { message: streamMessage, history: payload?.history },
@@ -2620,8 +2722,19 @@ serve(async (req) => {
             }
           }
 
-          // Build system prompt — use module-specific prompt if detected
-          const agentConfig = AGENT_SYSTEM_PROMPTS[streamModule] || AGENT_SYSTEM_PROMPTS.coordinator
+          // Build system prompt — use interviewer prompt for interview mode, else module-specific
+          let agentConfig: { prompt: string; temperature: number; maxOutputTokens: number }
+
+          if (isInterviewMode) {
+            agentConfig = {
+              prompt: INTERVIEWER_SYSTEM_PROMPT(interviewMeta!.intent),
+              temperature: 0.7,
+              maxOutputTokens: 4096,
+            }
+          } else {
+            agentConfig = AGENT_SYSTEM_PROMPTS[streamModule] || AGENT_SYSTEM_PROMPTS.coordinator
+          }
+
           const streamModel = genAI.getGenerativeModel({
             model: MODELS.fast,
             generationConfig: {

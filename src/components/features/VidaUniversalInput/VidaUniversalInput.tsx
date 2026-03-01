@@ -19,6 +19,8 @@ import {
 } from 'lucide-react'
 import { useVidaInputActions, type ActionType } from './useVidaInputActions'
 import { DailyQuestionsCarousel } from './DailyQuestionsCarousel'
+import { ContextualCTACarousel } from './ContextualCTACarousel'
+import { useContextualCTAs } from '@/hooks/useContextualCTAs'
 
 const ACTION_ICONS: Record<string, typeof ClipboardList> = {
   clipboard: ClipboardList,
@@ -47,6 +49,7 @@ export function VidaUniversalInput() {
     openChat,
     speech,
   } = useVidaInputActions()
+  const { ctas, isLoading: ctasLoading, isEmpty: ctasEmpty } = useContextualCTAs()
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -76,12 +79,37 @@ export function VidaUniversalInput() {
     inputRef.current?.focus()
   }, [setInput])
 
+  const handleCtaNavigate = useCallback((viewState: string) => {
+    window.dispatchEvent(
+      new CustomEvent('aica-navigate', { detail: { view: viewState } })
+    )
+  }, [])
+
+  const handleCtaChatAction = useCallback((text: string) => {
+    openChat(text)
+  }, [openChat])
+
+  const handleCtaInputAction = useCallback((text: string) => {
+    setInput(text)
+    inputRef.current?.focus()
+  }, [setInput])
+
   return (
     <div className="ceramic-card overflow-hidden">
-      {/* Daily Questions Carousel — above input */}
+      {/* Contextual CTAs or Daily Questions — above input */}
       {!input.trim() && (
         <div className="px-3 pt-3 pb-1">
-          <DailyQuestionsCarousel onSelectQuestion={handleSelectQuestion} />
+          {ctasEmpty ? (
+            <DailyQuestionsCarousel onSelectQuestion={handleSelectQuestion} />
+          ) : (
+            <ContextualCTACarousel
+              ctas={ctas}
+              isLoading={ctasLoading}
+              onNavigate={handleCtaNavigate}
+              onChatAction={handleCtaChatAction}
+              onInputAction={handleCtaInputAction}
+            />
+          )}
         </div>
       )}
 

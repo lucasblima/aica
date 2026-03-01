@@ -8,6 +8,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
+import { getCachedUser } from '@/services/authCacheService';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -108,7 +109,7 @@ export function useModuleRegistry(): UseModuleRegistryReturn {
 
   const fetchUserWaitlist = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await getCachedUser();
       if (!user) {
         setUserWaitlistIds(new Set());
         return;
@@ -133,7 +134,7 @@ export function useModuleRegistry(): UseModuleRegistryReturn {
 
   const joinWaitlist = useCallback(async (moduleId: string): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await getCachedUser();
       if (!user) return false;
 
       const { error: insertError } = await supabase
@@ -164,7 +165,7 @@ export function useModuleRegistry(): UseModuleRegistryReturn {
 
   const leaveWaitlist = useCallback(async (moduleId: string): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await getCachedUser();
       if (!user) return false;
 
       const { error: deleteError } = await supabase
@@ -249,7 +250,7 @@ export function useModuleRegistry(): UseModuleRegistryReturn {
 
     const setup = async () => {
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
 
@@ -289,7 +290,7 @@ export function useModuleRegistry(): UseModuleRegistryReturn {
       if (!cancelled) {
         channelRef.current = newChannel;
       } else {
-        newChannel.unsubscribe();
+        supabase.removeChannel(newChannel);
       }
     };
 
@@ -298,7 +299,7 @@ export function useModuleRegistry(): UseModuleRegistryReturn {
     return () => {
       cancelled = true;
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };

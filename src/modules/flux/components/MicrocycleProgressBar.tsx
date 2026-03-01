@@ -57,6 +57,7 @@ export function MicrocycleProgressBar({
         </div>
 
         {/* Progress Bar */}
+        {/* TODO: Backend calculation for progress line is incorrect — see issue #605 */}
         <div className="relative h-3 bg-ceramic-cool/30 rounded-full overflow-hidden">
           <div
             className={`absolute inset-y-0 left-0 ${getProgressColor(

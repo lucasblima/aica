@@ -507,6 +507,7 @@ export default function CanvasEditorView() {
         viewMode={viewMode}
         setViewMode={setViewMode}
         activeMicrocycleName={activeMicrocycle?.name || 'Ciclo'}
+        weekStartDate={weekStartDate}
         weekWorkoutsForPublish={weekWorkoutsForPublish}
         microcycleId={activeMicrocycle?.id}
         microcycleStatus={microcycleStatus}

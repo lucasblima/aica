@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 import type { UserStats } from '@/lib/agents/trustLevel'
 
 export function useUserStats() {
@@ -16,7 +17,7 @@ export function useUserStats() {
   const fetchStats = useCallback(async () => {
     setIsLoading(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { session } = await getCachedSession()
       if (!session?.user) return
 
       const userId = session.user.id

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
@@ -234,7 +234,7 @@ export function AppRouter() {
    }, [location.pathname]);
 
    // Enhanced view change handler that bridges state and router navigation
-   const handleViewChange = (view: ViewState) => {
+   const handleViewChange = useCallback((view: ViewState) => {
       if (view === 'connections') {
          navigate('/connections');
       } else if (view === 'contacts') {
@@ -246,7 +246,17 @@ export function AppRouter() {
          }
          setCurrentView(view);
       }
-   };
+   }, [navigate, location.pathname]);
+
+   // Listen for navigation events from components without direct access to setCurrentView
+   useEffect(() => {
+      const handler = (e: Event) => {
+         const view = (e as CustomEvent).detail?.view as ViewState;
+         if (view) handleViewChange(view);
+      };
+      window.addEventListener('aica-navigate', handler);
+      return () => window.removeEventListener('aica-navigate', handler);
+   }, [handleViewChange]);
 
    // Phase A: Auth Migration Complete
    // Manual session management removed - now handled by useAuth hook

@@ -11,8 +11,10 @@ import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximiz
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 import { useChatSession } from '@/hooks/useChatSession'
 import type { DisplayMessage } from '@/hooks/useChatSession'
+import type { InterviewMeta } from '@/services/chatStreamService'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import { formatAgentName } from '@/lib/agents/formatAgentName'
 import { ChatActionButtons } from './ChatActionButtons'
@@ -93,7 +95,7 @@ export function AicaChatFAB({
   const streakUpdatedRef = useRef(false)
 
   // Ref to hold pending message from external event (VidaChatHero)
-  const pendingMessageRef = useRef<string | null>(null)
+  const pendingMessageRef = useRef<{ message: string; interview?: InterviewMeta } | null>(null)
 
   // Listen for external open requests (e.g. from VidaChatHero)
   useEffect(() => {
@@ -105,7 +107,10 @@ export function AicaChatFAB({
       }
       if (detail?.message) {
         // Store the message to be auto-sent once the drawer is open
-        pendingMessageRef.current = detail.message
+        pendingMessageRef.current = {
+          message: detail.message,
+          interview: detail.interview,
+        }
         setInput(detail.message)
       }
     }
@@ -116,12 +121,12 @@ export function AicaChatFAB({
   // Auto-send pending message once the drawer is open and not loading
   useEffect(() => {
     if (isOpen && pendingMessageRef.current && !isLoading) {
-      const message = pendingMessageRef.current
+      const { message, interview } = pendingMessageRef.current
       pendingMessageRef.current = null
       // Small delay to let the drawer animation finish and input render
       const timer = setTimeout(() => {
         setInput('')
-        sendMessage(message)
+        sendMessage(message, interview)
       }, 500)
       return () => clearTimeout(timer)
     }
@@ -156,7 +161,7 @@ export function AicaChatFAB({
     if (!hasAssistantMessage) return
 
     streakUpdatedRef.current = true
-    supabase.auth.getSession().then(({ data: { session: authSession } }) => {
+    getCachedSession().then(({ session: authSession }) => {
       const userId = authSession?.user?.id
       if (!userId) return
       supabase.rpc('update_consciousness_streak', {
@@ -386,7 +391,10 @@ export function AicaChatFAB({
                         className="aica-fab-quick-action"
                         onClick={() => {
                           setInput('')
-                          sendMessage('Quero registrar um momento agora')
+                          sendMessage('Quero registrar um momento agora', {
+                            type: 'interview_start',
+                            intent: 'register_moment',
+                          })
                         }}
                       >
                         <PenLine size={13} />
@@ -396,7 +404,10 @@ export function AicaChatFAB({
                         className="aica-fab-quick-action"
                         onClick={() => {
                           setInput('')
-                          sendMessage('Me faca a pergunta do dia')
+                          sendMessage('Me faca a pergunta do dia', {
+                            type: 'interview_start',
+                            intent: 'daily_question',
+                          })
                         }}
                       >
                         <MessageCircle size={13} />
