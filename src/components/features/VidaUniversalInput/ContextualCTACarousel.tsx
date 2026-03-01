@@ -1,11 +1,12 @@
 /**
- * ContextualCTACarousel — Horizontal scrollable CTA chips
+ * ContextualCTACarousel — Swipeable contextual CTA cards
  *
- * Shows compact, actionable chips that are all partially visible.
+ * Uses CSS scroll-snap for smooth native-feel swiping (same pattern as DailyQuestionsCarousel).
+ * NO auto-advance — CTAs are actionable, user controls navigation.
  * Click dispatches based on action type (navigate, chat, input).
  */
 
-import { useCallback } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import {
   CheckSquare,
   DollarSign,
@@ -13,7 +14,6 @@ import {
   Calendar,
   HelpCircle,
   Search,
-  MessageCircle,
 } from 'lucide-react'
 import type { ContextualCTA } from '@/hooks/useContextualCTAs'
 
@@ -24,7 +24,6 @@ const ICON_MAP: Record<string, typeof CheckSquare> = {
   Calendar,
   HelpCircle,
   Search,
-  MessageCircle,
 }
 
 interface ContextualCTACarouselProps {
@@ -42,6 +41,28 @@ export function ContextualCTACarousel({
   onChatAction,
   onInputAction,
 }: ContextualCTACarouselProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const scrollLeft = el.scrollLeft
+    const itemWidth = el.offsetWidth
+    if (itemWidth === 0) return
+    const index = Math.round(scrollLeft / itemWidth)
+    setActiveIndex(Math.min(index, ctas.length - 1))
+  }, [ctas.length])
+
+  const handleDotClick = useCallback((index: number) => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTo({
+      left: index * el.offsetWidth,
+      behavior: 'smooth',
+    })
+  }, [])
+
   const handleCtaClick = useCallback((cta: ContextualCTA) => {
     switch (cta.action) {
       case 'navigate':
@@ -58,10 +79,8 @@ export function ContextualCTACarousel({
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 overflow-hidden">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-7 w-28 bg-ceramic-cool rounded-full animate-pulse shrink-0" />
-        ))}
+      <div className="h-8 flex items-center justify-center">
+        <div className="w-32 h-3 bg-ceramic-cool rounded-full animate-pulse" />
       </div>
     )
   }
@@ -69,24 +88,57 @@ export function ContextualCTACarousel({
   if (ctas.length === 0) return null
 
   return (
-    <div
-      className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-    >
-      {ctas.map((cta) => {
-        const Icon = ICON_MAP[cta.icon] || HelpCircle
-        return (
-          <button
-            key={cta.id}
-            onClick={() => handleCtaClick(cta)}
-            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-[1.03] active:scale-95 ${cta.color} hover:shadow-sm`}
-            aria-label={cta.label}
-          >
-            <Icon className="w-3.5 h-3.5 shrink-0" />
-            <span className="whitespace-nowrap">{cta.label}</span>
-          </button>
-        )
-      })}
+    <div className="relative">
+      {/* Scrollable carousel */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {ctas.map((cta, i) => {
+          const Icon = ICON_MAP[cta.icon] || HelpCircle
+          return (
+            <button
+              key={cta.id}
+              onClick={() => handleCtaClick(cta)}
+              className="w-full shrink-0 snap-center px-1 text-left group"
+              aria-label={cta.label}
+            >
+              <div
+                className={`flex items-center gap-2 py-1 transition-opacity duration-300 ${
+                  i === activeIndex ? 'opacity-100' : 'opacity-60'
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${cta.color}`}>
+                  <Icon className="w-3 h-3" />
+                </div>
+                <p className="text-xs text-ceramic-text-secondary group-hover:text-ceramic-text-primary transition-colors line-clamp-1">
+                  {cta.label}
+                </p>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Dot indicators */}
+      {ctas.length > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mt-2">
+          {ctas.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => handleDotClick(i)}
+              aria-label={`CTA ${i + 1}`}
+              className={`rounded-full transition-all duration-300 ${
+                i === activeIndex
+                  ? 'w-4 h-1.5 bg-amber-500'
+                  : 'w-1.5 h-1.5 bg-ceramic-border hover:bg-ceramic-text-secondary/40'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
