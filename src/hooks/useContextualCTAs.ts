@@ -6,7 +6,7 @@
  * 2. Finance alert (negative balance) -> "Revisar financas do mes"
  * 3. Streak at risk (no recent moments) -> "Registrar momento do dia"
  * 4. Upcoming event soon -> "Preparar para: {event}"
- * 5. Daily question fallback -> random question from FALLBACK pool
+ * 5. Module CTAs fallback -> actionable shortcuts to AICA modules
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -29,21 +29,59 @@ export interface ContextualCTA {
   color: string
 }
 
-/** Fallback questions used when no contextual data is available */
-const FALLBACK_QUESTIONS = [
-  'O que voce quer conquistar hoje?',
-  'Como voce esta se sentindo neste momento?',
-  'Qual area da sua vida precisa de mais atencao?',
-  'O que te deixaria orgulhoso hoje?',
-  'Como voce pode se cuidar melhor agora?',
-  'Qual foi a melhor parte do seu dia?',
-  'O que voce aprendeu recentemente?',
-  'Com quem voce gostaria de se reconectar?',
+/** Actionable module CTAs used to fill remaining slots */
+const MODULE_CTAS: ContextualCTA[] = [
+  {
+    id: 'mod-moment',
+    label: 'Registrar um momento',
+    icon: 'Sparkles',
+    action: 'chat',
+    actionPayload: 'Quero registrar um momento do meu dia',
+    category: 'journey',
+    color: 'text-amber-600 bg-amber-500/10',
+  },
+  {
+    id: 'mod-task',
+    label: 'Criar nova tarefa',
+    icon: 'CheckSquare',
+    action: 'navigate',
+    actionPayload: 'atlas',
+    category: 'task',
+    color: 'text-blue-600 bg-blue-500/10',
+  },
+  {
+    id: 'mod-agenda',
+    label: 'Ver agenda de hoje',
+    icon: 'Calendar',
+    action: 'navigate',
+    actionPayload: 'agenda',
+    category: 'agenda',
+    color: 'text-purple-600 bg-purple-500/10',
+  },
+  {
+    id: 'mod-finance',
+    label: 'Revisar financas',
+    icon: 'DollarSign',
+    action: 'navigate',
+    actionPayload: 'finance',
+    category: 'finance',
+    color: 'text-emerald-600 bg-emerald-500/10',
+  },
+  {
+    id: 'mod-chat',
+    label: 'Falar com AICA',
+    icon: 'MessageCircle',
+    action: 'chat',
+    actionPayload: '',
+    category: 'chat',
+    color: 'text-ceramic-info bg-ceramic-info/10',
+  },
 ]
 
-function pickRandomQuestions(count: number): string[] {
-  const shuffled = [...FALLBACK_QUESTIONS].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count)
+function pickModuleCTAs(count: number, existingIds: Set<string>): ContextualCTA[] {
+  return MODULE_CTAS
+    .filter(cta => !existingIds.has(cta.category))
+    .slice(0, count)
 }
 
 interface PendingTask {
@@ -145,21 +183,12 @@ function buildCTAs(context: UserAIContext, pendingTasks: PendingTask[]): Context
     })
   }
 
-  // 5. Fill remaining slots with daily question fallbacks
+  // 5. Fill remaining slots with actionable module CTAs
   const remaining = MAX_CTAS - ctas.length
   if (remaining > 0) {
-    const questions = pickRandomQuestions(remaining)
-    for (const q of questions) {
-      ctas.push({
-        id: `question-${ctas.length}`,
-        label: q,
-        icon: 'HelpCircle',
-        action: 'input',
-        actionPayload: q,
-        category: 'question',
-        color: 'text-ceramic-text-secondary bg-ceramic-cool',
-      })
-    }
+    const existingCategories = new Set(ctas.map(c => c.category))
+    const moduleCtas = pickModuleCTAs(remaining, existingCategories)
+    ctas.push(...moduleCtas)
   }
 
   return ctas.slice(0, MAX_CTAS)
