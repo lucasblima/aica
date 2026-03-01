@@ -191,6 +191,19 @@ const FUNCTION_DECLARATIONS = [
       },
     },
   },
+  {
+    name: 'get_moments_summary',
+    description: 'Analisa os momentos registrados no modulo Journey (humor, emocoes, reflexoes). Use quando o usuario perguntar sobre seus momentos, emocoes recentes, padrao emocional, como tem se sentido, ou pedir analise do diario.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        days: {
+          type: 'NUMBER',
+          description: 'Numero de dias para analisar (default: 7)',
+        },
+      },
+    },
+  },
 ];
 
 // ============================================================================
@@ -208,9 +221,9 @@ function buildSystemPrompt(userName: string): string {
     '',
     'Modulos disponiveis:',
     '- Atlas: tarefas, to-dos, atividades',
-    '- Finance: gastos, despesas, orcamento',
-    '- Journey: humor, sentimentos, momentos',
-    '- Agenda: eventos, reunioes, compromissos',
+    '- Finance: gastos, despesas, orcamento, status financeiro',
+    '- Journey: humor, sentimentos, momentos, analise emocional, diario',
+    '- Agenda: eventos, reunioes, compromissos (via Google Calendar no app)',
     '',
     `Data de hoje: ${today}.`,
     `Nome do usuario: ${userName}.`,
@@ -525,6 +538,142 @@ async function executeGetBudgetStatus(
   };
 }
 
+async function executeGetMomentsSummary(
+  supabase: SupabaseClient,
+  userId: string,
+  params: Record<string, unknown>,
+): Promise<{ reply: string; data: Record<string, unknown> }> {
+  const days = Math.min(30, Math.max(1, Number(params.days) || 7));
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceStr = since.toISOString().split('T')[0];
+
+  const { data: moments } = await supabase
+    .from('moments')
+    .select('type, content, emotion, quality_score, tags, created_at')
+    .eq('user_id', userId)
+    .gte('created_at', sinceStr)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (!moments || moments.length === 0) {
+    return {
+      reply: `Nenhum momento registrado nos ultimos ${days} dias. Use o Journey no app ou envie como esta se sentindo aqui!`,
+      data: {},
+    };
+  }
+
+  // Aggregate stats
+  const totalMoments = moments.length;
+  let sumQuality = 0;
+  let qualityCount = 0;
+  const emotionCounts: Record<string, number> = {};
+  const typeCounts: Record<string, number> = {};
+  const tagCounts: Record<string, number> = {};
+
+  for (const m of moments) {
+    // Quality score
+    if (m.quality_score != null) {
+      sumQuality += Number(m.quality_score);
+      qualityCount++;
+    }
+
+    // Emotion tracking
+    if (m.emotion) {
+      const emotions = String(m.emotion).split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean);
+      for (const emo of emotions) {
+        emotionCounts[emo] = (emotionCounts[emo] || 0) + 1;
+      }
+    }
+
+    // Type counts
+    const type = String(m.type || 'text');
+    typeCounts[type] = (typeCounts[type] || 0) + 1;
+
+    // Tag counts
+    if (Array.isArray(m.tags)) {
+      for (const tag of m.tags) {
+        if (tag && tag !== 'telegram') {
+          tagCounts[String(tag)] = (tagCounts[String(tag)] || 0) + 1;
+        }
+      }
+    }
+  }
+
+  const avgQuality = qualityCount > 0 ? (sumQuality / qualityCount).toFixed(1) : null;
+
+  // Build reply
+  const lines = [`<b>Analise dos ultimos ${days} dias:</b>`, ''];
+  lines.push(`📊 <b>${totalMoments} momento(s)</b> registrado(s)`);
+
+  if (avgQuality !== null) {
+    const qualNum = parseFloat(avgQuality);
+    const qualEmoji = qualNum >= 4 ? '😄' : qualNum >= 3 ? '🙂' : qualNum >= 2 ? '😕' : '😔';
+    lines.push(`${qualEmoji} Qualidade media: <b>${avgQuality}/5</b>`);
+  }
+
+  // Top emotions
+  const sortedEmotions = Object.entries(emotionCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5);
+
+  if (sortedEmotions.length > 0) {
+    lines.push('');
+    lines.push('<b>Emocoes mais frequentes:</b>');
+    for (const [emo, count] of sortedEmotions) {
+      lines.push(`  • ${emo} (${count}x)`);
+    }
+  }
+
+  // Types breakdown
+  const typeLabels: Record<string, string> = {
+    mood: '🎭 Humor',
+    text: '📝 Texto',
+    audio: '🎙️ Audio',
+    photo: '📸 Foto',
+  };
+
+  if (Object.keys(typeCounts).length > 1) {
+    lines.push('');
+    lines.push('<b>Tipos de momento:</b>');
+    for (const [type, count] of Object.entries(typeCounts)) {
+      lines.push(`  • ${typeLabels[type] || type}: ${count}`);
+    }
+  }
+
+  // Top tags
+  const sortedTags = Object.entries(tagCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5);
+
+  if (sortedTags.length > 0) {
+    lines.push('');
+    lines.push('<b>Tags frequentes:</b>');
+    lines.push(`  ${sortedTags.map(([t, c]) => `#${t} (${c}x)`).join(', ')}`);
+  }
+
+  // Recent moments preview
+  const recentMoments = moments.slice(0, 3);
+  if (recentMoments.length > 0) {
+    lines.push('');
+    lines.push('<b>Momentos recentes:</b>');
+    for (const m of recentMoments) {
+      const date = new Date(m.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const preview = m.content ? String(m.content).substring(0, 60) : (m.emotion || m.type);
+      lines.push(`  • ${date}: ${preview}`);
+    }
+  }
+
+  return {
+    reply: lines.join('\n'),
+    data: {
+      totalMoments,
+      avgQuality: avgQuality ? parseFloat(avgQuality) : null,
+      topEmotions: sortedEmotions.map(([e]) => e),
+    },
+  };
+}
+
 // Function executor dispatch
 async function executeFunctionCall(
   supabase: SupabaseClient,
@@ -545,6 +694,8 @@ async function executeFunctionCall(
       return executeGetDailySummary(supabase, userId, args);
     case 'get_budget_status':
       return executeGetBudgetStatus(supabase, userId, args);
+    case 'get_moments_summary':
+      return executeGetMomentsSummary(supabase, userId, args);
     default:
       return {
         reply: `Funcao "${functionName}" nao implementada ainda.`,
