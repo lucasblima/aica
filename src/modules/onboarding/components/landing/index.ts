@@ -1,33 +1,15 @@
 /**
- * Landing Page - "Ordem ao Caos" Concept
+ * Landing Page - "O Oleiro Digital" Concept (Gemini 3.1)
  *
- * Transform chaotic WhatsApp messages into organized, actionable modules
- * using AI-powered classification and semantic analysis.
+ * Fleeing chaos shards, "A Forja" OS card, interactive module carousel,
+ * invite code + waitlist with mechanical odometer.
  */
 
 // Main component
 export { LandingPage, default } from './LandingPage';
 
 // Sub-components
-export { ChaosPanel } from './components/ChaosPanel';
-export { OrderPanel } from './components/OrderPanel';
-export { ProcessingPipeline } from './components/ProcessingPipeline';
-export { FounderStorySection } from './components/FounderStorySection';
-export { ModulesOverviewSection } from './components/ModulesOverviewSection';
-export { WaitlistSection } from './components/WaitlistSection';
-export { TestimonialSection } from './components/TestimonialSection';
+export { HeroSection } from './components/HeroSection';
+export { InteractiveModulesSection } from './components/InteractiveModulesSection';
+export { ConversionSection } from './components/ConversionSection';
 export { FooterSection } from './components/FooterSection';
-
-// Services
-export { demoProcessingService } from './services/demoProcessingService';
-
-// Types
-export type {
-  DemoMessage,
-  ProcessedModules,
-  AtlasTask,
-  JourneyMoment,
-  StudioEpisode,
-  Connection,
-  ProcessingStage
-} from './types';
