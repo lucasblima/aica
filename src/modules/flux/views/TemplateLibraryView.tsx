@@ -666,16 +666,20 @@ function TemplateCard({
                 </div>
               )}
               <div className="flex items-start gap-1.5">
-                <span className="text-ceramic-accent font-bold shrink-0">
-                  {es.series.length} {es.series.length === 1 ? 'série' : 'séries'}
-                </span>
+                <span className="text-ceramic-accent font-bold shrink-0">P.</span>
                 <span className="line-clamp-2">
                   {es.series.map((s: any) => {
-                    if (s.exercise_name) return s.exercise_name;
-                    if (s.reps) return `${s.reps} rep${s.load_kg ? ` ${s.load_kg}kg` : ''}`;
-                    if (s.distance_meters) return formatWorkValue(s.distance_meters, 'meters');
-                    if (s.work_value) return formatWorkValue(s.work_value, s.work_unit, s.unit_detail);
-                    return 'série';
+                    const reps = s.repetitions && s.repetitions > 1 ? `${s.repetitions}x` : '';
+                    let work = '';
+                    if (s.exercise_name) work = s.exercise_name;
+                    else if (s.reps) work = `${s.reps} rep${s.load_kg ? ` ${s.load_kg}kg` : ''}`;
+                    else if (s.distance_meters) work = formatWorkValue(s.distance_meters, 'meters');
+                    else if (s.work_value) work = formatWorkValue(s.work_value, s.work_unit, s.unit_detail);
+                    else work = 'série';
+                    const rest = (s.rest_minutes || s.rest_seconds)
+                      ? ` int ${s.rest_minutes ? `${s.rest_minutes}'` : ''}${s.rest_seconds ? `${s.rest_seconds}"` : ''}`
+                      : '';
+                    return `${reps}${work}${rest}`;
                   }).join(' + ')}
                 </span>
               </div>

@@ -546,6 +546,8 @@ npx supabase functions deploy <name> --no-verify-jwt  # Deploy Edge Function
 | Lighthouse | >90 |
 | Compliance | LGPD, OWASP Top 10, WCAG 2.1 AA |
 
+> Full non-functional requirements (performance, reliability, compatibility, observability, scalability) in **Section 9**.
+
 ### Critical Rules
 - **NEVER** expose API keys in frontend — use Edge Functions
 - **NEVER** create .backup/.bak files — Git is the backup
@@ -565,7 +567,80 @@ npx supabase functions deploy <name> --no-verify-jwt  # Deploy Edge Function
 
 ---
 
-## 9. Roadmap Status
+## 9. Non-Functional Requirements
+
+> Aspirational targets for a 1-50 user early-stage product. These guide quality decisions without formal SLA enforcement.
+
+### 9.1 Performance
+
+| Metric | Target | How to Measure |
+|--------|--------|----------------|
+| **LCP** (Largest Contentful Paint) | < 2.5s | Lighthouse CI |
+| **FID** (First Input Delay) | < 100ms | Lighthouse CI |
+| **CLS** (Cumulative Layout Shift) | < 0.1 | Lighthouse CI |
+| **TTI** (Time to Interactive) | < 3.5s | Lighthouse CI |
+| **JS Bundle (initial)** | < 500KB gzipped | `npm run build` output |
+| **Edge Function p95** | < 2s (non-AI) / < 10s (AI) | Supabase logs |
+| **Supabase query p95** | < 200ms | `pg_stat_statements` |
+| **Lighthouse score** | > 90 (all categories) | Lighthouse CI |
+
+### 9.2 Reliability
+
+| Metric | Target | How to Measure |
+|--------|--------|----------------|
+| **Uptime** | > 99% monthly | Cloud Run + Supabase status |
+| **AI Health** | < 3 consecutive failures before alert | `ai_function_health` table |
+| **Error rate** | < 5% of requests per endpoint | Structured logging |
+| **RPO** (Recovery Point Objective) | < 24h | Supabase daily backups (Pro plan) |
+| **RTO** (Recovery Time Objective) | < 4h | Manual recovery playbook |
+| **Graceful degradation** | App usable without AI features | Feature flags / error boundaries |
+
+### 9.3 Security & Compliance
+
+| Requirement | Target | Reference |
+|-------------|--------|-----------|
+| **OWASP Top 10** | Full coverage | `docs/SECURITY_AUDIT_REPORT.md` |
+| **LGPD/GDPR** | Compliant | `docs/PRIVACY_AND_SECURITY.md` |
+| **WCAG 2.1 AA** | Compliant | Lighthouse accessibility audit |
+| **RLS** | 100% of tables | Migration checklist |
+| **API keys** | Zero client-side exposure | Edge Functions only |
+| **Dependency CVEs** | Zero critical/high | `npm audit` / Dependabot |
+| **Auth** | PKCE + cookie sessions | `@supabase/ssr` |
+
+### 9.4 Compatibility
+
+| Dimension | Target |
+|-----------|--------|
+| **Browsers** | Chrome 90+, Safari 15+, Firefox 90+, Edge 90+ |
+| **Mobile** | Responsive: 360px-1920px viewport |
+| **OS** | iOS 15+, Android 10+, Windows 10+, macOS 12+ |
+| **PWA** | Installable, share target, offline shell |
+| **Locale** | PT-BR primary (hardcoded). i18n deferred. |
+
+### 9.5 Observability
+
+| Area | Tool | Target |
+|------|------|--------|
+| **Frontend errors** | Error boundaries + Sentry (planned) | 100% unhandled errors captured |
+| **AI health** | `_shared/health-tracker.ts` | Alert on 3+ consecutive failures |
+| **AI costs** | `aiUsageTrackingService` | Per-operation cost tracking |
+| **Edge Function logs** | Supabase Dashboard | Structured JSON logging |
+| **Build health** | `npm run build && typecheck` | Zero errors on every commit |
+| **Database** | Supabase Dashboard advisors | Run security + performance checks monthly |
+
+### 9.6 Scalability (Current Tier)
+
+| Resource | Current Limit | Scale Trigger |
+|----------|---------------|---------------|
+| **Concurrent users** | ~50 | Supabase Pro plan limits |
+| **Edge Function concurrency** | Default Supabase limits | Monitor 429s |
+| **Database connections** | Supabase pooler (default) | Switch to pgBouncer if > 50 concurrent |
+| **AI rate limits** | Gemini API free/paid tier | Monitor `check-rate-limit` Edge Function |
+| **Storage** | Supabase Storage default | Monitor via dashboard |
+
+---
+
+## 10. Roadmap Status
 
 ### Completed (Phases 1-9)
 - Foundation (UI, auth, task management)
@@ -600,7 +675,7 @@ npx supabase functions deploy <name> --no-verify-jwt  # Deploy Edge Function
 
 ---
 
-## 10. Key Documentation
+## 11. Key Documentation
 
 | Document | Path | Purpose |
 |----------|------|---------|

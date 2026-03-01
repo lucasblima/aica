@@ -117,7 +117,7 @@ export interface CyclingSeries extends SeriesBase {
   work_value: number;
   work_unit: CyclingUnit; // 'time' or 'distance'
   unit_detail: TimeUnit | DistanceUnit; // if time: minutes/seconds, if distance: meters
-  zone: IntensityZone;
+  zone?: IntensityZone; // Optional for cycling — speed/power are the primary intensity measures
   cycling_duration_hours?: number; // Hours when in distance mode
   cycling_duration_minutes?: number; // Minutes when in distance mode
   estimated_speed_kmh?: number; // Estimated speed in km/h (distance mode)
@@ -311,36 +311,53 @@ export function calculateTotalDuration(series: WorkoutSeries[]): number {
   let total = 0;
 
   for (const s of series) {
-    // Work duration
+    const reps = s.repetitions ?? 1;
+
+    // Work duration (per repetition, then multiply)
+    let workMin = 0;
     if ('work_value' in s) {
       if (s.work_unit === 'minutes') {
-        total += s.work_value;
+        workMin = s.work_value;
       } else if (s.work_unit === 'seconds') {
-        total += s.work_value / 60;
+        workMin = s.work_value / 60;
       } else if (s.work_unit === 'meters' || s.work_unit === 'distance') {
         // Estimate: 1km = ~5-10 min depending on intensity (use 7.5 avg)
-        total += (s.work_value / 1000) * 7.5;
+        workMin = (s.work_value / 1000) * 7.5;
       } else if (s.work_unit === 'time' && 'unit_detail' in s) {
         // Cycling time
         const detail = (s as CyclingSeries).unit_detail;
         if (detail === 'minutes') {
-          total += s.work_value;
+          workMin = s.work_value;
         } else {
-          total += s.work_value / 60;
+          workMin = s.work_value / 60;
         }
       }
     } else if ('distance_meters' in s) {
       // Swimming: 100m = ~2 min avg
-      total += (s.distance_meters / 100) * 2;
+      workMin = (s.distance_meters / 100) * 2;
     } else if ('reps' in s) {
       // Strength: estimate 1 rep = 5 seconds
-      total += (s.reps * 5) / 60;
+      workMin = (s.reps * 5) / 60;
     }
 
-    // Rest duration
-    const restMin = s.rest_minutes ?? 0;
-    const restSec = s.rest_seconds ?? (s.rest_unit === 'minutes' ? (s.rest_value ?? 0) * 60 : (s.rest_value ?? 0));
-    total += (restMin + restSec / 60) * (s.repetitions ?? 1);
+    total += workMin * reps;
+
+    // Rest duration: use rest_minutes + rest_seconds (preferred),
+    // fall back to deprecated rest_value/rest_unit only if both are zero
+    let restMin = s.rest_minutes ?? 0;
+    let restSec = s.rest_seconds ?? 0;
+    if (restMin === 0 && restSec === 0 && s.rest_value) {
+      // Legacy fallback
+      if (s.rest_unit === 'minutes') {
+        restMin = s.rest_value;
+      } else {
+        restSec = s.rest_value;
+      }
+    }
+    // Rest happens between repetitions (reps - 1 intervals)
+    if (reps > 1) {
+      total += (restMin + restSec / 60) * (reps - 1);
+    }
   }
 
   return Math.round(total);
