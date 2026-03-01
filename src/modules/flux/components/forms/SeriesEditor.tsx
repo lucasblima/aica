@@ -589,7 +589,7 @@ function RunningFields({ series, onUpdate }: { series: RunningSeries; onUpdate: 
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => onUpdate({ work_value: 0, work_unit: 'minutes' })}
+            onClick={() => onUpdate({ work_value: 0, work_unit: 'seconds' })}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
               !isDistance
                 ? 'bg-ceramic-accent text-white'
@@ -694,6 +694,7 @@ function SwimmingFields({ series, onUpdate }: { series: SwimmingSeries; onUpdate
 
 function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: (u: Partial<CyclingSeries>) => void }) {
   const [estimationType, setEstimationType] = useState<'speed' | 'power'>('speed');
+  const [showZones, setShowZones] = useState(!!series.zone);
   const isTime = series.work_unit === 'time';
 
   // Convert work_value to h/min/seg for time mode (#545)
@@ -724,7 +725,7 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => onUpdate({ work_value: 0, work_unit: 'time', unit_detail: 'minutes' })}
+            onClick={() => onUpdate({ work_value: 0, work_unit: 'time', unit_detail: 'seconds' })}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
               isTime
                 ? 'bg-ceramic-accent text-white'
@@ -875,7 +876,27 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
         </>
       )}
 
-      <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
+      {/* Zone selector — optional for cycling (speed/power are the primary intensity) */}
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            setShowZones(!showZones);
+            if (showZones) onUpdate({ zone: undefined });
+          }}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            showZones
+              ? 'bg-ceramic-accent/10 text-ceramic-accent'
+              : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5" />
+          {showZones ? 'Zonas ativas' : 'Adicionar zonas FC'}
+        </button>
+      </div>
+      {showZones && (
+        <ZoneSelector zone={series.zone || 'Z2'} onChange={(zone) => onUpdate({ zone })} />
+      )}
     </>
   );
 }
