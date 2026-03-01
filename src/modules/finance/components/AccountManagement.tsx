@@ -18,8 +18,14 @@ import {
   PiggyBank,
   TrendingUp,
 } from 'lucide-react';
-import { supabase } from '@/services/supabaseClient';
 import type { FinanceAccount } from '../types';
+import {
+  getAccounts,
+  createAccount,
+  updateAccount,
+  deleteAccount,
+  setDefaultAccount,
+} from '../services/accountService';
 
 interface AccountManagementProps {
   userId: string;
@@ -93,22 +99,19 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AccountFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('finance_accounts')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .order('is_default', { ascending: false })
-      .order('created_at', { ascending: true });
-
-    if (!error && data) {
-      setAccounts(data as FinanceAccount[]);
+    try {
+      const data = await getAccounts(userId);
+      setAccounts(data);
+    } catch {
+      setError('Erro ao carregar contas.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [userId]);
 
   useEffect(() => {
@@ -120,36 +123,36 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
     if (!form.account_name.trim()) return;
 
     setSaving(true);
+    setError(null);
 
-    if (editingId) {
-      await supabase
-        .from('finance_accounts')
-        .update({
+    try {
+      if (editingId) {
+        await updateAccount(editingId, {
           account_name: form.account_name.trim(),
           bank_name: form.bank_name || null,
           account_type: form.account_type,
           color: form.color,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', editingId);
-    } else {
-      await supabase.from('finance_accounts').insert({
-        user_id: userId,
-        account_name: form.account_name.trim(),
-        bank_name: form.bank_name || null,
-        account_type: form.account_type,
-        color: form.color,
-        icon: form.account_type,
-        is_default: accounts.length === 0,
-        is_active: true,
-      });
-    }
+        });
+      } else {
+        await createAccount(userId, {
+          account_name: form.account_name.trim(),
+          bank_name: form.bank_name || null,
+          account_type: form.account_type,
+          color: form.color,
+          icon: form.account_type,
+          is_default: accounts.length === 0,
+        });
+      }
 
-    setForm(INITIAL_FORM);
-    setShowForm(false);
-    setEditingId(null);
-    setSaving(false);
-    await loadAccounts();
+      setForm(INITIAL_FORM);
+      setShowForm(false);
+      setEditingId(null);
+      await loadAccounts();
+    } catch {
+      setError(editingId ? 'Erro ao salvar conta. Tente novamente.' : 'Erro ao criar conta. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (account: FinanceAccount) => {
@@ -164,26 +167,24 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
   };
 
   const handleDelete = async (id: string) => {
-    await supabase
-      .from('finance_accounts')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    setDeleteConfirmId(null);
-    await loadAccounts();
+    setError(null);
+    try {
+      await deleteAccount(id);
+      setDeleteConfirmId(null);
+      await loadAccounts();
+    } catch {
+      setError('Erro ao remover conta. Tente novamente.');
+    }
   };
 
   const handleSetDefault = async (id: string) => {
-    // Remove default from all
-    await supabase
-      .from('finance_accounts')
-      .update({ is_default: false })
-      .eq('user_id', userId);
-    // Set new default
-    await supabase
-      .from('finance_accounts')
-      .update({ is_default: true })
-      .eq('id', id);
-    await loadAccounts();
+    setError(null);
+    try {
+      await setDefaultAccount(userId, id);
+      await loadAccounts();
+    } catch {
+      setError('Erro ao definir conta padrao. Tente novamente.');
+    }
   };
 
   const cancelForm = () => {
@@ -219,6 +220,16 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
           )}
         </div>
       </div>
+
+      {/* Error feedback */}
+      {error && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-ceramic-error/10 text-ceramic-error text-xs">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto p-0.5 hover:bg-ceramic-error/20 rounded">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
       {/* Add/Edit Form */}
       {showForm && (

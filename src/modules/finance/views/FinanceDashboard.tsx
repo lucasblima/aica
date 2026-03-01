@@ -116,7 +116,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     isSearching,
     documents,
     clearSearchResults,
-  } = useFinanceFileSearch({ userId, autoLoad: true });
+  } = useFinanceFileSearch({ userId, autoLoad: false });
 
   const hasIndexedStatements = documents.length > 0;
 
