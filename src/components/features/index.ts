@@ -79,4 +79,8 @@ export { VidaUniversalInput } from './VidaUniversalInput';
 // Memento Mori Bar — Life progress bar + expandable year view
 export { MementoMoriBar } from './MementoMoriBar';
 
-
+// Scientific Scoring Engine — Issue #575
+export { ScoreCard } from './ScoreCard';
+export { ScoreExplainer } from './ScoreExplainer';
+export { LifeScoreRadar } from './LifeScoreRadar';
+export { DomainWeightSliders } from './DomainWeightSliders';
