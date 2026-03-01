@@ -88,6 +88,12 @@ export { PomodoroTimer } from './features/PomodoroTimer';
 export { UnifiedJourneyCard } from './features/UnifiedJourneyCard';
 export { WeeklyCalendarView } from './features/WeeklyCalendarView';
 
+// Scientific Scoring Engine — Issue #575
+export { ScoreCard } from './features/ScoreCard';
+export { ScoreExplainer } from './features/ScoreExplainer';
+export { LifeScoreRadar } from './features/LifeScoreRadar';
+export { DomainWeightSliders } from './features/DomainWeightSliders';
+
 // ============ Domain-Specific ============
 export { AgendaModeToggle } from './domain/AgendaModeToggle';
 export { EmptyQuadrantState } from './domain/EmptyQuadrantState';
