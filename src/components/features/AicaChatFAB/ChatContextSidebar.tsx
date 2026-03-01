@@ -147,6 +147,28 @@ function InsightCard({ insight }: { insight: LifeCouncilInsight }) {
   )
 }
 
+function ContextSummaryCard({ context }: { context: UserAIContext }) {
+  const summaryParts: string[] = []
+  if (context.pendingTasks > 0) summaryParts.push(`${context.pendingTasks} tarefa${context.pendingTasks > 1 ? 's' : ''} pendente${context.pendingTasks > 1 ? 's' : ''}`)
+  if (context.completedTasksToday > 0) summaryParts.push(`${context.completedTasksToday} concluida${context.completedTasksToday > 1 ? 's' : ''} hoje`)
+  if (context.recentMoments.length > 0) summaryParts.push(`${context.recentMoments.length} momento${context.recentMoments.length > 1 ? 's' : ''} recente${context.recentMoments.length > 1 ? 's' : ''}`)
+  if (context.financeSummary) summaryParts.push(`saldo ${context.financeSummary.balance >= 0 ? 'positivo' : 'negativo'}`)
+
+  if (summaryParts.length === 0) return null
+
+  return (
+    <div className="aica-context-card">
+      <p className="aica-context-card__title text-cyan-600">Resumo do Dia</p>
+      <p style={{ fontSize: 12, margin: '4px 0 2px' }}>
+        Voce tem {summaryParts.join(', ')}.
+      </p>
+      <p className="aica-context-card__label">
+        Pergunte ao AICA para analisar seu dia
+      </p>
+    </div>
+  )
+}
+
 function renderCards(module: string, context: UserAIContext): React.ReactNode {
   switch (module) {
     case 'atlas':
@@ -172,7 +194,7 @@ function renderCards(module: string, context: UserAIContext): React.ReactNode {
       return (
         <>
           <ListCard title="Momentos Recentes" items={context.recentMoments} accentColor="text-teal-500" />
-          {context.latestInsight && <InsightCard insight={context.latestInsight} />}
+          {context.latestInsight ? <InsightCard insight={context.latestInsight} /> : <ContextSummaryCard context={context} />}
           <PatternsCard patterns={context.patterns.filter(p => ['emotional', 'trigger', 'strength'].includes(p.patternType))} />
         </>
       )
@@ -195,13 +217,19 @@ function renderCards(module: string, context: UserAIContext): React.ReactNode {
     default: // coordinator overview
       return (
         <>
-          {context.latestInsight && <InsightCard insight={context.latestInsight} />}
+          {context.latestInsight ? <InsightCard insight={context.latestInsight} /> : <ContextSummaryCard context={context} />}
           <StatCard title="Tarefas Pendentes" value={context.pendingTasks} label="no Atlas" accentColor="text-blue-500" />
           {context.financeSummary && (
             <StatCard title="Saldo do Mes" value={formatCurrency(context.financeSummary.balance)} accentColor="text-amber-500" />
           )}
           <StatCard title="Momentos" value={context.recentMoments.length} label="registrados recentemente" accentColor="text-teal-500" />
-          <StatCard title="Proximos Eventos" value={context.upcomingEvents?.length ?? 0} label="na agenda" accentColor="text-indigo-500" />
+          {(context.upcomingEvents?.length ?? 0) > 0 && (
+            <ListCard
+              title="Proximos Eventos"
+              items={(context.upcomingEvents || []).slice(0, 3).map(e => `${formatEventTime(e.startTime)} — ${e.title}`)}
+              accentColor="text-indigo-500"
+            />
+          )}
           <PatternsCard patterns={context.patterns} />
         </>
       )
