@@ -12,5 +12,10 @@ export { ContactSearchBar } from './ContactSearchBar';
 export { IntentTimelineCard } from './IntentTimelineCard';
 export type { IntentTimelineCardProps } from './IntentTimelineCard';
 
+// Network Science components (Sprint 4)
+export { DunbarLayerMap } from './DunbarLayerMap';
+export { TieStrengthBadge } from './TieStrengthBadge';
+export { NetworkHealthDashboard } from './NetworkHealthDashboard';
+
 // Loading states
 export * from './skeletons';
