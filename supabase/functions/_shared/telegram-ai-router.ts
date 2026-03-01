@@ -455,8 +455,8 @@ async function executeGetDailySummary(
     .from('calendar_events')
     .select('title, start_time')
     .eq('user_id', userId)
-    .gte('start_time', `${today}T00:00:00`)
-    .lte('start_time', `${today}T23:59:59`)
+    .gte('start_time', `${today}T00:00:00-03:00`)
+    .lte('start_time', `${today}T23:59:59-03:00`)
     .order('start_time', { ascending: true })
     .limit(5);
 
