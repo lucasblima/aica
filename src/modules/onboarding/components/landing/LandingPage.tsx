@@ -1,15 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Shield, Lock, Eye } from 'lucide-react';
-import { ChaosPanel } from './components/ChaosPanel';
-import { OrderPanel } from './components/OrderPanel';
-import { ProcessingPipeline } from './components/ProcessingPipeline';
-import { FounderStorySection } from './components/FounderStorySection';
-import { ModulesOverviewSection } from './components/ModulesOverviewSection';
-import { WaitlistSection } from './components/WaitlistSection';
+import { HeroSection } from './components/HeroSection';
+import { InteractiveModulesSection } from './components/InteractiveModulesSection';
+import { ConversionSection } from './components/ConversionSection';
 import { FooterSection } from './components/FooterSection';
-import { demoProcessingService } from './services/demoProcessingService';
 import { AuthSheet } from '@/components/layout';
 import { Logo } from '@/components/ui';
 import { useWaitlist } from '@/hooks/useWaitlist';
@@ -18,23 +14,17 @@ import {
   storeInviteCode,
   getStoredInviteCode,
 } from '@/services/inviteSystemService';
-import type { DemoMessage, ProcessedModules, ProcessingStage } from './types';
 
 /**
- * LandingPage - Redesigned for conversion
+ * LandingPage - "O Oleiro Digital" concept (Gemini 3.1)
  *
  * Structure:
- * 1. Header (fixed)
- * 2. Hero (Life OS value prop)
- * 3. Modules Overview (8 modules)
- * 4. Interactive Demo (Chaos → Order)
- * 5. Founder Story
- * 6. Testimonials
- * 7. How It Works (3 steps)
- * 8. Waitlist + Invite Code
- * 9. Security Badges
- * 10. Final CTA
- * 11. Footer
+ * 1. Header (fixed, frosted glass)
+ * 2. Hero (Fleeing chaos shards + "A Forja" OS card)
+ * 3. Interactive Modules ("A Prateleira do Ateliê")
+ * 4. Security Badges
+ * 5. Conversion (Invite code + Waitlist with odometer)
+ * 6. Footer
  */
 export function LandingPage() {
   const navigate = useNavigate();
@@ -49,14 +39,6 @@ export function LandingPage() {
     submitted: waitlistSubmitted,
     error: waitlistError,
   } = useWaitlist();
-
-  // Demo state
-  const [messages, setMessages] = useState<DemoMessage[]>(() =>
-    demoProcessingService.generateDemoMessages()
-  );
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStage, setProcessingStage] = useState<ProcessingStage | null>(null);
-  const [processedModules, setProcessedModules] = useState<ProcessedModules | null>(null);
 
   // Invite code state
   const [inviteCode, setInviteCode] = useState('');
@@ -142,31 +124,6 @@ export function LandingPage() {
     }
   }, [inviteCode]);
 
-  // Handle processing demo
-  const handleProcessChaos = async () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    setProcessedModules(null);
-
-    await demoProcessingService.processMessages(
-      messages,
-      (stage) => setProcessingStage(stage as ProcessingStage),
-      (modules) => {
-        setProcessedModules(modules);
-        setIsProcessing(false);
-        setProcessingStage(null);
-      }
-    );
-  };
-
-  // Reset demo
-  const handleResetDemo = () => {
-    setProcessedModules(null);
-    setIsProcessing(false);
-    setProcessingStage(null);
-    setMessages(demoProcessingService.generateDemoMessages());
-  };
-
   // Auth handlers
   const handleOpenLogin = () => setIsAuthSheetOpen(true);
   const handleAuthSuccess = () => navigate('/');
@@ -209,211 +166,16 @@ export function LandingPage() {
         </div>
       </header>
 
-      <main id="main" className="pt-24 pb-16">
-        {/* ── 1. Hero Section ── */}
-        <section className="max-w-7xl mx-auto px-6 mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h1 className="text-5xl md:text-8xl font-black text-ceramic-text-primary mb-8 leading-[0.9] tracking-tighter">
-              Seu sistema operacional{' '}
-              <br className="hidden md:block" />
-              de{' '}
-              <span className="bg-gradient-to-r from-ceramic-info via-ceramic-accent to-ceramic-warning bg-clip-text text-transparent">
-                vida pessoal
-              </span>
-              .
-            </h1>
-            <p className="text-xl md:text-2xl text-ceramic-text-secondary max-w-3xl mx-auto font-medium leading-relaxed">
-              8 módulos de IA que organizam suas tarefas, reflexões, finanças, treinos, podcasts, conexões e muito mais. Tudo a partir das suas conversas do dia a dia.
-            </p>
+      <main id="main">
+        {/* ── 1. Hero (Chaos shards + Forja OS card) ── */}
+        <HeroSection />
 
-            {/* Hero CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
-            >
-              <button
-                onClick={() => scrollToSection('waitlist')}
-                className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-[1.02] bg-amber-600 shadow-[8px_8px_24px_rgba(180,83,9,0.25)] hover:bg-amber-700"
-              >
-                Entrar na lista de espera
-              </button>
-              <button
-                onClick={() => scrollToSection('demo')}
-                className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-[1.02] ceramic-card"
-              >
-                Ver demonstração
-              </button>
-            </motion.div>
-          </motion.div>
-        </section>
-
-        {/* ── 2. Modules Overview ── */}
-        <ModulesOverviewSection />
-
-        {/* ── 3. Interactive Demo ── */}
-        <section id="demo" className="scroll-mt-20">
-          <div className="max-w-7xl mx-auto px-6 mb-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="text-center mb-8"
-            >
-              <h2 className="text-3xl md:text-5xl font-black text-ceramic-text-primary mb-4 tracking-tighter">
-                Veja o AICA em ação
-              </h2>
-              <p className="text-lg text-ceramic-text-secondary font-medium uppercase tracking-widest opacity-60">
-                Mensagens caóticas se transformam em clareza
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Processing Pipeline */}
-          <div className="h-24 flex items-center justify-center mb-8">
-            <AnimatePresence>
-              {isProcessing && processingStage && (
-                <ProcessingPipeline
-                  stage={processingStage}
-                  messageCount={messages.length}
-                />
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Demo Panels */}
-          <div className="max-w-7xl mx-auto px-6 mb-16">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <ChaosPanel messages={messages} isProcessing={isProcessing} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <OrderPanel modules={processedModules} isProcessing={isProcessing} />
-              </motion.div>
-            </div>
-
-            {/* Demo CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="flex justify-center mt-12 gap-4"
-            >
-              {!processedModules ? (
-                <button
-                  onClick={handleProcessChaos}
-                  disabled={isProcessing}
-                  className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed bg-[#5C554B] shadow-[8px_8px_24px_rgba(92,85,75,0.25)]"
-                >
-                  {isProcessing ? 'Destilando...' : 'Organizar meu WhatsApp'}
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={handleResetDemo}
-                    className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-[1.02] bg-ceramic-base ceramic-shadow"
-                  >
-                    Reiniciar
-                  </button>
-                  <button
-                    onClick={() => scrollToSection('waitlist')}
-                    className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-[1.02] bg-amber-600 shadow-[8px_8px_24px_rgba(180,83,9,0.25)]"
-                  >
-                    Quero experimentar
-                  </button>
-                </>
-              )}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ── 4. Founder Story ── */}
-        <FounderStorySection />
-
-        {/* ── 5. How It Works ── */}
-        <section className="max-w-7xl mx-auto px-6 py-16 border-t border-white/20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-black text-ceramic-text-primary mb-4 tracking-tighter">
-              Como funciona
-            </h2>
-            <p className="text-lg text-ceramic-text-secondary font-medium uppercase tracking-widest opacity-60">
-              Sua rotina, seus dados, organizados automaticamente
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: '📱',
-                title: 'Conecte suas mensagens',
-                description: 'Importe conversas do WhatsApp que você deseja processar de forma segura.'
-              },
-              {
-                icon: '🧠',
-                title: 'IA classifica tudo',
-                description: 'Nossa IA identifica tarefas, reflexões e conexões importantes na sua vida.'
-              },
-              {
-                icon: '✨',
-                title: 'Organize sua vida',
-                description: 'Tenha uma visão clara e estruturada para agir e refletir com precisão.'
-              }
-            ].map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
-                className="p-10 text-center ceramic-card-light group hover:ceramic-card transition-all duration-300"
-              >
-                <div className="text-6xl mb-6 transition-transform group-hover:scale-110">{feature.icon}</div>
-                <h3 className="text-2xl font-black text-ceramic-text-primary mb-4 tracking-tight">
-                  {feature.title}
-                </h3>
-                <p className="text-ceramic-text-secondary font-medium leading-relaxed">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── 7. Waitlist + Invite Code ── */}
-        <div id="waitlist" className="scroll-mt-20">
-          <WaitlistSection
-            waitlistCount={waitlistCount}
-            onJoinWaitlist={joinWaitlist}
-            isSubmitting={waitlistSubmitting}
-            submitted={waitlistSubmitted}
-            error={waitlistError}
-            inviteCode={inviteCode}
-            onCodeChange={handleCodeInput}
-            onCodeSubmit={handleCodeSubmit}
-            codeValid={codeValid}
-            codeError={codeError}
-          />
+        {/* ── 2. Interactive Modules ("A Prateleira do Ateliê") ── */}
+        <div id="modules">
+          <InteractiveModulesSection />
         </div>
 
-        {/* ── 8. Security Badges ── */}
+        {/* ── 3. Security Badges ── */}
         <motion.section
           className="max-w-4xl mx-auto px-6 py-12"
           initial={{ opacity: 0 }}
@@ -437,32 +199,19 @@ export function LandingPage() {
           </div>
         </motion.section>
 
-        {/* ── 9. Final CTA ── */}
-        <section className="max-w-6xl mx-auto px-6 text-center mb-16">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="p-16 ceramic-card relative overflow-hidden"
-          >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-ceramic-info via-ceramic-accent to-ceramic-warning opacity-40" />
-            <h2 className="text-4xl md:text-6xl font-black text-ceramic-text-primary mb-8 tracking-tighter leading-tight">
-              Pronto para organizar{' '}
-              <br className="hidden md:block" />
-              sua vida?
-            </h2>
-            <p className="text-xl text-ceramic-text-secondary mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-              Junte-se aos primeiros usuários que estão transformando o caos digital em clareza com inteligência artificial.
-            </p>
-            <button
-              onClick={() => scrollToSection('waitlist')}
-              className="px-16 py-6 rounded-full font-black text-xl text-white transition-all hover:scale-[1.02] bg-amber-600 shadow-[12px_12px_32px_rgba(180,83,9,0.3)] hover:bg-amber-700"
-            >
-              Quero entrar
-            </button>
-          </motion.div>
-        </section>
+        {/* ── 4. Conversion (Invite + Waitlist with odometer) ── */}
+        <ConversionSection
+          waitlistCount={waitlistCount}
+          onJoinWaitlist={joinWaitlist}
+          isSubmitting={waitlistSubmitting}
+          submitted={waitlistSubmitted}
+          error={waitlistError}
+          inviteCode={inviteCode}
+          onCodeChange={handleCodeInput}
+          onCodeSubmit={handleCodeSubmit}
+          codeValid={codeValid}
+          codeError={codeError}
+        />
       </main>
 
       {/* ── Footer ── */}
