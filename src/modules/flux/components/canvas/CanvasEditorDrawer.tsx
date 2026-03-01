@@ -9,9 +9,11 @@ import React from 'react';
 import {
   ArrowLeft,
   CheckCircle,
+  HeartPulse,
   LayoutGrid,
   List,
   Loader2,
+  Receipt,
   Send,
 } from 'lucide-react';
 import type { Athlete } from '../../types/flux';
@@ -49,6 +51,19 @@ function getAvatarColor(name: string): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+/**
+ * Formats a week date range in dd/MM - dd/MM format (Brazilian).
+ */
+function formatWeekDateRange(weekStart: Date | undefined): string {
+  if (!weekStart) return '';
+  const start = new Date(weekStart);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const fmt = (d: Date) =>
+    `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+  return `${fmt(start)} - ${fmt(end)}`;
 }
 
 // ============================================
@@ -131,6 +146,7 @@ export interface CanvasEditorDrawerProps {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   activeMicrocycleName: string | undefined;
+  weekStartDate?: Date;
   weekWorkoutsForPublish: WeekWorkoutForPublish[];
   microcycleId: string | undefined;
   microcycleStatus?: string;
@@ -148,6 +164,7 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
   viewMode,
   setViewMode,
   activeMicrocycleName,
+  weekStartDate,
   weekWorkoutsForPublish,
   microcycleId,
   microcycleStatus,
@@ -155,6 +172,13 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
   isReleasing,
   onBack,
 }) => {
+  const hasFinancialPending =
+    athlete?.financial_status === 'pending' || athlete?.financial_status === 'overdue';
+  const hasHealthPending =
+    athlete?.parq_clearance_status === 'pending' ||
+    athlete?.parq_clearance_status === 'blocked' ||
+    athlete?.parq_clearance_status === 'expired';
+
   return (
     <div className="border-b border-ceramic-text-secondary/10 bg-ceramic-base flex-shrink-0">
       {/* Top row: back + athlete info + actions */}
@@ -204,14 +228,26 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
             </div>
             <div>
               <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-0.5">
-                Prescrição
+                Prescricao
               </p>
-              <h1 className="text-2xl font-black text-ceramic-text-primary">
-                {athlete?.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black text-ceramic-text-primary">
+                  {athlete?.name}
+                </h1>
+                {hasFinancialPending && (
+                  <span title="Pendencia financeira">
+                    <Receipt className="w-5 h-5 text-amber-500" />
+                  </span>
+                )}
+                {hasHealthPending && (
+                  <span title="Pendencia de saude">
+                    <HeartPulse className="w-5 h-5 text-red-500" />
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-ceramic-text-secondary mt-0.5">
-                Semana {currentWeek} / Ciclo
-                {activeMicrocycleName && ` · ${activeMicrocycleName}`}
+                Semana {currentWeek}
+                {weekStartDate && ` · ${formatWeekDateRange(weekStartDate)}`}
                 {' · '}
                 {MODALITY_PT_LABELS[athlete?.modality || ''] || athlete?.modality}
               </p>
@@ -267,27 +303,45 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
             <span className="text-[10px] text-ceramic-text-secondary font-bold uppercase tracking-wider mr-1">
               Semana
             </span>
-            {[1, 2, 3, 4].map((week) => (
-              <button
-                key={week}
-                onClick={() => setCurrentWeek(week)}
-                className={`px-4 py-2 rounded-[12px] text-sm font-bold transition-all ${
-                  currentWeek === week
-                    ? 'bg-ceramic-base text-ceramic-text-primary'
-                    : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary hover:bg-ceramic-text-secondary/5'
-                }`}
-                style={
-                  currentWeek === week
-                    ? {
-                        boxShadow:
-                          '3px 3px 8px rgba(163,158,145,0.12), -3px -3px 8px rgba(255,255,255,0.9)',
-                      }
-                    : {}
-                }
-              >
-                Semana {week}
-              </button>
-            ))}
+            {[1, 2, 3, 4].map((week) => {
+              let weekDateLabel = '';
+              if (weekStartDate) {
+                const weekOffset = (week - currentWeek) * 7;
+                const tabStart = new Date(weekStartDate);
+                tabStart.setDate(tabStart.getDate() + weekOffset);
+                const tabEnd = new Date(tabStart);
+                tabEnd.setDate(tabEnd.getDate() + 6);
+                const fmt = (d: Date) =>
+                  `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+                weekDateLabel = `${fmt(tabStart)} - ${fmt(tabEnd)}`;
+              }
+              return (
+                <button
+                  key={week}
+                  onClick={() => setCurrentWeek(week)}
+                  className={`px-4 py-2 rounded-[12px] text-sm font-bold transition-all ${
+                    currentWeek === week
+                      ? 'bg-ceramic-base text-ceramic-text-primary'
+                      : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary hover:bg-ceramic-text-secondary/5'
+                  }`}
+                  style={
+                    currentWeek === week
+                      ? {
+                          boxShadow:
+                            '3px 3px 8px rgba(163,158,145,0.12), -3px -3px 8px rgba(255,255,255,0.9)',
+                        }
+                      : {}
+                  }
+                >
+                  <span>Sem {week}</span>
+                  {weekDateLabel && (
+                    <span className="ml-1.5 text-[10px] font-medium text-ceramic-text-secondary">
+                      {weekDateLabel}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

@@ -19,6 +19,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 import { useAuth } from '@/hooks/useAuth'
 import { createNamespacedLogger } from '@/lib/logger'
 
@@ -177,7 +178,7 @@ export function useUserCredits(): UseUserCreditsReturn {
     try {
       setError(null)
 
-      const { data: { session } } = await supabase.auth.getSession()
+      const { session } = await getCachedSession()
 
       if (!session?.access_token) {
         throw new Error('Not authenticated')
@@ -242,10 +243,14 @@ export function useUserCredits(): UseUserCreditsReturn {
           fetchCredits()
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          log.error('Realtime subscription error', { status, err })
+        }
+      })
 
     return () => {
-      channel.unsubscribe()
+      supabase.removeChannel(channel)
     }
   }, [user, fetchCredits])
 

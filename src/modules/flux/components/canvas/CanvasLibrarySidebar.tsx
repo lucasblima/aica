@@ -304,7 +304,7 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
   const [libraryModality, setLibraryModality] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col w-80 h-full border-r border-ceramic-text-secondary/10">
+    <div className="flex flex-col w-96 h-full border-r border-ceramic-text-secondary/10">
       {/* Modality Selector */}
       <div className="px-3 py-2 border-b border-ceramic-text-secondary/10 bg-ceramic-base flex-shrink-0">
         <p className="text-[9px] text-ceramic-text-tertiary font-medium uppercase tracking-wider mb-1.5">

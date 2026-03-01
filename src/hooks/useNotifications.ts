@@ -14,6 +14,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
+import { getCachedUser } from '@/services/authCacheService';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -83,7 +84,7 @@ export function useNotifications(): UseNotificationsReturn {
       setIsLoading(true);
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await getCachedUser();
       if (!user) {
         setNotifications([]);
         return;
@@ -133,7 +134,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await getCachedUser();
       if (!user) return;
 
       const { data, error: rpcError } = await supabase.rpc('get_notification_stats', {
@@ -191,7 +192,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await getCachedUser();
       if (!user) return;
 
       const now = new Date().toISOString();
@@ -273,12 +274,12 @@ export function useNotifications(): UseNotificationsReturn {
     let cancelled = false;
 
     const setupSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = await getCachedUser();
       if (!user || cancelled) return;
 
       // Clean up any previous channel before creating a new one
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
 
@@ -313,12 +314,16 @@ export function useNotifications(): UseNotificationsReturn {
             fetchStats();
           }
         )
-        .subscribe();
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            log.error('Realtime subscription error', { status, err });
+          }
+        });
 
       if (!cancelled) {
         channelRef.current = newChannel;
       } else {
-        newChannel.unsubscribe();
+        supabase.removeChannel(newChannel);
       }
     };
 
@@ -328,7 +333,7 @@ export function useNotifications(): UseNotificationsReturn {
     return () => {
       cancelled = true;
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };

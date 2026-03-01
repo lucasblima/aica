@@ -10,9 +10,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { chatService, type ChatSession, type ChatMessage } from '@/services/chatService'
 import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 import { getUserAIContext } from '@/services/userAIContextService'
-import { streamChat } from '@/services/chatStreamService'
+import { streamChat, type InterviewMeta } from '@/services/chatStreamService'
 import type { ChatAction } from '@/types/chatActions'
 
 export interface DisplayMessage {
@@ -35,7 +36,7 @@ export interface UseChatSessionReturn {
   error: string | null
   limitReached: boolean
   limitInfo: InteractionLimitResult | null
-  sendMessage: (text: string) => Promise<void>
+  sendMessage: (text: string, interviewMeta?: InterviewMeta) => Promise<void>
   createNewSession: () => void
   switchSession: (sessionId: string) => Promise<void>
   archiveSession: (sessionId: string) => Promise<void>
@@ -93,7 +94,7 @@ export function useChatSession(): UseChatSessionReturn {
   }, [])
 
   const getUserId = useCallback(async (): Promise<string> => {
-    const { data: { session: authSession } } = await supabase.auth.getSession()
+    const { session: authSession } = await getCachedSession()
     if (!authSession?.user?.id) throw new Error('Nao autenticado')
     return authSession.user.id
   }, [])
@@ -107,6 +108,7 @@ export function useChatSession(): UseChatSessionReturn {
     message: string,
     history: Array<{ role: string; content: string }>,
     context?: Record<string, unknown>,
+    interviewMeta?: InterviewMeta,
   ): Promise<{
     text: string
     agent: string
@@ -121,7 +123,7 @@ export function useChatSession(): UseChatSessionReturn {
     let actions: ChatAction[] = []
     let usage: { input: number; output: number } | undefined
 
-    for await (const event of streamChat(sessionId, message, history, context)) {
+    for await (const event of streamChat(sessionId, message, history, context, interviewMeta)) {
       if (event.type === 'token') {
         fullText += event.content
         setStreamedText(fullText)
@@ -145,7 +147,7 @@ export function useChatSession(): UseChatSessionReturn {
     return { text: fullText, agent, actions, usage }
   }, [])
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, interviewMeta?: InterviewMeta) => {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
 
@@ -241,6 +243,7 @@ export function useChatSession(): UseChatSessionReturn {
           trimmed,
           history,
           userContext,
+          interviewMeta,
         )
         finalText = streamResult.text
         respondingAgent = streamResult.agent

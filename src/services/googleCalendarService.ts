@@ -222,11 +222,43 @@ export interface TimelineEvent {
     aicaEntityId?: string;
 }
 
-export function transformGoogleEvent(event: GoogleCalendarEvent): TimelineEvent {
-    const startTime = event.start.dateTime || event.start.date || '';
-    const endTime = event.end.dateTime || event.end.date || '';
+/**
+ * Convert a dateTime string to a local ISO string in the given timezone.
+ * Ensures downstream new Date(str).getHours() and .toLocaleTimeString()
+ * produce the correct wall-clock time, and string-based date filtering
+ * (startsWith "YYYY-MM-DD") works correctly.
+ */
+function toLocalISOString(dateTime: string, timeZone?: string): string {
+    const d = new Date(dateTime);
+    if (isNaN(d.getTime())) return dateTime;
 
+    const tz = timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    }).formatToParts(d);
+
+    const get = (type: string) => parts.find(p => p.type === type)?.value || '00';
+    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`;
+}
+
+export function transformGoogleEvent(event: GoogleCalendarEvent): TimelineEvent {
     const isAllDay = !event.start.dateTime && !event.end.dateTime;
+
+    // For timed events, normalise dateTime to a local ISO string in the
+    // event's timezone so downstream Date parsing and date filtering work.
+    const startTime = event.start.dateTime
+        ? toLocalISOString(event.start.dateTime, event.start.timeZone)
+        : (event.start.date || '');
+    const endTime = event.end.dateTime
+        ? toLocalISOString(event.end.dateTime, event.end.timeZone)
+        : (event.end.date || '');
 
     let duration = 0;
     if (!isAllDay && event.start.dateTime && event.end.dateTime) {
