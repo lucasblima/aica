@@ -547,6 +547,25 @@ export function batchScoreWorkItems(
 /**
  * Determine current flow zone state for task recommendations.
  */
+/**
+ * Compute Atlas domain score for Life Score composition.
+ * Weighted combination of flow probability, task completion rate, and planning accuracy.
+ *
+ * @param avgFlowProbability - Average flow probability across tasks (0-1)
+ * @param taskCompletionRate - Ratio of completed tasks (0-1)
+ * @param planningAccuracy - 1 - abs(1 - planningFallacyMultiplier), clamped to 0-1
+ * @returns Normalized domain score (0-1)
+ */
+export function computeAtlasDomainScore(
+  avgFlowProbability: number,
+  taskCompletionRate: number,
+  planningAccuracy: number
+): number {
+  return 0.35 * Math.max(0, Math.min(avgFlowProbability, 1))
+    + 0.40 * Math.max(0, Math.min(taskCompletionRate, 1))
+    + 0.25 * Math.max(0, Math.min(planningAccuracy, 1));
+}
+
 export function computeFlowZoneState(profile: CognitiveProfile): FlowZoneState {
   const energyLevel = getCurrentEnergyLevel(profile)
   const hour = new Date().getHours()
