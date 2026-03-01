@@ -1,12 +1,12 @@
 /**
  * Telegram Webhook Edge Function
- * Issue #574: Telegram Bot Integration — Phase 1
+ * Issue #574: Telegram Bot Integration — Phase 1 + Phase 2
  *
  * Receives Telegram Bot API updates, validates the webhook secret,
  * normalizes the message via the channel adapter, routes to command
  * handlers, and logs all interactions.
  *
- * Commands (Phase 1):
+ * Phase 1 — Commands:
  * /start        — Welcome + linking instructions
  * /help         — Command list (Portuguese)
  * /status       — Account link status
@@ -16,6 +16,11 @@
  * /meus_dados   — Export user data (LGPD access)
  * /apagar_dados — Request data deletion (LGPD erasure)
  *
+ * Phase 2 — AI Integration:
+ * Text messages  → Gemini function calling → AICA module actions
+ * Voice messages → Gemini multimodal transcription → NLP pipeline
+ * Callbacks      → task_priority, expense_category, mood_rating
+ *
  * Pattern: stripe-webhook (validate → route → handle → return 200)
  */
 
@@ -23,6 +28,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
 import { TelegramAdapter } from "../_shared/telegram-adapter.ts"
 import type { UnifiedMessage, OutboundMessage } from "../_shared/channel-adapter.ts"
+import {
+  processNaturalLanguage,
+  processVoiceMessage,
+  buildTaskPriorityKeyboard,
+  buildExpenseCategoryKeyboard,
+  buildMoodRatingKeyboard,
+} from "../_shared/telegram-ai-router.ts"
 
 // ============================================================================
 // TYPES
@@ -34,6 +46,7 @@ interface WebhookResult {
   received: boolean
   processed: boolean
   command?: string
+  action?: string
   error?: string
 }
 
@@ -61,6 +74,7 @@ async function logMessage(
   status: string,
   durationMs?: number,
   errorMsg?: string,
+  aiMeta?: { intentSummary?: string; action?: string; model?: string },
 ): Promise<void> {
   try {
     await supabase.from('telegram_message_log').insert({
@@ -69,11 +83,13 @@ async function logMessage(
       user_id: userId,
       direction: 'inbound',
       message_type: message.content.type,
-      // LGPD: never store raw text — only command name or message type
-      intent_summary: message.content.command
-        ? message.content.command
-        : `[${message.content.type}]`,
+      // LGPD: never store raw text — only command name, intent summary, or message type
+      intent_summary: aiMeta?.intentSummary
+        || message.content.command
+        || `[${message.content.type}]`,
       command: message.content.command || null,
+      ai_action: aiMeta?.action || null,
+      ai_model: aiMeta?.model || null,
       processing_status: status,
       processing_duration_ms: durationMs || null,
       error_message: errorMsg || null,
@@ -143,6 +159,15 @@ async function handleHelp(
     '/privacidade — Politica de privacidade',
     '/meus_dados — Exportar seus dados',
     '/apagar_dados — Solicitar exclusao de dados',
+    '',
+    '<b>Voce tambem pode conversar naturalmente:</b>',
+    '• "Adiciona tarefa: revisar proposta"',
+    '• "Gastei R$50 no almoco"',
+    '• "To me sentindo bem hoje"',
+    '• "Agenda reuniao amanha as 14h"',
+    '• "Como ta meu dia?"',
+    '• "Quanto gastei esse mes?"',
+    '• Ou envie um audio! 🎙️',
   ].join('\n'))
 }
 
@@ -463,6 +488,74 @@ async function handleCallbackQuery(
 
   } else if (data === 'delete_data_cancel') {
     await reply(tg, msg.chat.chatId, '👍 Operacao cancelada. Seus dados permanecem intactos.')
+
+  // Phase 2: Module interaction callbacks
+  } else if (data.startsWith('task_priority:')) {
+    const parts = data.split(':')
+    const taskId = parts[1]
+    const priority = parts[2]
+    if (taskId && priority) {
+      const { data: userData } = await supabase
+        .rpc('get_telegram_user', { p_telegram_id: telegramId })
+      const userId = userData?.[0]?.user_id
+      if (userId) {
+        await supabase
+          .from('work_items')
+          .update({ priority })
+          .eq('id', taskId)
+        const priorityLabels: Record<string, string> = {
+          urgent_important: 'Urgente + Importante',
+          important: 'Importante',
+          urgent: 'Urgente',
+          neither: 'Normal',
+        }
+        await reply(tg, msg.chat.chatId,
+          `✅ Prioridade atualizada para: <b>${priorityLabels[priority] || priority}</b>`
+        )
+      }
+    }
+
+  } else if (data.startsWith('expense_category:')) {
+    const parts = data.split(':')
+    const txId = parts[1]
+    const category = parts[2]
+    if (txId && category) {
+      const { data: userData } = await supabase
+        .rpc('get_telegram_user', { p_telegram_id: telegramId })
+      const userId = userData?.[0]?.user_id
+      if (userId) {
+        await supabase
+          .from('finance_transactions')
+          .update({ category })
+          .eq('id', txId)
+        await reply(tg, msg.chat.chatId,
+          `✅ Categoria atualizada para: <b>${category}</b>`
+        )
+      }
+    }
+
+  } else if (data.startsWith('mood_rating:')) {
+    const score = Number(data.split(':')[1])
+    if (score >= 1 && score <= 5) {
+      const { data: userData } = await supabase
+        .rpc('get_telegram_user', { p_telegram_id: telegramId })
+      const userId = userData?.[0]?.user_id
+      if (userId) {
+        await supabase
+          .from('moments')
+          .insert({
+            user_id: userId,
+            type: 'mood',
+            mood_score: score,
+            content: '',
+            source: 'telegram',
+          })
+        const moodEmojis: Record<number, string> = { 1: '😔', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' }
+        await reply(tg, msg.chat.chatId,
+          `✅ Humor registrado: ${moodEmojis[score]} ${score}/5`
+        )
+      }
+    }
   }
 }
 
@@ -576,24 +669,139 @@ serve(async (req) => {
         result.processed = true
 
       } else if (message.content.type === 'text') {
-        // Phase 2 stub: natural language processing
-        await reply(tg, message.chat.chatId, [
-          '🚧 <b>Em breve!</b>',
-          '',
-          'A AICA vai entender mensagens de texto no Telegram.',
-          'Por enquanto, use os comandos (/help) para interagir.',
-        ].join('\n'))
-        result.processed = true
+        // Phase 2: AI-powered natural language processing
+        await tg.sendTypingAction(message.chat.chatId)
+
+        if (!aicaUserId) {
+          // User not linked — prompt to link first
+          await reply(tg, message.chat.chatId, [
+            '❌ Para usar a AICA, vincule sua conta primeiro.',
+            '',
+            'Acesse <b>aica.guru</b> → Conexoes → Telegram',
+            'e use /vincular <code>CODIGO</code> para conectar.',
+          ].join('\n'))
+          result.processed = true
+        } else {
+          // Check LGPD consent before AI processing
+          const consentGiven = userData?.[0]?.consent_given
+          if (!consentGiven) {
+            await reply(tg, message.chat.chatId, [
+              '⚠️ Preciso da sua autorizacao para processar mensagens com IA.',
+              '',
+              'Use /privacidade para ver a politica de dados.',
+            ].join('\n'), {
+              inlineKeyboard: {
+                rows: [[
+                  { text: '✅ Autorizar', callbackData: `consent_accept:${aicaUserId}` },
+                  { text: '📜 Politica', url: 'https://aica.guru/privacy' },
+                ]],
+              },
+            })
+            result.processed = true
+          } else {
+            // Process with AI router
+            const firstName = message.sender.firstName || 'usuario'
+            const aiResult = await processNaturalLanguage(
+              supabase, aicaUserId, message.chat.chatId, message.content.text || '', firstName,
+            )
+
+            // Build inline keyboard if action produced an entity
+            let keyboard: Partial<OutboundMessage> = {}
+            if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
+              keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
+            } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
+              keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+            }
+
+            await reply(tg, message.chat.chatId, aiResult.reply, keyboard)
+            result.action = aiResult.action
+            result.processed = true
+
+            // Enhanced logging with AI metadata
+            const durationMs = Date.now() - startTime
+            await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+              intentSummary: aiResult.intentSummary,
+              action: aiResult.action,
+              model: aiResult.model,
+            })
+            // Skip the default log at the end since we already logged
+            return new Response(
+              JSON.stringify(result),
+              { status: 200, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+        }
 
       } else if (message.content.type === 'voice') {
-        // Phase 2 stub: voice processing
-        await reply(tg, message.chat.chatId, [
-          '🎙️ <b>Em breve!</b>',
-          '',
-          'A AICA vai processar mensagens de voz no Telegram.',
-          'Por enquanto, envie mensagens de texto ou use comandos (/help).',
-        ].join('\n'))
-        result.processed = true
+        // Phase 2: Voice message processing via Gemini multimodal
+        await tg.sendTypingAction(message.chat.chatId)
+
+        if (!aicaUserId) {
+          await reply(tg, message.chat.chatId, [
+            '❌ Para usar a AICA, vincule sua conta primeiro.',
+            '',
+            'Acesse <b>aica.guru</b> → Conexoes → Telegram',
+            'e use /vincular <code>CODIGO</code> para conectar.',
+          ].join('\n'))
+          result.processed = true
+        } else {
+          const consentGiven = userData?.[0]?.consent_given
+          if (!consentGiven) {
+            await reply(tg, message.chat.chatId, [
+              '⚠️ Preciso da sua autorizacao para processar mensagens com IA.',
+              '',
+              'Use /privacidade para ver a politica de dados.',
+            ].join('\n'), {
+              inlineKeyboard: {
+                rows: [[
+                  { text: '✅ Autorizar', callbackData: `consent_accept:${aicaUserId}` },
+                  { text: '📜 Politica', url: 'https://aica.guru/privacy' },
+                ]],
+              },
+            })
+            result.processed = true
+          } else if (!message.content.voiceFileId) {
+            await reply(tg, message.chat.chatId,
+              '❌ Nao consegui processar o audio. Tente enviar novamente.'
+            )
+            result.processed = false
+          } else {
+            const firstName = message.sender.firstName || 'usuario'
+            try {
+              const aiResult = await processVoiceMessage(
+                supabase, aicaUserId, message.chat.chatId, message.content.voiceFileId, firstName,
+              )
+
+              let keyboard: Partial<OutboundMessage> = {}
+              if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
+                keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
+              } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
+                keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+              }
+
+              await reply(tg, message.chat.chatId, aiResult.reply, keyboard)
+              result.action = aiResult.action
+              result.processed = true
+
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: aiResult.intentSummary,
+                action: aiResult.action,
+                model: aiResult.model,
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            } catch (voiceErr) {
+              console.error(`[telegram-webhook] Voice processing error: ${(voiceErr as Error).message}`)
+              await reply(tg, message.chat.chatId,
+                '❌ Desculpe, tive um problema ao processar o audio. Tente enviar uma mensagem de texto.'
+              )
+              result.processed = false
+            }
+          }
+        }
 
       } else {
         // Unsupported message type
