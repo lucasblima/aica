@@ -245,7 +245,7 @@ export function useUserCredits(): UseUserCreditsReturn {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      channel.unsubscribe()
     }
   }, [user, fetchCredits])
 

@@ -513,6 +513,15 @@ export function AppRouter() {
       return <MainAppWithNavigation />;
    };
 
+   // Redirect ai-cost view-state to /usage via useEffect to avoid setState during render
+   function AiCostRedirect({ navigate: nav, setCurrentView: setView }: { navigate: (path: string) => void; setCurrentView: (v: ViewState) => void }) {
+      useEffect(() => {
+         nav('/usage');
+         setView('vida');
+      }, [nav, setView]);
+      return null;
+   }
+
    // Main App component with navigation context
    function MainAppWithNavigation() {
       const { isFocusedMode } = useNavigation();
@@ -567,9 +576,7 @@ export function AppRouter() {
             )}
             {currentView === 'ai-cost' && (
                // Redirect ai-cost view-state to /usage (consolidated billing dashboard)
-               <React.Fragment key="ai-cost-redirect">
-                  {(() => { navigate('/usage'); setCurrentView('vida'); return null; })()}
-               </React.Fragment>
+               <AiCostRedirect navigate={navigate} setCurrentView={setCurrentView} />
             )}
             {currentView === 'file-search-analytics' && userId && (
                <motion.div key="file-search" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
