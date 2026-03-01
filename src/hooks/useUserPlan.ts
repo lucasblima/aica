@@ -19,14 +19,15 @@ const FREE_PLAN: UserPlan = {
 }
 
 async function fetchUserPlan(userId: string): Promise<UserPlan> {
-  const { data, error } = await supabase
-    .from('user_subscriptions')
-    .select('plan_id, status, pricing_plans(id, name, monthly_credits, price_brl_monthly)')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .single()
+  try {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select('plan_id, status, pricing_plans(id, name, monthly_credits, price_brl_monthly)')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single()
 
-  if (error || !data) return FREE_PLAN
+    if (error || !data) return FREE_PLAN
 
   const plan = data.pricing_plans as unknown as {
     id: string
@@ -43,6 +44,10 @@ async function fetchUserPlan(userId: string): Promise<UserPlan> {
     monthly_credits: plan.monthly_credits ?? 500,
     price_brl_monthly: plan.price_brl_monthly,
     status: data.status,
+  }
+  } catch {
+    // Table may not exist yet (billing not configured) — fallback to free plan
+    return FREE_PLAN
   }
 }
 
