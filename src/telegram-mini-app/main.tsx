@@ -5,8 +5,8 @@ import WebApp from '@twa-dev/sdk'
 import { applyTelegramTheme } from './theme'
 import { App } from './App'
 
-// Import Tailwind CSS (shared with main app)
-import '../index.css'
+// Import Tailwind CSS (shared with main app — index.css is at project root)
+import '../../index.css'
 
 // Initialize Telegram Web App
 WebApp.ready()
