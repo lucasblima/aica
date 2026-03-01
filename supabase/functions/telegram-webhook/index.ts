@@ -549,9 +549,9 @@ async function handleCallbackQuery(
           .insert({
             user_id: userId,
             type: 'mood',
-            mood_score: score,
+            quality_score: score,
             content: '',
-            source: 'telegram',
+            tags: ['telegram'],
           })
         const moodEmojis: Record<number, string> = { 1: '😔', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' }
         await reply(tg, msg,
