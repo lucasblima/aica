@@ -77,6 +77,11 @@ const extractTimeHHMM = (ts: string): string | null => {
     } catch { return null; }
 };
 
+/** Get local YYYY-MM-DD string (avoids UTC offset issues from toISOString) */
+const toLocalDateStr = (d: Date): string => {
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+};
+
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
     useTourAutoStart('atlas-first-visit');
     const isDesktop = useIsDesktop();
@@ -294,7 +299,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Merge Google Calendar events with timeline tasks
     const mergedTimelineTasks = useMemo(() => {
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        const dateStr = toLocalDateStr(selectedDate);
 
         // Filter calendar events for selected date
         const selectedDateCalendarEvents = calendarEvents
@@ -325,7 +330,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     // Identify next event and rest of day
     const { nextEvent, restOfDay } = useMemo(() => {
         const now = new Date();
-        const dateStr = now.toISOString().split('T')[0];
+        const dateStr = toLocalDateStr(now);
 
         // Get all calendar events for today
         const todayEvents = calendarEvents

@@ -97,11 +97,12 @@ export function useFluxAgendaEvents(): {
         const dayOffset = (slot.week_number - 1) * 7 + (slot.day_of_week - 1);
         const slotDate = new Date(mcStart);
         slotDate.setDate(mcStart.getDate() + dayOffset);
-        const dateStr = slotDate.toISOString().split('T')[0];
+        const dateStr = `${slotDate.getFullYear()}-${(slotDate.getMonth() + 1).toString().padStart(2, '0')}-${slotDate.getDate().toString().padStart(2, '0')}`;
 
         const startISO = `${dateStr}T${slot.start_time}:00`;
-        const endDate = new Date(new Date(startISO).getTime() + slot.duration * 60000);
-        const endISO = endDate.toISOString();
+        const endMs = new Date(startISO).getTime() + slot.duration * 60000;
+        const ed = new Date(endMs);
+        const endISO = `${ed.getFullYear()}-${(ed.getMonth() + 1).toString().padStart(2, '0')}-${ed.getDate().toString().padStart(2, '0')}T${ed.getHours().toString().padStart(2, '0')}:${ed.getMinutes().toString().padStart(2, '0')}:${ed.getSeconds().toString().padStart(2, '0')}`;
 
         const color = MODALITY_COLORS[slot.modality] || '#F97316';
         const intensityLabel =

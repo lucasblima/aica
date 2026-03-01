@@ -47,7 +47,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
       date.setDate(today.getDate() + i);
       date.setHours(0, 0, 0, 0);
 
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
       const dayEvents = events.filter(event =>
         event.startTime.startsWith(dateStr)
       ).sort((a, b) => a.startTime.localeCompare(b.startTime));
