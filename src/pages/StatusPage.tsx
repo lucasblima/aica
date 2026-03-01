@@ -7,6 +7,7 @@ import {
   XCircle,
   Clock,
   Tag,
+  ExternalLink,
 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { CeramicLoadingState, CeramicErrorState } from '@/components/ui';
@@ -39,6 +40,21 @@ interface ChangelogEntry {
   commit_sha: string | null;
   pr_number: number | null;
   created_at: string;
+}
+
+type RoadmapStatus = 'planned' | 'in_progress' | 'completed';
+
+interface RoadmapItem {
+  id: number;
+  title: string;
+  description: string;
+  progress: number;
+  status: RoadmapStatus;
+  due_date: string | null;
+  url: string;
+  open_issues: number;
+  closed_issues: number;
+  total_issues: number;
 }
 
 // ==================== STATUS CONFIG ====================
@@ -102,6 +118,44 @@ const CHANGE_TYPE_CONFIG: Record<
   infra: { label: 'Infra', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
   docs: { label: 'Documentacao', bgColor: 'bg-ceramic-cool', textColor: 'text-ceramic-text-secondary' },
   perf: { label: 'Performance', bgColor: 'bg-emerald-100', textColor: 'text-emerald-700' },
+};
+
+const ROADMAP_STATUS_CONFIG: Record<
+  RoadmapStatus,
+  { label: string; icon: React.ElementType; color: string; bgColor: string }
+> = {
+  in_progress: {
+    label: 'Em Desenvolvimento',
+    icon: Clock,
+    color: 'text-ceramic-info',
+    bgColor: 'bg-ceramic-info/10',
+  },
+  planned: {
+    label: 'Planejado',
+    icon: Tag,
+    color: 'text-ceramic-warning',
+    bgColor: 'bg-amber-50',
+  },
+  completed: {
+    label: 'Concluído',
+    icon: CheckCircle2,
+    color: 'text-ceramic-success',
+    bgColor: 'bg-ceramic-success/10',
+  },
+};
+
+const MODULE_COLORS: Record<string, string> = {
+  'Atlas': 'bg-blue-100 text-blue-700',
+  'Journey': 'bg-purple-100 text-purple-700',
+  'Studio': 'bg-rose-100 text-rose-700',
+  'Grants': 'bg-emerald-100 text-emerald-700',
+  'Connections': 'bg-cyan-100 text-cyan-700',
+  'Finance': 'bg-amber-100 text-amber-700',
+  'Flux': 'bg-orange-100 text-orange-700',
+  'Chat': 'bg-indigo-100 text-indigo-700',
+  'Gamificacao': 'bg-yellow-100 text-yellow-700',
+  'Plataforma': 'bg-ceramic-cool text-ceramic-text-secondary',
+  'Integracoes': 'bg-teal-100 text-teal-700',
 };
 
 // ==================== HELPERS ====================
@@ -404,6 +458,20 @@ function groupChangelogByDate(entries: ChangelogEntry[]): Map<string, ChangelogE
   return groups;
 }
 
+function groupRoadmapByStatus(items: RoadmapItem[]): Map<RoadmapStatus, RoadmapItem[]> {
+  const groups = new Map<RoadmapStatus, RoadmapItem[]>();
+  const order: RoadmapStatus[] = ['in_progress', 'planned', 'completed'];
+  for (const status of order) {
+    groups.set(status, []);
+  }
+  for (const item of items) {
+    const existing = groups.get(item.status) || [];
+    existing.push(item);
+    groups.set(item.status, existing);
+  }
+  return groups;
+}
+
 // ==================== COMPONENT ====================
 
 export function StatusPage() {
@@ -412,6 +480,7 @@ export function StatusPage() {
   const [overallStatus, setOverallStatus] = useState<OverallStatus>('operational');
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
+  const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -420,10 +489,11 @@ export function StatusPage() {
     setError(null);
 
     try {
-      const [statusRes, incidentsRes, changelogRes] = await Promise.all([
+      const [statusRes, incidentsRes, changelogRes, roadmapRes] = await Promise.all([
         supabase.rpc('get_overall_service_status'),
         supabase.rpc('get_public_incidents'),
         supabase.rpc('get_public_changelog', { p_limit: 30 }),
+        supabase.functions.invoke('github-roadmap'),
       ]);
 
       if (statusRes.error) throw statusRes.error;
@@ -433,6 +503,18 @@ export function StatusPage() {
       setOverallStatus((statusRes.data as OverallStatus) || 'operational');
       setIncidents((incidentsRes.data as Incident[]) || []);
       setChangelog((changelogRes.data as ChangelogEntry[]) || []);
+
+      // Parse roadmap from Edge Function response
+      const roadmapBody = roadmapRes.data as { success: boolean; data?: RoadmapItem[]; error?: string };
+      if (roadmapRes.error) {
+        console.warn('[StatusPage] Roadmap fetch failed, continuing without roadmap:', roadmapRes.error);
+        setRoadmap([]);
+      } else if (roadmapBody?.success && roadmapBody.data) {
+        setRoadmap(roadmapBody.data);
+      } else {
+        console.warn('[StatusPage] Roadmap response invalid:', roadmapBody);
+        setRoadmap([]);
+      }
     } catch (err) {
       console.error('[StatusPage] Failed to fetch status data:', err);
       setError('Status indisponivel no momento.');
@@ -446,6 +528,7 @@ export function StatusPage() {
   }, [fetchData]);
 
   const changelogGroups = useMemo(() => groupChangelogByDate(changelog), [changelog]);
+  const roadmapGroups = useMemo(() => groupRoadmapByStatus(roadmap), [roadmap]);
 
   if (loading) {
     return (
@@ -453,9 +536,9 @@ export function StatusPage() {
         <header className="sticky top-0 z-40 bg-ceramic-base border-b border-ceramic-border">
           <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
             <button
-              onClick={() => navigate('/landing')}
+              onClick={() => navigate('/')}
               className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-info rounded-lg p-2"
-              aria-label="Voltar para a pagina inicial"
+              aria-label="Voltar"
             >
               <ArrowLeft size={20} />
               <span className="text-sm font-medium">Voltar</span>
@@ -475,9 +558,9 @@ export function StatusPage() {
         <header className="sticky top-0 z-40 bg-ceramic-base border-b border-ceramic-border">
           <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
             <button
-              onClick={() => navigate('/landing')}
+              onClick={() => navigate('/')}
               className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-info rounded-lg p-2"
-              aria-label="Voltar para a pagina inicial"
+              aria-label="Voltar"
             >
               <ArrowLeft size={20} />
               <span className="text-sm font-medium">Voltar</span>
@@ -507,9 +590,9 @@ export function StatusPage() {
       <header className="sticky top-0 z-40 bg-ceramic-base border-b border-ceramic-border">
         <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
           <button
-            onClick={() => navigate('/landing')}
+            onClick={() => navigate('/')}
             className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-info rounded-lg p-2"
-            aria-label="Voltar para a pagina inicial"
+            aria-label="Voltar"
           >
             <ArrowLeft size={20} />
             <span className="text-sm font-medium">Voltar</span>
@@ -601,6 +684,102 @@ export function StatusPage() {
             </div>
           </section>
         )}
+
+        {/* Roadmap */}
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold text-ceramic-text-primary mb-2">
+            Roadmap de Desenvolvimento
+          </h2>
+          <p className="text-sm text-ceramic-text-secondary mb-6">
+            O que estamos construindo e o que vem por aí.
+          </p>
+
+          {roadmap.length === 0 ? (
+            <p className="text-sm text-ceramic-text-secondary">
+              Nenhum item no roadmap ainda.
+            </p>
+          ) : (
+            <div className="space-y-8">
+              {Array.from(roadmapGroups.entries()).map(([status, items]) => {
+                if (items.length === 0) return null;
+                const cfg = ROADMAP_STATUS_CONFIG[status];
+                const RoadmapStatusIcon = cfg.icon;
+
+                return (
+                  <div key={status}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <RoadmapStatusIcon size={18} className={cfg.color} />
+                      <h3 className={`text-base font-semibold ${cfg.color}`}>
+                        {cfg.label}
+                      </h3>
+                      <span className="text-xs text-ceramic-text-secondary bg-ceramic-cool rounded-full px-2 py-0.5">
+                        {items.length}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {items.map((item) => (
+                        <a
+                          key={item.id}
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${cfg.bgColor} border border-ceramic-border rounded-xl p-5 transition-shadow hover:shadow-md block group`}
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <h4 className="text-sm font-semibold text-ceramic-text-primary leading-snug group-hover:text-ceramic-info transition-colors">
+                              {item.title}
+                            </h4>
+                            <ExternalLink size={14} className="text-ceramic-text-secondary opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+                          </div>
+                          {item.description && (
+                            <p className="text-xs text-ceramic-text-secondary leading-relaxed mb-3">
+                              {item.description}
+                            </p>
+                          )}
+
+                          {/* Progress bar */}
+                          {item.total_issues > 0 && (
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] text-ceramic-text-secondary">
+                                  {item.closed_issues}/{item.total_issues} issues
+                                </span>
+                                <span className="text-[10px] font-medium text-ceramic-text-secondary">
+                                  {item.progress}%
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-ceramic-border rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    item.progress === 100
+                                      ? 'bg-ceramic-success'
+                                      : item.progress > 0
+                                        ? 'bg-ceramic-info'
+                                        : 'bg-ceramic-border'
+                                  }`}
+                                  style={{ width: `${item.progress}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Due date */}
+                          {item.due_date && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-ceramic-text-secondary">
+                              <Clock size={10} />
+                              {formatDate(item.due_date.split('T')[0])}
+                            </span>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         {/* Changelog — grouped by date */}
         <section>
