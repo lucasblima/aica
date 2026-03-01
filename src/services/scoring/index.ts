@@ -76,3 +76,61 @@ export {
   getExplanationsForDomain,
   getContestedModels,
 } from './scoreExplainerService';
+
+// Correlation Analysis (Sprint 7)
+export {
+  pearsonCorrelation,
+  approximatePValue,
+  getCorrelationStrength,
+  computeCorrelationMatrix,
+  storeCorrelationMatrix,
+  getStoredCorrelations,
+} from './correlationAnalysisService';
+
+export type {
+  CorrelationResult,
+  CorrelationMatrix,
+} from './correlationAnalysisService';
+
+// Goodhart Detection (Sprint 7)
+export {
+  detectScoreHealthDivergence,
+  detectSingleDomainInflation,
+  detectMetricGaming,
+  generateGoodhartAlerts,
+  storeGoodhartAlert,
+  getUnacknowledgedAlerts,
+  acknowledgeAlert,
+} from './goodhartDetectionService';
+
+export type {
+  GoodhartAlertType,
+  GoodhartSeverity,
+  GoodhartAlert,
+  DomainTrend,
+  ActivityPattern,
+} from './goodhartDetectionService';
+
+// Digital Sabbatical (Sprint 7)
+export {
+  recordDailyActivity,
+  checkSabbaticalEligibility,
+  startSabbatical,
+  endSabbatical,
+  getSabbaticalState,
+  getSabbaticalSuggestion,
+} from './digitalSabbaticalService';
+
+export type {
+  SabbaticalState,
+  SabbaticalSuggestion,
+} from './digitalSabbaticalService';
+
+// Scientific Badge Definitions (Sprint 7)
+export {
+  SCIENTIFIC_BADGES,
+  getScientificBadges,
+  getScientificBadgeById,
+  getScientificBadgesByDomain,
+  getFeaturedScientificBadges,
+} from './scientificBadgeDefinitions';

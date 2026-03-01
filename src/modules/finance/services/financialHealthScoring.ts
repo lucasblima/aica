@@ -390,6 +390,29 @@ export const COMPONENT_LABELS: Record<string, string> = {
 };
 
 // ============================================================================
+// DOMAIN SCORE FOR LIFE SCORE COMPOSITION
+// ============================================================================
+
+/**
+ * Compute Finance domain score for Life Score composition.
+ * Weighted combination of financial health, savings progress, and behavioral engagement.
+ *
+ * @param finHealthComposite - FinHealth composite score (0-100)
+ * @param savingsGoalProgress - Progress toward savings goal (0-1)
+ * @param behavioralScore - Engagement with loss-framing features (0-1)
+ * @returns Normalized domain score (0-1)
+ */
+export function computeFinanceDomainScore(
+  finHealthComposite: number,
+  savingsGoalProgress: number,
+  behavioralScore: number
+): number {
+  return 0.50 * Math.max(0, Math.min(finHealthComposite / 100, 1))
+    + 0.30 * Math.max(0, Math.min(savingsGoalProgress, 1))
+    + 0.20 * Math.max(0, Math.min(behavioralScore, 1));
+}
+
+// ============================================================================
 // PERSISTENCE
 // ============================================================================
 

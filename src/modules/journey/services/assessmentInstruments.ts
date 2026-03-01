@@ -323,6 +323,25 @@ export function normalizeScore(instrumentId: string, rawScore: number): number {
 }
 
 /**
+ * Compute Journey domain score for Life Score composition.
+ * Weighted combination of PERMA flourishing, life satisfaction, and momentary affect.
+ *
+ * @param permaScore - Normalized PERMA flourishing score (0-1)
+ * @param swlsScore - Normalized SWLS satisfaction score (0-1)
+ * @param emaValence - Normalized Affect Grid valence (0-1)
+ * @returns Normalized domain score (0-1)
+ */
+export function computeJourneyDomainScore(
+  permaScore: number,
+  swlsScore: number,
+  emaValence: number
+): number {
+  return 0.40 * Math.max(0, Math.min(permaScore, 1))
+    + 0.30 * Math.max(0, Math.min(swlsScore, 1))
+    + 0.30 * Math.max(0, Math.min(emaValence, 1));
+}
+
+/**
  * Get a specific instrument definition.
  */
 export function getInstrumentDefinition(instrumentId: string): AssessmentInstrument | undefined {
