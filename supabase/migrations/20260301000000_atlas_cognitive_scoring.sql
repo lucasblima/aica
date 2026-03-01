@@ -136,139 +136,29 @@ COMMENT ON COLUMN user_cognitive_profiles.energy_pattern IS 'JSONB map of time-o
 COMMENT ON COLUMN user_cognitive_profiles.task_category_multipliers IS 'JSONB map of context_category to duration multiplier';
 
 -- ============================================================================
--- 3. CREATE TABLE: scientific_model_registry
--- Central registry for all scientific models used across AICA
+-- 3. SEED: Additional Atlas cognitive science models
+-- (scientific_model_registry table already created in Sprint 1 migration)
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS scientific_model_registry (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  model_key TEXT NOT NULL UNIQUE,
-  domain TEXT NOT NULL,                -- 'atlas', 'journey', 'flux', etc.
-  display_name TEXT NOT NULL,
-  description TEXT,
-
-  -- Scientific provenance
-  authors TEXT,                        -- Original researchers
-  year INTEGER,                        -- Publication year
-  paper_reference TEXT,                -- APA-style citation or DOI
-
-  -- Implementation status
-  status TEXT NOT NULL DEFAULT 'active'
-    CHECK (status IN ('active', 'experimental', 'contested', 'deprecated')),
-
-  -- Model configuration
-  parameters JSONB DEFAULT '{}',       -- Default parameters
-  version TEXT DEFAULT '1.0',
-
-  -- Metadata
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_scientific_model_registry_domain
-  ON scientific_model_registry(domain);
-
-CREATE INDEX IF NOT EXISTS idx_scientific_model_registry_status
-  ON scientific_model_registry(status);
-
--- RLS: readable by all authenticated users, writable by service_role only
-ALTER TABLE scientific_model_registry ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Authenticated users can read model registry"
-  ON scientific_model_registry FOR SELECT
-  TO authenticated
-  USING (true);
-
-CREATE POLICY "Service role can manage model registry"
-  ON scientific_model_registry FOR ALL
-  USING (auth.role() = 'service_role');
-
-COMMENT ON TABLE scientific_model_registry IS 'Central registry of scientific models with provenance and status tracking';
-
--- ============================================================================
--- 4. SEED: Atlas cognitive science models
--- ============================================================================
-
-INSERT INTO scientific_model_registry (model_key, domain, display_name, description, authors, year, paper_reference, status, parameters)
+INSERT INTO scientific_model_registry (id, name, module, category, methodology_reference, version, formula_description, is_active, is_contested, contested_note)
 VALUES
-  (
-    'cognitive_load',
-    'atlas',
-    'Cognitive Load Theory',
-    'Measures intrinsic, extraneous, and germane cognitive load for task prioritization. Helps prevent overload by balancing task demands with available mental resources.',
-    'John Sweller',
-    1988,
-    'Sweller, J. (1988). Cognitive load during problem solving. Cognitive Science, 12(2), 257-285.',
-    'active',
-    '{"weights": {"intrinsic": 0.4, "extraneous": 0.35, "germane": 0.25}, "max_daily_load": 100}'::jsonb
-  ),
-  (
-    'flow_state',
-    'atlas',
-    'Flow State Model',
-    'Predicts probability of entering flow based on skill-challenge balance. Tasks in the flow channel maximize productivity and satisfaction.',
-    'Mihaly Csikszentmihalyi',
-    1990,
-    'Csikszentmihalyi, M. (1990). Flow: The Psychology of Optimal Experience. Harper & Row.',
-    'active',
-    '{"skill_challenge_ratio_optimal": 1.0, "flow_channel_width": 0.2, "min_duration_minutes": 25}'::jsonb
-  ),
-  (
-    'planning_fallacy',
-    'atlas',
-    'Planning Fallacy',
-    'Corrects systematic underestimation of task duration using historical actual/estimated ratios. Applies reference class forecasting.',
-    'Roger Buehler, Dale Griffin, Michael Ross',
-    1994,
-    'Buehler, R., Griffin, D., & Ross, M. (1994). Exploring the planning fallacy. JPSP, 67(3), 366-381.',
-    'active',
-    '{"default_multiplier": 1.5, "learning_rate": 0.1, "min_samples": 5}'::jsonb
-  ),
-  (
-    'task_switch_cost',
-    'atlas',
-    'Task Switch Cost',
-    'Quantifies cognitive penalty of context switching between different task types. Groups similar tasks to reduce switch overhead.',
-    'Joshua Rubinstein, David Meyer, Jeffrey Evans',
-    2001,
-    'Rubinstein, J.S., Meyer, D.E., & Evans, J.E. (2001). Executive control of cognitive processes in task switching. JEP:HPP, 27(4), 763-797.',
-    'active',
-    '{"base_cost_minutes": 10, "same_context_reduction": 0.7, "deep_work_penalty": 1.5}'::jsonb
-  ),
-  (
-    'decision_fatigue',
-    'atlas',
-    'Decision Fatigue',
-    'Models ego depletion from sequential decision-making. Schedules important decisions early and reduces choice load. Note: replication concerns exist.',
-    'Shai Danziger, Jonathan Levav, Liora Avnaim-Pesso',
-    2011,
-    'Danziger, S., Levav, J., & Avnaim-Pesso, L. (2011). Extraneous factors in judicial decisions. PNAS, 108(17), 6889-6892.',
-    'contested',
-    '{"daily_decision_budget": 50, "depletion_rate": 0.02, "recovery_after_break_minutes": 15, "replication_note": "Ego depletion effect has mixed replication results"}'::jsonb
-  ),
-  (
-    'attention_restoration',
-    'atlas',
-    'Attention Restoration Theory',
-    'Predicts recovery of directed attention through restorative activities. Schedules breaks and nature exposure to maintain cognitive capacity.',
-    'Rachel Kaplan, Stephen Kaplan',
-    1995,
-    'Kaplan, S. (1995). The restorative benefits of nature. Journal of Environmental Psychology, 15(3), 169-182.',
-    'active',
-    '{"restoration_types": ["nature", "meditation", "exercise", "social"], "min_break_minutes": 5, "optimal_break_minutes": 20}'::jsonb
-  ),
-  (
-    'zeigarnik_effect',
-    'atlas',
-    'Zeigarnik Effect',
-    'Leverages the tendency for incomplete tasks to occupy working memory. Strategically starts tasks to create commitment, and captures open loops to reduce anxiety.',
-    'E.J. Masicampo, Roy Baumeister',
-    2011,
-    'Masicampo, E.J. & Baumeister, R.F. (2011). Consider it done! Plan making can eliminate the cognitive effects of unfulfilled goals. JPSP, 101(4), 667-683.',
-    'active',
-    '{"open_loop_cost": 0.05, "capture_relief": 0.8, "max_tracked_loops": 20}'::jsonb
-  )
-ON CONFLICT (model_key) DO NOTHING;
+  ('task_switch_cost', 'Task Switch Cost', 'atlas', 'scoring',
+   'Rubinstein, J.S., Meyer, D.E., & Evans, J.E. (2001). Executive control of cognitive processes in task switching. JEP:HPP, 27(4), 763-797.',
+   '1.0', 'effective = base + nSwitches * costByComplexity. Groups similar tasks to reduce switch overhead.',
+   true, false, NULL),
+  ('decision_fatigue', 'Decision Fatigue (Ego Depletion)', 'atlas', 'scoring',
+   'Danziger, S., Levav, J., & Avnaim-Pesso, L. (2011). Extraneous factors in judicial decisions. PNAS, 108(17), 6889-6892.',
+   '1.0', 'Schedule complex decisions early. Daily decision budget model with depletion rate.',
+   true, true, 'Ego depletion effect has mixed replication results. Used as practical heuristic, not proven science.'),
+  ('attention_restoration', 'Attention Restoration Theory', 'atlas', 'scoring',
+   'Kaplan, S. (1995). The restorative benefits of nature. Journal of Environmental Psychology, 15(3), 169-182.',
+   '1.0', 'Break quality scoring: nature(+3), change(+2), explore(+1). Predicts recovery of directed attention.',
+   true, false, NULL),
+  ('zeigarnik_effect', 'Zeigarnik Effect', 'atlas', 'scoring',
+   'Masicampo, E.J. & Baumeister, R.F. (2011). Consider it done! Plan making can eliminate the cognitive effects of unfulfilled goals. JPSP, 101(4), 667-683.',
+   '1.0', 'Capture open loops to reduce anxiety. Plan-making eliminates cognitive burden of unfulfilled goals.',
+   true, false, NULL)
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- 5. RPCs: Cognitive Profile CRUD
