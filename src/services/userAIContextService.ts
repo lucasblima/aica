@@ -15,6 +15,7 @@
 
 import { supabase } from './supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
+import { fetchCalendarEvents } from './googleCalendarService'
 
 const log = createNamespacedLogger('userAIContextService')
 
@@ -130,9 +131,29 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .limit(1),
     ])
 
-    // TODO: Re-enable when calendar_events table is created
-    // calendar_events table not yet migrated — skip query to avoid 404 noise
-    const eventsRes = { data: null as any, error: null }
+    // Fetch upcoming events from Google Calendar (best-effort)
+    let eventsRes: { data: any; error: any } = { data: null, error: null }
+    try {
+      const now = new Date()
+      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      const events = await fetchCalendarEvents('primary', {
+        timeMin: now.toISOString(),
+        timeMax: weekFromNow.toISOString(),
+        maxResults: 5,
+        singleEvents: true,
+        orderBy: 'startTime',
+      })
+      eventsRes = {
+        data: events.map(e => ({
+          title: e.summary || 'Sem titulo',
+          start_time: e.start.dateTime || e.start.date || '',
+        })),
+        error: null,
+      }
+    } catch {
+      // Google Calendar not connected or token expired — graceful fallback
+      eventsRes = { data: null, error: null }
+    }
 
     // Calculate finance summary
     let financeSummary: UserAIContext['financeSummary'] = null
