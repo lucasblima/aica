@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Shield, Lock, Eye } from 'lucide-react';
 import { HeroSection } from './components/HeroSection';
-import { InteractiveModulesSection } from './components/InteractiveModulesSection';
+import { ChatShowcase } from './components/ChatShowcase';
+import { ModuleExplorer } from './components/ModuleExplorer';
 import { ConversionSection } from './components/ConversionSection';
 import { FooterSection } from './components/FooterSection';
 import { AuthSheet } from '@/components/layout';
@@ -16,14 +15,14 @@ import {
 } from '@/services/inviteSystemService';
 
 /**
- * LandingPage - "O Oleiro Digital" concept (Gemini 3.1)
+ * LandingPage - "O Oleiro Digital" concept
  *
  * Structure:
- * 1. Header (fixed, frosted glass)
+ * 1. Header (fixed, frosted glass with nav links)
  * 2. Hero (Fleeing chaos shards + "A Forja" OS card)
- * 3. Interactive Modules ("A Prateleira do Ateliê")
- * 4. Security Badges
- * 5. Conversion (Invite code + Waitlist with odometer)
+ * 3. ChatShowcase (interactive VIDA demo)
+ * 4. ModuleExplorer (8 module mini-demos)
+ * 5. Conversion (TelegramPreview + TrustBadges + Invite/Waitlist)
  * 6. Footer
  */
 export function LandingPage() {
@@ -86,7 +85,14 @@ export function LandingPage() {
       tag.setAttribute('content', content);
     });
 
+    // Enable smooth scrolling globally
+    document.documentElement.style.scrollBehavior = 'smooth';
+
     window.scrollTo(0, 0);
+
+    return () => {
+      document.documentElement.style.scrollBehavior = '';
+    };
   }, []);
 
   // Smooth scroll to section
@@ -145,61 +151,44 @@ export function LandingPage() {
             <Logo variant="default" width={44} className="rounded-lg" />
             <span className="font-black text-2xl text-ceramic-text-primary tracking-tighter">Aica</span>
           </div>
-          <div className="flex items-center gap-3">
+          <nav className="flex items-center gap-3">
             <button
-              onClick={() => scrollToSection('waitlist')}
-              className="hidden sm:block px-5 py-2 rounded-full font-bold text-sm text-ceramic-text-primary transition-all hover:scale-105 ceramic-card"
+              onClick={() => scrollToSection('modules')}
+              className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
             >
-              Lista de Espera
+              Módulos
             </button>
+            <a
+              href="https://t.me/AicaLifeBot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-lg transition-colors"
+            >
+              Experimentar
+            </a>
             <button
               onClick={handleOpenLogin}
-              className={`px-6 py-2.5 rounded-full font-bold text-sm text-white transition-all hover:scale-105 ${
-                hasStoredInvite
-                  ? 'bg-amber-600 shadow-[4px_4px_10px_rgba(180,83,9,0.25)]'
-                  : 'bg-[#5C554B] shadow-[4px_4px_10px_rgba(92,85,75,0.25)]'
-              }`}
+              className="text-sm bg-ceramic-cool hover:bg-ceramic-border text-ceramic-text-primary px-4 py-1.5 rounded-lg transition-colors"
             >
               {hasStoredInvite ? 'Entrar com Convite' : 'Entrar'}
             </button>
-          </div>
+          </nav>
         </div>
       </header>
 
       <main id="main">
-        {/* ── 1. Hero (Chaos shards + Forja OS card) ── */}
+        {/* ── 1. Hero ── */}
         <HeroSection onOpenLogin={handleOpenLogin} />
 
-        {/* ── 2. Interactive Modules ("A Prateleira do Ateliê") ── */}
+        {/* ── 2. Chat Showcase (interactive VIDA demo) ── */}
+        <ChatShowcase />
+
+        {/* ── 3. Module Explorer (8 mini-demos) ── */}
         <div id="modules">
-          <InteractiveModulesSection />
+          <ModuleExplorer />
         </div>
 
-        {/* ── 3. Security Badges ── */}
-        <motion.section
-          className="max-w-4xl mx-auto px-6 py-12"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex flex-wrap items-center justify-center gap-8 text-ceramic-text-secondary">
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-ceramic-success" />
-              <span className="text-sm font-bold">LGPD Compliant</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-ceramic-success" />
-              <span className="text-sm font-bold">Dados criptografados</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-ceramic-success" />
-              <span className="text-sm font-bold">Sem acesso a senhas</span>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── 4. Conversion (Invite + Waitlist with odometer) ── */}
+        {/* ── 4. Conversion (Telegram + TrustBadges + Invite/Waitlist) ── */}
         <ConversionSection
           waitlistCount={waitlistCount}
           onJoinWaitlist={joinWaitlist}
