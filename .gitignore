@@ -86,3 +86,27 @@ gha-creds-*.json
 # Supabase temp
 supabase/.temp/
 .worktrees/
+
+# Session artifacts (prevent AI session output re-accumulation)
+*_SUMMARY.md
+*_SUMMARY.txt
+*_REPORT.md
+*_REPORT.txt
+*_COMPLETE.md
+*_COMPLETE.txt
+DELIVERY_*.md
+DELIVERY_*.txt
+SPRINT_*.md
+PHASE_*.md
+PHASE*.md
+IMPLEMENTATION_*.md
+
+# Root-level scripts (should live in scripts/ if needed)
+/*.sql
+/*.cjs
+/*.mjs
+/*.bat
+/*.sh
+/*.py
+/*.http
+/*.tar.gz
