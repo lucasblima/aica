@@ -79,7 +79,6 @@ interface VidaPageProps {
    lifeAreas: any[];
    onLogout: () => void;
    onNavigateToView: (view: ViewState) => void;
-   onNavigateToAICost: () => void;
    onNavigateToFileSearch: () => void;
    onOpenAssociation: (assoc: any) => void;
    onSelectArchetype: (archetypeId: string | null) => void;
@@ -93,7 +92,6 @@ export default function VidaPage({
    lifeAreas,
    onLogout,
    onNavigateToView,
-   onNavigateToAICost,
    onNavigateToFileSearch,
    onOpenAssociation,
    onSelectArchetype,
@@ -181,7 +179,6 @@ export default function VidaPage({
             avatarUrl={avatarUrl}
             userName={userName}
             onLogout={onLogout}
-            onNavigateToAICost={onNavigateToAICost}
             onNavigateToFileSearch={onNavigateToFileSearch}
             onOpenProfile={() => setProfileDrawerOpen(true)}
             level={cpStats?.level}
