@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { PageShell } from '@/components/ui/PageShell';
-import { Gift, Calculator, CreditCard } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
+import { ArrowLeft, Gift, Calculator, CreditCard } from 'lucide-react';
 
 interface AdminCard {
   title: string;
@@ -42,7 +43,19 @@ export function AdminPortalPage() {
   const navigate = useNavigate();
 
   return (
-    <PageShell title="Admin Portal">
+    <PageShell>
+      <div className="flex items-center gap-3 mb-6">
+        <Logo width={36} onClick={() => navigate('/vida')} className="rounded-lg" />
+        <button
+          onClick={() => navigate('/vida')}
+          className="w-9 h-9 ceramic-card-flat flex items-center justify-center rounded-full"
+          aria-label="Voltar"
+        >
+          <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
+        </button>
+        <h1 className="text-2xl font-bold text-ceramic-text-primary">Admin Portal</h1>
+      </div>
+
       <div className="max-w-4xl mx-auto">
         <p className="text-sm text-ceramic-text-secondary mb-8">
           Ferramentas administrativas para gestao de pricing, cupons e pagamentos.
