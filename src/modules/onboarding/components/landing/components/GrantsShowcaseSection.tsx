@@ -56,6 +56,7 @@ function AnimatedNumber({ value, decimals = 1 }: { value: number; decimals?: num
 
     const duration = 1200; // ms
     const start = performance.now();
+    let rafId: number;
 
     function tick(now: number) {
       const elapsed = now - start;
@@ -63,10 +64,14 @@ function AnimatedNumber({ value, decimals = 1 }: { value: number; decimals?: num
       // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplay((value * eased).toFixed(decimals));
-      if (progress < 1) requestAnimationFrame(tick);
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick);
+      }
     }
 
-    requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(rafId);
   }, [isInView, value, decimals]);
 
   return <span ref={ref}>{display}</span>;
@@ -87,7 +92,7 @@ export function GrantsShowcaseSection() {
   return (
     <section
       ref={sectionRef}
-      className="py-24 px-6 bg-ceramic-cool"
+      className="py-16 sm:py-24 px-6 bg-ceramic-cool"
     >
       {/* ---- Header ---- */}
       <motion.div
@@ -119,7 +124,7 @@ export function GrantsShowcaseSection() {
                 delay: 0.1 * index,
                 ease: 'easeOut',
               }}
-              className="bg-ceramic-base rounded-2xl p-8 shadow-ceramic-emboss text-center"
+              className="bg-ceramic-base rounded-2xl p-6 sm:p-8 shadow-ceramic-emboss text-center"
             >
               {/* Icon area */}
               <div className="w-16 h-16 rounded-2xl bg-ceramic-accent/10 flex items-center justify-center mx-auto relative">

@@ -31,7 +31,7 @@ export function HeroSection({ onOpenLogin }: HeroSectionProps) {
   }));
 
   return (
-    <section className="min-h-screen bg-ceramic-base flex items-center justify-center px-6 pt-20 pb-12">
+    <section className="min-h-screen bg-ceramic-base flex items-center justify-center px-4 sm:px-6 pt-20 pb-12">
       <div className="w-full max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
         {/* ── Left: Text content ── */}
         <motion.div

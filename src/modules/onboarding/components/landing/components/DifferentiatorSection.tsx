@@ -172,7 +172,7 @@ export function DifferentiatorSection() {
   const { ref, isInView } = useScrollReveal();
 
   return (
-    <section ref={ref} className="py-24 px-6 bg-ceramic-cool">
+    <section ref={ref} className="py-16 sm:py-24 px-6 bg-ceramic-cool">
       {/* Caption / Title */}
       <motion.h2
         className="text-3xl md:text-4xl font-black text-ceramic-text-primary text-center max-w-4xl mx-auto"
@@ -187,7 +187,7 @@ export function DifferentiatorSection() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto mt-16">
         {/* ── Left column (muted) ── */}
         <motion.div
-          className="bg-ceramic-base/50 rounded-2xl p-8"
+          className="bg-ceramic-base/50 rounded-2xl p-5 sm:p-8"
           variants={leftColumnVariants}
           initial="hidden"
           animate={isInView ? 'visible' : 'hidden'}
@@ -210,7 +210,7 @@ export function DifferentiatorSection() {
 
         {/* ── Right column (vibrant) ── */}
         <motion.div
-          className="bg-ceramic-base rounded-2xl p-8 border-2 border-ceramic-accent/20"
+          className="bg-ceramic-base rounded-2xl p-5 sm:p-8 border-2 border-ceramic-accent/20"
           variants={rightColumnVariants}
           initial="hidden"
           animate={isInView ? 'visible' : 'hidden'}

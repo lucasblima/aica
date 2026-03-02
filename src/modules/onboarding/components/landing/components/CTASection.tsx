@@ -62,7 +62,7 @@ export function CTASection({
   return (
     <section
       id="waitlist"
-      className="py-24 px-6 bg-gradient-to-br from-ceramic-accent/10 via-ceramic-warm to-ceramic-accent/5"
+      className="py-16 sm:py-24 px-6 bg-gradient-to-br from-ceramic-accent/10 via-ceramic-warm to-ceramic-accent/5"
     >
       <div ref={ref} className="max-w-3xl mx-auto">
         {/* ── Header ── */}
@@ -93,7 +93,7 @@ export function CTASection({
         >
           <button
             onClick={onOpenSignup}
-            className="bg-ceramic-accent text-white px-10 py-5 rounded-xl text-xl font-semibold hover:bg-ceramic-accent-dark transition-colors inline-flex items-center gap-2"
+            className="bg-ceramic-accent text-white px-8 py-4 sm:px-10 sm:py-5 rounded-xl text-lg sm:text-xl font-semibold hover:bg-ceramic-accent-dark transition-colors inline-flex items-center gap-2"
           >
             Criar minha conta gratis
             <ArrowRight className="w-5 h-5" />

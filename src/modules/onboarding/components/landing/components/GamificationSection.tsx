@@ -39,7 +39,7 @@ export function GamificationSection() {
   const { ref, isInView } = useScrollReveal();
 
   return (
-    <section ref={ref} className="py-24 px-6 bg-ceramic-cool">
+    <section ref={ref} className="py-16 sm:py-24 px-6 bg-ceramic-cool">
       {/* Title block */}
       <motion.div
         initial="hidden"

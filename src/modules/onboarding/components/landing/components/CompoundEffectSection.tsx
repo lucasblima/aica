@@ -18,7 +18,7 @@ export function CompoundEffectSection() {
   const { ref: sectionRef, isInView } = useScrollReveal();
 
   return (
-    <section className="py-24 px-6 bg-ceramic-base">
+    <section className="py-16 sm:py-24 px-6 bg-ceramic-base">
       {/* Title block */}
       <motion.div
         ref={sectionRef}

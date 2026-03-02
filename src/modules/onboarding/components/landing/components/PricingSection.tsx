@@ -9,7 +9,7 @@ export function PricingSection() {
   const { ref, isInView } = useScrollReveal();
 
   return (
-    <section className="py-24 px-6 bg-ceramic-base">
+    <section className="py-16 sm:py-24 px-6 bg-ceramic-base">
       <div ref={ref}>
         <h2 className="text-3xl md:text-4xl font-black text-center text-ceramic-text-primary">
           Planos que crescem com você
@@ -26,7 +26,7 @@ export function PricingSection() {
                 animate={isInView ? { scale: 1, opacity: 1 } : { scale: 0.95, opacity: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.2 }}
                 whileHover={{ y: -4 }}
-                className={`bg-ceramic-base rounded-2xl p-8 relative ${
+                className={`bg-ceramic-base rounded-2xl p-5 sm:p-8 relative ${
                   tier.highlighted
                     ? 'shadow-ceramic-elevated border-2 border-ceramic-accent shadow-[0_0_30px_rgba(217,119,6,0.15)]'
                     : 'shadow-ceramic-emboss'

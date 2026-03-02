@@ -141,7 +141,7 @@ export function LifeScoreRadar({ domains, isVisible }: LifeScoreRadarProps) {
   const polygonPoints = buildPolygonPoints(domains, progress);
 
   return (
-    <div className="w-full max-w-[400px] mx-auto lg:max-w-[400px] max-[640px]:max-w-[280px]">
+    <div className="w-full max-w-[280px] sm:max-w-[400px] mx-auto">
       <svg
         viewBox={`0 0 ${SIZE} ${SIZE}`}
         className="w-full h-auto"

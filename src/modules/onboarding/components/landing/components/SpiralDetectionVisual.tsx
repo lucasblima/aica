@@ -41,9 +41,7 @@ export function SpiralDetectionVisual() {
       <div className="flex justify-center mt-4">
         <svg
           viewBox="0 0 200 120"
-          width="200"
-          height="120"
-          className="overflow-visible"
+          className="w-full max-w-[200px] h-auto overflow-visible"
         >
           {/* Animated dashed connection lines */}
           {lines.map((line, i) => (
