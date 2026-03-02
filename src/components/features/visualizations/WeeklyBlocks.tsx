@@ -106,7 +106,7 @@ export function WeeklyBlocks({
       )}
 
       {/* Day blocks row */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-1.5 pb-1">
         {days.map((block, idx) => {
           const { bg, text, ring } = getColorClasses(block.color);
           const isExpanded = expandedDays.has(idx);
@@ -157,9 +157,9 @@ export function WeeklyBlocks({
               {block.exercises.map((ex, exIdx) => (
                 <div
                   key={`${ex.name}-${exIdx}`}
-                  className="flex items-center justify-between px-3 py-2 text-xs"
+                  className="flex items-center justify-between px-3 py-2 text-xs min-w-0"
                 >
-                  <span className="text-ceramic-text-primary">{ex.name}</span>
+                  <span className="text-ceramic-text-primary truncate min-w-0">{ex.name}</span>
                   <span className="text-ceramic-text-secondary shrink-0 ml-2 font-medium">
                     {ex.sets}x{ex.reps}
                   </span>

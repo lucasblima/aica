@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Sparkles, TrendingUp } from 'lucide-react';
+import { Plus, Users, Sparkles, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
 import { SpaceCard } from '../components/SpaceCard';
 import TelegramLinkCard from '../components/telegram/TelegramLinkCard';
@@ -33,6 +33,7 @@ export function ConnectionsView({
   onCreateSpace,
 }: ConnectionsViewProps) {
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [isTelegramExpanded, setIsTelegramExpanded] = useState(false);
 
   const {
     spaces,
@@ -137,9 +138,6 @@ export function ConnectionsView({
         </header>
 
         <div className="flex-1 px-6 pb-40 space-y-6">
-          {/* Telegram Integration */}
-          <TelegramLinkCard />
-
           <div className="flex items-center justify-center">
           <motion.div
             className="ceramic-tray p-12 text-center max-w-md"
@@ -209,8 +207,25 @@ export function ConnectionsView({
       </header>
 
       <main className="flex-1 overflow-y-auto px-6 pb-40 space-y-6">
-        {/* Telegram Integration */}
-        <TelegramLinkCard />
+        {/* Telegram Integration — collapsible */}
+        <div className="ceramic-card overflow-hidden">
+          <button
+            onClick={() => setIsTelegramExpanded(prev => !prev)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-ceramic-text-secondary hover:bg-ceramic-cool/50 transition-colors"
+          >
+            <span>Vincular Telegram</span>
+            {isTelegramExpanded ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+          {isTelegramExpanded && (
+            <div className="px-4 pb-4">
+              <TelegramLinkCard />
+            </div>
+          )}
+        </div>
 
         {/* Favorites Section */}
         {favorites.length > 0 && (
@@ -252,12 +267,14 @@ export function ConnectionsView({
                 Mapa da Rede
               </h2>
             </div>
-            <div className="ceramic-card p-4">
-              <NetworkGraph
-                nodes={networkNodes}
-                links={networkLinks}
-                roleColors={ARCHETYPE_COLORS}
-              />
+            <div className="ceramic-card p-4 max-h-64 flex items-center justify-center">
+              <div className="max-w-sm mx-auto w-full h-full">
+                <NetworkGraph
+                  nodes={networkNodes}
+                  links={networkLinks}
+                  roleColors={ARCHETYPE_COLORS}
+                />
+              </div>
             </div>
           </motion.section>
         )}

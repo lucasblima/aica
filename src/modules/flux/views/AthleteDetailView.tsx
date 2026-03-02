@@ -710,7 +710,7 @@ export default function AthleteDetailView() {
       {/* Semana Atual — WeeklyBlocks overview */}
       {weeklyDays.length > 0 && (
         <div className="px-6 mb-6">
-          <div className="ceramic-card p-4">
+          <div className="ceramic-card p-4 overflow-x-auto max-h-[28rem] overflow-y-auto">
             <WeeklyBlocks
               days={weeklyDays}
               expandedByDefault={true}

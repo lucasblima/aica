@@ -769,7 +769,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             {/* Charts */}
             {isValuesVisible && (
               <>
-                <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} />
+                <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} monthlyTrend={trendData} />
 
                 <ExpenseChart data={categoryBreakdown} totalExpenses={summary!.totalExpenses} />
               </>
