@@ -19,6 +19,7 @@ import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from '
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Calendar, Clock, Check, Repeat, ListChecks, CalendarDays } from 'lucide-react';
+import { HolidayBadge } from '@/modules/atlas/components';
 import { getTagColor } from '@/lib/utils/tagColors';
 import type { Task, Quadrant } from '@/types';
 import { QUADRANT_COLORS } from '@/constants/quadrantColors';
@@ -266,6 +267,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
                         {formattedDueDate}
                       </span>
                     )}
+                    {task.due_date && <HolidayBadge date={task.due_date} />}
                     {!compact && task.estimated_duration && (
                       <span className="text-xs text-ceramic-text-secondary flex items-center gap-1">
                         <Clock className="w-3 h-3" />
