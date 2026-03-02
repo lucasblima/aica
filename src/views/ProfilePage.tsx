@@ -176,13 +176,15 @@ export function ProfilePage({ userId, userEmail }: ProfilePageProps) {
                   </p>
                   <p className="text-sm text-[#948D82]">
                     <span className="font-medium">Fonte:</span>{' '}
-                    {location.source === 'browser_geolocation'
+                    {location.source === 'browser'
                       ? 'Geolocalização do navegador'
-                      : location.source === 'ip_lookup'
+                      : location.source === 'ipapi'
                         ? 'Detectado por IP'
                         : location.source === 'manual'
                           ? 'Configuração manual'
-                          : 'Não configurada'}
+                          : location.source === 'cep'
+                            ? 'Detectado por CEP'
+                            : 'Não configurada'}
                   </p>
                 </div>
               ) : (
