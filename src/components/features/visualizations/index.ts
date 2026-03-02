@@ -11,3 +11,20 @@ export type { WeeklyDay, WeeklyExercise, WeeklyBlocksProps } from './WeeklyBlock
 
 export { HorizontalTimeline } from './HorizontalTimeline';
 export type { TimelinePhase, TimelinePhaseStatus, HorizontalTimelineProps } from './HorizontalTimeline';
+
+export { CircularScore } from './CircularScore';
+
+export { HeatmapGrid } from './HeatmapGrid';
+export type { HeatmapDay } from './HeatmapGrid';
+
+export { CalendarGrid } from './CalendarGrid';
+export type { CalendarEvent } from './CalendarGrid';
+
+export { BarChartSimple } from './BarChartSimple';
+export type { BarGroup } from './BarChartSimple';
+
+export { NetworkGraph } from './NetworkGraph';
+export type { GraphNode, GraphLink } from './NetworkGraph';
+
+export { EisenhowerMatrix } from './EisenhowerMatrix';
+export type { MatrixTask } from './EisenhowerMatrix';
