@@ -27,7 +27,7 @@ async function resolveLocation(userId: string): Promise<GeolocationData | null> 
     .from('profiles')
     .select('detected_city, detected_latitude, detected_longitude, detected_timezone, location_source')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (profile?.detected_latitude && profile?.detected_longitude) {
     return {
