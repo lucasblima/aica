@@ -216,14 +216,20 @@ export class PDFProcessingService {
         piiSanitized: false
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       log.error('[PDFProcessingService] Gemini parsing failed:', error)
       onProgress?.({
         stage: 'error',
         message: 'Falha ao processar extrato com IA',
-        detail: error instanceof Error ? error.message : 'Erro desconhecido',
+        detail: errorMessage,
         progress: 0,
       })
-      throw new Error('Falha ao processar extrato com IA. Tente novamente.')
+
+      // Preserve auth-related errors so the user knows to re-login
+      if (errorMessage.includes('Authentication') || errorMessage.includes('log in')) {
+        throw error instanceof Error ? error : new Error(errorMessage)
+      }
+      throw new Error(`Falha ao processar extrato com IA: ${errorMessage}`)
     }
   }
 

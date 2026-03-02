@@ -2173,9 +2173,14 @@ Use formato ISO (YYYY-MM-DD). Retorne APENAS o JSON.`
 // ============================================================================
 
 async function handleParseStatement(genAI: GoogleGenerativeAI, payload: ParseStatementPayload): Promise<any> {
-  const { rawText } = payload
+  const { rawText } = payload || {}
 
   console.log(`[parse_statement] Starting. rawText length: ${rawText?.length || 0}`)
+
+  // Validate input — rawText is required and must have meaningful content
+  if (!rawText || typeof rawText !== 'string' || rawText.trim().length < 50) {
+    throw new Error('Campo "rawText" e obrigatorio e deve ter pelo menos 50 caracteres de texto extraido do PDF.')
+  }
 
   // Use gemini-2.5-flash with HIGH maxOutputTokens — thinking tokens are included
   // in the budget, and bank statements can produce large JSON (100+ transactions).
@@ -2222,7 +2227,7 @@ REGRAS:
 - Retorne APENAS o JSON, sem explicacao
 
 TEXTO:
-${rawText.substring(0, 15000)}`
+${rawText.substring(0, 15000).trim()}`
 
   try {
     const result = await model.generateContent(prompt)
