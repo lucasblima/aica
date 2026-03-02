@@ -79,13 +79,8 @@ export function ProgressTimeline({
         )}
       </div>
 
-      {/* Section label */}
-      <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-        Treinos Cumpridos
-      </p>
-
       {/* Week pills */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-hidden max-w-full">
         {weeks.map((week, i) => {
           const isCurrent = week.weekNumber === currentWeek;
           const isSelected = week.weekNumber === activeSelected;
@@ -124,9 +119,9 @@ export function ProgressTimeline({
                 </div>
               )}
 
-              {/* Week date range or number */}
+              {/* Week label */}
               <p
-                className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${
+                className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${
                   isCurrent && isSelected
                     ? 'text-amber-600'
                     : isSelected
@@ -136,8 +131,13 @@ export function ProgressTimeline({
                         : 'text-ceramic-text-secondary'
                 }`}
               >
-                {week.dateRange || `Sem ${week.weekNumber}`}
+                Semana {week.weekNumber}
               </p>
+              {week.dateRange && (
+                <p className="text-[9px] text-ceramic-text-secondary/70 mb-0.5">
+                  {week.dateRange}
+                </p>
+              )}
 
               {/* Progress bar */}
               <div className="h-1.5 bg-ceramic-cool rounded-full overflow-hidden mb-1.5">

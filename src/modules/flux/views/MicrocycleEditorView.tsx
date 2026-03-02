@@ -506,7 +506,7 @@ export default function MicrocycleEditorView() {
                   </div>
 
                   {/* Day Grid */}
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-2 overflow-hidden max-w-full">
                     {[1, 2, 3, 4, 5, 6, 7].map((day) => {
                       const cellSlots = getSlotsForCell(week, day);
 
