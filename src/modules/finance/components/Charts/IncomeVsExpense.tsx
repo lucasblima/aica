@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChartSimple } from '@/components/features/visualizations';
 
 // =====================================================
 // Types
@@ -205,6 +206,18 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
       {/* Monthly sparkline */}
       {monthlyTrend && monthlyTrend.length >= 2 && (
         <Sparkline data={monthlyTrend} />
+      )}
+
+      {/* Monthly bar chart trend */}
+      {monthlyTrend && monthlyTrend.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-3">Tendência Mensal</h4>
+          <BarChartSimple
+            data={monthlyTrend.map(m => ({ label: m.month, values: [{ key: 'income', value: m.income, color: 'bg-ceramic-success/80' }, { key: 'expense', value: m.expense, color: 'bg-ceramic-error/70' }] }))}
+            legend={[{ key: 'income', label: 'Receita', color: 'bg-ceramic-success/80' }, { key: 'expense', label: 'Despesa', color: 'bg-ceramic-error/70' }]}
+            formatValue={(v) => `R$ ${v.toLocaleString('pt-BR')}`}
+          />
+        </div>
       )}
 
       {/* Balance Summary */}

@@ -10,6 +10,7 @@ import type { ActivityDay } from '../../hooks/useJourneyPatterns'
 interface ActivityHeatmapProps {
   data: ActivityDay[]
   days?: number
+  emotions?: Array<{ label: string; count: number; color: string }>
 }
 
 const DAY_LABELS = ['Seg', '', 'Qua', '', 'Sex', '', 'Dom']
@@ -23,7 +24,7 @@ function getIntensityColor(count: number, maxCount: number): string {
   return '#fbbf24'                    // amber-400
 }
 
-export function ActivityHeatmap({ data, days = 90 }: ActivityHeatmapProps) {
+export function ActivityHeatmap({ data, days = 90, emotions }: ActivityHeatmapProps) {
   const { grid, maxCount, totalMoments, activeDays } = useMemo(() => {
     // Build lookup map
     const lookup: Record<string, number> = {}
@@ -120,6 +121,23 @@ export function ActivityHeatmap({ data, days = 90 }: ActivityHeatmapProps) {
         ))}
         <span className="text-xs text-[#948D82] ml-1">Mais</span>
       </div>
+
+      {/* Emotion summary circles */}
+      {emotions && emotions.length > 0 && (
+        <div className="flex flex-wrap gap-3 mt-4">
+          {emotions.map((emotion) => (
+            <div key={emotion.label} className="flex items-center gap-1.5">
+              <div
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: emotion.color }}
+              />
+              <span className="text-[10px] text-ceramic-text-secondary">
+                {emotion.label} ({emotion.count})
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

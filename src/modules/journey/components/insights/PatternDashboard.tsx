@@ -4,7 +4,7 @@
  * Includes automatic backfill progress banner for historic moments
  */
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useJourneyPatterns, BackfillProgress } from '../../hooks/useJourneyPatterns'
 import { EmotionTrendChart } from './EmotionTrendChart'
@@ -107,6 +107,43 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
     return <PatternDashboardSkeleton />
   }
 
+  // Aggregate dominant emotions from weekly trend data into summary for heatmap
+  const emotionSummary = useMemo(() => {
+    if (!emotionTrends || emotionTrends.length === 0) return undefined;
+
+    const EMOTION_COLORS: Record<string, string> = {
+      alegria: '#f59e0b',
+      tristeza: '#6366f1',
+      ansiedade: '#ef4444',
+      calma: '#22c55e',
+      raiva: '#dc2626',
+      gratidao: '#f97316',
+      medo: '#8b5cf6',
+      esperanca: '#14b8a6',
+      frustracao: '#e11d48',
+      amor: '#ec4899',
+    };
+    const FALLBACK_COLORS = ['#d97706', '#0ea5e9', '#84cc16', '#a855f7', '#f43f5e', '#06b6d4'];
+
+    const counts: Record<string, number> = {};
+    for (const point of emotionTrends) {
+      for (const emotion of point.dominantEmotions) {
+        const key = emotion.toLowerCase();
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+
+    let fallbackIdx = 0;
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([label, count]) => ({
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        count,
+        color: EMOTION_COLORS[label] || FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length],
+      }));
+  }, [emotionTrends]);
+
   const showBackfillBanner = backfillProgress.isRunning || (backfillProgress.processed > 0 && backfillProgress.total > 0)
 
   return (
@@ -123,7 +160,7 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0 }}
       >
-        <ActivityHeatmap data={activityData} />
+        <ActivityHeatmap data={activityData} emotions={emotionSummary} />
       </motion.div>
 
       <FeatureGate featureId="emotion_trends">

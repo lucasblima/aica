@@ -90,3 +90,6 @@ export { CrossDomainInsights } from './CrossDomainInsights';
 export { DigitalSabbaticalPrompt } from './DigitalSabbaticalPrompt';
 export { GoodhartAlert } from './GoodhartAlert';
 export { EthicalGuardrailsBanner } from './EthicalGuardrailsBanner';
+
+// Shared Visualizations — Landing-to-App consistent charts
+export * from './visualizations';
