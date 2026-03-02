@@ -173,6 +173,8 @@ serve(async (req: Request) => {
     // Process moments sequentially to avoid Gemini rate limits
     const results: Array<{ id: string; oldEmotion: string | null; newEmotion: string; newMood: { emoji: string; label: string } }> = []
     const errors: string[] = []
+    let totalTokensIn = 0
+    let totalTokensOut = 0
     const BATCH_SIZE = 1
 
     for (let i = 0; i < moments.length; i += BATCH_SIZE) {
@@ -206,6 +208,9 @@ REGRAS: Responda SOMENTE com o JSON. Nunca use "neutral" exceto para textos pura
           try {
             const result = await model.generateContent(prompt)
             text = result.response.text()
+            const usageMeta = result.response.usageMetadata
+            totalTokensIn += usageMeta?.promptTokenCount || 0
+            totalTokensOut += usageMeta?.candidatesTokenCount || 0
             console.log(`[reanalyze-moments] Gemini OK for ${moment.id}: ${text.substring(0, 100)}`)
           } catch (geminiError: any) {
             const errMsg = geminiError?.message || String(geminiError)
@@ -290,8 +295,8 @@ REGRAS: Responda SOMENTE com o JSON. Nunca use "neutral" exceto para textos pura
         p_action: 'analyze_moment',
         p_module: 'journey',
         p_model: 'gemini-2.5-flash',
-        p_tokens_in: 0,
-        p_tokens_out: 0,
+        p_tokens_in: totalTokensIn,
+        p_tokens_out: totalTokensOut,
       }).then(() => {
         console.log('[reanalyze-moments] Logged interaction')
       }).catch((err: Error) => {

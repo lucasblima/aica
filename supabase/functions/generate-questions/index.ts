@@ -447,7 +447,7 @@ Generate exactly ${batchSize} questions now:
 
 async function generateQuestionsWithGemini(
   prompt: string
-): Promise<GeneratedQuestion[]> {
+): Promise<{ questions: GeneratedQuestion[]; usageMetadata: { promptTokenCount?: number; candidatesTokenCount?: number } | undefined }> {
   log('INFO', 'Calling Gemini for question generation')
 
   const requestBody = {
@@ -483,6 +483,7 @@ async function generateQuestionsWithGemini(
   const candidate = result.candidates?.[0]
   const text = candidate?.content?.parts?.[0]?.text || '[]'
   const finishReason = candidate?.finishReason
+  const usageMetadata = result.usageMetadata
 
   if (finishReason === 'MAX_TOKENS') {
     log('WARN', 'Gemini response truncated (MAX_TOKENS), attempting partial recovery')
@@ -492,7 +493,7 @@ async function generateQuestionsWithGemini(
   try {
     const questions = extractJSON<GeneratedQuestion[]>(text)
     log('INFO', 'Successfully parsed questions', { count: questions.length })
-    return questions
+    return { questions, usageMetadata }
   } catch (parseError) {
     // If truncated, try to recover partial array by closing it
     if (finishReason === 'MAX_TOKENS' || text.includes('[')) {
@@ -500,14 +501,14 @@ async function generateQuestionsWithGemini(
         const recovered = recoverTruncatedArray(text)
         if (recovered.length > 0) {
           log('INFO', 'Recovered partial questions from truncated response', { count: recovered.length })
-          return recovered
+          return { questions: recovered, usageMetadata }
         }
       } catch {
         // Fall through to error
       }
     }
     log('WARN', 'Failed to parse Gemini response, returning empty', { text: text.substring(0, 500), finishReason })
-    return []
+    return { questions: [], usageMetadata }
   }
 }
 
@@ -745,7 +746,7 @@ serve(async (req) => {
 
     const promptHash = btoa(prompt.substring(0, 100)).substring(0, 32)
 
-    const generatedQuestions = await generateQuestionsWithGemini(prompt)
+    const { questions: generatedQuestions, usageMetadata } = await generateQuestionsWithGemini(prompt)
     log('INFO', 'Gemini returned questions', { count: generatedQuestions.length })
 
     // Filter out any questions too similar to existing ones
@@ -774,8 +775,8 @@ serve(async (req) => {
       p_action: 'generate_daily_question',
       p_module: 'journey',
       p_model: GEMINI_MODEL,
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+      p_tokens_in: usageMetadata?.promptTokenCount || 0,
+      p_tokens_out: usageMetadata?.candidatesTokenCount || 0,
     }).then(() => {
       log('INFO', 'Logged generate_daily_question interaction')
     }).catch((err: Error) => {
