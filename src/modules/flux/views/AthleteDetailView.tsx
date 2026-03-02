@@ -5,7 +5,7 @@
  * Contextual descent view with back button (no global nav).
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import { AthleteService } from '../services/athleteService';
@@ -66,6 +66,8 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
+import { WeeklyBlocks } from '@/components/features/visualizations';
+import type { WeeklyDay } from '@/components/features/visualizations';
 
 export default function AthleteDetailView() {
   const navigate = useNavigate();
@@ -82,6 +84,16 @@ export default function AthleteDetailView() {
   const [activatingMicrocycle, setActivatingMicrocycle] = useState(false);
   const alerts: Alert[] = [];
   const activeBlock = null;
+
+  // Current week workout slots for WeeklyBlocks overview
+  const [currentWeekSlots, setCurrentWeekSlots] = useState<Array<{
+    day_of_week: number;
+    name: string;
+    modality: string;
+    exercise_structure?: {
+      series?: Array<{ exercise_name?: string; repetitions?: number; reps?: number; work_value?: number; work_unit?: string; distance_meters?: number }>;
+    } | null;
+  }>>([]);
 
   // Inline edit state
   const [isEditing, setIsEditing] = useState(false);
@@ -216,6 +228,112 @@ export default function AthleteDetailView() {
 
     return () => { cancelled = true; };
   }, [athleteId]);
+
+  // Load current week slots for WeeklyBlocks overview
+  useEffect(() => {
+    if (!athleteId) return;
+    let cancelled = false;
+
+    const loadCurrentWeekSlots = async () => {
+      // Get the active microcycle first, then fetch its week 1 slots
+      const { data: microcycle } = await MicrocycleService.getActiveMicrocycle(athleteId);
+      if (cancelled || !microcycle) return;
+
+      const { data: slots, error } = await supabase
+        .from('workout_slots')
+        .select('day_of_week, name, modality, exercise_structure')
+        .eq('microcycle_id', microcycle.id)
+        .eq('week_number', 1)
+        .order('day_of_week');
+
+      if (cancelled || error || !slots) return;
+      setCurrentWeekSlots(slots as typeof currentWeekSlots);
+    };
+
+    loadCurrentWeekSlots();
+    return () => { cancelled = true; };
+  }, [athleteId]);
+
+  // Map modality to hex color (matches MODALITY_CONFIG colors)
+  const MODALITY_HEX: Record<string, string> = {
+    swimming:  '#06b6d4',
+    running:   '#10b981',
+    cycling:   '#f59e0b',
+    strength:  '#ef4444',
+    walking:   '#3b82f6',
+  };
+
+  // Portuguese day name lookup (day_of_week: 1=Mon..7=Sun)
+  const DAY_CONFIG: Record<number, { day: string; label: string }> = {
+    1: { day: 'seg', label: 'Segunda' },
+    2: { day: 'ter', label: 'Terca' },
+    3: { day: 'qua', label: 'Quarta' },
+    4: { day: 'qui', label: 'Quinta' },
+    5: { day: 'sex', label: 'Sexta' },
+    6: { day: 'sab', label: 'Sabado' },
+    7: { day: 'dom', label: 'Domingo' },
+  };
+
+  // Transform workout slots into WeeklyDay[] for WeeklyBlocks
+  const weeklyDays = useMemo<WeeklyDay[]>(() => {
+    if (currentWeekSlots.length > 0) {
+      return currentWeekSlots
+        .filter((slot) => DAY_CONFIG[slot.day_of_week])
+        .map((slot) => {
+          const dayInfo = DAY_CONFIG[slot.day_of_week];
+          const modalityLabel = slot.modality
+            ? (MODALITY_CONFIG[slot.modality as keyof typeof MODALITY_CONFIG]?.label ?? slot.modality)
+            : slot.name;
+          const hexColor = MODALITY_HEX[slot.modality] ?? '#6b7280';
+
+          // Map exercise_structure.series to simple WeeklyExercise[]
+          const exercises = (slot.exercise_structure?.series ?? [])
+            .slice(0, 5) // cap at 5 exercises for display
+            .map((s) => {
+              const name = s.exercise_name ?? slot.name ?? 'Exercicio';
+              const sets = s.repetitions ?? 1;
+              // Build reps string depending on series type
+              const reps =
+                s.reps != null
+                  ? String(s.reps)
+                  : s.distance_meters != null
+                  ? `${s.distance_meters}m`
+                  : s.work_value != null && s.work_unit != null
+                  ? `${s.work_value} ${s.work_unit}`
+                  : '';
+              return { name, sets, reps };
+            });
+
+          return {
+            day: dayInfo.day,
+            label: dayInfo.label,
+            modality: modalityLabel,
+            color: hexColor,
+            exercises,
+          };
+        });
+    }
+
+    // Fallback: build a demo week based on athlete's primary modality
+    // TODO: replace with real data once more athletes have active microcycles
+    if (!athlete) return [];
+
+    const modalityLabel = MODALITY_CONFIG[athlete.modality]?.label ?? 'Treino';
+    const hexColor = MODALITY_HEX[athlete.modality] ?? '#6b7280';
+    const daysWithWorkout = [
+      { day: 'seg', label: 'Segunda' },
+      { day: 'qua', label: 'Quarta' },
+      { day: 'sex', label: 'Sexta' },
+    ];
+
+    return daysWithWorkout.map(({ day, label }) => ({
+      day,
+      label,
+      modality: modalityLabel,
+      color: hexColor,
+      exercises: [], // no exercises without real data
+    }));
+  }, [currentWeekSlots, athlete]);
 
   // Athlete profile calculator: BMI
   const calcBMI = () => {
@@ -588,6 +706,19 @@ export default function AthleteDetailView() {
           </div>
         </div>
       </div>
+
+      {/* Semana Atual — WeeklyBlocks overview */}
+      {weeklyDays.length > 0 && (
+        <div className="px-6 mb-6">
+          <div className="ceramic-card p-4">
+            <WeeklyBlocks
+              days={weeklyDays}
+              expandedByDefault={true}
+              title="Semana Atual"
+            />
+          </div>
+        </div>
+      )}
 
       {/* PAR-Q / Health Section (only when PAR-Q onboarding is enabled) */}
       {athlete.allow_parq_onboarding && (
