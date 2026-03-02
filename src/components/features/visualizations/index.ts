@@ -8,3 +8,6 @@
 
 export { WeeklyBlocks } from './WeeklyBlocks';
 export type { WeeklyDay, WeeklyExercise, WeeklyBlocksProps } from './WeeklyBlocks';
+
+export { HorizontalTimeline } from './HorizontalTimeline';
+export type { TimelinePhase, TimelinePhaseStatus, HorizontalTimelineProps } from './HorizontalTimeline';

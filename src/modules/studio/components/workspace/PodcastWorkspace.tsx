@@ -40,7 +40,7 @@
  * @see useAutoSave for auto-save functionality
  */
 
-import React, { Component, Suspense, useState } from 'react';
+import React, { Component, Suspense, useState, useMemo } from 'react';
 import { PodcastWorkspaceProvider, usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
 import { useWorkspaceState } from '@/modules/studio/hooks/useWorkspaceState';
 import { useAutoSave } from '@/modules/studio/hooks/useAutoSave';
@@ -51,8 +51,27 @@ import type { Dossier, WorkspaceCustomSource } from '@/modules/studio/types';
 import { createNamespacedLogger } from '@/lib/logger';
 import { AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HorizontalTimeline } from '@/components/features/visualizations';
+import type { TimelinePhase } from '@/components/features/visualizations';
 
 const log = createNamespacedLogger('PodcastWorkspace');
+
+// ============================================================================
+// STUDIO PRODUCTION PIPELINE — Full 6-phase timeline
+// Extends beyond the 4-stage workspace FSM to show the complete journey
+// ============================================================================
+
+const STUDIO_PHASES: Array<{ id: string; label: string; icon: string }> = [
+  { id: 'setup',          label: 'Setup',      icon: '⚙️' },
+  { id: 'research',       label: 'Pesquisa',   icon: '🔍' },
+  { id: 'pauta',          label: 'Pauta',      icon: '📝' },
+  { id: 'production',     label: 'Gravação',   icon: '🎙️' },
+  { id: 'postproduction', label: 'Edição',     icon: '✂️' },
+  { id: 'distribution',   label: 'Publicação', icon: '📡' },
+];
+
+// FSM stages that are tracked in the workspace (in order)
+const WORKSPACE_STAGE_ORDER = ['setup', 'research', 'pauta', 'production'] as const;
 
 /**
  * Error boundary for workspace stage rendering
@@ -129,6 +148,36 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
   const { state, actions, stageCompletions } = usePodcastWorkspace();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Build timeline phases by mapping the full production pipeline to statuses.
+  // Workspace FSM tracks 4 stages; postproduction and distribution are always pending
+  // until we have dedicated stages for them.
+  const timelinePhases = useMemo<TimelinePhase[]>(() => {
+    const currentIdx = WORKSPACE_STAGE_ORDER.indexOf(
+      state.currentStage as (typeof WORKSPACE_STAGE_ORDER)[number]
+    );
+
+    return STUDIO_PHASES.map((phase) => {
+      const workspaceIdx = WORKSPACE_STAGE_ORDER.indexOf(
+        phase.id as (typeof WORKSPACE_STAGE_ORDER)[number]
+      );
+
+      let status: TimelinePhase['status'];
+
+      if (workspaceIdx === -1) {
+        // Phase is beyond the workspace FSM (postproduction, distribution)
+        status = 'pending';
+      } else if (workspaceIdx < currentIdx) {
+        status = 'completed';
+      } else if (workspaceIdx === currentIdx) {
+        status = 'active';
+      } else {
+        status = 'pending';
+      }
+
+      return { ...phase, status };
+    });
+  }, [state.currentStage]);
 
   // DEBUG: Log workspace content state
   log.debug('[WorkspaceContent] Rendering with state:', {
@@ -210,6 +259,12 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
         isSaving={isSaving}
         isDirty={state.isDirty}
         onBack={onBack}
+      />
+
+      {/* Production Pipeline Timeline */}
+      <HorizontalTimeline
+        phases={timelinePhases}
+        title="Pipeline de Produção"
       />
 
       {/* Stage Navigation */}
