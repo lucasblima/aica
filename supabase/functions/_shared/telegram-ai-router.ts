@@ -501,15 +501,25 @@ async function executeLogMood(
     ? (params.emotions as string[]).join(', ')
     : '';
 
+  // moments table CHECK constraint only allows type IN ('audio','text','both')
+  // Store mood data using emotion + sentiment_data columns (see migration 20260302050000)
+  const emotionLabel = score >= 4 ? 'feliz' : score === 3 ? 'neutro' : 'triste';
+
   const { data, error } = await supabase
     .from('moments')
     .insert({
       user_id: userId,
-      type: 'mood',
-      content: String(params.note || '').substring(0, 200),
-      quality_score: score,
-      emotion: emotionText,
-      tags: ['telegram'],
+      type: 'text',
+      content: String(params.note || `Check-in de humor via Telegram: ${score}/5`).substring(0, 200),
+      emotion: emotionText || emotionLabel,
+      sentiment_data: {
+        mood_score: score,
+        source: 'telegram',
+        type: 'mood_checkin',
+        emotions: Array.isArray(params.emotions) ? params.emotions : [],
+      },
+      quality_score: score / 5, // DECIMAL(3,2): normalize 1-5 to 0.20-1.00
+      tags: ['telegram', 'mood_checkin'],
     })
     .select('id, quality_score')
     .single();
@@ -717,9 +727,12 @@ async function executeGetMomentsSummary(
   lines.push(`📊 <b>${totalMoments} momento(s)</b> registrado(s)`);
 
   if (avgQuality !== null) {
+    // quality_score is stored as 0-1 in DB (DECIMAL(3,2)); convert to 1-5 for display
     const qualNum = parseFloat(avgQuality);
-    const qualEmoji = qualNum >= 4 ? '😄' : qualNum >= 3 ? '🙂' : qualNum >= 2 ? '😕' : '😔';
-    lines.push(`${qualEmoji} Qualidade media: <b>${avgQuality}/5</b>`);
+    const displayScore = qualNum <= 1 ? (qualNum * 5).toFixed(1) : parseFloat(avgQuality).toFixed(1);
+    const displayNum = parseFloat(displayScore);
+    const qualEmoji = displayNum >= 4 ? '😄' : displayNum >= 3 ? '🙂' : displayNum >= 2 ? '😕' : '😔';
+    lines.push(`${qualEmoji} Qualidade media: <b>${displayScore}/5</b>`);
   }
 
   // Top emotions

@@ -544,14 +544,23 @@ async function handleCallbackQuery(
         .rpc('get_telegram_user', { p_telegram_id: telegramId })
       const userId = userData?.[0]?.user_id
       if (userId) {
+        // moments table CHECK constraint only allows type IN ('audio','text','both')
+        // Store mood data using emotion + sentiment_data columns (see migration 20260302050000)
+        const emotionLabel = score >= 4 ? 'feliz' : score === 3 ? 'neutro' : 'triste'
         await supabase
           .from('moments')
           .insert({
             user_id: userId,
-            type: 'mood',
-            quality_score: score,
-            content: '',
-            tags: ['telegram'],
+            type: 'text',
+            content: `Check-in de humor via Telegram: ${score}/5`,
+            emotion: emotionLabel,
+            sentiment_data: {
+              mood_score: score,
+              source: 'telegram',
+              type: 'mood_checkin',
+            },
+            quality_score: score / 5, // DECIMAL(3,2): normalize 1-5 to 0.20-1.00
+            tags: ['telegram', 'mood_checkin'],
           })
         const moodEmojis: Record<number, string> = { 1: '😔', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' }
         await reply(tg, msg,
