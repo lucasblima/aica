@@ -1,95 +1,75 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { HeroDashboardDemo } from './HeroDashboardDemo';
+import { LifeScoreRadar } from './LifeScoreRadar';
+import { DOMAINS } from '../data/landingData';
 
 interface HeroSectionProps {
   onOpenLogin?: () => void;
 }
 
+/**
+ * HeroSection -- Fullscreen split-layout hero.
+ *
+ * Left: headline, subtitle, CTA button.
+ * Right: animated Life Score radar chart.
+ * Mobile: stacks column-reverse (radar on top, text below).
+ */
 export function HeroSection({ onOpenLogin }: HeroSectionProps) {
+  const [radarVisible, setRadarVisible] = useState(false);
+
+  // Trigger radar animation after a short delay to let the page paint first
+  useEffect(() => {
+    const timer = setTimeout(() => setRadarVisible(true), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Map the DOMAINS readonly array to a mutable shape for LifeScoreRadar
+  const radarDomains = DOMAINS.map((d) => ({
+    id: d.id,
+    label: d.label,
+    demoScore: d.demoScore,
+  }));
+
   return (
-    <section className="min-h-[100dvh] bg-ceramic-base flex flex-col items-center justify-center pt-20 pb-12 px-6">
-      <div className="w-full max-w-2xl mx-auto flex flex-col items-center text-center">
-        {/* Headline */}
-        <motion.h1
-          className="text-4xl md:text-6xl font-black tracking-tighter text-ceramic-text-primary leading-[1.1] mb-2"
+    <section className="min-h-screen bg-ceramic-base flex items-center justify-center px-6 pt-20 pb-12">
+      <div className="w-full max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
+        {/* ── Left: Text content ── */}
+        <motion.div
+          className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left"
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
         >
-          Voce nao precisa de mais um app.
-        </motion.h1>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-ceramic-text-primary leading-tight">
+            Meca, entenda e transforme cada area da sua vida
+          </h1>
 
-        <motion.h1
-          className="text-4xl md:text-6xl font-black tracking-tighter text-ceramic-text-primary leading-[1.1] mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
-        >
-          Voce precisa de um sistema que te entenda.
-        </motion.h1>
+          <p className="text-lg md:text-xl text-ceramic-text-secondary max-w-lg mt-6">
+            O AICA integra 18+ modelos cientificos validados em um sistema que conecta
+            produtividade, bem-estar, financas, relacionamentos e mais — para que voce
+            veja o todo, nao pedacos.
+          </p>
 
-        {/* Sub-headline */}
-        <motion.p
-          className="text-lg text-ceramic-text-secondary mb-10 max-w-lg"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
-        >
-          Seu sistema operacional de vida — tatil, unificado, inteligente.
-        </motion.p>
-
-        {/* Dashboard Demo */}
-        <motion.div
-          className="w-full max-w-lg mb-10"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.3, ease: 'easeOut' }}
-        >
-          <HeroDashboardDemo />
-        </motion.div>
-
-        {/* CTA buttons */}
-        <motion.div
-          className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.8, ease: 'easeOut' }}
-        >
-          <a
-            href="https://t.me/AicaLifeBot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-8 py-3 rounded-full font-bold text-white bg-amber-500 hover:bg-amber-600 transition-all hover:scale-[1.03] active:scale-[0.98] shadow-lg shadow-amber-500/25 w-full sm:w-auto text-center"
-          >
-            Experimentar no Telegram
-          </a>
           <button
             onClick={onOpenLogin}
-            className="px-8 py-3 rounded-full font-bold text-ceramic-text-primary bg-ceramic-cool hover:bg-ceramic-cool/80 transition-all hover:scale-[1.03] active:scale-[0.98] w-full sm:w-auto"
+            className="bg-ceramic-accent hover:bg-ceramic-accent-dark text-white rounded-xl px-8 py-4 text-lg font-semibold mt-8 transition-colors"
           >
-            Entrar
+            Comecar gratuitamente
           </button>
+
+          <p className="text-sm text-ceramic-text-secondary mt-3">
+            Sem cartao. 500 creditos gratis.
+          </p>
         </motion.div>
 
-        {/* Scroll indicator */}
+        {/* ── Right: Life Score Radar ── */}
         <motion.div
-          className="flex flex-col items-center gap-3 text-ceramic-text-secondary"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 1.2, ease: 'easeOut' }}
+          className="flex-1 flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
         >
-          <span className="text-sm font-bold tracking-widest uppercase">Deslize para baixo</span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-            className="w-px h-12 bg-gradient-to-b from-ceramic-text-secondary to-transparent"
-          />
+          <LifeScoreRadar domains={radarDomains} isVisible={radarVisible} />
         </motion.div>
       </div>
     </section>
