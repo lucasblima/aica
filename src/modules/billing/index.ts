@@ -13,8 +13,6 @@
 export { PricingPage } from './pages/PricingPage';
 export { ManageSubscriptionPage } from './pages/ManageSubscriptionPage';
 export { AdminCouponsPage } from './pages/AdminCouponsPage';
-export { AdminPortalPage } from './pages/AdminPortalPage';
-export { PricingSimulatorPage } from './pages/PricingSimulatorPage';
 
 // ============================================
 // COMPONENTS
