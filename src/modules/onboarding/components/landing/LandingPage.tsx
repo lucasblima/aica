@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Shield, Lock, Eye } from 'lucide-react';
 import { HeroSection } from './components/HeroSection';
-import { InteractiveModulesSection } from './components/InteractiveModulesSection';
-import { ConversionSection } from './components/ConversionSection';
+import { DifferentiatorSection } from './components/DifferentiatorSection';
+import { ScoringEngineSection } from './components/ScoringEngineSection';
+import { GrantsShowcaseSection } from './components/GrantsShowcaseSection';
+import { CompoundEffectSection } from './components/CompoundEffectSection';
+import { GamificationSection } from './components/GamificationSection';
+import { PricingSection } from './components/PricingSection';
+import { CTASection } from './components/CTASection';
 import { FooterSection } from './components/FooterSection';
 import { AuthSheet } from '@/components/layout';
 import { Logo } from '@/components/ui';
@@ -16,15 +19,11 @@ import {
 } from '@/services/inviteSystemService';
 
 /**
- * LandingPage - "O Oleiro Digital" concept (Gemini 3.1)
+ * LandingPage — Thin orchestrator for the AICA landing experience.
  *
- * Structure:
- * 1. Header (fixed, frosted glass)
- * 2. Hero (Fleeing chaos shards + "A Forja" OS card)
- * 3. Interactive Modules ("A Prateleira do Ateliê")
- * 4. Security Badges
- * 5. Conversion (Invite code + Waitlist with odometer)
- * 6. Footer
+ * Renders sections in order; each section is a self-contained component.
+ * Invite code, auth sheet, and waitlist logic live here and are
+ * passed down via props to the sections that need them.
  */
 export function LandingPage() {
   const navigate = useNavigate();
@@ -138,7 +137,7 @@ export function LandingPage() {
         Pular para o conteúdo principal
       </a>
 
-      {/* ── Header ── */}
+      {/* ── Header (fixed, frosted glass) ── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-ceramic-base/80 backdrop-blur-md border-b border-white/20">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -166,41 +165,16 @@ export function LandingPage() {
         </div>
       </header>
 
+      {/* ── Main Content ── */}
       <main id="main">
-        {/* ── 1. Hero (Chaos shards + Forja OS card) ── */}
         <HeroSection onOpenLogin={handleOpenLogin} />
-
-        {/* ── 2. Interactive Modules ("A Prateleira do Ateliê") ── */}
-        <div id="modules">
-          <InteractiveModulesSection />
-        </div>
-
-        {/* ── 3. Security Badges ── */}
-        <motion.section
-          className="max-w-4xl mx-auto px-6 py-12"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex flex-wrap items-center justify-center gap-8 text-ceramic-text-secondary">
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-ceramic-success" />
-              <span className="text-sm font-bold">LGPD Compliant</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-ceramic-success" />
-              <span className="text-sm font-bold">Dados criptografados</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-ceramic-success" />
-              <span className="text-sm font-bold">Sem acesso a senhas</span>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── 4. Conversion (Invite + Waitlist with odometer) ── */}
-        <ConversionSection
+        <DifferentiatorSection />
+        <ScoringEngineSection />
+        <GrantsShowcaseSection />
+        <CompoundEffectSection />
+        <GamificationSection />
+        <PricingSection />
+        <CTASection
           waitlistCount={waitlistCount}
           onJoinWaitlist={joinWaitlist}
           isSubmitting={waitlistSubmitting}
