@@ -8,7 +8,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Activity, Target, MessageSquare, Loader2, CheckCircle } from 'lucide-react';
+import { X, Save, Activity, Target, MessageSquare, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { WorkoutBlockData } from './WorkoutBlock';
 import type { WorkoutIntensity } from '../../mockData/workoutTemplates';
 
@@ -25,6 +26,7 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
   onClose,
   onSave,
 }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<WorkoutBlockData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -258,6 +260,25 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
               placeholder="Instrucoes especificas, dicas tecnicas, ajustes personalizados..."
             />
           </Section>
+
+          {/* Link to full template editor */}
+          {formData.templateId && (
+            <div className="ceramic-inset p-4 rounded-xl">
+              <p className="text-xs text-ceramic-text-secondary mb-2">
+                Este treino foi criado a partir de um exercicio da biblioteca.
+              </p>
+              <button
+                onClick={() => {
+                  onClose();
+                  navigate(`/flux/templates/edit/${formData.templateId}`);
+                }}
+                className="flex items-center gap-2 text-sm font-bold text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Editar exercicio completo
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
