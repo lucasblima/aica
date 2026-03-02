@@ -1,3 +1,6 @@
 export { FlowZoneIndicator } from './FlowZoneIndicator'
 export { CognitiveLoadBadge } from './CognitiveLoadBadge'
 export { PlanningFallacyCorrection } from './PlanningFallacyCorrection'
+export { WeatherInsightCard } from './WeatherInsightCard'
+export { LocationConnectModal } from './LocationConnectModal'
+export { HolidayBadge } from './HolidayBadge'
