@@ -63,6 +63,8 @@ interface ProcessingResult {
   error?: string
   detected_document_type?: string
   pending_action_id?: string
+  totalTokensIn?: number
+  totalTokensOut?: number
 }
 
 interface OrganizationDocumentDetection {
@@ -162,7 +164,7 @@ async function uploadToStorage(
 async function transcribeAudio(
   audioData: Uint8Array,
   mimeType: string
-): Promise<string | null> {
+): Promise<{ text: string | null; tokensIn: number; tokensOut: number }> {
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
@@ -195,13 +197,14 @@ If you cannot hear or understand the audio, return "[Audio inaudivel]".`
     ])
 
     const response = await result.response
+    const usageMeta = response.usageMetadata
     const transcription = response.text().trim()
 
     log('INFO', 'Audio transcribed', { length: transcription.length })
-    return transcription || null
+    return { text: transcription || null, tokensIn: usageMeta?.promptTokenCount || 0, tokensOut: usageMeta?.candidatesTokenCount || 0 }
   } catch (error) {
     log('ERROR', 'Audio transcription error', (error as Error).message)
-    return null
+    return { text: null, tokensIn: 0, tokensOut: 0 }
   }
 }
 
@@ -211,7 +214,7 @@ If you cannot hear or understand the audio, return "[Audio inaudivel]".`
 async function extractImageText(
   imageData: Uint8Array,
   mimeType: string
-): Promise<string | null> {
+): Promise<{ text: string | null; tokensIn: number; tokensOut: number }> {
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
@@ -246,13 +249,14 @@ Return the extracted text only, preserving the original language and formatting 
     ])
 
     const response = await result.response
+    const usageMeta = response.usageMetadata
     const ocrText = response.text().trim()
 
     log('INFO', 'Image OCR completed', { length: ocrText.length })
-    return ocrText || null
+    return { text: ocrText || null, tokensIn: usageMeta?.promptTokenCount || 0, tokensOut: usageMeta?.candidatesTokenCount || 0 }
   } catch (error) {
     log('ERROR', 'Image OCR error', (error as Error).message)
-    return null
+    return { text: null, tokensIn: 0, tokensOut: 0 }
   }
 }
 
@@ -261,7 +265,7 @@ Return the extracted text only, preserving the original language and formatting 
  */
 async function extractPdfText(
   pdfData: Uint8Array
-): Promise<string | null> {
+): Promise<{ text: string | null; tokensIn: number; tokensOut: number }> {
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
@@ -302,13 +306,14 @@ If the PDF is a Brazilian business document (Cartao CNPJ, Estatuto), extract all
     ])
 
     const response = await result.response
+    const usageMeta = response.usageMetadata
     const pdfText = response.text().trim()
 
     log('INFO', 'PDF text extracted', { length: pdfText.length })
-    return pdfText || null
+    return { text: pdfText || null, tokensIn: usageMeta?.promptTokenCount || 0, tokensOut: usageMeta?.candidatesTokenCount || 0 }
   } catch (error) {
     log('ERROR', 'PDF text extraction error', (error as Error).message)
-    return null
+    return { text: null, tokensIn: 0, tokensOut: 0 }
   }
 }
 
@@ -318,7 +323,7 @@ If the PDF is a Brazilian business document (Cartao CNPJ, Estatuto), extract all
 async function analyzeImage(
   imageData: Uint8Array,
   mimeType: string
-): Promise<{ description: string; sentiment: string } | null> {
+): Promise<{ description: string; sentiment: string; tokensIn: number; tokensOut: number } | null> {
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
@@ -352,9 +357,11 @@ Return ONLY valid JSON.`
     ])
 
     const response = await result.response
+    const usageMeta = response.usageMetadata
     const text = response.text().replace(/```json\n?|\n?```/g, '').trim()
 
-    return JSON.parse(text)
+    const parsed = JSON.parse(text)
+    return { ...parsed, tokensIn: usageMeta?.promptTokenCount || 0, tokensOut: usageMeta?.candidatesTokenCount || 0 }
   } catch (error) {
     log('WARN', 'Image analysis error', (error as Error).message)
     return null
@@ -636,28 +643,34 @@ async function processMessage(
   const result: ProcessingResult = {
     success: true,
     storage_url: storageUrl || undefined,
+    totalTokensIn: 0,
+    totalTokensOut: 0,
   }
 
   // Process based on media type
   switch (message_type) {
     case 'audio':
-      const transcription = await transcribeAudio(
+      const audioResult = await transcribeAudio(
         mediaResult.data,
         media_mimetype || 'audio/ogg'
       )
-      result.transcription = transcription || undefined
+      result.transcription = audioResult.text || undefined
+      result.totalTokensIn! += audioResult.tokensIn
+      result.totalTokensOut! += audioResult.tokensOut
       break
 
     case 'image':
-      const ocrText = await extractImageText(
+      const imageResult = await extractImageText(
         mediaResult.data,
         media_mimetype || 'image/jpeg'
       )
-      result.ocr_text = ocrText || undefined
+      result.ocr_text = imageResult.text || undefined
+      result.totalTokensIn! += imageResult.tokensIn
+      result.totalTokensOut! += imageResult.tokensOut
 
       // Detect organization documents from OCR
-      if (ocrText) {
-        const detection = detectOrganizationDocument(ocrText)
+      if (imageResult.text) {
+        const detection = detectOrganizationDocument(imageResult.text)
         if (detection.is_organization_document && detection.confidence >= 0.5) {
           result.detected_document_type = detection.document_type
           const pendingActionId = await createPendingOrganizationAction(
@@ -685,12 +698,14 @@ async function processMessage(
     case 'document':
       // For PDF documents, extract text and detect organization docs
       if (media_mimetype === 'application/pdf' || media_filename?.toLowerCase().endsWith('.pdf')) {
-        const pdfOcrText = await extractPdfText(mediaResult.data)
-        result.ocr_text = pdfOcrText || undefined
+        const pdfResult = await extractPdfText(mediaResult.data)
+        result.ocr_text = pdfResult.text || undefined
+        result.totalTokensIn! += pdfResult.tokensIn
+        result.totalTokensOut! += pdfResult.tokensOut
 
         // Detect organization documents from PDF
-        if (pdfOcrText) {
-          const pdfDetection = detectOrganizationDocument(pdfOcrText)
+        if (pdfResult.text) {
+          const pdfDetection = detectOrganizationDocument(pdfResult.text)
           if (pdfDetection.is_organization_document && pdfDetection.confidence >= 0.5) {
             result.detected_document_type = pdfDetection.document_type
             const pdfPendingActionId = await createPendingOrganizationAction(
@@ -844,8 +859,8 @@ serve(async (req) => {
         p_action: 'analyze_moment',
         p_module: 'connections',
         p_model: 'gemini-2.5-flash',
-        p_tokens_in: 0,
-        p_tokens_out: 0,
+        p_tokens_in: result.totalTokensIn || 0,
+        p_tokens_out: result.totalTokensOut || 0,
       }).catch((err: Error) => {
         log('WARN', 'Failed to log interaction', err.message)
       })

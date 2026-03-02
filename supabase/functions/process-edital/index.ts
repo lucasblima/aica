@@ -287,7 +287,7 @@ async function waitForFileActive(geminiFileUri: string, maxWaitMs = 120000): Pro
 /**
  * Extract structured data from edital using Gemini with the uploaded file
  */
-async function extractEditalStructure(geminiFileUri: string): Promise<AnalyzedEditalData> {
+async function extractEditalStructure(geminiFileUri: string): Promise<{ data: AnalyzedEditalData; usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }> {
   log('INFO', 'Extracting edital structure with Gemini', { geminiFileUri })
 
   const extractionPrompt = `
@@ -482,22 +482,25 @@ IMPORTANTE:
 
     // Ensure required fields have defaults
     return {
-      title: (parsed.title as string) || 'Edital sem titulo',
-      funding_agency: (parsed.funding_agency as string) || 'Agencia nao identificada',
-      program_name: parsed.program_name as string | undefined,
-      edital_number: parsed.edital_number as string | undefined,
-      submission_deadline: (parsed.submission_deadline as string) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      submission_start: parsed.submission_start as string | undefined,
-      result_date: parsed.result_date as string | undefined,
-      min_funding: parsed.min_funding as number | undefined,
-      max_funding: parsed.max_funding as number | undefined,
-      counterpart_percentage: parsed.counterpart_percentage as number | undefined,
-      eligible_themes: (parsed.eligible_themes as string[]) || [],
-      eligibility_requirements: (parsed.eligibility_requirements as string[]) || [],
-      evaluation_criteria: (parsed.evaluation_criteria as EvaluationCriterion[]) || [],
-      form_fields: (parsed.form_fields as FormField[]) || getDefaultFormFields(),
-      external_system_url: parsed.external_system_url as string | undefined,
-      raw_text_preview: (parsed.raw_text_preview as string)?.substring(0, 2000),
+      data: {
+        title: (parsed.title as string) || 'Edital sem titulo',
+        funding_agency: (parsed.funding_agency as string) || 'Agencia nao identificada',
+        program_name: parsed.program_name as string | undefined,
+        edital_number: parsed.edital_number as string | undefined,
+        submission_deadline: (parsed.submission_deadline as string) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        submission_start: parsed.submission_start as string | undefined,
+        result_date: parsed.result_date as string | undefined,
+        min_funding: parsed.min_funding as number | undefined,
+        max_funding: parsed.max_funding as number | undefined,
+        counterpart_percentage: parsed.counterpart_percentage as number | undefined,
+        eligible_themes: (parsed.eligible_themes as string[]) || [],
+        eligibility_requirements: (parsed.eligibility_requirements as string[]) || [],
+        evaluation_criteria: (parsed.evaluation_criteria as EvaluationCriterion[]) || [],
+        form_fields: (parsed.form_fields as FormField[]) || getDefaultFormFields(),
+        external_system_url: parsed.external_system_url as string | undefined,
+        raw_text_preview: (parsed.raw_text_preview as string)?.substring(0, 2000),
+      },
+      usageMetadata,
     }
   } catch (parseError) {
     log('ERROR', 'Failed to parse Gemini response', { responseText: responseText.substring(0, 500) })
@@ -694,7 +697,7 @@ serve(async (req) => {
     // 3. Extract structured data using Gemini (always runs)
     currentStep = 'extract'
     log('INFO', `[STEP] ${currentStep}`)
-    const analyzedData = await extractEditalStructure(geminiFileUri)
+    const { data: analyzedData, usageMetadata } = await extractEditalStructure(geminiFileUri)
 
     // =======================================================================
 
@@ -713,8 +716,8 @@ serve(async (req) => {
       p_action: 'parse_statement',
       p_module: 'grants',
       p_model: GEMINI_MODEL,
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+      p_tokens_in: usageMetadata?.promptTokenCount || 0,
+      p_tokens_out: usageMetadata?.candidatesTokenCount || 0,
     }).then(() => {
       log('INFO', 'Logged interaction')
     }).catch((err: Error) => {

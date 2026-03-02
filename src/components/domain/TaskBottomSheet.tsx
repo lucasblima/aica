@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import type { Task } from '@/types';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
+import { useHolidays } from '@/hooks/useHolidays';
+import { notificationService } from '@/services/notificationService';
 import { Accordion, SubtaskList, RecurrencePicker, TagInput } from '@/components/ui';
 import type { Subtask } from '@/components/ui/SubtaskList';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -54,6 +56,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
   onClose,
 }) => {
   const isDesktop = useIsDesktop();
+  const { isHoliday } = useHolidays();
 
   // ---- helpers ----
   const extractTimeFromTimestamp = (ts?: string | null): string => {
@@ -188,6 +191,21 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
         checklist: checklist.length > 0 ? checklist : null,
       };
       await onSave(task.id, updates);
+
+      // Holiday warning
+      if (dueDate) {
+        const holiday = isHoliday(dueDate);
+        if (holiday) {
+          const dateFormatted = new Date(dueDate + 'T12:00:00').toLocaleDateString('pt-BR');
+          notificationService.show({
+            type: 'warning',
+            title: 'Feriado detectado',
+            message: `${dateFormatted} e ${holiday.name}. Considere ajustar a data limite.`,
+            duration: 6000,
+          });
+        }
+      }
+
       onClose();
     } catch (error) {
       log.error('Error saving task:', error);

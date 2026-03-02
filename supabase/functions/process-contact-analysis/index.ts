@@ -158,6 +158,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`
   }
 
   const result = await response.json()
+  const usageMetadata = result.usageMetadata
   const text = result.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
 
   console.log('[process-contact-analysis] Gemini response received')
@@ -170,7 +171,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`
   }
 
   try {
-    return JSON.parse(jsonMatch[0])
+    return { ...JSON.parse(jsonMatch[0]), usageMetadata }
   } catch (parseError) {
     console.error('[process-contact-analysis] JSON parse error:', parseError)
     // Return default values on parse error
@@ -180,7 +181,8 @@ IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`
       topics: [],
       actionItems: [],
       insights: { communicationStyle: 'Não determinado', responsePatterns: {}, recommendations: [] },
-      keyMoments: []
+      keyMoments: [],
+      usageMetadata,
     }
   }
 }
@@ -380,8 +382,8 @@ serve(async (req: Request) => {
       p_action: 'whatsapp_sentiment',
       p_module: 'connections',
       p_model: 'gemini-2.5-flash',
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+      p_tokens_in: geminiResult.usageMetadata?.promptTokenCount || 0,
+      p_tokens_out: geminiResult.usageMetadata?.candidatesTokenCount || 0,
     }).then(() => {
       console.log('[process-contact-analysis] Logged interaction')
     }).catch((err: Error) => {
