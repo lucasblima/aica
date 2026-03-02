@@ -14,6 +14,7 @@ import type { TrainingModality } from '../../types';
 import type { WorkoutIntensity } from '../../mockData/workoutTemplates';
 
 export interface WorkoutBlockData {
+  templateId?: string;
   id: string;
   name: string;
   duration: number; // minutes
@@ -43,6 +44,7 @@ const MODALITY_COLORS: Record<TrainingModality, string> = {
   cycling: 'bg-emerald-400',
   strength: 'bg-purple-400',
   walking: 'bg-sky-400',
+  triathlon: 'bg-rose-400',
 };
 
 const MODALITY_LABELS: Record<TrainingModality, string> = {
@@ -51,6 +53,7 @@ const MODALITY_LABELS: Record<TrainingModality, string> = {
   cycling: 'Ciclismo',
   strength: 'Musculacao',
   walking: 'Caminhada',
+  triathlon: 'Triatleta',
 };
 
 const INTENSITY_LABELS: Record<WorkoutIntensity, string> = {

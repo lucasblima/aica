@@ -67,15 +67,19 @@ const MODALITY_ICONS: Record<string, string> = {
   running: '\u{1F3C3}',
   cycling: '\u{1F6B4}',
   strength: '\u{1F4AA}',
+  walking: '\u{1F6B6}',
+  triathlon: '\u{1F3C5}',
 };
 
 // getPeriodizationLabel removed — redundant with WeekStrip header (#626)
 
-const MODALITY_PILL_STYLES: Record<WeekWorkout['modality'], { bg: string; text: string }> = {
+const MODALITY_PILL_STYLES: Record<string, { bg: string; text: string }> = {
   swimming: { bg: 'rgba(96,165,250,0.15)', text: '#1e3a5f' },
   running: { bg: 'rgba(251,146,60,0.15)', text: '#7c2d12' },
   cycling: { bg: 'rgba(52,211,153,0.15)', text: '#064e3b' },
   strength: { bg: 'rgba(192,132,252,0.15)', text: '#581c87' },
+  walking: { bg: 'rgba(56,189,248,0.15)', text: '#0c4a6e' },
+  triathlon: { bg: 'rgba(251,113,133,0.15)', text: '#881337' },
 };
 
 // ============================================

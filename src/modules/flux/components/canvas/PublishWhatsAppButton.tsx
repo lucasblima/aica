@@ -194,9 +194,22 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                   Previa da Mensagem
                 </label>
                 <div className="ceramic-inset p-4 rounded-xl max-h-64 overflow-y-auto">
-                  <pre className="text-xs text-ceramic-text-primary whitespace-pre-wrap font-sans">
-                    {messagePreview}
-                  </pre>
+                  <div className="text-xs text-ceramic-text-primary whitespace-pre-wrap font-sans leading-relaxed">
+                    {messagePreview.split('\n').map((line, i) => (
+                      <span key={i}>
+                        {line.split(/(\*[^*]+\*)/).map((part, j) =>
+                          part.startsWith('*') && part.endsWith('*') && part.length > 2 ? (
+                            <strong key={j} className="font-bold">{part.slice(1, -1)}</strong>
+                          ) : part.startsWith('_') && part.endsWith('_') && part.length > 2 ? (
+                            <em key={j} className="italic text-ceramic-text-secondary">{part.slice(1, -1)}</em>
+                          ) : (
+                            <span key={j}>{part}</span>
+                          )
+                        )}
+                        {'\n'}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
