@@ -21,3 +21,5 @@ export type { FeedbackTimelineProps } from './FeedbackTimeline';
 export { FeedbackStatusRow } from './FeedbackStatusRow';
 export { FeedbackRadarChart } from './FeedbackRadarChart';
 export type { FeedbackRadarChartProps } from './FeedbackRadarChart';
+export { StressFatigueGauges } from './StressFatigueGauges';
+export type { StressFatigueGaugesProps } from './StressFatigueGauges';
