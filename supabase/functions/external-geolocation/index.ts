@@ -86,21 +86,21 @@ serve(async (req) => {
     // 2. Check if user already has geo data in profiles
     const { data: profile } = await supabase
       .from('profiles')
-      .select('timezone, city, latitude, longitude, geo_source')
+      .select('detected_timezone, detected_city, detected_latitude, detected_longitude, location_source')
       .eq('id', user.id)
       .single();
 
-    if (profile?.latitude && profile?.longitude && profile?.timezone) {
+    if (profile?.detected_latitude && profile?.detected_longitude && profile?.detected_timezone) {
       console.log(TAG, `Returning cached geo data for user ${user.id}`);
       return new Response(
         JSON.stringify({
           success: true,
           data: {
-            timezone: profile.timezone,
-            city: profile.city,
-            latitude: profile.latitude,
-            longitude: profile.longitude,
-            source: profile.geo_source || 'cached',
+            timezone: profile.detected_timezone,
+            city: profile.detected_city,
+            latitude: profile.detected_latitude,
+            longitude: profile.detected_longitude,
+            source: profile.location_source || 'cached',
           } as GeoData,
           source: 'ipapi',
           cached: true,
@@ -155,11 +155,11 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        timezone: geo.timezone,
-        city: geo.city,
-        latitude: geo.latitude,
-        longitude: geo.longitude,
-        geo_source: 'ipapi',
+        detected_timezone: geo.timezone,
+        detected_city: geo.city,
+        detected_latitude: geo.latitude,
+        detected_longitude: geo.longitude,
+        location_source: 'ipapi',
       })
       .eq('id', user.id);
 

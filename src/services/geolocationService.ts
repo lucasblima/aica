@@ -61,10 +61,10 @@ export async function saveManualLocation(
   const { error } = await supabase
     .from('profiles')
     .update({
-      location_city: data.city,
-      location_lat: data.latitude,
-      location_lng: data.longitude,
-      location_timezone: data.timezone ?? null,
+      detected_city: data.city,
+      detected_latitude: data.latitude,
+      detected_longitude: data.longitude,
+      detected_timezone: data.timezone ?? null,
       location_source: 'manual' as const,
     })
     .eq('id', userId)

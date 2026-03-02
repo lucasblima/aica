@@ -25,16 +25,16 @@ async function resolveLocation(userId: string): Promise<GeolocationData | null> 
   // 1. Check profiles table for stored location
   const { data: profile } = await supabase
     .from('profiles')
-    .select('location_city, location_lat, location_lng, location_timezone, location_source')
+    .select('detected_city, detected_latitude, detected_longitude, detected_timezone, location_source')
     .eq('id', userId)
     .single()
 
-  if (profile?.location_lat && profile?.location_lng) {
+  if (profile?.detected_latitude && profile?.detected_longitude) {
     return {
-      city: profile.location_city ?? '',
-      latitude: profile.location_lat,
-      longitude: profile.location_lng,
-      timezone: profile.location_timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+      city: profile.detected_city ?? '',
+      latitude: profile.detected_latitude,
+      longitude: profile.detected_longitude,
+      timezone: profile.detected_timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
       source: (profile.location_source as GeolocationData['source']) ?? 'manual',
     }
   }
