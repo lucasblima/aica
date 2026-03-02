@@ -96,9 +96,7 @@ const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m =
 // Billing Module - Pricing and subscription management
 const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingPage })));
 const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
-const AdminPortalPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminPortalPage })));
 const AdminCouponsPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminCouponsPage })));
-const PricingSimulatorPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingSimulatorPage })));
 
 // Invites Dashboard - Manage sent invites
 const InvitesPage = lazy(() => import('../pages/InvitesPage'));
@@ -843,9 +841,7 @@ export function AppRouter() {
                />
 
                {/* Admin Portal — admin-only routes */}
-               <Route path="/admin" element={<ProtectedRoute><AdminGuard><AdminPortalPage /></AdminGuard></ProtectedRoute>} />
                <Route path="/admin/coupons" element={<ProtectedRoute><AdminGuard><AdminCouponsPage /></AdminGuard></ProtectedRoute>} />
-               <Route path="/admin/simulator" element={<ProtectedRoute><AdminGuard><PricingSimulatorPage /></AdminGuard></ProtectedRoute>} />
 
                {/* Module Hub - Coming Soon system (CS-004) */}
                <Route
