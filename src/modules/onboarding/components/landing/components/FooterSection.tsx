@@ -24,6 +24,12 @@ export function FooterSection() {
               Plataforma
             </h4>
             <a
+              href="/pricing"
+              className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
+            >
+              Planos
+            </a>
+            <a
               href="/status"
               className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
             >

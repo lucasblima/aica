@@ -18,6 +18,13 @@ export { PricingSection } from './components/PricingSection';
 export { CTASection } from './components/CTASection';
 export { FooterSection } from './components/FooterSection';
 
+// Visualization components
+export { LifeScoreRadar } from './components/LifeScoreRadar';
+export { DomainCard } from './components/DomainCard';
+export { SpiralDetectionVisual } from './components/SpiralDetectionVisual';
+export { ModuleNetwork } from './components/ModuleNetwork';
+export { StreakRing } from './components/StreakRing';
+
 // Hooks
 export { useScrollReveal } from './hooks/useScrollReveal';
 
