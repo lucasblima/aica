@@ -103,8 +103,11 @@ export function DunbarLayerMap({
       </div>
 
       {/* SVG Visualization */}
-      <div className="flex justify-center">
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <div className="flex justify-center max-w-full overflow-hidden">
+        <svg
+          className="max-w-full max-h-[400px] w-auto h-auto"
+          viewBox={`0 0 ${size} ${size}`}
+        >
           {/* Render rings from outermost to innermost */}
           {([500, 150, 50, 15, 5] as DunbarLayer[]).map((layer) => {
             const radius = layerRadii[layer];
