@@ -80,7 +80,7 @@ function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?:
 async function queryDocument(
   geminiFileUri: string,
   userQuery: string
-): Promise<{ answer: string; citations: string[] }> {
+): Promise<{ answer: string; citations: string[]; usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }> {
   log('INFO', 'Querying document with Gemini', { geminiFileUri, queryLength: userQuery.length })
 
   const queryPrompt = `
@@ -139,6 +139,7 @@ Responda de forma direta e clara. Se citar trechos do documento, use aspas.
   }
 
   const result = await response.json()
+  const usageMetadata = result.usageMetadata
   const answer = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Nao foi possivel gerar uma resposta.'
 
   // Extract citations (quoted text)
@@ -153,7 +154,7 @@ Responda de forma direta e clara. Se citar trechos do documento, use aspas.
 
   log('INFO', 'Query completed', { answerLength: answer.length, citationsCount: citations.length })
 
-  return { answer, citations }
+  return { answer, citations, usageMetadata }
 }
 
 // =============================================================================
@@ -253,7 +254,7 @@ serve(async (req) => {
     }
 
     // Query the document
-    const { answer, citations } = await queryDocument(request.gemini_file_name, request.query)
+    const { answer, citations, usageMetadata } = await queryDocument(request.gemini_file_name, request.query)
 
     const processingTimeMs = Date.now() - startTime
 
@@ -268,8 +269,8 @@ serve(async (req) => {
       p_action: 'generate_field_content',
       p_module: 'grants',
       p_model: 'gemini-2.5-flash',
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+      p_tokens_in: usageMetadata?.promptTokenCount || 0,
+      p_tokens_out: usageMetadata?.candidatesTokenCount || 0,
     }).then(() => {
       log('INFO', 'Logged interaction')
     }).catch((err: Error) => {
