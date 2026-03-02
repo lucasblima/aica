@@ -30,6 +30,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/genai": "^1.30.0",
     "@heroicons/react": "^2.2.0",
+    "@marsidev/react-turnstile": "^1.4.2",
     "@supabase/ssr": "^0.8.0",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-virtual": "^3.13.13",
