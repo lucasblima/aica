@@ -15,6 +15,7 @@ import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { PatternDashboard } from '../components/insights/PatternDashboard'
+import { ActivityHeatmapCard } from '../components/insights/ActivityHeatmapCard'
 
 import { JourneySearchPanel } from '../components/JourneySearchPanel'
 import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
@@ -476,7 +477,12 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               )}
             </FeatureGate>
 
-            {/* Pattern Dashboard (heatmap, trends, clusters) */}
+            {/* Activity Heatmap — standalone, unlocks at level 3 */}
+            <FeatureGate featureId="activity_heatmap">
+              <ActivityHeatmapCard userId={user?.id} />
+            </FeatureGate>
+
+            {/* Pattern Dashboard (emotion trends, clusters) */}
             <FeatureGate featureId="pattern_dashboard">
               <PatternDashboard userId={user?.id} />
             </FeatureGate>
@@ -648,6 +654,10 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 ) : (
                   <InsightsEmptyState />
                 )}
+              </FeatureGate>
+
+              <FeatureGate featureId="activity_heatmap">
+                <ActivityHeatmapCard userId={user?.id} />
               </FeatureGate>
 
               <FeatureGate featureId="pattern_dashboard">
