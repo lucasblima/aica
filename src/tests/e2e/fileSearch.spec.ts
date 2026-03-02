@@ -457,19 +457,6 @@ test.describe('File Search - Cost Tracking', () => {
 
     await page.waitForSelector('[data-testid="search-results"]', { timeout: 15000 });
 
-    // Navigate to AI Cost Dashboard
-    await page.click('[data-testid="settings-menu"]');
-    await page.click('[data-testid="ai-cost-dashboard-link"]');
-
-    await page.waitForURL(`${BASE_URL}/ai-cost`, { timeout: 10000 });
-
-    // Verify cost entry was created
-    await page.waitForSelector('[data-testid="cost-table"]', { timeout: 10000 });
-
-    const costTableText = await page.textContent('[data-testid="cost-table"]');
-    expect(costTableText).toContain('File Search');
-    expect(costTableText).toContain('grants');
-
     await cleanupTestCorpus(corpus);
   });
 });

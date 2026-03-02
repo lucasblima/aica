@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../ui';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { springHover, springPress } from '@/lib/animations/ceramic-motion';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 interface LoginProps {
   onLogin: () => void;
@@ -15,6 +16,7 @@ interface LoginProps {
 
 export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
   const { login, error, loading } = useGoogleAuth();
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
   const handleGoogleLogin = async () => {
     await login();
@@ -174,6 +176,14 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Cloudflare Turnstile — invisible CAPTCHA */}
+        <div className="mb-4 flex justify-center">
+          <Turnstile
+            siteKey={turnstileSiteKey}
+            options={{ theme: 'light', size: 'invisible' }}
+          />
+        </div>
 
         {/* Google Login Button */}
         <motion.button

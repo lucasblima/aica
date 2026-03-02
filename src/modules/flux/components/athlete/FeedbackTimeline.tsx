@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { MessageSquare } from 'lucide-react';
 import { FeedbackStatusRow } from './FeedbackStatusRow';
 import { FeedbackRadarChart } from './FeedbackRadarChart';
+import { StressFatigueGauges } from './StressFatigueGauges';
 import { MODALITY_CONFIG } from '../../types';
 import type { TrainingModality } from '../../types';
 import type { WeekFeedbackSummary, FeedbackSlotSummary } from '../../hooks/useAthleteFeedback';
@@ -146,10 +147,14 @@ export function FeedbackTimeline({
                 />
               </div>
 
-              {/* Weekly radar chart (shown if weekly feedback has questionnaire data) */}
+              {/* Weekly radar chart + stress/fatigue gauges (shown if weekly feedback has questionnaire data) */}
               {weeklyQuestionnaire && (
-                <div className="px-4 py-3">
+                <div className="px-4 py-3 space-y-3">
                   <FeedbackRadarChart questionnaire={weeklyQuestionnaire} />
+                  <StressFatigueGauges
+                    stress={weeklyQuestionnaire.stress}
+                    fatigue={weeklyQuestionnaire.fatigue}
+                  />
                 </div>
               )}
 
@@ -196,12 +201,16 @@ export function FeedbackTimeline({
                                     : undefined
                                 }
                               />
-                              {/* Radar chart for daily feedback entry */}
+                              {/* Radar chart + gauges for daily feedback entry */}
                               {slotQuestionnaire && (
-                                <div className="px-4 py-2">
+                                <div className="px-4 py-2 space-y-2">
                                   <FeedbackRadarChart
                                     questionnaire={slotQuestionnaire}
                                     size={180}
+                                  />
+                                  <StressFatigueGauges
+                                    stress={slotQuestionnaire.stress}
+                                    fatigue={slotQuestionnaire.fatigue}
                                   />
                                 </div>
                               )}

@@ -9,11 +9,9 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet, HardDrive, BarChart3, List, GitCompare, Trophy, Download } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet, BarChart3, List, GitCompare, Trophy, Download } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
-import { DriveFilePicker } from '../components/DriveFilePicker';
-import { importFromDrive } from '../services/driveImportService';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
 import { TrendLineChart } from '../components/Charts/TrendLineChart';
@@ -90,7 +88,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
-  const [showDrivePicker, setShowDrivePicker] = useState(false);
   const [showManagement, setShowManagement] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
@@ -661,28 +658,11 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           />
         )}
 
-        {/* Drive File Picker Modal */}
-        {showDrivePicker && (
-          <DriveFilePicker
-            onImport={async (file, content) => {
-              const result = await importFromDrive(userId, file, content);
-              if (result.success) {
-                setShowDrivePicker(false);
-                loadData();
-              } else {
-                throw new Error(result.error || 'Erro ao importar');
-              }
-            }}
-            onClose={() => setShowDrivePicker(false)}
-          />
-        )}
-
         {/* Empty State - when no transactions */}
         {!hasData && (
           <FinanceEmptyState
             onUploadPDF={() => setShowUpload(true)}
             onUploadCSV={() => setShowCSVUpload(true)}
-            onImportDrive={() => setShowDrivePicker(true)}
             onNavigateBudget={() => setActiveView('budget')}
           />
         )}
@@ -767,13 +747,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             </div>
 
             {/* Charts */}
-            {isValuesVisible && (
-              <>
-                <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} monthlyTrend={trendData} />
+            <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} monthlyTrend={trendData} />
 
-                <ExpenseChart data={categoryBreakdown} totalExpenses={summary!.totalExpenses} />
-              </>
-            )}
+            <ExpenseChart data={categoryBreakdown} totalExpenses={summary!.totalExpenses} />
 
             {/* Trend Line Chart - 6 Months */}
             {trendData.some(d => d.income > 0 || d.expense > 0) && (
@@ -856,14 +832,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-ceramic-success" />
                 <span className="text-xs font-bold text-ceramic-success">CSV</span>
-              </button>
-              <button
-                onClick={() => setShowDrivePicker(true)}
-                className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
-                title="Importar do Google Drive"
-              >
-                <HardDrive className="w-3.5 h-3.5 text-ceramic-info" />
-                <span className="text-xs font-bold text-ceramic-info">Drive</span>
               </button>
               {allTransactions.length > 0 && (
                 <button

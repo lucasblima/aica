@@ -946,14 +946,31 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             <section className="w-full">
                 <CompletedTasksSection
                     tasks={completedTodayTasks}
-                    onUncomplete={(taskId: string) => {
+                    onUncomplete={async (taskId: string) => {
                         // Cancel pending removal timer if user uncompletes within animation window
                         const pendingTimer = completionTimers.current.get(taskId);
                         if (pendingTimer) {
                             clearTimeout(pendingTimer);
                             completionTimers.current.delete(taskId);
                         }
-                        handleUncomplete(taskId);
+                        const success = await handleUncomplete(taskId);
+                        if (success) {
+                            notificationService.show({
+                                type: 'success',
+                                title: 'Tarefa restaurada',
+                                message: 'A tarefa voltou para sua lista ativa',
+                                icon: '↩️',
+                                duration: 3000,
+                            });
+                        } else {
+                            notificationService.show({
+                                type: 'error',
+                                title: 'Erro ao restaurar',
+                                message: 'Nao foi possivel desfazer a conclusao. Tente novamente.',
+                                icon: '❌',
+                                duration: 5000,
+                            });
+                        }
                     }}
                     isLoading={isLoadingCompleted}
                 />

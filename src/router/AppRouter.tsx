@@ -22,6 +22,7 @@ import { allTours } from '../config/tours';
 import { AuthGuard } from '../components/guards/AuthGuard';
 import { ActivationGuard } from '../components/guards/ActivationGuard';
 import { AicaChatFAB } from '../components/features/AicaChatFAB';
+import { AdminGuard } from '../components/guards/AdminGuard';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('AppRouter');
@@ -92,10 +93,12 @@ const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ d
 // Invite System - Public page for invite acceptance
 const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m => ({ default: m.InviteAcceptPage })));
 
-// Billing Module - Pricing, usage, and subscription management
+// Billing Module - Pricing and subscription management
 const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingPage })));
-const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
+const AdminPortalPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminPortalPage })));
+const AdminCouponsPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminCouponsPage })));
+const PricingSimulatorPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingSimulatorPage })));
 
 // Invites Dashboard - Manage sent invites
 const InvitesPage = lazy(() => import('../pages/InvitesPage'));
@@ -413,7 +416,6 @@ export function AppRouter() {
             lifeAreas={lifeAreas}
             onLogout={() => supabase.auth.signOut()}
             onNavigateToView={setCurrentView}
-            onNavigateToAICost={() => setCurrentView('ai-cost')}
             onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
             onOpenAssociation={handleOpenAssociation}
             onSelectArchetype={handleSelectArchetype}
@@ -523,22 +525,13 @@ export function AppRouter() {
       return <MainAppWithNavigation />;
    };
 
-   // Redirect ai-cost view-state to /usage via useEffect to avoid setState during render
-   function AiCostRedirect({ navigate: nav, setCurrentView: setView }: { navigate: (path: string) => void; setCurrentView: (v: ViewState) => void }) {
-      useEffect(() => {
-         nav('/usage');
-         setView('vida');
-      }, [nav, setView]);
-      return null;
-   }
-
    // Main App component with navigation context
    function MainAppWithNavigation() {
       const { isFocusedMode } = useNavigation();
 
       // Define focused modes where global nav should be hidden (Contextual Descent)
       const focusedModes: ViewState[] = [
-         'association_detail', 'finance', 'grants', 'ai-cost', 'file-search-analytics',
+         'association_detail', 'finance', 'grants', 'file-search-analytics',
          'studio', 'eraforge',
          // Life Area Modules
          'health', 'education', 'legal', 'professional'
@@ -583,10 +576,6 @@ export function AppRouter() {
                      </EraforgeGameProvider>
                   </ErrorBoundary>
                </motion.div>
-            )}
-            {currentView === 'ai-cost' && (
-               // Redirect ai-cost view-state to /usage (consolidated billing dashboard)
-               <AiCostRedirect navigate={navigate} setCurrentView={setCurrentView} />
             )}
             {currentView === 'file-search-analytics' && userId && (
                <motion.div key="file-search" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
@@ -825,12 +814,6 @@ export function AppRouter() {
                />
 
 
-               {/* AI Cost Dashboard - redirects to /usage (consolidated billing dashboard) */}
-               <Route
-                  path="/ai-cost"
-                  element={<Navigate to="/usage" replace />}
-               />
-
                {/* File Search Analytics - Protected */}
                <Route
                   path="/file-search"
@@ -855,13 +838,14 @@ export function AppRouter() {
                   element={<ProtectedRoute><PricingPage /></ProtectedRoute>}
                />
                <Route
-                  path="/usage"
-                  element={<ProtectedRoute><UsageDashboardPage /></ProtectedRoute>}
-               />
-               <Route
                   path="/manage-subscription"
                   element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
                />
+
+               {/* Admin Portal — admin-only routes */}
+               <Route path="/admin" element={<ProtectedRoute><AdminGuard><AdminPortalPage /></AdminGuard></ProtectedRoute>} />
+               <Route path="/admin/coupons" element={<ProtectedRoute><AdminGuard><AdminCouponsPage /></AdminGuard></ProtectedRoute>} />
+               <Route path="/admin/simulator" element={<ProtectedRoute><AdminGuard><PricingSimulatorPage /></AdminGuard></ProtectedRoute>} />
 
                {/* Module Hub - Coming Soon system (CS-004) */}
                <Route

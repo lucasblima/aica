@@ -83,6 +83,7 @@ export const MODALITY_OPTIONS: { value: TrainingModality; label: string; icon: s
   { value: 'cycling', label: 'Ciclismo', icon: '\u{1F6B4}' },
   { value: 'strength', label: 'Musculacao', icon: '\u{1F3CB}\uFE0F' },
   { value: 'walking', label: 'Caminhada', icon: '\u{1F6B6}' },
+  { value: 'triathlon', label: 'Triatleta', icon: '\u{1F3C5}' },
 ];
 
 export const LEVEL_OPTIONS: { value: SimpleAthleteLevel; label: string }[] = [

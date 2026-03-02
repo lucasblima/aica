@@ -30,6 +30,7 @@ const MODALITY_PT_LABELS: Record<string, string> = {
   cycling: 'Ciclismo',
   strength: 'Musculacao',
   walking: 'Caminhada',
+  triathlon: 'Triatleta',
 };
 
 const AVATAR_COLORS = [

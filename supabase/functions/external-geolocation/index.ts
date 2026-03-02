@@ -88,7 +88,7 @@ serve(async (req) => {
       .from('profiles')
       .select('detected_timezone, detected_city, detected_latitude, detected_longitude, location_source')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profile?.detected_latitude && profile?.detected_longitude && profile?.detected_timezone) {
       console.log(TAG, `Returning cached geo data for user ${user.id}`);

@@ -35,7 +35,7 @@ export function ScheduleEditor({
   return (
     <div className="bg-ceramic-cool/50 rounded-xl p-3 space-y-3">
       {/* Day selector */}
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex items-center justify-between gap-1 overflow-hidden max-w-full">
         {DAY_LABELS.map((label, idx) => {
           const dayValue = idx + 1; // 1=Mon ... 7=Sun
           const isSelected = day === dayValue;

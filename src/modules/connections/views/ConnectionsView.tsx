@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Sparkles, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
 import { SpaceCard } from '../components/SpaceCard';
-import TelegramLinkCard from '../components/telegram/TelegramLinkCard';
 import { CeramicTabSelector } from '@/components';
 import { NetworkGraph } from '@/components/features/visualizations';
 import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';

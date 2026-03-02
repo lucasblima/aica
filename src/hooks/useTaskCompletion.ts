@@ -140,20 +140,23 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
 
   /**
    * Undo a task completion: clear completed_at, remove from completedToday list.
+   * Returns true on success so callers can show feedback.
    */
-  const handleUncomplete = useCallback(async (taskId: string) => {
-    const { error } = await supabase
+  const handleUncomplete = useCallback(async (taskId: string): Promise<boolean> => {
+    const { data: restored, error } = await supabase
       .from('work_items')
       .update({
         completed_at: null,
         is_completed: false,
         status: 'pending',
       })
-      .eq('id', taskId);
+      .eq('id', taskId)
+      .select('id')
+      .single();
 
-    if (error) {
-      log.error('Error uncompleting task:', { error });
-      return;
+    if (error || !restored) {
+      log.error('Error uncompleting task:', { error, taskId });
+      return false;
     }
 
     log.debug('Task uncompleted:', taskId);
@@ -161,7 +164,22 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
     // Remove from completedToday list
     setCompletedTodayTasks(prev => prev.filter(t => t.id !== taskId));
 
+    // Clear any lingering completing animation for this task
+    setCompletingTaskIds(prev => {
+      const next = new Set(prev);
+      next.delete(taskId);
+      return next;
+    });
+
+    // Cancel the animation timer if still pending
+    const timer = completingTimers.current.get(taskId);
+    if (timer) {
+      clearTimeout(timer);
+      completingTimers.current.delete(taskId);
+    }
+
     onRefresh();
+    return true;
   }, [onRefresh]);
 
   /**

@@ -1,13 +1,15 @@
 /**
  * FeedbackRadarChart -- Pure SVG radar/spider chart for feedback questionnaire data.
  *
- * Shows 6 dimensions derived from the athlete questionnaire:
- *   Volume (avg of volume_adequate + volume_completed)
- *   Intensidade (avg of intensity_adequate + intensity_completed)
- *   Fadiga (inverted: low fatigue = good score)
- *   Stress (inverted: low stress = good score)
- *   Nutricao
- *   Sono
+ * Shows exactly 6 indicators from the athlete questionnaire:
+ *   1. Volume adequado
+ *   2. Intensidade adequada
+ *   3. Cuidado com alimentacao
+ *   4. Cumpriu com volume
+ *   5. Cumpriu com intensidade
+ *   6. Qualidade do sono
+ *
+ * Stress and fatigue are displayed as separate gauges (StressFatigueGauges).
  *
  * Reference implementation: EntityStatRadar.tsx (Life RPG module)
  */
@@ -69,27 +71,25 @@ interface RadarDimension {
 const MAX_VALUE = 5;
 
 /**
- * Derive 6 radar dimensions from the raw 8-field questionnaire.
+ * Derive exactly 6 radar dimensions from the raw questionnaire fields.
  * Returns null if fewer than 3 fields are populated (not enough data to render).
+ *
+ * The 6 indicators are:
+ *   1. Volume adequado   (volume_adequate)
+ *   2. Intensidade adequada (intensity_adequate)
+ *   3. Cuidado com alimentacao (nutrition)
+ *   4. Cumpriu com volume (volume_completed)
+ *   5. Cumpriu com intensidade (intensity_completed)
+ *   6. Qualidade do sono  (sleep)
  */
 function extractDimensions(q: QuestionnaireData): RadarDimension[] | null {
-  const avg = (a?: number, b?: number): number | undefined => {
-    if (a != null && b != null) return (a + b) / 2;
-    return a ?? b;
-  };
-
-  const invert = (v?: number): number | undefined => {
-    if (v == null) return undefined;
-    return MAX_VALUE - v;
-  };
-
   const dims: { label: string; raw: number | undefined }[] = [
-    { label: 'Volume', raw: avg(q.volume_adequate, q.volume_completed) },
-    { label: 'Intensidade', raw: avg(q.intensity_adequate, q.intensity_completed) },
-    { label: 'Fadiga', raw: invert(q.fatigue) },
-    { label: 'Stress', raw: invert(q.stress) },
-    { label: 'Nutricao', raw: q.nutrition },
-    { label: 'Sono', raw: q.sleep },
+    { label: 'Volume adequado', raw: q.volume_adequate },
+    { label: 'Intensidade adequada', raw: q.intensity_adequate },
+    { label: 'Alimentacao', raw: q.nutrition },
+    { label: 'Cumpriu volume', raw: q.volume_completed },
+    { label: 'Cumpriu intensidade', raw: q.intensity_completed },
+    { label: 'Qualidade do sono', raw: q.sleep },
   ];
 
   // Need at least 3 populated dimensions

@@ -12,7 +12,6 @@ interface HeaderGlobalProps {
     avatarUrl?: string;
     userName?: string;
     onLogout?: () => void;
-    onNavigateToAICost?: () => void;
     onNavigateToFileSearch?: () => void;
     onOpenProfile?: () => void;
     showTabs?: boolean;
@@ -36,7 +35,6 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
     avatarUrl,
     userName,
     onLogout,
-    onNavigateToAICost,
     onNavigateToFileSearch,
     onOpenProfile,
     showTabs = false,
@@ -84,7 +82,6 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
                         avatarUrl={avatarUrl}
                         userName={userName}
                         onLogout={onLogout}
-                        onNavigateToAICost={onNavigateToAICost}
                         onNavigateToFileSearch={onNavigateToFileSearch}
                         onOpenProfile={onOpenProfile}
                     />

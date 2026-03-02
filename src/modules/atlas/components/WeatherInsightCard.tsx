@@ -2,14 +2,14 @@
  * WeatherInsightCard — Displays current weather + Gemini insight.
  *
  * States:
- *   1. Loading — skeleton pulse
+ *   1. Loading — compact skeleton with spinner
  *   2. Connect — no location, prompts user to connect
- *   3. Complete — weather icon + temperature + insight
- *   4. Error — returns null (silently hidden)
+ *   3. Complete — weather icon + temperature + insight (compact inline)
+ *   4. Error — friendly error message
  */
 
 import React, { useState } from 'react'
-import { Sun, Cloud, CloudRain, MapPin } from 'lucide-react'
+import { Sun, Cloud, CloudRain, CloudSnow, CloudLightning, MapPin, ChevronDown, CloudOff, Loader2 } from 'lucide-react'
 import { useWeatherInsight } from '@/hooks/useWeatherInsight'
 import { LocationConnectModal } from './LocationConnectModal'
 import type { WeatherData } from '@/lib/external-api'
@@ -18,13 +18,10 @@ import type { WeatherData } from '@/lib/external-api'
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Gets the temperature for the current hour from the hourly forecast array.
- */
 function getCurrentTemp(forecast: WeatherData['forecast']): number | null {
   const now = new Date()
   const currentHour = now.getHours()
-  const todayStr = now.toISOString().slice(0, 10) // YYYY-MM-DD
+  const todayStr = now.toISOString().slice(0, 10)
 
   const idx = forecast.hourly.time.findIndex((t) => {
     const d = new Date(t)
@@ -34,9 +31,6 @@ function getCurrentTemp(forecast: WeatherData['forecast']): number | null {
   return idx >= 0 ? forecast.hourly.temperature_2m[idx] : null
 }
 
-/**
- * Gets the WMO weather code for the current hour.
- */
 function getCurrentWeatherCode(forecast: WeatherData['forecast']): number | null {
   const now = new Date()
   const currentHour = now.getHours()
@@ -50,14 +44,13 @@ function getCurrentWeatherCode(forecast: WeatherData['forecast']): number | null
   return idx >= 0 ? forecast.hourly.weathercode[idx] : null
 }
 
-/**
- * Maps WMO weather codes to a Lucide icon component.
- */
 function getWeatherIcon(code: number | null) {
   if (code === null) return Cloud
   if (code === 0 || code === 1) return Sun
   if (code === 2 || code === 3) return Cloud
-  if (code === 61 || code === 63 || code === 65) return CloudRain
+  if (code >= 51 && code <= 67) return CloudRain
+  if (code >= 71 && code <= 77) return CloudSnow
+  if (code >= 95) return CloudLightning
   return Cloud
 }
 
@@ -65,45 +58,46 @@ function getWeatherIcon(code: number | null) {
 // Component
 // ---------------------------------------------------------------------------
 
-export const WeatherInsightCard: React.FC = () => {
+interface WeatherInsightCardProps {
+  compact?: boolean
+}
+
+export const WeatherInsightCard: React.FC<WeatherInsightCardProps> = ({ compact = false }) => {
   const { weather, insight, hasLocation, isLoading } = useWeatherInsight()
   const [showModal, setShowModal] = useState(false)
+  const [expanded, setExpanded] = useState(!compact)
 
-  // State 1: Loading
+  // State 1: Loading — compact skeleton with spinner
   if (isLoading) {
     return (
-      <div className="bg-ceramic-base rounded-xl p-4 shadow-ceramic-emboss animate-pulse">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-ceramic-cool" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 bg-ceramic-cool rounded w-24" />
-            <div className="h-3 bg-ceramic-cool rounded w-48" />
+      <div className="bg-ceramic-base rounded-xl px-3 py-2.5 shadow-ceramic-emboss">
+        <div className="flex items-center gap-2">
+          <Loader2 className="w-4 h-4 text-amber-500 animate-spin shrink-0" />
+          <div className="flex-1 flex items-center gap-2">
+            <div className="h-3 bg-ceramic-cool rounded w-10 animate-pulse" />
+            <div className="h-3 bg-ceramic-cool rounded flex-1 max-w-[140px] animate-pulse" />
           </div>
         </div>
       </div>
     )
   }
 
-  // State 2: No location — prompt to connect
+  // State 2: No location — compact prompt to connect
   if (!hasLocation) {
     return (
       <>
-        <div className="bg-ceramic-base rounded-xl p-4 shadow-ceramic-emboss">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-amber-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-ceramic-text-secondary">
-                Ative sua localização para insights de clima
-              </p>
-              <button
-                onClick={() => setShowModal(true)}
-                className="text-sm font-medium text-amber-600 hover:text-amber-700 mt-0.5"
-              >
-                Conectar →
-              </button>
-            </div>
+        <div className="bg-ceramic-base rounded-xl px-3 py-2.5 shadow-ceramic-emboss">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+            <p className="text-xs text-ceramic-text-secondary flex-1">
+              Ative localização para clima
+            </p>
+            <button
+              onClick={() => setShowModal(true)}
+              className="text-xs font-medium text-amber-600 hover:text-amber-700 shrink-0"
+            >
+              Conectar
+            </button>
           </div>
         </div>
 
@@ -114,9 +108,18 @@ export const WeatherInsightCard: React.FC = () => {
     )
   }
 
-  // State 4: Has location but no weather data (error) — silently hidden
+  // State 4: Has location but no weather data (error) — friendly message
   if (!weather) {
-    return null
+    return (
+      <div className="bg-ceramic-base rounded-xl px-3 py-2.5 shadow-ceramic-emboss">
+        <div className="flex items-center gap-2">
+          <CloudOff className="w-4 h-4 text-ceramic-text-secondary shrink-0" />
+          <p className="text-xs text-ceramic-text-secondary flex-1">
+            Clima indisponivel no momento
+          </p>
+        </div>
+      </div>
+    )
   }
 
   // State 3: Complete — show weather + insight
@@ -124,24 +127,55 @@ export const WeatherInsightCard: React.FC = () => {
   const code = getCurrentWeatherCode(weather.forecast)
   const WeatherIcon = getWeatherIcon(code)
 
+  // Compact collapsed: single-line summary
+  if (compact && !expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="w-full bg-ceramic-base rounded-xl px-3 py-2.5 shadow-ceramic-emboss flex items-center gap-2 text-left"
+      >
+        <WeatherIcon className="w-4 h-4 text-amber-600 shrink-0" />
+        {temp !== null && (
+          <span className="text-xs font-medium text-ceramic-text-primary">
+            {Math.round(temp)}°C
+          </span>
+        )}
+        {insight && (
+          <span className="text-xs text-ceramic-text-secondary truncate flex-1">
+            — {insight}
+          </span>
+        )}
+        <ChevronDown className="w-3.5 h-3.5 text-ceramic-text-secondary shrink-0" />
+      </button>
+    )
+  }
+
+  // Full card (default, or compact expanded)
   return (
-    <div className="bg-ceramic-base rounded-xl p-4 shadow-ceramic-emboss">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-          <WeatherIcon className="w-5 h-5 text-amber-600" />
+    <div className="bg-ceramic-base rounded-xl px-3 py-2.5 shadow-ceramic-emboss">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+          <WeatherIcon className="w-4 h-4 text-amber-600" />
         </div>
         <div className="flex-1 min-w-0">
-          {temp !== null && (
-            <p className="text-sm font-medium text-ceramic-text-primary">
-              {Math.round(temp)}°C
-            </p>
-          )}
-          {insight && (
-            <p className="text-sm text-ceramic-text-secondary truncate">
-              {insight}
-            </p>
-          )}
+          <div className="flex items-center gap-1.5">
+            {temp !== null && (
+              <span className="text-xs font-medium text-ceramic-text-primary">
+                {Math.round(temp)}°C
+              </span>
+            )}
+            {insight && (
+              <span className="text-xs text-ceramic-text-secondary truncate">
+                — {insight}
+              </span>
+            )}
+          </div>
         </div>
+        {compact && (
+          <button onClick={() => setExpanded(false)} className="p-0.5 shrink-0">
+            <ChevronDown className="w-3.5 h-3.5 text-ceramic-text-secondary rotate-180" />
+          </button>
+        )}
       </div>
     </div>
   )

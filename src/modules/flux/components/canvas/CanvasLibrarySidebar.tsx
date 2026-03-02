@@ -21,6 +21,7 @@ const MODALITY_ICONS: Record<string, string> = {
   cycling: '\u{1F6B4}',
   strength: '\u{1F4AA}',
   walking: '\u{1F6B6}',
+  triathlon: '\u{1F3C5}',
 };
 
 const MODALITY_PT_LABELS: Record<string, string> = {
@@ -29,6 +30,7 @@ const MODALITY_PT_LABELS: Record<string, string> = {
   cycling: 'Ciclismo',
   strength: 'Musculacao',
   walking: 'Caminhada',
+  triathlon: 'Triatleta',
 };
 
 const ZONE_OPTIONS = [

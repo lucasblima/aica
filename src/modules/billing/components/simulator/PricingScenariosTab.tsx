@@ -18,11 +18,13 @@ interface ScenarioConfig {
 
 const SCENARIO_COLORS = ['#22c55e', '#3b82f6', '#f59e0b'];
 
-function ScenarioColumn({ config, onUpdate, color, result }: {
+function ScenarioColumn({ config, onUpdate, color, result, onPromote, isFirst }: {
   config: ScenarioConfig;
   onUpdate: (patch: Partial<ScenarioConfig>) => void;
   color: string;
   result: { mrrM12: number; mrrM24: number; breakEven: number | null; margin24: number; ltvCac: number };
+  onPromote?: () => void;
+  isFirst: boolean;
 }) {
   const formatBRL = (v: number) => `R$ ${v.toLocaleString('pt-BR')}`;
 
@@ -35,6 +37,15 @@ function ScenarioColumn({ config, onUpdate, color, result }: {
           onChange={e => onUpdate({ name: e.target.value })}
           className="text-sm font-semibold bg-transparent border-b border-ceramic-border text-ceramic-text-primary w-full"
         />
+        {!isFirst && onPromote && (
+          <button
+            onClick={onPromote}
+            title="Promover a cenario Atual"
+            className="shrink-0 text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-colors"
+          >
+            ★ Atual
+          </button>
+        )}
       </div>
 
       <div className="space-y-2 text-sm mb-4">
@@ -74,6 +85,18 @@ export function PricingScenariosTab({ baseInput }: PricingScenariosTabProps) {
     { name: 'Cenario C', priceProBRL: 59.90, creditsPro: 8000, priceTeamsBRL: 199, creditsTeams: 30000 },
   ]);
 
+  const promoteToAtual = (index: number) => {
+    const promoted = scenarios[index];
+    const oldAtual = scenarios[0];
+    const otherIdx = index === 1 ? 2 : 1;
+    const other = scenarios[otherIdx];
+    setScenarios([
+      { ...promoted, name: 'Atual' },
+      { ...oldAtual, name: oldAtual.name === 'Atual' ? 'Cenario B' : oldAtual.name },
+      { ...other },
+    ]);
+  };
+
   // Use runSimulation (pure function, NOT hook) to avoid rules-of-hooks violation
   const results = scenarios.map(s => {
     const input: SimulationInput = {
@@ -98,6 +121,8 @@ export function PricingScenariosTab({ baseInput }: PricingScenariosTabProps) {
             key={i}
             config={s}
             color={SCENARIO_COLORS[i]}
+            isFirst={i === 0}
+            onPromote={i > 0 ? () => promoteToAtual(i) : undefined}
             onUpdate={patch => {
               const updated = [...scenarios];
               updated[i] = { ...updated[i], ...patch };

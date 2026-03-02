@@ -17,7 +17,7 @@ import type { WorkoutTemplate, TrainingModality } from '../../types/flow';
 import type { WorkoutSeries } from '../../types/series';
 import { MODALITY_CONFIG } from '../../types/flux';
 
-const MODALITY_OPTIONS: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength', 'walking'];
+const MODALITY_OPTIONS: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength', 'walking', 'triathlon'];
 
 interface TemplateFormDrawerProps {
   mode: 'create' | 'edit';

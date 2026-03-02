@@ -20,6 +20,7 @@ import {
   User as UserIcon,
   Pencil,
   Lock,
+  ChevronDown,
 } from 'lucide-react';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
 import { useWorkoutTemplates } from '../hooks';
@@ -139,6 +140,7 @@ export default function TemplateLibraryView() {
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
   const [groupByModality, setGroupByModality] = useState(false);
+  const [expandedModality, setExpandedModality] = useState<TrainingModality | null>(null);
 
   // Apply filters
   useEffect(() => {
@@ -347,7 +349,7 @@ export default function TemplateLibraryView() {
               Modalidade
             </p>
             <div className="flex flex-wrap gap-2">
-              {(['swimming', 'running', 'cycling', 'strength', 'walking'] as TrainingModality[]).map(
+              {(['swimming', 'running', 'cycling', 'strength', 'walking', 'triathlon'] as TrainingModality[]).map(
                 (modality) => (
                   <button
                     key={modality}
@@ -468,35 +470,48 @@ export default function TemplateLibraryView() {
             </button>
           </div>
         ) : groupByModality ? (
-          <div className="space-y-8">
-            {(['swimming', 'running', 'cycling', 'strength', 'walking'] as TrainingModality[])
+          <div className="space-y-3">
+            {(['swimming', 'running', 'cycling', 'strength', 'walking', 'triathlon'] as TrainingModality[])
               .map((mod) => {
                 const modTemplates = filteredTemplates.filter((t) => t.modality === mod);
                 if (modTemplates.length === 0) return null;
                 const config = MODALITY_CONFIG[mod];
+                const isExpanded = expandedModality === mod;
                 return (
-                  <div key={mod}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xl">{config?.icon}</span>
-                      <h3 className="text-lg font-bold text-ceramic-text-primary">{config?.label}</h3>
-                      <span className="text-sm text-ceramic-text-secondary">({modTemplates.length})</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {modTemplates.map((template) => (
-                        <TemplateCard
-                          key={template.id}
-                          template={template}
-                          currentUserId={user?.id}
-                          onToggleFavorite={handleToggleFavorite}
-                          onEdit={handleEdit}
-                          onDuplicate={handleDuplicate}
-                          onDelete={handleDelete}
-                          onDragStart={handleDragStart}
-                          onDragEnd={handleDragEnd}
-                          isDragging={draggedTemplate?.id === template.id}
-                          favoritingId={favoritingIds.has(template.id)}
-                        />
-                      ))}
+                  <div key={mod} className="rounded-xl overflow-hidden ceramic-card">
+                    <button
+                      onClick={() => setExpandedModality(isExpanded ? null : mod)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{config?.icon}</span>
+                        <h3 className="text-lg font-bold text-ceramic-text-primary">{config?.label}</h3>
+                        <span className="text-sm text-ceramic-text-secondary">({modTemplates.length})</span>
+                      </div>
+                      <ChevronDown
+                        className={`w-5 h-5 text-ceramic-text-secondary transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    <div
+                      className={`transition-all duration-200 overflow-hidden ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 pt-0">
+                        {modTemplates.map((template) => (
+                          <TemplateCard
+                            key={template.id}
+                            template={template}
+                            currentUserId={user?.id}
+                            onToggleFavorite={handleToggleFavorite}
+                            onEdit={handleEdit}
+                            onDuplicate={handleDuplicate}
+                            onDelete={handleDelete}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            isDragging={draggedTemplate?.id === template.id}
+                            favoritingId={favoritingIds.has(template.id)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 );
