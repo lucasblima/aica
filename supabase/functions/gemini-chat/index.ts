@@ -2800,6 +2800,7 @@ serve(async (req) => {
             async start(controller) {
               const encoder = new TextEncoder()
               let fullText = ''
+              let usageMeta: any = null
 
               try {
                 // Phase 3: Emit agent_detected early so frontend can show badge during streaming
@@ -2819,7 +2820,6 @@ serve(async (req) => {
                 const streamActions = generateSuggestedActions(streamMessage, streamRawData)
 
                 // Get usage metadata safely
-                let usageMeta: any = null
                 try {
                   const response = await streamResult.response
                   usageMeta = response?.usageMetadata
@@ -2840,24 +2840,23 @@ serve(async (req) => {
                   message: (streamError as Error).message || 'Erro no streaming',
                 })}\n\n`))
               } finally {
+                // Fire-and-forget: log interaction with real token counts from stream
+                if (userId && supabaseAdminStream) {
+                  supabaseAdminStream.rpc('log_interaction', {
+                    p_user_id: userId,
+                    p_action: 'chat_aica_stream',
+                    p_module: streamModule,
+                    p_model: MODELS.fast,
+                    p_tokens_in: usageMeta?.promptTokenCount || 0,
+                    p_tokens_out: usageMeta?.candidatesTokenCount || 0,
+                  }).catch((err: any) => {
+                    console.warn(`[chat_aica_stream] Failed to log interaction: ${err.message}`)
+                  })
+                }
                 controller.close()
               }
             },
           })
-
-          // Fire-and-forget: log interaction
-          if (userId && supabaseAdminStream) {
-            supabaseAdminStream.rpc('log_interaction', {
-              p_user_id: userId,
-              p_action: 'chat_aica_stream',
-              p_module: streamModule,
-              p_model: MODELS.fast,
-              p_tokens_in: 0,
-              p_tokens_out: 0,
-            }).catch((err: any) => {
-              console.warn(`[chat_aica_stream] Failed to log interaction: ${err.message}`)
-            })
-          }
 
           return new Response(sseStream, {
             headers: {

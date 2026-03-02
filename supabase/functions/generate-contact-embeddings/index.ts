@@ -200,6 +200,8 @@ serve(async (req: Request) => {
 
     console.log(`[generate-contact-embeddings] Processing ${insights.length} contacts`)
 
+    let totalCharsEmbedded = 0
+
     // Process each contact
     for (const insight of insights as ContactInsight[]) {
       try {
@@ -231,6 +233,7 @@ serve(async (req: Request) => {
         if (needsUpdate && profileText.length > 10) {
           // Generate profile embedding
           const profileEmbedding = await generateEmbedding(profileText, 'RETRIEVAL_DOCUMENT')
+          totalCharsEmbedded += profileText.length
           const embeddingVector = `[${profileEmbedding.join(',')}]`
 
           // Upsert embedding
@@ -276,6 +279,7 @@ serve(async (req: Request) => {
 
           if (summaryNeedsUpdate) {
             const summaryEmbedding = await generateEmbedding(insight.conversation_summary, 'RETRIEVAL_DOCUMENT')
+            totalCharsEmbedded += insight.conversation_summary.length
             const summaryVector = `[${summaryEmbedding.join(',')}]`
 
             const { error: summaryError } = await supabase
@@ -322,6 +326,7 @@ serve(async (req: Request) => {
 
           if (actionNeedsUpdate) {
             const actionEmbedding = await generateEmbedding(actionItemsText, 'RETRIEVAL_DOCUMENT')
+            totalCharsEmbedded += actionItemsText.length
             const actionVector = `[${actionEmbedding.join(',')}]`
 
             const { error: actionError } = await supabase
