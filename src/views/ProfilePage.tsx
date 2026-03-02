@@ -10,8 +10,10 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cog, ChevronLeft, Lightbulb } from 'lucide-react';
+import { Cog, ChevronLeft, Lightbulb, MapPin } from 'lucide-react';
 import TrailSelectionFlow from '@/modules/onboarding/components/TrailSelectionFlow';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { LocationConnectModal } from '@/modules/atlas/components';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ProfilePage');
@@ -26,6 +28,8 @@ type ProfileTab = 'profile' | 'trails' | 'settings';
 export function ProfilePage({ userId, userEmail }: ProfilePageProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
+  const { location, isLoading: locationLoading } = useUserLocation();
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   const handleTrailsComplete = () => {
     // When user completes trails from profile, just stay on page
@@ -150,12 +154,61 @@ export function ProfilePage({ userId, userEmail }: ProfilePageProps) {
         )}
 
         {activeTab === 'settings' && (
-          <div className="max-w-2xl">
+          <div className="max-w-2xl space-y-6">
+            {/* Location Settings */}
+            <div className="ceramic-card p-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-amber-600" />
+                </div>
+                <h3 className="text-lg font-bold text-[#5C554B]">Localização</h3>
+              </div>
+
+              {locationLoading ? (
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-[#A39E91]/20 rounded w-32" />
+                  <div className="h-3 bg-[#A39E91]/20 rounded w-48" />
+                </div>
+              ) : location ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-[#5C554B]">
+                    <span className="font-medium">Cidade:</span> {location.city || 'Não detectada'}
+                  </p>
+                  <p className="text-sm text-[#948D82]">
+                    <span className="font-medium">Fonte:</span>{' '}
+                    {location.source === 'browser_geolocation'
+                      ? 'Geolocalização do navegador'
+                      : location.source === 'ip_lookup'
+                        ? 'Detectado por IP'
+                        : location.source === 'manual'
+                          ? 'Configuração manual'
+                          : 'Não configurada'}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-[#948D82]">
+                  Localização não configurada. Configure para receber insights de clima.
+                </p>
+              )}
+
+              <button
+                onClick={() => setShowLocationModal(true)}
+                className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors"
+              >
+                {location ? 'Alterar localização' : 'Configurar localização'}
+              </button>
+            </div>
+
+            {/* Placeholder for future settings */}
             <div className="ceramic-card p-8">
               <p className="text-sm text-[#948D82]">
-                Configurações de conta em desenvolvimento...
+                Mais configurações em desenvolvimento...
               </p>
             </div>
+
+            {showLocationModal && (
+              <LocationConnectModal onClose={() => setShowLocationModal(false)} />
+            )}
           </div>
         )}
       </div>
