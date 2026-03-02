@@ -11,7 +11,7 @@ import type { Task } from '@/types';
 
 interface CompletedTasksSectionProps {
   tasks: Task[];
-  onUncomplete: (taskId: string) => void;
+  onUncomplete: (taskId: string) => void | Promise<void>;
   isLoading?: boolean;
 }
 
