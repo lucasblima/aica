@@ -5,7 +5,6 @@ import {
   MessageSquare,
   FileText,
   FileSpreadsheet,
-  HardDrive,
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
@@ -17,7 +16,6 @@ import {
 interface FinanceEmptyStateProps {
   onUploadPDF: () => void;
   onUploadCSV: () => void;
-  onImportDrive: () => void;
   onNavigateBudget: () => void;
 }
 
@@ -37,7 +35,6 @@ const staggerKeyframes = `
 export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
   onUploadPDF,
   onUploadCSV,
-  onImportDrive,
   onNavigateBudget,
 }) => {
   return (
@@ -83,7 +80,7 @@ export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
               Importe seu extrato
             </h3>
             <p className="text-xs text-ceramic-text-secondary mb-4">
-              Envie o extrato do seu banco em PDF, CSV ou importe do Google Drive.
+              Envie o extrato do seu banco em PDF ou CSV.
             </p>
             <div className="flex flex-col gap-2 w-full mt-auto">
               <button
@@ -93,22 +90,13 @@ export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
                 <FileText className="w-3.5 h-3.5" />
                 PDF
               </button>
-              <div className="flex gap-2">
-                <button
-                  onClick={onUploadCSV}
-                  className="flex items-center justify-center gap-1.5 flex-1 ceramic-inset rounded-lg px-3 py-2 text-xs font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  CSV
-                </button>
-                <button
-                  onClick={onImportDrive}
-                  className="flex items-center justify-center gap-1.5 flex-1 ceramic-inset rounded-lg px-3 py-2 text-xs font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-                >
-                  <HardDrive className="w-3.5 h-3.5" />
-                  Drive
-                </button>
-              </div>
+              <button
+                onClick={onUploadCSV}
+                className="flex items-center justify-center gap-1.5 w-full ceramic-inset rounded-lg px-3 py-2 text-xs font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                CSV
+              </button>
             </div>
           </div>
 
