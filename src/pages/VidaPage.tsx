@@ -17,7 +17,6 @@ import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
 import { WeatherInsightCard } from '@/modules/atlas/components';
 import { FluxCard } from '../modules/flux';
-import { WeatherInsightCard } from '@/modules/atlas/components';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
 // #440: useLifeCouncil and useUserPatterns removed from /vida
