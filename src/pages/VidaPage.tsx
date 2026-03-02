@@ -15,6 +15,7 @@ import { MementoMoriBar } from '@/components/features/MementoMoriBar';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
+import { WeatherInsightCard } from '@/modules/atlas/components';
 import { FluxCard } from '../modules/flux';
 import { WeatherInsightCard } from '@/modules/atlas/components';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
