@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { VariablePanel } from '../components/simulator/VariablePanel';
 import { PLTab } from '../components/simulator/PLTab';
 import { UnitEconomicsTab } from '../components/simulator/UnitEconomicsTab';
@@ -11,6 +14,7 @@ import type { SimulationInput } from '../components/simulator/types';
 const TABS = ['P&L Mensal', 'Unit Economics', 'Cenarios'] as const;
 
 export function PricingSimulatorPage() {
+  const navigate = useNavigate();
   const { input: baselineInput, isLoading } = useBaselineData();
   const [input, setInput] = useState<SimulationInput>(DEFAULT_SIMULATION);
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('P&L Mensal');
@@ -49,10 +53,22 @@ export function PricingSimulatorPage() {
 
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold text-ceramic-text-primary mb-1">Simulador de Pricing</h1>
-          <p className="text-sm text-ceramic-text-secondary mb-6">
-            Ajuste as variaveis na barra lateral e veja o impacto em tempo real.
-          </p>
+          <div className="flex items-center gap-3 mb-6">
+            <Logo width={36} onClick={() => navigate('/vida')} className="rounded-lg" />
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-9 h-9 ceramic-card-flat flex items-center justify-center rounded-full"
+              aria-label="Voltar"
+            >
+              <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-ceramic-text-primary leading-tight">Simulador de Pricing</h1>
+              <p className="text-sm text-ceramic-text-secondary">
+                Ajuste as variaveis na barra lateral e veja o impacto em tempo real.
+              </p>
+            </div>
+          </div>
 
           {/* Tab bar */}
           <div className="flex gap-1 mb-6 bg-ceramic-base rounded-lg p-1">

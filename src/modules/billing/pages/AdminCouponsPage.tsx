@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Loader2, Plus, Coins, Ticket, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Loader2, Plus, Coins, Ticket, ToggleLeft, ToggleRight } from 'lucide-react';
 import { PageShell } from '@/components/ui';
+import { Logo } from '@/components/ui/Logo';
 import { useAdminCoupons } from '@/hooks/useAdminCoupons';
 
 export function AdminCouponsPage() {
+  const navigate = useNavigate();
   const { coupons, isLoading, createCoupon, toggleCoupon, topUp } = useAdminCoupons();
 
   // Top-up form
@@ -78,7 +81,19 @@ export function AdminCouponsPage() {
   };
 
   return (
-    <PageShell title="Admin — Cupons">
+    <PageShell>
+      <div className="flex items-center gap-3 mb-6">
+        <Logo width={36} onClick={() => navigate('/vida')} className="rounded-lg" />
+        <button
+          onClick={() => navigate('/admin')}
+          className="w-9 h-9 ceramic-card-flat flex items-center justify-center rounded-full"
+          aria-label="Voltar"
+        >
+          <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
+        </button>
+        <h1 className="text-2xl font-bold text-ceramic-text-primary">Admin — Cupons</h1>
+      </div>
+
       <div className="space-y-6">
         {/* Section 1: Top-Up Manual */}
         <div className="bg-ceramic-50 rounded-xl p-6 shadow-ceramic-emboss">
