@@ -14,6 +14,7 @@ import type { MyAthleteProfile } from '../../types';
 import { useAthleteFeedback } from '../../hooks/useAthleteFeedback';
 import { FeedbackTimeline } from './FeedbackTimeline';
 import { FeedbackRadarChart } from './FeedbackRadarChart';
+import { StressFatigueGauges } from './StressFatigueGauges';
 
 export interface AthleteFeedbackViewProps {
   profile: MyAthleteProfile;
@@ -46,14 +47,18 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
         <h3 className="text-sm font-bold text-ceramic-text-primary">Meu Feedback</h3>
       </div>
 
-      {/* Aggregated Radar Chart (#433) */}
+      {/* Aggregated Radar Chart + Stress/Fatigue Gauges (#607) */}
       {aggregatedQuestionnaire ? (
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-border/30">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-border/30 space-y-4">
           <FeedbackRadarChart
             questionnaire={aggregatedQuestionnaire}
             size={260}
             title="Visao Geral"
             subtitle="Media de todos os feedbacks respondidos"
+          />
+          <StressFatigueGauges
+            stress={aggregatedQuestionnaire.stress}
+            fatigue={aggregatedQuestionnaire.fatigue}
           />
         </div>
       ) : !isLoading && weekSummaries.length > 0 ? (
@@ -63,7 +68,7 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
             Responda os questionarios para ver seu radar de performance
           </p>
           <p className="text-[10px] text-ceramic-text-secondary/60 mt-1">
-            Volume · Intensidade · Fadiga · Stress · Nutricao · Sono
+            Volume · Intensidade · Alimentacao · Sono · Stress · Cansaco
           </p>
         </div>
       ) : null}
