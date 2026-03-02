@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from 'react'
-import { Sun, Cloud, CloudRain, MapPin } from 'lucide-react'
+import { Sun, Cloud, CloudRain, MapPin, ChevronDown } from 'lucide-react'
 import { useWeatherInsight } from '@/hooks/useWeatherInsight'
 import { LocationConnectModal } from './LocationConnectModal'
 import type { WeatherData } from '@/lib/external-api'
@@ -65,9 +65,14 @@ function getWeatherIcon(code: number | null) {
 // Component
 // ---------------------------------------------------------------------------
 
-export const WeatherInsightCard: React.FC = () => {
+interface WeatherInsightCardProps {
+  compact?: boolean
+}
+
+export const WeatherInsightCard: React.FC<WeatherInsightCardProps> = ({ compact = false }) => {
   const { weather, insight, hasLocation, isLoading } = useWeatherInsight()
   const [showModal, setShowModal] = useState(false)
+  const [expanded, setExpanded] = useState(!compact)
 
   // State 1: Loading
   if (isLoading) {
@@ -124,6 +129,30 @@ export const WeatherInsightCard: React.FC = () => {
   const code = getCurrentWeatherCode(weather.forecast)
   const WeatherIcon = getWeatherIcon(code)
 
+  // Compact collapsed: single-line summary
+  if (compact && !expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="w-full bg-ceramic-base rounded-xl px-4 py-3 shadow-ceramic-emboss flex items-center gap-2 text-left"
+      >
+        <WeatherIcon className="w-4 h-4 text-amber-600 shrink-0" />
+        {temp !== null && (
+          <span className="text-sm font-medium text-ceramic-text-primary">
+            {Math.round(temp)}°C
+          </span>
+        )}
+        {insight && (
+          <span className="text-sm text-ceramic-text-secondary truncate flex-1">
+            — {insight}
+          </span>
+        )}
+        <ChevronDown className="w-4 h-4 text-ceramic-text-secondary shrink-0" />
+      </button>
+    )
+  }
+
+  // Full card (default, or compact expanded)
   return (
     <div className="bg-ceramic-base rounded-xl p-4 shadow-ceramic-emboss">
       <div className="flex items-center gap-3">
@@ -142,6 +171,11 @@ export const WeatherInsightCard: React.FC = () => {
             </p>
           )}
         </div>
+        {compact && (
+          <button onClick={() => setExpanded(false)} className="p-1">
+            <ChevronDown className="w-4 h-4 text-ceramic-text-secondary rotate-180" />
+          </button>
+        )}
       </div>
     </div>
   )

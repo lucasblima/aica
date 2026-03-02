@@ -172,32 +172,49 @@ export const OPERATION_TYPE_LABELS: Record<string, string> = {
 // =====================================================
 
 export const ACTION_CREDIT_COSTS: Record<string, number> = {
-  // 1 credit
+  // 1 credit — lightweight (<2K tokens avg)
   analyze_moment_sentiment: 1,
   evaluate_quality: 1,
   generate_daily_question: 1,
   route_entities_to_modules: 1,
   text_embedding: 1,
   classify_intent: 1,
-  // 2 credits
-  chat: 2,
-  chat_aica: 2,
-  analyze_moment: 2,
+  chat: 1,
+  chat_aica: 1,
+  analyze_moment: 1,
+  generate_tags: 1,
+  chat_aica_stream: 1,
+  transcribe_audio: 1,
+  analyze_content_realtime: 1,
+  extract_task_from_voice: 1,
+  generate_post_capture_insight: 1,
+  chat_with_agent: 1,
+  atlas_suggest: 1,
+  // 2 credits — moderate (2-5K tokens avg)
   build_conversation_threads: 2,
-  generate_tags: 2,
   whatsapp_sentiment: 2,
-  // 3 credits
-  generate_report: 3,
+  generate_report: 2,
+  generate_briefing: 2,
+  generate_field_content: 2,
+  generate_ice_breakers: 2,
+  build_profile: 2,
+  interview_extract_insights: 2,
+  generate_interview_followup: 2,
+  atlas_prioritize: 2,
+  atlas_breakdown: 2,
+  // 3 credits — heavy (5-10K tokens avg)
   build_contact_dossier: 3,
-  generate_briefing: 3,
   research_guest: 3,
   generate_pauta_outline: 3,
-  parse_statement: 3,
-  generate_field_content: 3,
-  // 5 credits
+  pattern_synthesis: 3,
+  generate_dossier: 3,
+  generate_pauta_questions: 3,
+  plan_and_execute: 3,
+  // 5 credits — very heavy (>10K tokens)
   life_council: 5,
-  pattern_synthesis: 5,
   generate_weekly_summary: 5,
+  // 8 credits — PDF parsing (~13K tokens avg)
+  parse_statement: 8,
 };
 
 /**

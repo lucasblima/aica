@@ -239,7 +239,7 @@ async function extractOrganizationFields(
   base64Content: string,
   mimeType: string,
   documentType: string
-): Promise<{ fields: OrganizationFields; fieldConfidence: Record<string, number>; rawText: string; detectedType: string }> {
+): Promise<{ fields: OrganizationFields; fieldConfidence: Record<string, number>; rawText: string; detectedType: string; usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }> {
   const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
 
   const extractionPrompt = `
@@ -323,6 +323,7 @@ IMPORTANTE: Seja preciso. Nao invente dados que nao estao no documento.
     ])
   }, 'extractOrganizationFields')
 
+  const orgUsageMetadata = result.response.usageMetadata
   let responseText = result.response.text()
   responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
@@ -424,6 +425,7 @@ IMPORTANTE: Seja preciso. Nao invente dados que nao estao no documento.
       fieldConfidence,
       rawText: parsed.raw_text || '',
       detectedType: parsed.detected_type || 'outro',
+      usageMetadata: orgUsageMetadata,
     }
   } catch {
     log('WARN', 'Failed to parse extraction response as JSON')
@@ -432,6 +434,7 @@ IMPORTANTE: Seja preciso. Nao invente dados que nao estao no documento.
       fieldConfidence: {},
       rawText: responseText,
       detectedType: 'outro',
+      usageMetadata: orgUsageMetadata,
     }
   }
 }
@@ -507,7 +510,7 @@ Deno.serve(async (req) => {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
     // Extract fields
-    const { fields, fieldConfidence, rawText, detectedType } = await extractOrganizationFields(
+    const { fields, fieldConfidence, rawText, detectedType, usageMetadata } = await extractOrganizationFields(
       genAI,
       base64,
       mimeType,
@@ -528,8 +531,8 @@ Deno.serve(async (req) => {
       p_action: 'parse_statement',
       p_module: 'grants',
       p_model: 'gemini-2.5-flash',
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+      p_tokens_in: usageMetadata?.promptTokenCount || 0,
+      p_tokens_out: usageMetadata?.candidatesTokenCount || 0,
     }).then(() => {
       log('INFO', 'Logged interaction')
     }).catch((err: Error) => {

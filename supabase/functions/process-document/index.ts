@@ -375,7 +375,7 @@ async function extractTextWithGemini(
   base64Content: string,
   mimeType: string,
   fileType: string
-): Promise<{ text: string; pageCount?: number; hasImages: boolean }> {
+): Promise<{ text: string; pageCount?: number; hasImages: boolean; usageMetadata?: any }> {
   const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
 
   const extractionPrompt = `
@@ -415,6 +415,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou formatacao extra.
     ])
   }, 'extractTextWithGemini')
 
+  const extractionUsage = result.response.usageMetadata
   let responseText = result.response.text()
 
   // Clean JSON response
@@ -426,6 +427,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou formatacao extra.
       text: parsed.extracted_text || '',
       pageCount: parsed.page_count,
       hasImages: parsed.has_significant_images || false,
+      usageMetadata: extractionUsage,
     }
   } catch {
     // If JSON parsing fails, use raw response as text
@@ -434,6 +436,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou formatacao extra.
       text: responseText,
       pageCount: undefined,
       hasImages: false,
+      usageMetadata: extractionUsage,
     }
   }
 }
@@ -448,7 +451,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou formatacao extra.
 async function classifyDocument(
   genAI: GoogleGenerativeAI,
   extractedText: string
-): Promise<ClassificationResult> {
+): Promise<ClassificationResult & { usageMetadata?: any }> {
   const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
 
   const classificationPrompt = `
@@ -535,6 +538,7 @@ IMPORTANTE:
     return await model.generateContent(classificationPrompt)
   }, 'classifyDocument')
 
+  const classificationUsage = result.response.usageMetadata
   let responseText = result.response.text()
   responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
@@ -544,6 +548,7 @@ IMPORTANTE:
       detected_type: parsed.detected_type || 'outro',
       confidence: parsed.confidence || 0.5,
       extracted_fields: parsed.extracted_fields || {},
+      usageMetadata: classificationUsage,
     }
   } catch {
     log('WARN', 'Failed to parse classification response, using fallback')
@@ -551,6 +556,7 @@ IMPORTANTE:
       detected_type: 'outro',
       confidence: 0.3,
       extracted_fields: {},
+      usageMetadata: classificationUsage,
     }
   }
 }
@@ -995,7 +1001,7 @@ async function processDocument(
 
     // 3. Extract text content using Gemini Vision
     log('INFO', 'Extracting text content')
-    const { text: extractedText, pageCount, hasImages } = await extractTextWithGemini(
+    const { text: extractedText, pageCount, hasImages, usageMetadata: extractUsage } = await extractTextWithGemini(
       genAI,
       base64,
       mimeType,
@@ -1008,7 +1014,7 @@ async function processDocument(
 
     // 4. Classify document and extract structured fields
     log('INFO', 'Classifying document')
-    const classification = await classifyDocument(genAI, extractedText)
+    const { usageMetadata: classifyUsage, ...classification } = await classifyDocument(genAI, extractedText)
 
     // 5. Create text chunks
     log('INFO', 'Creating text chunks')
@@ -1057,6 +1063,10 @@ async function processDocument(
       timeMs: processingTimeMs,
     })
 
+    // Accumulate token usage from all Gemini calls
+    const totalTokensIn = (extractUsage?.promptTokenCount || 0) + (classifyUsage?.promptTokenCount || 0)
+    const totalTokensOut = (extractUsage?.candidatesTokenCount || 0) + (classifyUsage?.candidatesTokenCount || 0)
+
     return {
       document_id: documentId,
       detected_type: classification.detected_type,
@@ -1066,6 +1076,8 @@ async function processDocument(
       embeddings_created: embeddingsCreated,
       link_suggestions: linkSuggestions,
       processing_time_ms: processingTimeMs,
+      totalTokensIn,
+      totalTokensOut,
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -1180,8 +1192,8 @@ Deno.serve(async (req) => {
       p_action: 'parse_statement',
       p_module: 'grants',
       p_model: 'gemini-2.5-flash',
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+      p_tokens_in: result.totalTokensIn || 0,
+      p_tokens_out: result.totalTokensOut || 0,
     }).then(() => {
       log('INFO', 'Logged interaction')
     }).catch((err: Error) => {
