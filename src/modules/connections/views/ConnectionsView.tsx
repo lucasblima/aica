@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Sparkles, TrendingUp } from 'lucide-react';
 import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
 import { SpaceCard } from '../components/SpaceCard';
-import TelegramLinkCard from '../components/telegram/TelegramLinkCard';
 import { CeramicTabSelector } from '@/components';
 import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';
 import type { ArchetypeType } from '../types';
@@ -116,9 +115,6 @@ export function ConnectionsView({
         </header>
 
         <div className="flex-1 px-6 pb-40 space-y-6">
-          {/* Telegram Integration */}
-          <TelegramLinkCard />
-
           <div className="flex items-center justify-center">
           <motion.div
             className="ceramic-tray p-12 text-center max-w-md"
@@ -188,9 +184,6 @@ export function ConnectionsView({
       </header>
 
       <main className="flex-1 overflow-y-auto px-6 pb-40 space-y-6">
-        {/* Telegram Integration */}
-        <TelegramLinkCard />
-
         {/* Favorites Section */}
         {favorites.length > 0 && (
           <motion.section
