@@ -380,10 +380,10 @@ export const telegramCommands: TelegramCommand[] = [
     userMessage: '/resumo',
     botResponse:
       'Bom dia! Aqui esta seu resumo:\n\n' +
-      '3 tarefas pendentes (1 urgente)\n' +
-      '2 reunioes hoje\n' +
-      'Saldo: R$ 2.400\n' +
-      'Streak: 47 dias\n\n' +
+      '📋 3 tarefas pendentes (1 urgente)\n' +
+      '📅 2 reunioes hoje\n' +
+      '💰 Saldo: R$ 2.400\n' +
+      '🔥 Streak: 47 dias\n\n' +
       'Sua tarefa mais urgente: "Revisar proposta do cliente Nexus" as 10h.',
   },
   {
@@ -392,9 +392,9 @@ export const telegramCommands: TelegramCommand[] = [
     userMessage: '/tarefa Ligar para o contador amanha as 9h',
     botResponse:
       'Tarefa criada com sucesso!\n\n' +
-      '"Ligar para o contador"\n' +
-      'Amanha, 09:00\n' +
-      'Quadrante: Urgente & Importante\n\n' +
+      '✅ "Ligar para o contador"\n' +
+      '📅 Amanha, 09:00\n' +
+      '📊 Quadrante: Urgente & Importante\n\n' +
       'Adicionei ao seu Atlas e ao calendario.',
   },
   {
@@ -403,9 +403,9 @@ export const telegramCommands: TelegramCommand[] = [
     userMessage: '/gasto 45.90 Almoco no restaurante',
     botResponse:
       'Gasto registrado!\n\n' +
-      'R$ 45,90 — Almoco no restaurante\n' +
-      'Categoria: Alimentacao\n' +
-      'Gasto diario acumulado: R$ 127,40\n\n' +
+      '💸 R$ 45,90 — Almoco no restaurante\n' +
+      '🏷️ Categoria: Alimentacao\n' +
+      '📊 Gasto diario acumulado: R$ 127,40\n\n' +
       'Voce esta dentro do orcamento diario (limite: R$ 220).',
   },
   {
@@ -414,9 +414,9 @@ export const telegramCommands: TelegramCommand[] = [
     userMessage: '/humor Ansioso com a apresentacao, mas animado com o resultado',
     botResponse:
       'Momento registrado no Journey!\n\n' +
-      'Emocoes detectadas: Ansiedade (40%), Animacao (60%)\n' +
-      '+15 Pontos de Consciencia\n' +
-      'Tendencia da semana: Motivacao crescente\n\n' +
+      '🎭 Emocoes detectadas: Ansiedade (40%), Animacao (60%)\n' +
+      '✨ +15 Pontos de Consciencia\n' +
+      '📊 Tendencia da semana: Motivacao crescente\n\n' +
       'Dica: Respiracao 4-7-8 pode ajudar com a ansiedade antes da apresentacao.',
   },
 ];

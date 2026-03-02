@@ -2,76 +2,51 @@ import { Logo } from '@/components/ui';
 
 export function FooterSection() {
   return (
-    <footer className="border-t border-ceramic-text-secondary/10 bg-ceramic-cool mt-16">
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Col 1: Logo + Tagline */}
-          <div className="flex flex-col items-center sm:items-start gap-3">
-            <div className="flex items-center gap-3">
-              <Logo variant="default" width={32} />
-              <span className="font-black text-xl text-ceramic-text-primary tracking-tighter">
-                Aica Life OS
-              </span>
-            </div>
-            <p className="text-sm text-ceramic-text-secondary font-medium">
-              Transforme o caos em clareza
-            </p>
+    <footer className="border-t border-ceramic-border bg-ceramic-cool">
+      <div className="max-w-5xl mx-auto py-8 px-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          {/* Left: Logo */}
+          <div className="flex items-center gap-2">
+            <Logo variant="default" width={28} />
+            <span className="font-black text-lg text-ceramic-text-primary tracking-tight">
+              AICA Life OS
+            </span>
           </div>
 
-          {/* Col 2: Plataforma */}
-          <div className="flex flex-col items-center sm:items-start gap-3">
-            <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-1">
-              Plataforma
-            </h4>
-            <a
-              href="/status"
-              className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
-            >
-              Status dos Serviços
-            </a>
-          </div>
-
-          {/* Col 3: Legal */}
-          <div className="flex flex-col items-center sm:items-start gap-3">
-            <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-1">
-              Legal
-            </h4>
+          {/* Center: Links */}
+          <nav className="flex items-center gap-4 text-sm font-medium text-ceramic-text-secondary">
             <a
               href="/privacy-policy"
-              className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
+              className="hover:text-ceramic-text-primary transition-colors"
             >
               Privacidade
             </a>
+            <span className="text-ceramic-border">|</span>
             <a
               href="/terms"
-              className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
+              className="hover:text-ceramic-text-primary transition-colors"
             >
               Termos
             </a>
-          </div>
-
-          {/* Col 4: Contato */}
-          <div className="flex flex-col items-center sm:items-start md:items-end gap-3">
-            <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-1">
-              Contato
-            </h4>
+            <span className="text-ceramic-border">|</span>
             <a
               href="mailto:contato@aica.guru"
-              className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-medium"
+              className="hover:text-ceramic-text-primary transition-colors"
             >
-              contato@aica.guru
+              Contato
             </a>
-          </div>
-        </div>
-      </div>
+          </nav>
 
-      {/* Bottom bar */}
-      <div className="border-t border-ceramic-text-secondary/10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <p className="text-center text-xs text-ceramic-text-secondary/60">
-            &copy; {new Date().getFullYear()} Aica. Todos os direitos reservados.
+          {/* Right: Tagline */}
+          <p className="text-sm text-ceramic-text-secondary italic">
+            Feito com ceramica digital
           </p>
         </div>
+
+        {/* Copyright */}
+        <p className="text-xs text-ceramic-text-secondary/60 text-center mt-4">
+          &copy; 2026 AICA Life OS
+        </p>
       </div>
     </footer>
   );
