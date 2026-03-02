@@ -44,6 +44,10 @@ import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
 const log = createNamespacedLogger('AgendaView');
 import { DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, AgendaModeToggle, TaskListView, TaskKanbanView, TaskFilterBar } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
+import { EisenhowerMatrix } from '@/components/features/visualizations';
+import type { MatrixTask } from '@/components/features/visualizations';
+import { CalendarGrid } from '@/components/features/visualizations';
+import type { CalendarEvent as CalendarGridEvent } from '@/components/features/visualizations';
 import { CompletedTasksSection } from '../components/domain/CompletedTasksSection';
 import { useTaskCompletion } from '../hooks/useTaskCompletion';
 import { useTaskFilters } from '../hooks/useTaskFilters';
@@ -87,7 +91,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const isDesktop = useIsDesktop();
     const [mobileMode, setMobileMode] = useState<AgendaMode>('agenda');
 
-    const MOBILE_VIEWS: AgendaMode[] = ['agenda', 'list', 'kanban'];
+    const MOBILE_VIEWS: AgendaMode[] = ['agenda', 'list', 'kanban', 'matrix', 'calendar'];
     const SWIPE_THRESHOLD = 60;
     const SWIPE_VELOCITY = 100;
 
@@ -123,6 +127,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [skippedEvents, setSkippedEvents] = useState<Set<string>>(new Set());
+    const [calendarSelectedDay, setCalendarSelectedDay] = useState<number | null>(null);
+    const [calendarMonth, setCalendarMonth] = useState(() => ({
+      year: new Date().getFullYear(),
+      month: new Date().getMonth() + 1,
+    }));
     const completionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
     // Task filters for Lista/Kanban views
@@ -187,6 +196,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             a.startTime.localeCompare(b.startTime)
         );
     }, [googleCalendarEvents, fluxEvents]);
+
+    const calendarGridEvents: CalendarGridEvent[] = useMemo(() => {
+      return calendarEvents.map(e => ({
+        id: e.id,
+        date: e.startTime.split('T')[0],
+        title: e.title,
+        color: e.color || '#f59e0b',
+        time: extractTimeHHMM(e.startTime) || undefined,
+      }));
+    }, [calendarEvents]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -1041,6 +1060,46 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                             onMoveTask={handleMoveTask}
                                             isLoading={isLoading}
                                         />
+                                    )}
+
+                                    {mobileMode === 'matrix' && (
+                                      <EisenhowerMatrix
+                                        tasks={Object.fromEntries(
+                                          Object.entries(matrixTasks).map(([q, tasks]) => [
+                                            q,
+                                            tasks.map((t: Task) => ({
+                                              id: t.id,
+                                              title: t.title,
+                                              completed: !!t.completed_at,
+                                              dueTime: t.scheduled_time ? (extractTimeHHMM(t.scheduled_time) || undefined) : undefined,
+                                            })),
+                                          ])
+                                        ) as Record<'urgent-important' | 'important' | 'urgent' | 'low', MatrixTask[]>}
+                                        onTaskComplete={(taskId) => handleTaskComplete(taskId)}
+                                      />
+                                    )}
+
+                                    {mobileMode === 'calendar' && (
+                                      <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                          <button onClick={() => { setCalendarMonth(prev => prev.month === 1 ? { year: prev.year - 1, month: 12 } : { ...prev, month: prev.month - 1 }); setCalendarSelectedDay(null); }} className="p-2 hover:bg-ceramic-cool rounded-lg text-ceramic-text-secondary">&larr;</button>
+                                          <h3 className="font-bold text-ceramic-text-primary capitalize">{new Date(calendarMonth.year, calendarMonth.month - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+                                          <button onClick={() => { setCalendarMonth(prev => prev.month === 12 ? { year: prev.year + 1, month: 1 } : { ...prev, month: prev.month + 1 }); setCalendarSelectedDay(null); }} className="p-2 hover:bg-ceramic-cool rounded-lg text-ceramic-text-secondary">&rarr;</button>
+                                        </div>
+                                        <CalendarGrid year={calendarMonth.year} month={calendarMonth.month} events={calendarGridEvents} selectedDay={calendarSelectedDay} onDayClick={(day) => setCalendarSelectedDay(day === calendarSelectedDay ? null : day)} />
+                                        {calendarSelectedDay && (
+                                          <div className="mt-4 space-y-2">
+                                            <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest">Eventos do dia {calendarSelectedDay}</h4>
+                                            {calendarGridEvents.filter(e => { const parts = e.date.split('-'); return parseInt(parts[2], 10) === calendarSelectedDay && parseInt(parts[1], 10) === calendarMonth.month && parseInt(parts[0], 10) === calendarMonth.year; }).map(e => (
+                                              <div key={e.id} className="flex items-center gap-2 p-3 bg-white rounded-lg shadow-sm">
+                                                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: e.color }} />
+                                                <span className="text-sm text-ceramic-text-primary flex-1">{e.title}</span>
+                                                {e.time && <span className="text-xs text-ceramic-text-secondary">{e.time}</span>}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
                                     )}
 
                                 </>

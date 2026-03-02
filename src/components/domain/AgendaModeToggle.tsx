@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, List, Columns3 } from 'lucide-react';
+import { CalendarDays, List, Columns3, Grid2x2, Calendar } from 'lucide-react';
 
-export type AgendaMode = 'agenda' | 'list' | 'kanban';
+export type AgendaMode = 'agenda' | 'list' | 'kanban' | 'matrix' | 'calendar';
 
 interface AgendaModeToggleProps {
   mode: AgendaMode;
@@ -13,6 +13,8 @@ const segments: { key: AgendaMode; label: string; icon: React.ElementType }[] = 
   { key: 'agenda', label: 'Agenda', icon: CalendarDays },
   { key: 'list', label: 'Lista', icon: List },
   { key: 'kanban', label: 'Kanban', icon: Columns3 },
+  { key: 'matrix', label: 'Matrix', icon: Grid2x2 },
+  { key: 'calendar', label: 'Mês', icon: Calendar },
 ];
 
 export const AgendaModeToggle: React.FC<AgendaModeToggleProps> = ({

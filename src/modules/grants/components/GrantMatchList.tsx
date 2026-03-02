@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { Target, TrendingUp, Clock, Users, DollarSign, BookOpen } from 'lucide-react';
+import { CircularScore } from '@/components/features/visualizations';
 
 // ============================================================================
 // TYPES
@@ -108,12 +109,12 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         <h4 className="text-sm font-medium text-ceramic-text-primary line-clamp-2 flex-1">
           {match.opportunityName}
         </h4>
-        <span
-          className="text-lg font-bold px-2 py-0.5 rounded-lg flex-shrink-0"
-          style={{ color: probColor.text, backgroundColor: probColor.bg }}
-        >
-          {(match.probability * 100).toFixed(0)}%
-        </span>
+        <CircularScore
+          score={Math.round(match.probability * 100)}
+          size={64}
+          label="Match"
+          progressColor={match.probability >= 0.7 ? '#10b981' : match.probability >= 0.4 ? '#f59e0b' : '#ef4444'}
+        />
       </div>
 
       {/* Factor breakdown mini bars */}

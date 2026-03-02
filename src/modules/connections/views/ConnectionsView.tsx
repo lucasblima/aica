@@ -5,11 +5,19 @@ import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
 import { SpaceCard } from '../components/SpaceCard';
 import TelegramLinkCard from '../components/telegram/TelegramLinkCard';
 import { CeramicTabSelector } from '@/components';
+import { NetworkGraph } from '@/components/features/visualizations';
 import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';
 import type { ArchetypeType } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';
 import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('ConnectionsView');
+
+const ARCHETYPE_COLORS: Record<string, string> = {
+  habitat: '#10b981',
+  ventures: '#f59e0b',
+  academia: '#3b82f6',
+  tribo: '#8b5cf6',
+};
 
 interface ConnectionsViewProps {
   userId: string;
@@ -49,6 +57,19 @@ export function ConnectionsView({
     if (activeFilter === 'all') return spaces;
     return byArchetype[activeFilter as ArchetypeType] || [];
   }, [activeFilter, spaces, byArchetype]);
+
+  const networkNodes = useMemo(() => {
+    if (!spaces?.length) return [];
+    return spaces.map((s, i) => {
+      const angle = (i / spaces.length) * 2 * Math.PI;
+      return { id: s.id, label: s.name, role: s.archetype || 'tribo', x: 50 + 35 * Math.cos(angle), y: 50 + 35 * Math.sin(angle) };
+    });
+  }, [spaces]);
+
+  const networkLinks = useMemo(() => {
+    if (networkNodes.length < 2) return [];
+    return networkNodes.map((_, i) => ({ source: networkNodes[i].id, target: networkNodes[(i + 1) % networkNodes.length].id }));
+  }, [networkNodes]);
 
   const handleToggleFavorite = async (spaceId: string, isFavorite: boolean) => {
     try {
@@ -215,6 +236,28 @@ export function ConnectionsView({
                   />
                 </div>
               ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* Network Graph */}
+        {networkNodes.length >= 2 && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-ceramic-accent" />
+              <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Mapa da Rede
+              </h2>
+            </div>
+            <div className="ceramic-card p-4">
+              <NetworkGraph
+                nodes={networkNodes}
+                links={networkLinks}
+                roleColors={ARCHETYPE_COLORS}
+              />
             </div>
           </motion.section>
         )}
