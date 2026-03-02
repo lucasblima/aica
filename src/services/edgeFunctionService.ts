@@ -188,8 +188,25 @@ export async function callGeminiEdgeFunction<T = any>(
       ...(model && { model }),
     }
 
+    // Get the current session to ensure we have a valid token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError) {
+      log.error(`[EdgeFunction] Session error for action "${action}":`, sessionError)
+      throw new Error('Authentication error: Could not get session')
+    }
+
+    if (!session?.access_token) {
+      log.error(`[EdgeFunction] No active session for action "${action}"`)
+      throw new Error('Authentication required: Please log in again')
+    }
+
+    // Explicitly pass the Authorization header (matches invokeEdgeFunction pattern)
     const { data, error } = await supabase.functions.invoke('gemini-chat', {
       body,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
     })
 
     if (error) {
