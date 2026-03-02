@@ -1192,8 +1192,8 @@ Deno.serve(async (req) => {
       p_action: 'parse_statement',
       p_module: 'grants',
       p_model: 'gemini-2.5-flash',
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+      p_tokens_in: result.totalTokensIn || 0,
+      p_tokens_out: result.totalTokensOut || 0,
     }).then(() => {
       log('INFO', 'Logged interaction')
     }).catch((err: Error) => {
