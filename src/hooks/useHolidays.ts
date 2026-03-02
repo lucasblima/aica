@@ -22,6 +22,7 @@ export function useHolidays(year?: number) {
     queryFn: () => getHolidays(targetYear),
     staleTime: ONE_DAY_MS,
     gcTime: SEVEN_DAYS_MS,
+    retry: 1,
   })
 
   const nextHoliday = useMemo(
