@@ -11,17 +11,23 @@ import type { HolidayData } from '@/lib/external-api'
 const client = ExternalApiClient.getInstance()
 
 /**
- * Fetches public holidays for a given year (defaults to current year)
+ * Fetches public holidays for a given year (defaults to current year).
+ * Returns empty array on any failure so callers always get a safe value.
  */
 export async function getHolidays(year?: number): Promise<HolidayData[]> {
   const targetYear = year ?? new Date().getFullYear()
-  const response = await client.call<HolidayData[]>('holidays', { year: targetYear })
 
-  if (!response.success || !response.data) {
+  try {
+    const response = await client.call<HolidayData[]>('holidays', { year: targetYear })
+
+    if (!response.success || !response.data) {
+      return []
+    }
+
+    return response.data
+  } catch {
     return []
   }
-
-  return response.data
 }
 
 /**
