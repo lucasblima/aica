@@ -47,6 +47,7 @@ const MODALITY_ICONS: Record<string, string> = {
   cycling: '\u{1F6B4}',
   strength: '\u{1F4AA}',
   walking: '\u{1F6B6}',
+  triathlon: '\u{1F3C5}',
 };
 
 interface AthletePickerProps {
@@ -163,6 +164,7 @@ const MODALITY_PT_LABELS: Record<string, string> = {
   cycling: 'Ciclismo',
   strength: 'Musculacao',
   walking: 'Caminhada',
+  triathlon: 'Triatleta',
 };
 
 function slotToWeekWorkout(slot: WorkoutSlot): WeekWorkout {
@@ -191,6 +193,7 @@ function slotToWorkoutBlockData(slot: WorkoutSlot): WorkoutBlockData {
     ftp_percentage: slot.ftp_percentage,
     pace_zone: slot.pace_zone,
     css_percentage: slot.css_percentage,
+    templateId: slot.template_id,
   };
 }
 

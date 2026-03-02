@@ -23,7 +23,7 @@ export interface WeekWorkout {
   name: string;
   duration: number;
   intensity: 'low' | 'medium' | 'high';
-  modality: 'swimming' | 'running' | 'cycling' | 'strength';
+  modality: 'swimming' | 'running' | 'cycling' | 'strength' | 'walking' | 'triathlon';
   type?: string;
   templateId?: string;
 }
@@ -76,6 +76,8 @@ const MODALITY_COLORS: Record<string, { bg: string; border: string; text: string
   running:  { bg: 'rgba(251,146,60,0.12)', border: 'rgb(251,146,60)', text: '#7c2d12' },
   cycling:  { bg: 'rgba(52,211,153,0.12)', border: 'rgb(52,211,153)', text: '#064e3b' },
   strength: { bg: 'rgba(192,132,252,0.12)', border: 'rgb(192,132,252)', text: '#581c87' },
+  walking:  { bg: 'rgba(56,189,248,0.12)', border: 'rgb(56,189,248)', text: '#0c4a6e' },
+  triathlon: { bg: 'rgba(251,113,133,0.12)', border: 'rgb(251,113,133)', text: '#881337' },
 };
 
 const INTENSITY_DOTS: Record<string, string> = {
@@ -95,6 +97,8 @@ const MODALITY_ICONS: Record<string, string> = {
   running: '\u{1F3C3}',
   cycling: '\u{1F6B4}',
   strength: '\u{1F4AA}',
+  walking: '\u{1F6B6}',
+  triathlon: '\u{1F3C5}',
 };
 
 // ============================================
