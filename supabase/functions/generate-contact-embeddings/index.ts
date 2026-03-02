@@ -364,7 +364,7 @@ serve(async (req: Request) => {
           p_action: 'text_embedding',
           p_module: 'connections',
           p_model: 'text-embedding-004',
-          p_tokens_in: 0,
+          p_tokens_in: Math.ceil(totalCharsEmbedded / 4),
           p_tokens_out: 0,
         }).catch((err: Error) => {
           console.warn('[generate-contact-embeddings] Failed to log interaction:', err.message)
