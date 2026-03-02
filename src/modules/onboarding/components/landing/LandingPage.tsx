@@ -185,6 +185,7 @@ export function LandingPage() {
           onCodeSubmit={handleCodeSubmit}
           codeValid={codeValid}
           codeError={codeError}
+          onOpenSignup={handleOpenLogin}
         />
       </main>
 
