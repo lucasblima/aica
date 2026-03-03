@@ -339,7 +339,7 @@ interface UserContextResult {
 
 const MODELS = {
   fast: 'gemini-2.5-flash',
-  smart: 'gemini-2.5-flash',
+  smart: 'gemini-2.5-pro',
 } as const
 
 const SMART_MODEL_ACTIONS = [
@@ -416,7 +416,34 @@ const PROMPTS = {
     return `Voce e um coach de consciencia emocional. Analise os seguintes ${moments.length} momentos de diario da ultima semana:\n\n${momentsList}\n\nCrie um resumo semanal profundo e empatico retornando um JSON com emotionalTrend, dominantEmotions, keyMoments, insights, suggestedFocus. Retorne APENAS o JSON.`
   },
 
-  generate_dossier: (guestName: string, theme?: string) => `Voce e um pesquisador especializado em preparacao de entrevistas para podcasts. Crie um dossie completo sobre ${guestName}${theme ? ` com foco no tema "${theme}"` : ''}. Retorne um JSON com biography, controversies, suggestedTopics, iceBreakers, technicalSheet. Retorne APENAS o JSON valido.`,
+  generate_dossier: (guestName: string, theme?: string) => `Voce e um pesquisador especializado em preparacao de entrevistas para podcasts brasileiros.
+
+Crie um dossie completo e detalhado sobre "${guestName}"${theme ? ` com foco no tema "${theme}"` : ''}.
+
+Pesquise e retorne APENAS um JSON valido no formato EXATO abaixo (sem texto antes ou depois):
+{
+  "biography": "Biografia detalhada com 3-5 paragrafos cobrindo trajetoria profissional, realizacoes, e fatos relevantes",
+  "controversies": ["Controversia ou ponto polemico 1", "Controversia 2"],
+  "suggestedTopics": ["Topico 1 para entrevista", "Topico 2", "Topico 3", "Topico 4", "Topico 5"],
+  "iceBreakers": ["Pergunta quebra-gelo 1", "Pergunta 2", "Pergunta 3"],
+  "technicalSheet": {
+    "fullName": "Nome completo",
+    "occupation": "Ocupacao principal",
+    "birthDate": "Data de nascimento se disponivel",
+    "socialMedia": "Principais redes sociais",
+    "notableWorks": "Obras ou projetos notaveis",
+    "education": "Formacao academica se disponivel"
+  }
+}
+
+IMPORTANTE:
+- biography DEVE ser uma string com 3-5 paragrafos detalhados
+- controversies DEVE ser um array de strings (pode ser vazio se nao houver)
+- suggestedTopics DEVE conter 5-10 topicos relevantes para entrevista
+- iceBreakers DEVE conter 3-5 perguntas leves para iniciar a conversa
+- technicalSheet DEVE ser um objeto com dados factuais
+- NAO inclua campos extras como "title" ou "content"
+- Retorne APENAS o JSON, sem markdown, sem texto explicativo`,
 
   generate_ice_breakers: (guestName: string, keyFacts: string[] = [], occupation?: string) => `Crie 5 perguntas quebra-gelo personalizadas para ${guestName}. ${occupation ? `Ocupacao: ${occupation}` : ''} Retorne um JSON com iceBreakers array. Retorne APENAS JSON valido.`,
 
@@ -479,17 +506,30 @@ async function handleGenerateWeeklySummary(genAI: GoogleGenerativeAI, payload: W
 async function handleGenerateDossier(genAI: GoogleGenerativeAI, payload: GenerateDossierPayload): Promise<DossierResult> {
   if (!payload.guestName) throw new Error('Campo "guestName" e obrigatorio')
 
-  const model = genAI.getGenerativeModel({ model: MODELS.smart, generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 4096 } })
+  const model = genAI.getGenerativeModel({ model: MODELS.smart, generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192 } })
   const result = await model.generateContent(PROMPTS.generate_dossier(payload.guestName, payload.theme))
   const text = result.response.text()
 
   let parsed: DossierResult
   parsed = extractJSON(text)
 
+  // Rescue: if model returned {content} instead of {biography}, use content as biography
+  if (!parsed.biography && (parsed as any).content) {
+    parsed.biography = (parsed as any).content
+    delete (parsed as any).content
+  }
+  // Rescue: if model returned {title} instead of structured data, remove it
+  if ((parsed as any).title && !parsed.biography) {
+    parsed.biography = (parsed as any).title
+    delete (parsed as any).title
+  }
+
   parsed.biography = parsed.biography || 'Nao foi possivel gerar biografia'
   parsed.controversies = Array.isArray(parsed.controversies) ? parsed.controversies : []
   parsed.suggestedTopics = Array.isArray(parsed.suggestedTopics) ? parsed.suggestedTopics.slice(0, 10) : []
   parsed.iceBreakers = Array.isArray(parsed.iceBreakers) ? parsed.iceBreakers.slice(0, 5) : []
+  // Ensure technicalSheet is an object
+  parsed.technicalSheet = parsed.technicalSheet && typeof parsed.technicalSheet === 'object' ? parsed.technicalSheet : undefined
 
   return parsed
 }

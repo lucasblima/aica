@@ -129,6 +129,58 @@ export function useAutoSave({
 
       log.debug('[useAutoSave] Episode update successful');
 
+      // Save dossier/research data to podcast_guest_research (if dossier exists)
+      const dossier = currentState.research.dossier;
+      const prevDossier = previousStateRef.current.research.dossier;
+      const dossierChanged = dossier && JSON.stringify(dossier) !== JSON.stringify(prevDossier);
+
+      if (dossierChanged && dossier) {
+        log.debug('[useAutoSave] Dossier changed, saving to podcast_guest_research...');
+
+        const researchUpsert = {
+          episode_id: currentState.episodeId,
+          guest_name: dossier.guestName || currentState.setup.guestName,
+          biography: dossier.biography || null,
+          controversies: dossier.controversies?.length ? dossier.controversies : null,
+          full_name: dossier.technicalSheet?.fullName || null,
+          occupation: (dossier.technicalSheet as any)?.occupation || null,
+          education: (dossier.technicalSheet as any)?.education || null,
+          social_media: (dossier.technicalSheet as any)?.socialMedia
+            ? { links: (dossier.technicalSheet as any).socialMedia }
+            : null,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error: researchError } = await supabase
+          .from('podcast_guest_research')
+          .upsert(researchUpsert, { onConflict: 'episode_id' });
+
+        if (researchError) {
+          log.error('[useAutoSave] Guest research upsert failed:', researchError);
+          // Non-fatal: don't throw, episode data was already saved
+        } else {
+          log.debug('[useAutoSave] Guest research saved successfully');
+        }
+
+        // Also update biography + ice_breakers on the episode for quick access
+        const episodeDossierUpdate: Record<string, any> = {
+          biography: dossier.biography || null,
+          controversies: dossier.controversies?.length ? dossier.controversies : null,
+          ice_breakers: dossier.iceBreakers?.length ? dossier.iceBreakers : null,
+        };
+
+        const { error: dossierEpError } = await supabase
+          .from('podcast_episodes')
+          .update(episodeDossierUpdate)
+          .eq('id', currentState.episodeId);
+
+        if (dossierEpError) {
+          log.error('[useAutoSave] Episode dossier fields update failed:', dossierEpError);
+        } else {
+          log.debug('[useAutoSave] Episode dossier fields updated');
+        }
+      }
+
       // Save topics (if changed)
       const topicsChanged =
         currentState.pauta.topics.length !== previousStateRef.current.pauta.topics.length ||
