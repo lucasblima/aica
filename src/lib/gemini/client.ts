@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 import { callWithRetry, type RetryOptions } from './retry'
 import { getModelForUseCase } from './models'
 import { GeminiError } from './types'
@@ -252,12 +253,17 @@ export class GeminiClient {
 
   /**
    * Obtém token de autenticação do Supabase
+   * Uses getCachedSession() to avoid auth lock contention (#660, #665)
    */
   private async getAuthToken(): Promise<string> {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { session, error } = await getCachedSession()
 
-    if (!session) {
-      throw new Error('User not authenticated')
+    if (error) {
+      throw new GeminiError('Authentication error: Could not get session', 'UNAUTHORIZED', 401)
+    }
+
+    if (!session?.access_token) {
+      throw new GeminiError('User not authenticated', 'UNAUTHORIZED', 401)
     }
 
     return session.access_token

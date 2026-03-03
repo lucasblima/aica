@@ -64,6 +64,71 @@ const ensureString = (value: unknown): string => {
   return String(value);
 };
 
+/**
+ * DossierGeneratingState — Phased progress indicator for dossier generation (#661)
+ * Shows animated phases with descriptive labels so users know the app is working.
+ */
+const DOSSIER_PHASES = [
+  { icon: Search, text: 'Buscando informacoes na web...' },
+  { icon: FileText, text: 'Analisando perfil do convidado...' },
+  { icon: Sparkles, text: 'Gerando biografia e dossier...' },
+] as const;
+
+function DossierGeneratingState({ guestName }: { guestName: string }) {
+  const [phaseIndex, setPhaseIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setPhaseIndex((prev) => (prev < DOSSIER_PHASES.length - 1 ? prev + 1 : prev));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const phase = DOSSIER_PHASES[phaseIndex];
+  const PhaseIcon = phase.icon;
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4" role="status" aria-label="Gerando dossier">
+      <div className="flex flex-col items-center space-y-6 max-w-md">
+        {/* Animated icon */}
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg animate-pulse">
+          <PhaseIcon className="w-8 h-8 text-white" aria-hidden="true" />
+        </div>
+
+        {/* Phase text */}
+        <div className="text-center space-y-2">
+          <p className="text-lg font-medium text-ceramic-text-primary">
+            {phase.text}
+          </p>
+          <p className="text-sm text-ceramic-text-secondary">
+            Pesquisando sobre <span className="font-semibold text-amber-600">{guestName}</span>
+          </p>
+        </div>
+
+        {/* Phase progress dots */}
+        <div className="flex items-center gap-3">
+          {DOSSIER_PHASES.map((_, i) => (
+            <div
+              key={i}
+              className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+                i <= phaseIndex ? 'bg-amber-500' : 'bg-ceramic-border'
+              } ${i === phaseIndex ? 'animate-pulse' : ''}`}
+            />
+          ))}
+        </div>
+
+        {/* Skeleton preview beneath to hint at what's coming */}
+        <div className="w-full mt-4 space-y-3 opacity-40">
+          <div className="h-5 bg-ceramic-cool animate-pulse rounded-lg w-40" />
+          <div className="h-3 bg-ceramic-cool animate-pulse rounded-lg w-full" />
+          <div className="h-3 bg-ceramic-cool animate-pulse rounded-lg w-11/12" />
+          <div className="h-3 bg-ceramic-cool animate-pulse rounded-lg w-4/5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type ResearchTab = 'bio' | 'ficha' | 'noticias';
 type ChatMode = 'text' | 'audio';
 
@@ -509,35 +574,8 @@ export default function ResearchStage() {
 
           {!research.dossier ? (
               research.isGenerating ? (
-                /* Dossier generating skeleton */
-                <div className="p-4 md:p-8 max-w-3xl" role="status" aria-label="Gerando dossier">
-                  <div className="flex items-center space-x-2 mb-6">
-                    <Sparkles className="w-5 h-5 text-orange-500 animate-pulse" aria-hidden="true" />
-                    <p className="text-sm font-medium text-ceramic-secondary">Gerando dossier...</p>
-                  </div>
-                  {/* Title skeleton */}
-                  <div className="h-7 bg-ceramic-cool animate-pulse rounded-lg w-48 mb-6" />
-                  {/* Paragraph skeletons */}
-                  <div className="space-y-3 mb-8">
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-full" />
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-full" />
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-11/12" />
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-4/5" />
-                  </div>
-                  {/* Second section skeleton */}
-                  <div className="h-5 bg-ceramic-cool animate-pulse rounded-lg w-36 mb-4" />
-                  <div className="space-y-3 mb-8">
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-full" />
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-5/6" />
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-3/4" />
-                  </div>
-                  {/* Third section skeleton */}
-                  <div className="h-5 bg-ceramic-cool animate-pulse rounded-lg w-28 mb-4" />
-                  <div className="space-y-3">
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-full" />
-                    <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-2/3" />
-                  </div>
-                </div>
+                /* Dossier generating — phased progress indicator (#661) */
+                <DossierGeneratingState guestName={setup.guestName} />
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center py-12">

@@ -14,6 +14,7 @@ import { QuickCapture } from '../components/capture/QuickCapture'
 import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
+import { DailyQuestionCarousel } from '../components/insights/DailyQuestionCarousel'
 import { PatternDashboard } from '../components/insights/PatternDashboard'
 import { ActivityHeatmapCard } from '../components/insights/ActivityHeatmapCard'
 
@@ -21,7 +22,7 @@ import { JourneySearchPanel } from '../components/JourneySearchPanel'
 import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
 import { useMoments } from '../hooks/useMoments'
 import { useCurrentWeeklySummary } from '../hooks/useWeeklySummary'
-import { useDailyQuestionAI } from '../hooks/useDailyQuestionAI'
+import { useDailyQuestionAI, useDailyQuestionCarousel } from '../hooks/useDailyQuestionAI'
 import { useConsciousnessPoints, useCPAnimation } from '../hooks/useConsciousnessPoints'
 import { useJourneyFileSearch } from '../hooks/useJourneyFileSearch'
 import { useUnifiedTimeline } from '../hooks/useUnifiedTimeline'
@@ -164,6 +165,13 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { moments, create: createMoment } = useMoments()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary({ immediate: true })
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestionAI()
+  const {
+    questions: carouselQuestions,
+    isLoading: isLoadingCarousel,
+    isSubmitting: isSubmittingCarousel,
+    answer: answerCarouselQuestion,
+    refresh: refreshCarousel,
+  } = useDailyQuestionCarousel(5)
 
   // Track answered question IDs to prevent re-displaying the same question after refresh
   const answeredIdsRef = useRef<Set<string>>(new Set())
@@ -328,6 +336,36 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       answeredIdsRef.current.delete(questionId)
       log.error('Error answering question:', error)
       // Re-throw to let the card component handle UI state
+      throw error
+    }
+  }
+
+  // Handle carousel question answer
+  const handleAnswerCarouselQuestion = async (questionIndex: number, responseText: string) => {
+    try {
+      const result = await answerCarouselQuestion(questionIndex, responseText)
+
+      // Trigger CP animation
+      triggerAnimation(
+        result.cp_earned,
+        result.leveled_up,
+        result.leveled_up
+          ? { level: stats?.level || 1, name: stats?.level_name || 'Observador' }
+          : undefined,
+        result.quality_feedback
+      )
+
+      if (result.leveled_up) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        })
+      }
+
+      refreshStats()
+    } catch (error) {
+      log.error('Error answering carousel question:', error)
       throw error
     }
   }
@@ -510,18 +548,18 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
             {/* QuickCapture */}
             <QuickCapture onSubmit={handleCreateMoment} compact />
 
-            {/* Daily Question */}
+            {/* Daily Questions Carousel */}
             <div data-tour="daily-question">
-              {isLoadingQuestion ? (
+              {isLoadingCarousel ? (
                 <DailyQuestionSkeleton />
-              ) : question ? (
-                <DailyQuestionCard
-                  question={question}
-                  onAnswer={handleAnswerQuestion}
-                  onSkip={skipQuestion}
+              ) : carouselQuestions.length > 0 ? (
+                <DailyQuestionCarousel
+                  questions={carouselQuestions}
+                  onAnswer={handleAnswerCarouselQuestion}
+                  isSubmitting={isSubmittingCarousel}
                 />
               ) : (
-                <DailyQuestionRetryState onRetry={refreshQuestion} />
+                <DailyQuestionRetryState onRetry={refreshCarousel} />
               )}
             </div>
 
@@ -606,24 +644,24 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               transition={{ duration: 0.2 }}
               className="space-y-4"
             >
-              {/* Daily Question */}
+              {/* Daily Questions Carousel */}
               <div data-tour="daily-question">
-                {isLoadingQuestion ? (
+                {isLoadingCarousel ? (
                   <DailyQuestionSkeleton />
-                ) : question ? (
+                ) : carouselQuestions.length > 0 ? (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 }}
                   >
-                    <DailyQuestionCard
-                      question={question}
-                      onAnswer={handleAnswerQuestion}
-                      onSkip={skipQuestion}
+                    <DailyQuestionCarousel
+                      questions={carouselQuestions}
+                      onAnswer={handleAnswerCarouselQuestion}
+                      isSubmitting={isSubmittingCarousel}
                     />
                   </motion.div>
                 ) : (
-                  <DailyQuestionRetryState onRetry={refreshQuestion} />
+                  <DailyQuestionRetryState onRetry={refreshCarousel} />
                 )}
               </div>
 
