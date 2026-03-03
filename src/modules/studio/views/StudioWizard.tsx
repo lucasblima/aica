@@ -142,23 +142,37 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
     setError(null);
 
     try {
+      // Build insert payload, including research data so it persists to the workspace
+      const insertPayload: Record<string, any> = {
+        show_id: showId,
+        user_id: userId,
+        title: formData.title.trim() || `Episodio com ${formData.guestName.trim()}`,
+        description: formData.description || null,
+        guest_name: formData.guestName || null,
+        guest_reference: formData.guestContext || null,
+        guest_contact_id: formData.guestContactId || null,
+        episode_theme: formData.theme || null,
+        status: 'draft',
+        scheduled_date: formData.scheduledDate || null,
+        scheduled_time: formData.scheduledTime || null,
+        location: formData.location || null,
+        season: formData.season || '1',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Persist research results so the workspace can load them (#662)
+      // Only columns that exist on podcast_episodes: biography, controversies, ice_breakers
+      // (technical_sheet, suggested_topics, deep_research live on podcast_guest_research table)
+      if (researchResults?.dossier) {
+        insertPayload.biography = researchResults.dossier.biography || null;
+        insertPayload.controversies = researchResults.dossier.controversies || [];
+        insertPayload.ice_breakers = researchResults.dossier.iceBreakers || [];
+      }
+
       const { data: episode, error: dbError } = await supabase
         .from('podcast_episodes')
-        .insert({
-          show_id: showId,
-          user_id: userId,
-          title: formData.title.trim() || `Episodio com ${formData.guestName.trim()}`,
-          description: formData.description || null,
-          guest_name: formData.guestName || null,
-          guest_contact_id: formData.guestContactId || null,
-          episode_theme: formData.theme || null,
-          status: 'draft',
-          scheduled_date: formData.scheduledDate || null,
-          location: formData.location || null,
-          season: formData.season || '1',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(insertPayload)
         .select()
         .single();
 

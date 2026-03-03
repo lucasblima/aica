@@ -732,20 +732,109 @@ const TIME_CATEGORY_WEIGHTS: Record<string, QuestionCategory[]> = {
   evening: ['reflection', 'gratitude', 'health'],
 }
 
+/**
+ * Track recently shown question IDs to avoid repetition.
+ * Uses sessionStorage to persist across re-renders but reset on new session.
+ */
+function getRecentlyShownIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const stored = sessionStorage.getItem('daily_question_recent_ids')
+    if (stored) return new Set(JSON.parse(stored))
+  } catch { /* ignore */ }
+  return new Set()
+}
+
+function addRecentlyShownId(id: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    const recent = getRecentlyShownIds()
+    recent.add(id)
+    // Keep only last 20 IDs to prevent the pool from being exhausted
+    const arr = Array.from(recent)
+    if (arr.length > 20) arr.splice(0, arr.length - 20)
+    sessionStorage.setItem('daily_question_recent_ids', JSON.stringify(arr))
+  } catch { /* ignore */ }
+}
+
 function getPoolQuestion(userId: string): DailyQuestion {
   const hour = new Date().getHours()
   const timeOfDay = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 18 ? 'afternoon' : 'evening'
   const preferredCategories = TIME_CATEGORY_WEIGHTS[timeOfDay]
+  const recentIds = getRecentlyShownIds()
+
+  // Filter out recently shown questions
+  const notRecent = FALLBACK_QUESTION_POOL.filter(q => !recentIds.has(q.id))
+  const pool = notRecent.length > 0 ? notRecent : FALLBACK_QUESTION_POOL // Reset if all shown
 
   // 70% chance to pick from time-preferred categories, 30% fully random
+  let selected: DailyQuestion
   if (Math.random() < 0.7) {
-    const timeFiltered = FALLBACK_QUESTION_POOL.filter(q => preferredCategories.includes(q.category))
+    const timeFiltered = pool.filter(q => preferredCategories.includes(q.category))
     if (timeFiltered.length > 0) {
-      return timeFiltered[Math.floor(Math.random() * timeFiltered.length)]
+      selected = timeFiltered[Math.floor(Math.random() * timeFiltered.length)]
+    } else {
+      selected = pool[Math.floor(Math.random() * pool.length)]
     }
+  } else {
+    selected = pool[Math.floor(Math.random() * pool.length)]
   }
 
-  return FALLBACK_QUESTION_POOL[Math.floor(Math.random() * FALLBACK_QUESTION_POOL.length)]
+  addRecentlyShownId(selected.id)
+  return selected
+}
+
+/**
+ * Get multiple non-repeating pool questions for the carousel.
+ */
+function getPoolQuestions(userId: string, count: number): DailyQuestion[] {
+  const hour = new Date().getHours()
+  const timeOfDay = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 18 ? 'afternoon' : 'evening'
+  const preferredCategories = TIME_CATEGORY_WEIGHTS[timeOfDay]
+  const recentIds = getRecentlyShownIds()
+
+  // Filter out recently shown questions
+  const notRecent = FALLBACK_QUESTION_POOL.filter(q => !recentIds.has(q.id))
+  const pool = notRecent.length >= count ? notRecent : FALLBACK_QUESTION_POOL
+
+  // Separate time-preferred and other questions
+  const preferred = pool.filter(q => preferredCategories.includes(q.category))
+  const other = pool.filter(q => !preferredCategories.includes(q.category))
+
+  // Shuffle both pools
+  const shuffleArray = <T>(arr: T[]): T[] => {
+    const copy = [...arr]
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[copy[i], copy[j]] = [copy[j], copy[i]]
+    }
+    return copy
+  }
+
+  const shuffledPreferred = shuffleArray(preferred)
+  const shuffledOther = shuffleArray(other)
+
+  // Pick ~70% from preferred, rest from other (ensures category variety)
+  const preferredCount = Math.min(Math.ceil(count * 0.7), shuffledPreferred.length)
+  const otherCount = Math.min(count - preferredCount, shuffledOther.length)
+
+  const selected = [
+    ...shuffledPreferred.slice(0, preferredCount),
+    ...shuffledOther.slice(0, otherCount),
+  ]
+
+  // If still not enough, fill from whatever is available
+  if (selected.length < count) {
+    const selectedIds = new Set(selected.map(q => q.id))
+    const remaining = shuffleArray(pool.filter(q => !selectedIds.has(q.id)))
+    selected.push(...remaining.slice(0, count - selected.length))
+  }
+
+  // Track all as recently shown
+  selected.forEach(q => addRecentlyShownId(q.id))
+
+  // Shuffle final selection so preferred aren't always first
+  return shuffleArray(selected)
 }
 
 /**
@@ -806,16 +895,30 @@ function generateTemplateQuestion(context: UserContext): string | null {
 /**
  * Sistema em cascata para obter pergunta do dia
  * Level 1 → Level 1.5 → Level 2 → Level 3
+ * Fetches user context ONCE and reuses across all levels.
  */
 export async function getDailyQuestionWithContext(
   userId: string
 ): Promise<DailyQuestionResult> {
   const generatedAt = new Date().toISOString()
 
+  // Fetch user context ONCE — reuse across all fallback levels
+  let userContext: UserContext
+  try {
+    userContext = await getUserContext(userId)
+  } catch (error) {
+    log.warn('Failed to fetch user context, using empty context:', error)
+    userContext = {
+      healthStatus: { burnoutCount: 0, mentalHealthFlags: [] },
+      criticalAreas: [],
+      activeJourneys: [],
+      recentResponses: [],
+      momentHistory: [],
+    }
+  }
+
   try {
     // LEVEL 1: AI-Driven (Gemini)
-    const userContext = await getUserContext(userId)
-
     const aiQuestion = await generateAIDrivenQuestion(userId, userContext)
     if (aiQuestion) {
       const question: QuestionWithResponse = {
@@ -840,8 +943,7 @@ export async function getDailyQuestionWithContext(
 
   try {
     // LEVEL 1.5: Template-based fallback using already-fetched user context
-    const templateContext = await getUserContext(userId)
-    const templateQuestion = generateTemplateQuestion(templateContext)
+    const templateQuestion = generateTemplateQuestion(userContext)
     if (templateQuestion) {
       log.info('Using Level 1.5 template-based question')
       const question: QuestionWithResponse = {
@@ -866,7 +968,6 @@ export async function getDailyQuestionWithContext(
 
   try {
     // LEVEL 2: Journey Fallback
-    const userContext = await getUserContext(userId)
     const journeyQuestion = await getJourneyQuestion(userId, userContext)
 
     if (journeyQuestion) {
@@ -889,6 +990,94 @@ export async function getDailyQuestionWithContext(
     source: 'pool',
     generatedAt,
   }
+}
+
+/**
+ * Get multiple daily questions for carousel display.
+ * Returns 3-5 questions from different sources, de-duplicated.
+ */
+export async function getDailyQuestionsForCarousel(
+  userId: string,
+  count: number = 5
+): Promise<DailyQuestionResult[]> {
+  const generatedAt = new Date().toISOString()
+  const results: DailyQuestionResult[] = []
+  const usedTexts = new Set<string>()
+
+  // Fetch user context ONCE
+  let userContext: UserContext
+  try {
+    userContext = await getUserContext(userId)
+  } catch (error) {
+    log.warn('Failed to fetch user context for carousel:', error)
+    userContext = {
+      healthStatus: { burnoutCount: 0, mentalHealthFlags: [] },
+      criticalAreas: [],
+      activeJourneys: [],
+      recentResponses: [],
+      momentHistory: [],
+    }
+  }
+
+  // Try to get 1 AI question first (most valuable)
+  try {
+    const aiQuestion = await generateAIDrivenQuestion(userId, userContext)
+    if (aiQuestion && !usedTexts.has(aiQuestion.toLowerCase())) {
+      usedTexts.add(aiQuestion.toLowerCase())
+      results.push({
+        question: {
+          id: `ai-${Date.now()}`,
+          question_text: aiQuestion,
+          category: 'reflection',
+          active: true,
+          created_at: generatedAt,
+        },
+        source: 'ai',
+        generatedAt,
+      })
+    }
+  } catch (error) {
+    log.warn('AI question for carousel failed:', error)
+  }
+
+  // Try to get 1 template question
+  try {
+    const templateQuestion = generateTemplateQuestion(userContext)
+    if (templateQuestion && !usedTexts.has(templateQuestion.toLowerCase())) {
+      usedTexts.add(templateQuestion.toLowerCase())
+      results.push({
+        question: {
+          id: `template-${Date.now()}-${results.length}`,
+          question_text: templateQuestion,
+          category: 'reflection',
+          active: true,
+          created_at: generatedAt,
+        },
+        source: 'ai',
+        generatedAt,
+      })
+    }
+  } catch (error) {
+    log.warn('Template question for carousel failed:', error)
+  }
+
+  // Fill remaining with pool questions (guaranteed variety via getPoolQuestions)
+  const remaining = count - results.length
+  if (remaining > 0) {
+    const poolQuestions = getPoolQuestions(userId, remaining)
+    for (const pq of poolQuestions) {
+      if (!usedTexts.has(pq.question_text.toLowerCase())) {
+        usedTexts.add(pq.question_text.toLowerCase())
+        results.push({
+          question: pq,
+          source: 'pool',
+          generatedAt,
+        })
+      }
+    }
+  }
+
+  return results.slice(0, count)
 }
 
 /**

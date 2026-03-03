@@ -25,28 +25,56 @@ const REFLECTION_KEYWORDS = /percebi|aprendi|sinto|entendi|refleti|descobri|comp
 
 /**
  * Heuristic quality scorer used when Gemini evaluation fails.
- * Scores based on text length, reflection keywords, and punctuation.
- * Returns a score in [0.15, 0.95] — gives CP range of ~4-19 instead of always 11.
+ * Evaluates content quality based on multiple dimensions:
+ * - Word count (not char count) for meaningful length assessment
+ * - Sentence structure and completeness
+ * - Reflection and emotional vocabulary
+ * - Engagement signals (questions, varied punctuation)
+ * - Vocabulary diversity
+ * Returns a score in [0.15, 0.95] — gives CP range of ~4-19.
  */
 function computeHeuristicQuality(content: string): number {
-  const len = content.trim().length
+  const trimmed = content.trim()
+  if (!trimmed) return 0.15
 
-  // Base score from text length
+  const words = trimmed.split(/\s+/).filter(w => w.length > 0)
+  const wordCount = words.length
+  const sentences = trimmed.split(/[.!?]+/).filter(s => s.trim().length > 0)
+  const sentenceCount = sentences.length
+
+  // 1. Base score from word count (primary signal, not char count)
   let score: number
-  if (len < 20) score = 0.2
-  else if (len < 100) score = 0.4
-  else if (len < 300) score = 0.6
-  else score = 0.8
+  if (wordCount < 5) score = 0.15
+  else if (wordCount < 15) score = 0.30
+  else if (wordCount < 30) score = 0.45
+  else if (wordCount < 60) score = 0.55
+  else if (wordCount < 100) score = 0.65
+  else score = 0.75
 
-  // Bonus for reflection/emotion keywords
-  if (REFLECTION_KEYWORDS.test(content)) {
-    score += 0.1
+  // 2. Sentence structure bonus — complete sentences indicate thoughtfulness
+  if (sentenceCount >= 2) score += 0.05
+  if (sentenceCount >= 4) score += 0.05
+
+  // 3. Reflection/emotion keywords — strong signal of quality
+  const reflectionMatches = trimmed.match(REFLECTION_KEYWORDS)
+  if (reflectionMatches) {
+    score += 0.10
   }
 
-  // Bonus for questions or exclamations (indicates engagement)
-  if (/[?!]/.test(content)) {
+  // Additional emotional depth keywords
+  const DEPTH_KEYWORDS = /importante|significativo|profundo|impacto|transform|mudou|cresci|evolui|superei|conquist|desafi|vulnerab|coragem|medo|esperan/i
+  if (DEPTH_KEYWORDS.test(trimmed)) {
     score += 0.05
   }
+
+  // 4. Engagement signals — questions and exclamations
+  if (/\?/.test(trimmed)) score += 0.03
+  if (/!/.test(trimmed)) score += 0.02
+
+  // 5. Vocabulary diversity — unique words / total words
+  const uniqueWords = new Set(words.map(w => w.toLowerCase()))
+  const diversityRatio = uniqueWords.size / Math.max(1, wordCount)
+  if (diversityRatio > 0.7 && wordCount >= 10) score += 0.05
 
   return Math.max(0.15, Math.min(0.95, score))
 }

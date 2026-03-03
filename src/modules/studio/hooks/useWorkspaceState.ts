@@ -83,6 +83,7 @@ export function useWorkspaceState({
             // guestBio is a temporary UI-only field, not loaded from DB
             // The actual biography comes from research.dossier.biography
             guestBio: '',
+            guestContactId: episode.guest_contact_id || null,
             phone: episode.guest_phone || '',
             email: '',
             theme: episode.episode_theme || '',
@@ -192,6 +193,11 @@ export function useWorkspaceState({
 
 /**
  * Determines the initial stage to show based on episode data
+ *
+ * Fix for #663: Previously only checked biography to skip past setup,
+ * which forced users back to "Configuracao" even when guest_name and theme
+ * were already filled in from the wizard. Now checks guest_name + theme
+ * as a signal that setup is complete.
  */
 function determineInitialStage(episode: any, topics: any[]): 'setup' | 'research' | 'pauta' | 'production' {
   // If recording started, go to production
@@ -204,8 +210,14 @@ function determineInitialStage(episode: any, topics: any[]): 'setup' | 'research
     return 'pauta';
   }
 
-  // If dossier exists, go to research
+  // If dossier exists, go to research (user can review/regenerate)
   if (episode.biography) {
+    return 'research';
+  }
+
+  // If guest name and theme are set (from wizard), skip setup to research
+  // so the user isn't forced to redo configuration (#663)
+  if (episode.guest_name?.trim() && episode.episode_theme?.trim()) {
     return 'research';
   }
 
@@ -219,16 +231,17 @@ function determineInitialStage(episode: any, topics: any[]): 'setup' | 'research
 function determineVisitedStages(episode: any, topics: any[]): ('setup' | 'research' | 'pauta' | 'production')[] {
   const visited: ('setup' | 'research' | 'pauta' | 'production')[] = ['setup'];
 
-  if (episode.biography) {
-    visited.push('research');
+  // Mark research as visited if biography exists OR if setup was completed (guest_name + theme)
+  if (episode.biography || (episode.guest_name?.trim() && episode.episode_theme?.trim())) {
+    if (!visited.includes('research')) visited.push('research');
   }
 
   if (topics && topics.length > 0) {
-    visited.push('pauta');
+    if (!visited.includes('pauta')) visited.push('pauta');
   }
 
   if (episode.recording_started_at) {
-    visited.push('production');
+    if (!visited.includes('production')) visited.push('production');
   }
 
   return visited;

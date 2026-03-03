@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 import type { ExternalApiName, ExternalApiResponse } from './types'
 import { ExternalApiError } from './types'
 
@@ -85,7 +86,14 @@ export class ExternalApiClient {
       body = { action: brasilAction, ...params }
     }
 
-    const { data, error } = await supabase.functions.invoke(functionName, { body })
+    // Get auth token explicitly to avoid 401 errors (#660)
+    const { session } = await getCachedSession()
+    const headers: Record<string, string> = {}
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`
+    }
+
+    const { data, error } = await supabase.functions.invoke(functionName, { body, headers })
 
     if (error) {
       throw new ExternalApiError(

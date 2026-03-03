@@ -17,6 +17,7 @@ import { supabase } from '@/services/supabaseClient'
 import { QuestionWithResponse, AnswerQuestionResult } from '../types/dailyQuestion'
 import {
   getDailyQuestionWithContext,
+  getDailyQuestionsForCarousel,
   saveDailyResponse,
   logDailyQuestionUsage,
 } from '../services/dailyQuestionService'
@@ -122,12 +123,24 @@ export function useDailyQuestionAI() {
           // AI/template/pool question with synthetic ID — use heuristic CP scoring
           await saveDailyResponse(user.id, state.question.id, responseText, state.source as 'ai' | 'journey' | 'pool')
 
-          const wordCount = responseText.trim().split(/\s+/).length
+          // Use the same heuristic-quality approach as qualityEvaluationService
+          // for consistency between DB-question and AI/pool-question scoring paths
+          const words = responseText.trim().split(/\s+/).filter(w => w.length > 0)
+          const wordCount = words.length
+          const sentenceCount = responseText.split(/[.!?]+/).filter(s => s.trim().length > 0).length
+          const hasReflection = /percebi|aprendi|sinto|entendi|refleti|descobri|compreendi|importante|significativo|profundo/i.test(responseText)
+
+          // Base CP from word count (generous for meaningful responses)
           let cpEarned = 3
-          if (wordCount >= 10) cpEarned = 5
-          if (wordCount >= 25) cpEarned = 8
-          if (wordCount >= 50) cpEarned = 12
-          if (wordCount >= 80) cpEarned = 15
+          if (wordCount >= 5) cpEarned = 5
+          if (wordCount >= 15) cpEarned = 8
+          if (wordCount >= 30) cpEarned = 11
+          if (wordCount >= 50) cpEarned = 14
+          if (wordCount >= 80) cpEarned = 17
+
+          // Bonus for sentence structure and reflection
+          if (sentenceCount >= 2) cpEarned = Math.min(20, cpEarned + 1)
+          if (hasReflection) cpEarned = Math.min(20, cpEarned + 2)
 
           // Award CP via RPC
           let leveledUp = false
@@ -203,6 +216,153 @@ export function useDailyQuestionAI() {
     error: state.error,
     answer,
     skip,
+    refresh,
+  }
+}
+
+/**
+ * useDailyQuestionCarousel Hook
+ * Gets multiple daily questions (3-5) for carousel display.
+ * Supports answering individual questions and cycling through them.
+ */
+export function useDailyQuestionCarousel(count: number = 5) {
+  const { user } = useAuth()
+  const [questions, setQuestions] = useState<QuestionWithResponse[]>([])
+  const [sources, setSources] = useState<('ai' | 'journey' | 'pool')[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetchQuestions = useCallback(async () => {
+    if (!user?.id) return
+
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const results = await getDailyQuestionsForCarousel(user.id, count)
+
+      setQuestions(results.map(r => r.question))
+      setSources(results.map(r => r.source))
+      setIsLoading(false)
+
+      log.debug(`Carousel loaded ${results.length} questions`, {
+        sources: results.map(r => r.source),
+      })
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to fetch questions')
+      setError(error)
+      setIsLoading(false)
+      log.error('Error fetching carousel questions:', error)
+    }
+  }, [user?.id, count])
+
+  const answer = useCallback(
+    async (questionIndex: number, responseText: string): Promise<AnswerQuestionResult> => {
+      if (!user?.id || !questions[questionIndex]) {
+        throw new Error('No question available at this index')
+      }
+
+      if (!responseText.trim()) {
+        throw new Error('Response cannot be empty')
+      }
+
+      const question = questions[questionIndex]
+      const source = sources[questionIndex] || 'pool'
+
+      try {
+        setIsSubmitting(true)
+        setError(null)
+
+        // Check if question_id is a real DB UUID
+        const isRealDBQuestion = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(question.id)
+
+        let result: AnswerQuestionResult
+
+        if (isRealDBQuestion) {
+          result = await saveQuestionResponse(user.id, {
+            question_id: question.id,
+            response_text: responseText,
+          })
+        } else {
+          await saveDailyResponse(user.id, question.id, responseText, source)
+
+          // Quality-aware heuristic CP scoring
+          const words = responseText.trim().split(/\s+/).filter(w => w.length > 0)
+          const wordCount = words.length
+          const sentenceCount = responseText.split(/[.!?]+/).filter(s => s.trim().length > 0).length
+          const hasReflection = /percebi|aprendi|sinto|entendi|refleti|descobri|compreendi|importante|significativo|profundo/i.test(responseText)
+
+          let cpEarned = 3
+          if (wordCount >= 5) cpEarned = 5
+          if (wordCount >= 15) cpEarned = 8
+          if (wordCount >= 30) cpEarned = 11
+          if (wordCount >= 50) cpEarned = 14
+          if (wordCount >= 80) cpEarned = 17
+          if (sentenceCount >= 2) cpEarned = Math.min(20, cpEarned + 1)
+          if (hasReflection) cpEarned = Math.min(20, cpEarned + 2)
+
+          let leveledUp = false
+          try {
+            const { data: awardData } = await supabase.rpc('award_consciousness_points', {
+              p_user_id: user.id,
+              p_points: cpEarned,
+              p_reason: 'question_answered',
+            })
+            leveledUp = awardData?.leveled_up || false
+          } catch (err) {
+            log.warn('Failed to award CP:', err)
+          }
+
+          result = {
+            response: {
+              id: `response-${Date.now()}`,
+              user_id: user.id,
+              question_id: question.id,
+              response_text: responseText,
+              responded_at: new Date().toISOString(),
+            },
+            cp_earned: cpEarned,
+            leveled_up: leveledUp,
+          }
+        }
+
+        // Mark question as answered in local state
+        setQuestions(prev =>
+          prev.map((q, i) =>
+            i === questionIndex ? { ...q, user_response: result.response } : q
+          )
+        )
+        setIsSubmitting(false)
+
+        return result
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to save response')
+        setError(error)
+        setIsSubmitting(false)
+        throw error
+      }
+    },
+    [user?.id, questions, sources]
+  )
+
+  const refresh = useCallback(() => {
+    fetchQuestions()
+  }, [fetchQuestions])
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchQuestions()
+    }
+  }, [user?.id, fetchQuestions])
+
+  return {
+    questions,
+    sources,
+    isLoading,
+    isSubmitting,
+    error,
+    answer,
     refresh,
   }
 }
