@@ -95,7 +95,13 @@ export class CSVParserService {
     // Detect format
     const format = this.detectFormat(content);
     if (!format) {
-      throw new Error('Formato de CSV não reconhecido. Suporte: Nubank, Inter, Itaú.');
+      const firstLine = content.split('\n')[0]?.trim() || '(vazio)';
+      const previewCols = firstLine.length > 120 ? firstLine.substring(0, 120) + '...' : firstLine;
+      throw new Error(
+        `Formato de CSV não reconhecido. Cabeçalho encontrado: [${previewCols}]. ` +
+        `O CSV deve conter colunas de data, descrição e valor. ` +
+        `Formatos conhecidos: Nubank (date,title,amount), Banco Inter (Data;Descrição;Valor;Saldo), Itaú (data;lancamento;valor;saldo).`
+      );
     }
 
     // Parse lines
@@ -167,15 +173,17 @@ export class CSVParserService {
   }
 
   /**
-   * Detect CSV format based on header
+   * Detect CSV format based on header.
+   * Falls back to a generic format if no known bank is matched.
    */
   private detectFormat(csvContent: string): CSVBankFormat | null {
     const lines = csvContent.split('\n');
     if (lines.length < 1) return null;
 
-    const header = lines[0].toLowerCase();
+    const headerRaw = lines[0];
+    const header = headerRaw.toLowerCase();
 
-    // Detect by header columns
+    // Detect by header columns — try known bank formats first
     for (const format of KNOWN_FORMATS) {
       const dateCol = typeof format.columns.date === 'string'
         ? format.columns.date.toLowerCase()
@@ -191,18 +199,117 @@ export class CSVParserService {
       }
     }
 
+    // Fallback: try to build a generic format from the header
+    const genericFormat = this.buildGenericFormat(headerRaw);
+    if (genericFormat) {
+      log.info('[detectFormat] No known bank matched — using generic format:', {
+        columns: genericFormat.columns,
+        delimiter: genericFormat.delimiter,
+      });
+      return genericFormat;
+    }
+
     return null;
   }
 
   /**
-   * Parse CSV lines respecting delimiter
+   * Attempt to build a generic CSV format by detecting common column names
+   * for date, description, and amount.
+   */
+  private buildGenericFormat(headerLine: string): CSVBankFormat | null {
+    // Detect delimiter: semicolon vs comma
+    const semicolonCount = (headerLine.match(/;/g) || []).length;
+    const commaCount = (headerLine.match(/,/g) || []).length;
+    const delimiter = semicolonCount > commaCount ? ';' : ',';
+
+    const columns = headerLine.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
+    const columnsLower = columns.map(c => c.toLowerCase());
+
+    // Common date column names (Portuguese and English)
+    const dateAliases = ['data', 'date', 'dt', 'data_transacao', 'data transacao', 'data_lancamento', 'data lancamento', 'dt_transacao'];
+    const descAliases = ['descricao', 'descrição', 'description', 'titulo', 'título', 'title', 'lancamento', 'lançamento', 'historico', 'histórico', 'memo', 'detalhes'];
+    const amountAliases = ['valor', 'amount', 'value', 'quantia', 'montante', 'vlr'];
+    const balanceAliases = ['saldo', 'balance', 'saldo_final', 'saldo final'];
+    const categoryAliases = ['categoria', 'category', 'tipo', 'type'];
+
+    const findColumn = (aliases: string[]): string | undefined => {
+      for (const alias of aliases) {
+        const idx = columnsLower.findIndex(c => c === alias || c.includes(alias));
+        if (idx !== -1) return columns[idx];
+      }
+      return undefined;
+    };
+
+    const dateCol = findColumn(dateAliases);
+    const descCol = findColumn(descAliases);
+    const amountCol = findColumn(amountAliases);
+    const balanceCol = findColumn(balanceAliases);
+    const categoryCol = findColumn(categoryAliases);
+
+    // Must have at least date, description, and amount
+    if (!dateCol || !descCol || !amountCol) {
+      return null;
+    }
+
+    // Detect date format and decimal separator from first data line
+    const lines = headerLine.split('\n');
+    // We only have the header here; date/decimal detection uses safe defaults
+    // that handle both formats
+    const useBrazilianFormat = delimiter === ';';
+
+    return {
+      bankName: 'Genérico',
+      delimiter,
+      dateFormat: useBrazilianFormat ? 'DD/MM/YYYY' : 'YYYY-MM-DD',
+      decimalSeparator: useBrazilianFormat ? ',' : '.',
+      columns: {
+        date: dateCol,
+        description: descCol,
+        amount: amountCol,
+        ...(balanceCol ? { balance: balanceCol } : {}),
+        ...(categoryCol ? { category: categoryCol } : {}),
+      },
+      amountSign: 'auto',
+    };
+  }
+
+  /**
+   * Parse CSV lines respecting delimiter and quoted fields
    */
   private parseLines(content: string, delimiter: string): string[][] {
     const lines = content.split('\n').filter(line => line.trim() !== '');
-    return lines.map(line => {
-      // Simple CSV parsing (doesn't handle quoted commas yet)
-      return line.split(delimiter).map(cell => cell.trim());
-    });
+    return lines.map(line => this.parseCsvLine(line, delimiter));
+  }
+
+  /**
+   * Parse a single CSV line respecting quotes and escaped delimiters
+   */
+  private parseCsvLine(line: string, delimiter: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Escaped quote ("") inside quoted field
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result;
   }
 
   /**
@@ -231,9 +338,19 @@ export class CSVParserService {
       indices.category = findIndex(format.columns.category);
     }
 
-    // Validate required columns
-    if (indices.date === -1 || indices.description === -1 || indices.amount === -1) {
-      throw new Error('Colunas obrigatórias não encontradas no CSV');
+    // Validate required columns with specific error messages
+    const missingColumns: string[] = [];
+    if (indices.date === -1) missingColumns.push(`data (esperado: "${format.columns.date}")`);
+    if (indices.description === -1) missingColumns.push(`descrição (esperado: "${format.columns.description}")`);
+    if (indices.amount === -1) missingColumns.push(`valor (esperado: "${format.columns.amount}")`);
+
+    if (missingColumns.length > 0) {
+      const headerPreview = header.slice(0, 8).join(', ');
+      throw new Error(
+        `Colunas obrigatórias não encontradas no CSV: ${missingColumns.join(', ')}. ` +
+        `Colunas encontradas: [${headerPreview}${header.length > 8 ? '...' : ''}]. ` +
+        `Formatos suportados: Nubank (date,title,amount), Banco Inter (Data;Descrição;Valor;Saldo), Itaú (data;lancamento;valor;saldo), ou CSV genérico com colunas de data, descrição e valor.`
+      );
     }
 
     return indices;
@@ -291,29 +408,43 @@ export class CSVParserService {
   }
 
   /**
-   * Parse date from string
+   * Parse date from string.
+   * Tries the expected format first, then falls back to auto-detection.
    */
   private parseDate(dateStr: string, format: string): string | null {
     if (!dateStr) return null;
 
+    const cleaned = dateStr.trim().replace(/^["']|["']$/g, '');
+
     try {
-      if (format === 'YYYY-MM-DD') {
-        // Already in correct format
+      // Try expected format first
+      const result = this.parseDateWithFormat(cleaned, format);
+      if (result) return result;
+
+      // Fallback: try the other format
+      const altFormat = format === 'YYYY-MM-DD' ? 'DD/MM/YYYY' : 'YYYY-MM-DD';
+      return this.parseDateWithFormat(cleaned, altFormat);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private parseDateWithFormat(dateStr: string, format: string): string | null {
+    try {
+      if (format === 'YYYY-MM-DD' && dateStr.includes('-')) {
         const [year, month, day] = dateStr.split('-');
         const date = new Date(Number(year), Number(month) - 1, Number(day));
         if (isNaN(date.getTime())) return null;
-        return dateStr;
-      } else if (format === 'DD/MM/YYYY') {
-        // Convert DD/MM/YYYY to YYYY-MM-DD
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      } else if (format === 'DD/MM/YYYY' && dateStr.includes('/')) {
         const [day, month, year] = dateStr.split('/');
         const date = new Date(Number(year), Number(month) - 1, Number(day));
         if (isNaN(date.getTime())) return null;
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       }
-    } catch (error) {
+    } catch {
       return null;
     }
-
     return null;
   }
 
