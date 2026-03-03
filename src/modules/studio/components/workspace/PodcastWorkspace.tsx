@@ -21,7 +21,7 @@
  * - useAutoSave: Hook for auto-saving changes with 2s debounce
  * - WorkspaceContent: Inner component that uses workspace context
  * - WorkspaceHeader: Header with breadcrumb and save status
- * - StageStepper: Stage navigation with completion indicators
+ * - HorizontalTimeline: Pipeline display with clickable stage navigation
  * - StageRenderer: Lazy-loads and renders active stage component
  *
  * Accessibility Features:
@@ -45,9 +45,8 @@ import { PodcastWorkspaceProvider, usePodcastWorkspace } from '@/modules/studio/
 import { useWorkspaceState } from '@/modules/studio/hooks/useWorkspaceState';
 import { useAutoSave } from '@/modules/studio/hooks/useAutoSave';
 import WorkspaceHeader from './WorkspaceHeader';
-import StageStepper from './StageStepper';
 import StageRenderer from './StageRenderer';
-import type { Dossier, WorkspaceCustomSource } from '@/modules/studio/types';
+import type { Dossier, PodcastStageId, WorkspaceCustomSource } from '@/modules/studio/types';
 import { createNamespacedLogger } from '@/lib/logger';
 import { AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -145,7 +144,7 @@ interface PodcastWorkspaceProps {
  * Separated to ensure context is available
  */
 function WorkspaceContent({ onBack }: { onBack: () => void }) {
-  const { state, actions, stageCompletions } = usePodcastWorkspace();
+  const { state, actions } = usePodcastWorkspace();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -265,13 +264,12 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
       <HorizontalTimeline
         phases={timelinePhases}
         title="Pipeline de Produção"
-      />
-
-      {/* Stage Navigation */}
-      <StageStepper
-        currentStage={state.currentStage}
-        completions={stageCompletions}
-        onStageChange={actions.setStage}
+        onPhaseClick={(phaseId) => {
+          // Only navigate to phases that are tracked in the workspace FSM
+          if (WORKSPACE_STAGE_ORDER.includes(phaseId as (typeof WORKSPACE_STAGE_ORDER)[number])) {
+            actions.setStage(phaseId as PodcastStageId);
+          }
+        }}
       />
 
       {/* Auto-save Error Banner */}
