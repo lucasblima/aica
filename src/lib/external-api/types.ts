@@ -51,7 +51,7 @@ export interface GeolocationData {
   city: string
   latitude: number
   longitude: number
-  source: 'ipapi' | 'browser' | 'cep' | 'manual'
+  source: 'ipapi' | 'ip-api' | 'browser' | 'cep' | 'manual' | 'timezone'
 }
 
 export interface CepData {
