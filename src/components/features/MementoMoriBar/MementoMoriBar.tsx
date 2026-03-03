@@ -19,6 +19,8 @@ import { useUserBirthdate } from '@/hooks/useUserBirthdate'
 import { updateUserProfile } from '@/services/supabaseService'
 import { useAuth } from '@/hooks/useAuth'
 import { LifeWeeksStrip } from '@/modules/journey/components/ceramic/LifeWeeksStrip'
+import type { WeatherData } from '@/lib/external-api'
+import { getDayForecast, getWeatherIcon } from '@/utils/weatherUtils'
 
 // IBGE 2024 Brazilian life expectancy by gender
 const LIFE_EXPECTANCY: Record<string, number> = {
@@ -38,6 +40,8 @@ function getLifeExpectancy(gender: string | null): number {
 
 interface MementoMoriBarProps {
   onSetBirthdate?: () => void
+  forecast?: WeatherData['forecast'] | null
+  weatherInsight?: string | null
 }
 
 // Validate and parse DD/MM/YYYY input → YYYY-MM-DD for DB
@@ -132,7 +136,33 @@ function LifeDotsVisualization({
   )
 }
 
-export function MementoMoriBar({ onSetBirthdate }: MementoMoriBarProps) {
+// Inline weather snippet — sits next to week counter
+function WeatherInline({
+  forecast,
+  insight,
+}: {
+  forecast?: WeatherData['forecast'] | null
+  insight?: string | null
+}) {
+  const dayData = getDayForecast(forecast, 0)
+  if (!dayData) return null
+
+  const Icon = getWeatherIcon(dayData.currentCode ?? dayData.dominantCode)
+  const temp = dayData.currentTemp ?? dayData.maxTemp
+  const text = insight || dayData.conditionText
+
+  return (
+    <>
+      <span className="text-ceramic-border">·</span>
+      <Icon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+      <span className="text-xs text-ceramic-text-secondary truncate">
+        {Math.round(temp)}&deg; {text}
+      </span>
+    </>
+  )
+}
+
+export function MementoMoriBar({ onSetBirthdate, forecast, weatherInsight }: MementoMoriBarProps) {
   const { user } = useAuth()
   const { birthdate, gender, isLoading } = useUserBirthdate()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -268,6 +298,7 @@ export function MementoMoriBar({ onSetBirthdate }: MementoMoriBarProps) {
             <span className="text-xs text-ceramic-text-secondary">
               Semana {formatter.format(lifeData.currentWeek)} de {formatter.format(totalWeeks)}
             </span>
+            <WeatherInline forecast={forecast} insight={weatherInsight} />
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs font-bold text-ceramic-text-primary">

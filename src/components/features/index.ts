@@ -91,5 +91,8 @@ export { DigitalSabbaticalPrompt } from './DigitalSabbaticalPrompt';
 export { GoodhartAlert } from './GoodhartAlert';
 export { EthicalGuardrailsBanner } from './EthicalGuardrailsBanner';
 
+// Weather Strip — Compact weather display for header and agenda
+export { WeatherStrip } from './WeatherStrip';
+
 // Shared Visualizations — Landing-to-App consistent charts
 export * from './visualizations';
