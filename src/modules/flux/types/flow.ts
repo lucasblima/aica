@@ -260,8 +260,8 @@ export interface FlowAthleteProfile {
   phone?: string;
 
   // Training Profile
-  modality: TrainingModality;
-  level: AthleteLevel;
+  modality?: TrainingModality;
+  level?: AthleteLevel;
 
   // Performance Thresholds
   ftp?: number; // watts
