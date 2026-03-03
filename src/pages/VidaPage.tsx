@@ -15,7 +15,6 @@ import { MementoMoriBar } from '@/components/features/MementoMoriBar';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
-import { WeatherStrip } from '@/components/features/WeatherStrip';
 import { useWeatherInsight } from '@/hooks/useWeatherInsight';
 import { FluxCard } from '../modules/flux';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
@@ -192,17 +191,6 @@ export default function VidaPage({
             onAvatarClick={() => setProfileDrawerOpen(true)}
          />
 
-         {/* Weather micro-bar — Jony Ive approved */}
-         {weather?.forecast && (
-            <div className="px-6 pt-2">
-               <WeatherStrip
-                  variant="header"
-                  forecast={weather.forecast}
-                  insight={weatherInsight}
-               />
-            </div>
-         )}
-
          {/* Credit Balance - compact inline */}
          {userId && (
             <div className="px-6 pt-3 flex justify-end">
@@ -217,7 +205,11 @@ export default function VidaPage({
                animate={{ opacity: 1, y: 0 }}
                transition={{ duration: 0.3 }}
             >
-               <MementoMoriBar onSetBirthdate={() => setProfileDrawerOpen(true)} />
+               <MementoMoriBar
+                  onSetBirthdate={() => setProfileDrawerOpen(true)}
+                  forecast={weather?.forecast}
+                  weatherInsight={weatherInsight}
+               />
             </motion.div>
 
             {/* Universal Input — text + voice + action pills */}
