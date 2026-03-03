@@ -24,8 +24,9 @@ import type {
   Topic,
   TopicCategory,
   SavedPauta,
+  SuggestionCardStatus,
 } from '../types';
-import { deepResearchGuest } from '../services/podcastAIService';
+import { deepResearchGuest, analyzeGaps, indexSources } from '../services/podcastAIService';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('PodcastWorkspaceContext');
@@ -59,6 +60,10 @@ const initialResearchState: ResearchState = {
   lastGenerated: null,
   error: null,
   deepResearch: null,
+  suggestionCards: [],
+  isAnalyzingGaps: false,
+  fileSearchStoreId: null,
+  chatOpen: false,
 };
 
 const initialPautaState: PautaState = {
@@ -218,6 +223,96 @@ function workspaceReducer(state: PodcastWorkspaceState, action: WorkspaceAction)
       return {
         ...state,
         research: { ...state.research, error: action.payload, isGenerating: false },
+      };
+
+    // Suggestion card actions (NotebookLM UX)
+    case 'SET_SUGGESTION_CARDS':
+      return {
+        ...state,
+        research: { ...state.research, suggestionCards: action.payload, isAnalyzingGaps: false },
+      };
+
+    case 'UPDATE_CARD_STATUS':
+      return {
+        ...state,
+        research: {
+          ...state.research,
+          suggestionCards: state.research.suggestionCards.map(c =>
+            c.id === action.payload.cardId ? { ...c, status: action.payload.status } : c
+          ),
+        },
+      };
+
+    case 'UPDATE_CARD_TEXT':
+      return {
+        ...state,
+        research: {
+          ...state.research,
+          suggestionCards: state.research.suggestionCards.map(c =>
+            c.id === action.payload.cardId ? { ...c, fullText: action.payload.fullText } : c
+          ),
+        },
+      };
+
+    case 'INSERT_CARD_TO_DOSSIER': {
+      const { cardId, targetSection, text } = action.payload;
+      const currentDossier = state.research.dossier;
+      if (!currentDossier) return state;
+
+      let updatedDossier: Dossier;
+      if (targetSection === 'bio') {
+        updatedDossier = {
+          ...currentDossier,
+          biography: currentDossier.biography
+            ? `${currentDossier.biography}\n\n${text}`
+            : text,
+        };
+      } else if (targetSection === 'noticias') {
+        updatedDossier = {
+          ...currentDossier,
+          controversies: [...(currentDossier.controversies || []), text],
+        };
+      } else {
+        updatedDossier = {
+          ...currentDossier,
+          biography: currentDossier.biography
+            ? `${currentDossier.biography}\n\n${text}`
+            : text,
+        };
+      }
+
+      return {
+        ...state,
+        research: {
+          ...state.research,
+          dossier: updatedDossier,
+          suggestionCards: state.research.suggestionCards.map(c =>
+            c.id === cardId ? { ...c, status: 'inserted' as const } : c
+          ),
+        },
+        isDirty: true,
+      };
+    }
+
+    case 'SET_ANALYZING_GAPS':
+      return {
+        ...state,
+        research: { ...state.research, isAnalyzingGaps: action.payload },
+      };
+
+    case 'SET_FILE_SEARCH_STORE':
+      return {
+        ...state,
+        research: { ...state.research, fileSearchStoreId: action.payload },
+      };
+
+    case 'TOGGLE_CHAT':
+      return {
+        ...state,
+        research: {
+          ...state.research,
+          chatOpen: action.payload !== undefined ? action.payload : !state.research.chatOpen,
+        },
       };
 
     // Pauta actions
@@ -613,6 +708,71 @@ export function PodcastWorkspaceProvider({
 
     removeCustomSource: (sourceId: string) => {
       dispatch({ type: 'REMOVE_CUSTOM_SOURCE', payload: sourceId });
+    },
+
+    // Suggestion card actions (NotebookLM UX)
+    analyzeGaps: async () => {
+      const { dossier, customSources } = state.research;
+      if (!dossier) return;
+
+      dispatch({ type: 'SET_ANALYZING_GAPS', payload: true });
+      try {
+        const result = await analyzeGaps(
+          dossier,
+          state.setup.guestName,
+          state.setup.theme,
+          customSources.length > 0 ? customSources : undefined
+        );
+        if (result.success && result.data) {
+          dispatch({ type: 'SET_SUGGESTION_CARDS', payload: result.data.suggestions });
+        } else {
+          dispatch({ type: 'SET_ANALYZING_GAPS', payload: false });
+          log.error('Gap analysis returned no data');
+        }
+      } catch (error) {
+        log.error('Error analyzing gaps:', error);
+        dispatch({ type: 'SET_ANALYZING_GAPS', payload: false });
+      }
+    },
+
+    updateCardStatus: (cardId: string, status: SuggestionCardStatus) => {
+      dispatch({ type: 'UPDATE_CARD_STATUS', payload: { cardId, status } });
+    },
+
+    updateCardText: (cardId: string, fullText: string) => {
+      dispatch({ type: 'UPDATE_CARD_TEXT', payload: { cardId, fullText } });
+    },
+
+    insertCardToDossier: (cardId: string) => {
+      const card = state.research.suggestionCards.find(c => c.id === cardId);
+      if (!card) return;
+      dispatch({
+        type: 'INSERT_CARD_TO_DOSSIER',
+        payload: { cardId, targetSection: card.targetSection, text: card.fullText },
+      });
+    },
+
+    toggleChat: (open?: boolean) => {
+      dispatch({ type: 'TOGGLE_CHAT', payload: open });
+    },
+
+    indexCustomSources: async () => {
+      const { customSources } = state.research;
+      if (customSources.length === 0) return;
+
+      try {
+        const sources = customSources.map(s => ({
+          content: s.content,
+          type: (s.type === 'url' ? 'url' : 'text') as 'text' | 'url',
+          label: s.label || s.content.substring(0, 50) || 'Source',
+        }));
+        const result = await indexSources({ sources });
+        if (result.success && result.data) {
+          dispatch({ type: 'SET_FILE_SEARCH_STORE', payload: result.data.storeId });
+        }
+      } catch (error) {
+        log.error('Error indexing custom sources:', error);
+      }
     },
 
     // Pauta actions

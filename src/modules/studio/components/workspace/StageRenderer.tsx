@@ -29,7 +29,10 @@ interface StageRendererProps {
 
 // Lazy load stage components from migrated workspace location
 const SetupStage = lazy(() => import('./SetupStage'));
-const ResearchStage = lazy(() => import('./ResearchStage'));
+// ResearchCanvas replaces old ResearchStage (NotebookLM UX — #664, #667)
+const ResearchCanvas = lazy(() =>
+  import('../research/ResearchCanvas').then(m => ({ default: m.ResearchCanvas }))
+);
 const PautaStage = lazy(() => import('./PautaStage'));
 const ProductionStage = lazy(() => import('./ProductionStage'));
 
@@ -63,7 +66,7 @@ export default function StageRenderer({ currentStage }: StageRendererProps) {
       case 'setup':
         return <SetupStage />;
       case 'research':
-        return <ResearchStage />;
+        return <ResearchCanvas />;
       case 'pauta':
         return <PautaStage />;
       case 'production':

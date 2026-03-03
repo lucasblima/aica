@@ -13,7 +13,7 @@
 import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
-import type { Dossier, WorkspaceCustomSource, DeepResearchResult } from '../types'
+import type { Dossier, WorkspaceCustomSource, DeepResearchResult, GapAnalysisResponse, EnrichCardRequest, EnrichCardResponse, FileSearchRequest, FileSearchResponse } from '../types'
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('podcastAIService');
@@ -308,4 +308,72 @@ export async function deepResearchGuest(
   });
 
   return data.data;
+}
+
+/**
+ * Analyze gaps in an existing dossier using Google Grounding.
+ * Calls studio-gap-analysis Edge Function.
+ */
+export async function analyzeGaps(
+  dossier: Dossier,
+  guestName: string,
+  theme: string,
+  customSources?: WorkspaceCustomSource[]
+): Promise<GapAnalysisResponse> {
+  log.debug('[podcastAIService] Analyzing gaps:', { guestName, theme });
+
+  const { session, error: sessionError } = await getCachedSession();
+  if (sessionError || !session?.access_token) {
+    throw new Error('Authentication required: Please log in again');
+  }
+
+  const { data, error } = await supabase.functions.invoke('studio-gap-analysis', {
+    body: { dossier, guestName, theme, customSources },
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  });
+
+  if (error) throw new Error(error.message || 'Gap analysis failed');
+  return data;
+}
+
+/**
+ * Enrich a specific suggestion card with detailed content.
+ * Calls studio-enrich-card Edge Function.
+ */
+export async function enrichCard(request: EnrichCardRequest): Promise<EnrichCardResponse> {
+  log.debug('[podcastAIService] Enriching card:', { cardType: request.cardType, cardTitle: request.cardTitle });
+
+  const { session, error: sessionError } = await getCachedSession();
+  if (sessionError || !session?.access_token) {
+    throw new Error('Authentication required: Please log in again');
+  }
+
+  const { data, error } = await supabase.functions.invoke('studio-enrich-card', {
+    body: request,
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  });
+
+  if (error) throw new Error(error.message || 'Card enrichment failed');
+  return data;
+}
+
+/**
+ * Index custom sources for File Search RAG.
+ * Calls studio-file-search Edge Function.
+ */
+export async function indexSources(request: FileSearchRequest): Promise<FileSearchResponse> {
+  log.debug('[podcastAIService] Indexing sources:', { count: request.sources.length });
+
+  const { session, error: sessionError } = await getCachedSession();
+  if (sessionError || !session?.access_token) {
+    throw new Error('Authentication required: Please log in again');
+  }
+
+  const { data, error } = await supabase.functions.invoke('studio-file-search', {
+    body: request,
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  });
+
+  if (error) throw new Error(error.message || 'Source indexing failed');
+  return data;
 }
