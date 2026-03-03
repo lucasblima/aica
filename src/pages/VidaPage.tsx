@@ -15,7 +15,7 @@ import { MementoMoriBar } from '@/components/features/MementoMoriBar';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
-import { WeatherInsightCard } from '@/modules/atlas/components';
+import { useWeatherInsight } from '@/hooks/useWeatherInsight';
 import { FluxCard } from '../modules/flux';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
@@ -98,6 +98,7 @@ export default function VidaPage({
    onCreateAssociation
 }: VidaPageProps) {
    const { user } = useAuth();
+   const { weather, insight: weatherInsight } = useWeatherInsight();
 
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileDrawerOpen, setProfileDrawerOpen] = useState(false);
@@ -204,7 +205,11 @@ export default function VidaPage({
                animate={{ opacity: 1, y: 0 }}
                transition={{ duration: 0.3 }}
             >
-               <MementoMoriBar onSetBirthdate={() => setProfileDrawerOpen(true)} />
+               <MementoMoriBar
+                  onSetBirthdate={() => setProfileDrawerOpen(true)}
+                  forecast={weather?.forecast}
+                  weatherInsight={weatherInsight}
+               />
             </motion.div>
 
             {/* Universal Input — text + voice + action pills */}
@@ -214,15 +219,6 @@ export default function VidaPage({
                transition={{ duration: 0.4, delay: 0.05 }}
             >
                <VidaUniversalInput />
-            </motion.div>
-
-            {/* Weather Insight — contextual climate card */}
-            <motion.div
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.4, delay: 0.08 }}
-            >
-               <WeatherInsightCard compact />
             </motion.div>
 
             {/* Quick Stats — real-time user data */}

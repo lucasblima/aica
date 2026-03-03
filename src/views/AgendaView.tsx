@@ -57,6 +57,7 @@ import { Task, Quadrant } from '@/types';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
 import { useTourAutoStart } from '../hooks/useTourAutoStart';
+import { useWeatherInsight } from '@/hooks/useWeatherInsight';
 import { TimelineEvent } from '../services/googleCalendarService';
 import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
 import { notificationService } from '../services/notificationService';
@@ -89,6 +90,7 @@ const toLocalDateStr = (d: Date): string => {
 
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
     useTourAutoStart('atlas-first-visit');
+    const { weather } = useWeatherInsight();
     const isDesktop = useIsDesktop();
     const [mobileMode, setMobileMode] = useState<AgendaMode>('agenda');
 
@@ -912,6 +914,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     onUnskipEvent={handleUnskipEvent}
                     onTaskComplete={handleTaskComplete}
                     completingTaskIds={completingTaskIds}
+                    forecast={weather?.forecast}
                 />
             </section>
 
