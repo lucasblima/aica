@@ -881,13 +881,11 @@ export default function CRMCommandCenterView() {
 
           {/* Group Filter Pills */}
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-ceramic-text-secondary" />
-                <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                  Grupos
-                </span>
-              </div>
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="w-4 h-4 text-ceramic-text-secondary" />
+              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Grupos
+              </span>
               <button
                 onClick={() => setGroupManagerOpen(true)}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"

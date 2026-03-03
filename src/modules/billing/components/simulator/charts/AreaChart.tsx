@@ -118,23 +118,28 @@ export function AreaChart({ series, labels, height = 240, formatValue = String, 
             />
           ))}
 
-          {/* Tooltip */}
-          {hoverIdx !== null && (
-            <g transform={`translate(${hoverIdx * xStep}, 0)`}>
-              <line y1={0} y2={innerH} stroke="#94a3b8" strokeDasharray="2" />
-              <foreignObject x={10} y={0} width={120} height={series.length * 20 + 20}>
-                <div className="bg-ceramic-base/95 backdrop-blur border border-ceramic-border rounded p-1.5 text-[10px] shadow-lg">
-                  <div className="font-medium text-ceramic-text-primary mb-0.5">{labels[hoverIdx]}</div>
-                  {series.map(s => (
-                    <div key={s.key} className="flex justify-between gap-2">
-                      <span style={{ color: s.color }}>{s.label}</span>
-                      <span className="text-ceramic-text-primary">{formatValue(s.values[hoverIdx])}</span>
-                    </div>
-                  ))}
-                </div>
-              </foreignObject>
-            </g>
-          )}
+          {/* Tooltip — flips left when near right edge to stay within viewport */}
+          {hoverIdx !== null && (() => {
+            const tooltipW = 130;
+            const xPos = hoverIdx * xStep;
+            const flipLeft = xPos + tooltipW + 15 > innerW;
+            return (
+              <g transform={`translate(${xPos}, 0)`}>
+                <line y1={0} y2={innerH} stroke="#94a3b8" strokeDasharray="2" />
+                <foreignObject x={flipLeft ? -tooltipW - 10 : 10} y={0} width={tooltipW} height={series.length * 20 + 20}>
+                  <div className="bg-ceramic-base/95 backdrop-blur border border-ceramic-border rounded p-1.5 text-[10px] shadow-lg">
+                    <div className="font-medium text-ceramic-text-primary mb-0.5">{labels[hoverIdx]}</div>
+                    {series.map(s => (
+                      <div key={s.key} className="flex justify-between gap-2">
+                        <span style={{ color: s.color }}>{s.label}</span>
+                        <span className="text-ceramic-text-primary">{formatValue(s.values[hoverIdx])}</span>
+                      </div>
+                    ))}
+                  </div>
+                </foreignObject>
+              </g>
+            );
+          })()}
         </g>
       </svg>
     </div>

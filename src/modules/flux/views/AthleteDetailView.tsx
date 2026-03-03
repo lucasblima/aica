@@ -896,48 +896,53 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
-      {/* PAR-Q / Health Section — collapsible (#678) */}
-      {athlete.allow_parq_onboarding && (
-        <div className="px-6 mb-6" title="Secao completa do questionario PAR-Q+. Clique para expandir e ver perguntas, respostas e documentos medicos.">
-          <div className="ceramic-card overflow-hidden">
-            {/* Collapsible header */}
-            <button
-              onClick={() => setParqExpanded(!parqExpanded)}
-              className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="ceramic-inset p-2">
-                  <ShieldCheck className="w-5 h-5 text-ceramic-text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-ceramic-text-primary">PAR-Q Detalhado</p>
-                  <p className="text-xs text-ceramic-text-secondary">
-                    Perguntas, respostas e documentos
-                  </p>
-                </div>
+      {/* PAR-Q / Health Section — collapsible (#678), always visible */}
+      <div className="px-6 mb-6" title="Secao completa do questionario PAR-Q+. Clique para expandir e ver perguntas, respostas e documentos medicos.">
+        <div className="ceramic-card overflow-hidden">
+          {/* Collapsible header */}
+          <button
+            onClick={() => setParqExpanded(!parqExpanded)}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="ceramic-inset p-2">
+                <ShieldCheck className="w-5 h-5 text-ceramic-text-primary" />
               </div>
-              <div className="flex items-center gap-2">
-                {/* Status indicator: green = up to date, red = expired/missing */}
-                {parqStatus && (
-                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                    parqStatus.clearance_status === 'cleared' ? 'bg-ceramic-success' :
-                    parqStatus.clearance_status === 'expired' || parqStatus.clearance_status === 'blocked' ? 'bg-ceramic-error' :
-                    parqStatus.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning' :
-                    'bg-ceramic-text-secondary/30'
-                  }`} />
-                )}
-                {!parqStatus && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-ceramic-error flex-shrink-0" />
-                )}
-                <span className={`text-ceramic-text-secondary transition-transform ${parqExpanded ? 'rotate-180' : ''}`}>
-                  &#9662;
+              <div className="text-left">
+                <p className="text-sm font-bold text-ceramic-text-primary">PAR-Q Detalhado</p>
+                <p className="text-xs text-ceramic-text-secondary">
+                  Perguntas, respostas e documentos
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Status indicator */}
+              {athlete.allow_parq_onboarding && parqStatus && (
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                  parqStatus.clearance_status === 'cleared' ? 'bg-ceramic-success' :
+                  parqStatus.clearance_status === 'expired' || parqStatus.clearance_status === 'blocked' ? 'bg-ceramic-error' :
+                  parqStatus.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning' :
+                  'bg-ceramic-text-secondary/30'
+                }`} />
+              )}
+              {athlete.allow_parq_onboarding && !parqStatus && (
+                <span className="w-2.5 h-2.5 rounded-full bg-ceramic-error flex-shrink-0" />
+              )}
+              {!athlete.allow_parq_onboarding && (
+                <span className="text-[10px] font-bold text-ceramic-text-secondary bg-ceramic-text-secondary/10 px-2 py-0.5 rounded">
+                  Desativado
                 </span>
-              </div>
-            </button>
+              )}
+              <span className={`text-ceramic-text-secondary transition-transform ${parqExpanded ? 'rotate-180' : ''}`}>
+                &#9662;
+              </span>
+            </div>
+          </button>
 
-            {/* Expandable content */}
-            {parqExpanded && (
-              <div className="p-4 pt-0">
+          {/* Expandable content */}
+          {parqExpanded && (
+            <div className="p-4 pt-0">
+              {athlete.allow_parq_onboarding ? (
                 <ParQCoachView
                   athleteName={athlete.name}
                   parqStatus={parqStatus}
@@ -949,11 +954,16 @@ export default function AthleteDetailView() {
                   onUploadDocument={(input) => docs.uploadDocument(input)}
                   isUploading={docs.isUploading}
                 />
-              </div>
-            )}
-          </div>
+              ) : (
+                <p className="text-sm text-ceramic-text-secondary">
+                  O onboarding PAR-Q esta desativado para este atleta.
+                  Ative nas configuracoes do atleta para que ele possa preencher o questionario.
+                </p>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Athlete Profile Calculator */}
       <div className="px-6 mb-6" title="Perfil fisico completo: peso, altura, IMC, modalidades praticadas e zonas de treino recomendadas.">

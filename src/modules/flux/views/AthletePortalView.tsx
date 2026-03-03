@@ -113,13 +113,7 @@ export default function AthletePortalView() {
 
   const handleViewFeedback = (slotId: string) => { setFeedbackSlotId(slotId); setActiveTab('feedback'); };
 
-  const handleToggleComplete = async (slotId: string, currentlyCompleted: boolean) => {
-    setUpdating(slotId);
-    try {
-      await supabase.from('workout_slots').update({ completed: !currentlyCompleted, completed_at: !currentlyCompleted ? new Date().toISOString() : null }).eq('id', slotId);
-      await refetch();
-    } finally { setUpdating(null); }
-  };
+  // handleToggleComplete removed — athletes should not mark exercises as completed
 
   const handleSubmitFeedback = async (slotId: string, data: FeedbackData) => {
     setUpdating(slotId);
@@ -263,22 +257,35 @@ export default function AthletePortalView() {
 
   const micro = profile.active_microcycle;
   const modalityConfig = MODALITY_CONFIG[profile.modality];
-  const completionPct = micro ? Math.round((micro.completed_slots / Math.max(micro.total_slots, 1)) * 100) : 0;
 
-  // Derive prescribed modalities from workout slot templates (only show what coach actually prescribed)
-  const prescribedModalities = (() => {
-    if (!micro?.slots?.length) return [profile.modality] as Array<keyof typeof MODALITY_CONFIG>;
-    const categories = new Set<string>();
+  // Count past workout days (days that have already passed) instead of manual completions
+  const pastWorkoutDays = useMemo(() => {
+    if (!micro?.slots?.length || !micro.start_date) return 0;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const startDate = new Date(micro.start_date);
+    let count = 0;
     for (const slot of micro.slots) {
-      const cat = slot.template?.category?.toLowerCase();
-      if (cat && cat in MODALITY_CONFIG) {
-        categories.add(cat);
-      }
+      const weekOffset = (slot.week_number - 1) * 7;
+      const dayOffset = slot.day_of_week - 1;
+      const slotDate = new Date(startDate);
+      slotDate.setDate(startDate.getDate() + weekOffset + dayOffset);
+      if (slotDate <= today) count++;
     }
-    // Always include the primary modality
-    categories.add(profile.modality);
-    return Array.from(categories) as Array<keyof typeof MODALITY_CONFIG>;
-  })();
+    return count;
+  }, [micro?.slots, micro?.start_date]);
+  const completionPct = micro ? Math.round((pastWorkoutDays / Math.max(micro.total_slots, 1)) * 100) : 0;
+
+  // Derive athlete modalities from profile.modality
+  // Template categories (warmup, main, cooldown) don't map to training modalities,
+  // so we use the athlete's declared modality and expand triathlon to its components.
+  const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
+    const mod = profile.modality as keyof typeof MODALITY_CONFIG;
+    if (mod === 'triathlon') {
+      return ['triathlon', 'swimming', 'running', 'cycling'];
+    }
+    return MODALITY_CONFIG[mod] ? [mod] : ['strength'];
+  }, [profile.modality]);
 
   const weeks = micro
     ? [1, 2, 3, 4].map((wk) => {
@@ -385,7 +392,7 @@ export default function AthletePortalView() {
             <div className="space-y-2 pt-3 border-t border-ceramic-border/30">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-ceramic-text-secondary inline-block" />
-                <span className="text-sm font-bold text-ceramic-text-primary">{micro.completed_slots}/{micro.total_slots}</span>
+                <span className="text-sm font-bold text-ceramic-text-primary">{pastWorkoutDays}/{micro.total_slots}</span>
                 <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Treinos Cumpridos</span>
               </div>
               <div className="flex items-center justify-between">
@@ -520,7 +527,6 @@ export default function AthletePortalView() {
                         <div className="space-y-2">
                           {daySlots.map((slot) => (
                             <WorkoutCard key={slot.id} slot={slot}
-                              onToggleComplete={handleToggleComplete}
                               isUpdating={updating === slot.id} modality={profile.modality} />
                           ))}
                         </div>
@@ -555,6 +561,8 @@ export default function AthletePortalView() {
                 weekNumber={selectedWeek}
                 userId={user.id}
                 currentWeek={micro.current_week || 1}
+                microcycleStartDate={micro.start_date}
+                workoutDays={[...new Set(currentWeekSlots.map(s => s.day_of_week))]}
               />
             </motion.section>
           )}
