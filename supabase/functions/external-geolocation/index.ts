@@ -1,8 +1,9 @@
 /**
- * External Geolocation Edge Function — ipapi.co
+ * External Geolocation Edge Function — ipapi.co + ip-api.com fallback
  *
  * Resolves user location (timezone, city, lat/lng) from IP address.
  * Caches result in user's profile to avoid redundant lookups.
+ * Falls back to ip-api.com when ipapi.co fails.
  *
  * @endpoint POST /external-geolocation
  * @auth Required (JWT)
@@ -29,6 +30,14 @@ const GEO_CONFIG: ExternalApiConfig = {
   rateLimitPerDay: 900,
 };
 
+const IP_API_CONFIG: ExternalApiConfig = {
+  name: 'ip-api',
+  baseUrl: 'http://ip-api.com',
+  cacheTtlSeconds: 86400, // 24 hours
+  maxRetries: 1,
+  rateLimitPerDay: 900,
+};
+
 interface IpApiResponse {
   ip: string;
   city: string;
@@ -40,6 +49,18 @@ interface IpApiResponse {
   utc_offset: string;
   error?: boolean;
   reason?: string;
+}
+
+interface IpApiComResponse {
+  status: string;
+  message?: string;
+  city: string;
+  regionName: string;
+  country: string;
+  lat: number;
+  lon: number;
+  timezone: string;
+  offset: number;
 }
 
 interface GeoData {
@@ -102,7 +123,7 @@ serve(async (req) => {
             longitude: profile.detected_longitude,
             source: profile.location_source || 'cached',
           } as GeoData,
-          source: 'ipapi',
+          source: profile.location_source || 'cached',
           cached: true,
           latencyMs: 0,
         }),
@@ -114,7 +135,7 @@ serve(async (req) => {
     const forwarded = req.headers.get('x-forwarded-for');
     const clientIp = forwarded ? forwarded.split(',')[0].trim() : '';
 
-    // 4. Fetch from ipapi.co
+    // 4. Try ipapi.co first
     const path = clientIp ? `/${clientIp}/json/` : '/json/';
     const apiResult: ExternalApiResponse<IpApiResponse> = await fetchExternalApi<IpApiResponse>(
       GEO_CONFIG,
@@ -122,68 +143,92 @@ serve(async (req) => {
       { cacheKey: `geo:${user.id}` },
     );
 
-    if (!apiResult.success || !apiResult.data) {
+    let geoData: GeoData | null = null;
+    let totalLatencyMs = apiResult.latencyMs;
+
+    if (apiResult.success && apiResult.data && !apiResult.data.error) {
+      // ipapi.co succeeded
+      const geo = apiResult.data;
+      geoData = {
+        timezone: geo.timezone,
+        city: geo.city,
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+        source: 'ipapi',
+      };
+    } else {
+      // 5. ipapi.co failed — try ip-api.com as fallback
+      const ipapiError = apiResult.data?.reason || apiResult.error || 'ipapi.co failed';
+      console.warn(TAG, `ipapi.co failed: ${ipapiError} — trying ip-api.com fallback`);
+
+      const fallbackPath = clientIp
+        ? `/json/${clientIp}?fields=status,message,city,regionName,country,lat,lon,timezone,offset`
+        : '/json?fields=status,message,city,regionName,country,lat,lon,timezone,offset';
+
+      const fallbackResult: ExternalApiResponse<IpApiComResponse> =
+        await fetchExternalApi<IpApiComResponse>(
+          IP_API_CONFIG,
+          fallbackPath,
+          { cacheKey: `geo-fallback:${user.id}` },
+        );
+
+      totalLatencyMs += fallbackResult.latencyMs;
+
+      if (fallbackResult.success && fallbackResult.data && fallbackResult.data.status === 'success') {
+        const fb = fallbackResult.data;
+        geoData = {
+          timezone: fb.timezone,
+          city: fb.city,
+          latitude: fb.lat,
+          longitude: fb.lon,
+          source: 'ip-api',
+        };
+        console.log(TAG, `ip-api.com fallback succeeded for user ${user.id}`);
+      } else {
+        const fbError = fallbackResult.data?.message || fallbackResult.error || 'ip-api.com failed';
+        console.error(TAG, `Both providers failed. ipapi: ${ipapiError}, ip-api: ${fbError}`);
+      }
+    }
+
+    // Both providers failed — return 502
+    if (!geoData) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: apiResult.error || 'Failed to resolve geolocation',
-          source: 'ipapi',
+          error: 'All geolocation providers failed',
+          source: 'ipapi+ip-api',
           cached: false,
-          latencyMs: apiResult.latencyMs,
+          latencyMs: totalLatencyMs,
         }),
         { status: 502, headers: jsonHeaders },
       );
     }
 
-    const geo = apiResult.data;
-
-    // ipapi returns error as part of the JSON body
-    if (geo.error) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: geo.reason || 'ipapi returned an error',
-          source: 'ipapi',
-          cached: false,
-          latencyMs: apiResult.latencyMs,
-        }),
-        { status: 502, headers: jsonHeaders },
-      );
-    }
-
-    // 5. Save to profiles table
+    // 6. Save to profiles table
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        detected_timezone: geo.timezone,
-        detected_city: geo.city,
-        detected_latitude: geo.latitude,
-        detected_longitude: geo.longitude,
-        location_source: 'ipapi',
+        detected_timezone: geoData.timezone,
+        detected_city: geoData.city,
+        detected_latitude: geoData.latitude,
+        detected_longitude: geoData.longitude,
+        location_source: geoData.source,
       })
       .eq('id', user.id);
 
     if (updateError) {
       console.warn(TAG, `Failed to update profile geo data: ${updateError.message}`);
     } else {
-      console.log(TAG, `Saved geo data for user ${user.id}: ${geo.city}, ${geo.timezone}`);
+      console.log(TAG, `Saved geo data for user ${user.id}: ${geoData.city}, ${geoData.timezone} (via ${geoData.source})`);
     }
-
-    const result: GeoData = {
-      timezone: geo.timezone,
-      city: geo.city,
-      latitude: geo.latitude,
-      longitude: geo.longitude,
-      source: 'ipapi',
-    };
 
     return new Response(
       JSON.stringify({
         success: true,
-        data: result,
-        source: 'ipapi',
+        data: geoData,
+        source: geoData.source,
         cached: false,
-        latencyMs: apiResult.latencyMs,
+        latencyMs: totalLatencyMs,
       }),
       { status: 200, headers: jsonHeaders },
     );
