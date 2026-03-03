@@ -1,5 +1,6 @@
 // src/modules/billing/components/simulator/charts/AreaChart.tsx
 import { useState } from 'react';
+import { InfoTip } from '../Tooltip';
 
 interface AreaSeries {
   key: string;
@@ -14,9 +15,11 @@ interface AreaChartProps {
   height?: number;
   formatValue?: (v: number) => string;
   highlightIndex?: number | null;
+  title?: string;
+  titleTooltip?: string;
 }
 
-export function AreaChart({ series, labels, height = 240, formatValue = String, highlightIndex }: AreaChartProps) {
+export function AreaChart({ series, labels, height = 240, formatValue = String, highlightIndex, title, titleTooltip }: AreaChartProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const padding = { top: 20, right: 20, bottom: 30, left: 60 };
   const width = 800;
@@ -46,6 +49,12 @@ export function AreaChart({ series, labels, height = 240, formatValue = String, 
 
   return (
     <div className="bg-ceramic-base rounded-xl p-4 shadow-ceramic-emboss">
+      {title && (
+        <h3 className="text-sm font-medium text-ceramic-text-primary mb-3 flex items-center">
+          {title}
+          {titleTooltip && <InfoTip text={titleTooltip} />}
+        </h3>
+      )}
       <div className="flex gap-4 mb-3 text-xs">
         {series.map(s => (
           <div key={s.key} className="flex items-center gap-1.5">

@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Check, Clock } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export interface ProgressTimelineProps {
   weeks: Array<{
@@ -23,62 +23,15 @@ export interface ProgressTimelineProps {
   onWeekSelect?: (week: number) => void;
 }
 
-const FOCUS_COLORS: Record<string, string> = {
-  volume: 'text-blue-500',
-  intensidade: 'text-amber-500',
-  intensity: 'text-amber-500',
-  recuperação: 'text-green-500',
-  recuperacao: 'text-green-500',
-  recovery: 'text-green-500',
-  teste: 'text-purple-500',
-  test: 'text-purple-500',
-};
-
-const FOCUS_BG: Record<string, string> = {
-  volume: 'bg-blue-500',
-  intensidade: 'bg-amber-500',
-  intensity: 'bg-amber-500',
-  recuperação: 'bg-green-500',
-  recuperacao: 'bg-green-500',
-  recovery: 'bg-green-500',
-  teste: 'bg-purple-500',
-  test: 'bg-purple-500',
-};
-
-function getFocusColor(focus: string): string {
-  const key = focus.toLowerCase().trim();
-  return FOCUS_COLORS[key] || 'text-ceramic-text-secondary';
-}
-
-function getFocusBg(focus: string): string {
-  const key = focus.toLowerCase().trim();
-  return FOCUS_BG[key] || 'bg-ceramic-text-secondary';
-}
-
 export function ProgressTimeline({
   weeks,
   currentWeek,
-  microcycleName,
-  status,
   selectedWeek,
   onWeekSelect,
 }: ProgressTimelineProps) {
   const activeSelected = selectedWeek ?? currentWeek;
   return (
     <div className="space-y-3">
-      {/* Title row */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-ceramic-text-primary truncate">
-          {microcycleName.replace(/^Microciclo\s*/i, 'Ciclo ')}
-        </h3>
-        {status === 'draft' && (
-          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">
-            <Clock className="w-3 h-3" />
-            Pendente
-          </span>
-        )}
-      </div>
-
       {/* Week pills */}
       <div className="flex gap-2 overflow-hidden max-w-full">
         {weeks.map((week, i) => {
@@ -94,11 +47,11 @@ export function ProgressTimeline({
 
           let pillStyle = 'bg-white shadow-sm';
           if (isCurrent && isSelected) {
-            pillStyle = 'bg-white ring-2 ring-amber-400 shadow-md';
+            pillStyle = 'bg-amber-50 ring-2 ring-amber-400 shadow-md';
           } else if (isSelected) {
             pillStyle = 'bg-white ring-2 ring-sky-400 shadow-md';
           } else if (isCurrent) {
-            pillStyle = 'bg-white ring-2 ring-amber-400/50 shadow-sm';
+            pillStyle = 'bg-amber-50/50 ring-2 ring-amber-400/50 shadow-sm';
           }
 
           return (
@@ -119,6 +72,13 @@ export function ProgressTimeline({
                 </div>
               )}
 
+              {/* Current week indicator */}
+              {isCurrent && (
+                <div className="absolute top-2 right-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 block animate-pulse" />
+                </div>
+              )}
+
               {/* Week label */}
               <p
                 className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${
@@ -132,6 +92,9 @@ export function ProgressTimeline({
                 }`}
               >
                 Semana {week.weekNumber}
+                {isCurrent && (
+                  <span className="ml-1 text-[8px] font-bold text-amber-500 normal-case tracking-normal">· atual</span>
+                )}
               </p>
               {week.dateRange && (
                 <p className="text-[9px] text-ceramic-text-secondary/70 mb-0.5">
@@ -157,20 +120,6 @@ export function ProgressTimeline({
                   ? `${week.completedSlots}/${week.totalSlots} treinos`
                   : 'Sem treinos'}
               </p>
-
-              {/* Focus label */}
-              {week.focus && (
-                <div className="flex items-center gap-1 mt-1.5">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${getFocusBg(week.focus)}`}
-                  />
-                  <span
-                    className={`text-[10px] font-medium capitalize ${getFocusColor(week.focus)}`}
-                  >
-                    {week.focus}
-                  </span>
-                </div>
-              )}
             </motion.div>
           );
         })}

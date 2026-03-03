@@ -307,9 +307,6 @@ export default function AthletePortalView() {
     slotsByDay.set(slot.day_of_week, existing);
   }
 
-  // Weekly volume total (#383: display total volume per week)
-  const weeklyVolume = currentWeekSlots.reduce((sum, s) => sum + (s.custom_duration || s.template.duration), 0);
-
   const getDateForDay = (dayOfWeek: number): Date | null => {
     if (!micro?.start_date) return null;
     const start = new Date(micro.start_date);
@@ -361,25 +358,36 @@ export default function AthletePortalView() {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-black text-ceramic-text-primary truncate">
-                {profile.athlete_name}
-                {prescribedModalities.map((mod) => (
-                  <span key={mod} className="ml-1" title={MODALITY_CONFIG[mod]?.label}>
-                    {MODALITY_CONFIG[mod]?.icon}
-                  </span>
-                ))}
-              </h1>
-              <p className="text-xs text-ceramic-text-secondary">Prescrito por {profile.coach_name}</p>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-xl font-black text-ceramic-text-primary truncate">
+                  {profile.athlete_name}
+                </h1>
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {prescribedModalities.map((mod) => (
+                    <span key={mod} className="text-base" title={MODALITY_CONFIG[mod]?.label}>
+                      {MODALITY_CONFIG[mod]?.icon}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-xs text-ceramic-text-secondary">Prescrito por {profile.coach_name}</p>
+                <span className="text-ceramic-border">·</span>
+                <p className="text-xs text-ceramic-text-secondary">
+                  {prescribedModalities.map((mod) => MODALITY_CONFIG[mod]?.label).join(', ')}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Treinos Cumpridos — overall progress (#379: labeled section) */}
+          {/* Treinos Cumpridos — overall progress */}
           {micro && (
             <div className="space-y-2 pt-3 border-t border-ceramic-border/30">
-              <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-ceramic-text-secondary inline-block" />
-                Treinos Cumpridos
-              </p>
+                <span className="text-sm font-bold text-ceramic-text-primary">{micro.completed_slots}/{micro.total_slots}</span>
+                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Treinos Cumpridos</span>
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-ceramic-text-secondary">Semana {micro.current_week}/4</span>
                 <span className="text-xs font-bold text-ceramic-text-primary">{completionPct}%</span>
@@ -387,7 +395,6 @@ export default function AthletePortalView() {
               <div className="h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
                 <motion.div className="h-full bg-amber-400 rounded-full" initial={{ width: 0 }} animate={{ width: `${completionPct}%` }} transition={{ duration: 0.6, delay: 0.2 }} />
               </div>
-              <p className="text-[10px] text-ceramic-text-secondary text-right">{micro.completed_slots}/{micro.total_slots} treinos</p>
             </div>
           )}
         </div>
@@ -503,15 +510,11 @@ export default function AthletePortalView() {
                 {[1, 2, 3, 4, 5, 6, 7].map((day) => {
                   const daySlots = slotsByDay.get(day) || [];
                   const date = getDateForDay(day);
-                  const dayVolume = daySlots.reduce((sum, s) => sum + (s.custom_duration || s.template.duration), 0);
                   return (
                     <div key={day}>
                       <div className="flex items-center gap-2 py-3">
                         <span className="text-xs font-black text-ceramic-text-primary uppercase">{DAY_NAMES[day]}</span>
                         {date && <span className="text-xs text-ceramic-text-secondary">{date.getDate()} {MONTH_NAMES[date.getMonth()]}</span>}
-                        {daySlots.length > 0 && (
-                          <span className="text-[10px] text-ceramic-text-secondary ml-auto">{dayVolume}min</span>
-                        )}
                       </div>
                       {daySlots.length > 0 ? (
                         <div className="space-y-2">
@@ -531,13 +534,7 @@ export default function AthletePortalView() {
                   );
                 })}
 
-                {/* Weekly volume summary (#383) */}
-                {currentWeekSlots.length > 0 && (
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-ceramic-border/30">
-                    <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Volume Semanal</span>
-                    <span className="text-xs font-bold text-ceramic-text-primary">{weeklyVolume} min</span>
-                  </div>
-                )}
+                {/* Weekly volume removed (#692): formula not ready */}
               </motion.section>
             )
           ) : (

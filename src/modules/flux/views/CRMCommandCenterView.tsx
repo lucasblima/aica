@@ -349,6 +349,7 @@ export default function CRMCommandCenterView() {
       cycling: 0,
       strength: 0,
       walking: 0,
+      triathlon: 0,
     };
 
     for (const athlete of allAthletes) {
@@ -880,7 +881,7 @@ export default function CRMCommandCenterView() {
 
           {/* Group Filter Pills */}
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-ceramic-text-secondary" />
                 <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
@@ -890,7 +891,7 @@ export default function CRMCommandCenterView() {
               <button
                 onClick={() => setGroupManagerOpen(true)}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
-                title="Gerenciar grupos"
+                title="Gerenciar grupos e atribuir atletas"
               >
                 <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
                 <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
