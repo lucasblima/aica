@@ -33,6 +33,8 @@ export interface HorizontalTimelineProps {
   phases: TimelinePhase[];
   /** Optional title displayed above the timeline */
   title?: string;
+  /** Optional callback when a phase node is clicked (enables navigation) */
+  onPhaseClick?: (phaseId: string) => void;
   className?: string;
 }
 
@@ -81,6 +83,7 @@ function getConnectorClass(leftStatus: TimelinePhaseStatus): string {
 export function HorizontalTimeline({
   phases,
   title,
+  onPhaseClick,
   className = '',
 }: HorizontalTimelineProps) {
   if (phases.length === 0) return null;
@@ -102,12 +105,17 @@ export function HorizontalTimeline({
           return (
             <React.Fragment key={phase.id}>
               {/* Phase node + label */}
-              <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <div
+                className={`flex flex-col items-center gap-1.5 flex-shrink-0 ${onPhaseClick ? 'cursor-pointer' : ''}`}
+                onClick={onPhaseClick ? () => onPhaseClick(phase.id) : undefined}
+                role={onPhaseClick ? 'button' : 'listitem'}
+                tabIndex={onPhaseClick ? 0 : undefined}
+                onKeyDown={onPhaseClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPhaseClick(phase.id); } } : undefined}
+                aria-label={`${phase.label}: ${phase.status === 'completed' ? 'concluído' : phase.status === 'active' ? 'em andamento' : 'pendente'}`}
+              >
                 {/* Circle node */}
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${outer}`}
-                  role="listitem"
-                  aria-label={`${phase.label}: ${phase.status === 'completed' ? 'concluído' : phase.status === 'active' ? 'em andamento' : 'pendente'}`}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${outer} ${onPhaseClick ? 'hover:scale-110' : ''}`}
                 >
                   <span className={`text-lg leading-none select-none ${inner}`}>
                     {phase.icon}
