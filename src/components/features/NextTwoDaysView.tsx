@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, MapPin, X, Check, AlertCircle, ListChecks } from 'lucide-react';
 import { getQuadrantFromFlags, QUADRANT_COLORS } from '@/constants/quadrantColors';
+import type { WeatherData } from '@/lib/external-api';
+import { WeatherStrip } from './WeatherStrip';
 
 interface EventWithCategory {
   id: string;
@@ -28,6 +30,7 @@ interface NextTwoDaysViewProps {
   onUnskipEvent: (eventId: string) => void;
   onTaskComplete?: (taskId: string) => void;
   completingTaskIds?: Set<string>;
+  forecast?: WeatherData['forecast'] | null;
 }
 
 // Detectar categoria do evento baseado no titulo e descricao
@@ -131,7 +134,8 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   onSkipEvent,
   onUnskipEvent,
   onTaskComplete,
-  completingTaskIds
+  completingTaskIds,
+  forecast
 }) => {
   const [timeUntilMap, setTimeUntilMap] = useState<Record<string, string>>({});
 
@@ -383,16 +387,20 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   const renderDaySection = (
     dayLabel: string,
     dayEvents: EventWithCategory[],
-    isToday: boolean = false
+    isToday: boolean = false,
+    dayOffset: number = 0
   ) => {
     return (
       <div className="ceramic-tray p-5 mb-4">
         {/* Titulo "gravado" na borda superior da bandeja */}
-        <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 ${
-          isToday ? 'text-ceramic-accent' : 'text-ceramic-text-secondary/70'
-        }`}>
+        <h3 className={`text-xs font-bold uppercase tracking-widest ${
+          forecast ? 'mb-1' : 'mb-4'
+        } ${isToday ? 'text-ceramic-accent' : 'text-ceramic-text-secondary/70'}`}>
           {dayLabel}
         </h3>
+
+        {/* Weather strip for this day */}
+        <WeatherStrip variant="day" dayOffset={dayOffset} forecast={forecast} />
 
         {/* Conteudo */}
         {dayEvents.length > 0 ? (
@@ -425,7 +433,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         animate="visible"
         className={getDayOpacity(0)}
       >
-        {renderDaySection('Hoje', todayEvents, true)}
+        {renderDaySection('Hoje', todayEvents, true, 0)}
       </motion.div>
 
       {/* Secao Amanha - index 1 */}
@@ -436,7 +444,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         animate="visible"
         className={getDayOpacity(1)}
       >
-        {renderDaySection('Amanha', tomorrowEvents)}
+        {renderDaySection('Amanha', tomorrowEvents, false, 1)}
       </motion.div>
 
       {/* Secao Depois de Amanha - index 2 */}
@@ -449,7 +457,9 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
       >
         {renderDaySection(
           dayAfter.toLocaleDateString('pt-BR', { weekday: 'long' }),
-          dayAfterEvents
+          dayAfterEvents,
+          false,
+          2
         )}
       </motion.div>
     </div>
