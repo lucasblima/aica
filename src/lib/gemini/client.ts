@@ -6,7 +6,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
-import { getCachedSession } from '@/services/authCacheService'
+import { getCachedSession, invalidateAuthCache } from '@/services/authCacheService'
 import { callWithRetry, type RetryOptions } from './retry'
 import { getModelForUseCase } from './models'
 import { GeminiError } from './types'
@@ -220,13 +220,50 @@ export class GeminiClient {
 
   /**
    * Faz request HTTP ao backend
+   * Retries once on 401 with a fresh token (defense-in-depth for expired JWTs, #681)
    */
   private async makeRequest(
     endpoint: string,
     request: GeminiChatRequest
   ): Promise<GeminiChatResponse> {
     const token = await this.getAuthToken()
+    const response = await this.doFetch(endpoint, request, token)
 
+    // If 401, try refreshing the token once and retry
+    if (response.status === 401) {
+      log.debug('Received 401, attempting token refresh and retry...')
+      invalidateAuthCache()
+      try {
+        const { data, error } = await supabase.auth.refreshSession()
+        if (!error && data.session?.access_token && data.session.access_token !== token) {
+          const retryResponse = await this.doFetch(endpoint, request, data.session.access_token)
+          if (!retryResponse.ok) {
+            throw await this.handleError(retryResponse)
+          }
+          return retryResponse.json()
+        }
+      } catch (retryErr) {
+        if (retryErr instanceof GeminiError) throw retryErr
+        // Refresh failed — throw original 401 error
+      }
+      throw await this.handleError(response)
+    }
+
+    if (!response.ok) {
+      throw await this.handleError(response)
+    }
+
+    return response.json()
+  }
+
+  /**
+   * Execute fetch with given auth token
+   */
+  private async doFetch(
+    endpoint: string,
+    request: GeminiChatRequest,
+    token: string
+  ): Promise<Response> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
@@ -238,22 +275,17 @@ export class GeminiClient {
       headers['apikey'] = anonKey
     }
 
-    const response = await fetch(endpoint, {
+    return fetch(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(request)
     })
-
-    if (!response.ok) {
-      throw await this.handleError(response)
-    }
-
-    return response.json()
   }
 
   /**
    * Obtém token de autenticação do Supabase
    * Uses getCachedSession() to avoid auth lock contention (#660, #665)
+   * Proactively refreshes expired/expiring tokens to prevent 401 from Edge Functions (#681)
    */
   private async getAuthToken(): Promise<string> {
     const { session, error } = await getCachedSession()
@@ -266,7 +298,37 @@ export class GeminiClient {
       throw new GeminiError('User not authenticated', 'UNAUTHORIZED', 401)
     }
 
+    // Check if token is expired or expiring within 60s — refresh proactively
+    // This prevents 401 from Edge Functions with verify_jwt = true
+    if (this.isTokenExpiringSoon(session.access_token)) {
+      log.debug('Access token expired or expiring soon, refreshing...')
+      invalidateAuthCache()
+      try {
+        const { data, error: refreshError } = await supabase.auth.refreshSession()
+        if (!refreshError && data.session?.access_token) {
+          return data.session.access_token
+        }
+      } catch {
+        // Refresh failed — fall through with current token, let server decide
+      }
+    }
+
     return session.access_token
+  }
+
+  /**
+   * Check if JWT access token is expired or expiring within threshold
+   */
+  private isTokenExpiringSoon(token: string, thresholdSeconds = 60): boolean {
+    try {
+      const payloadB64 = token.split('.')[1]
+      if (!payloadB64) return false
+      const payload = JSON.parse(atob(payloadB64))
+      const expiresAtMs = (payload.exp || 0) * 1000
+      return Date.now() > expiresAtMs - (thresholdSeconds * 1000)
+    } catch {
+      return false
+    }
   }
 
   /**
