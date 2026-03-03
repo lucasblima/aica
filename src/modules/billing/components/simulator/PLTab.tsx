@@ -1,6 +1,7 @@
 // src/modules/billing/components/simulator/PLTab.tsx
 import type { MonthlyRow } from './types';
 import { AreaChart } from './charts/AreaChart';
+import { Tooltip } from './Tooltip';
 
 interface PLTabProps {
   monthly: MonthlyRow[];
@@ -24,22 +25,64 @@ export function PLTab({ monthly, breakEvenMonth }: PLTabProps) {
         labels={labels}
         highlightIndex={breakEvenMonth ? breakEvenMonth - 1 : null}
         formatValue={formatBRL}
+        title="Receita vs Custos — 24 meses"
+        titleTooltip="Grafico de area mostrando a evolucao mensal da receita (MRR) comparada aos custos fixos e de IA. A linha tracejada verde marca o mes de break-even."
       />
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-ceramic-text-secondary border-b border-ceramic-border">
-              <th className="text-left py-2 px-2">Mes</th>
-              <th className="text-right px-2">Usuarios</th>
-              <th className="text-right px-2">Free</th>
-              <th className="text-right px-2">Pro</th>
-              <th className="text-right px-2">Teams</th>
-              <th className="text-right px-2">MRR</th>
-              <th className="text-right px-2">Custo Fixo</th>
-              <th className="text-right px-2">Custo AI</th>
-              <th className="text-right px-2">Margem</th>
-              <th className="text-right px-2">%</th>
+              <th className="text-left py-2 px-2">
+                <Tooltip text="Numero do mes na simulacao (M1 = primeiro mes)" position="bottom">
+                  <span className="cursor-help">Mes</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Total de usuarios ativos naquele mes (Free + Pro + Teams)" position="bottom">
+                  <span className="cursor-help">Usuarios</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Usuarios no plano gratuito. Nao geram receita mas consomem creditos de IA." position="bottom">
+                  <span className="cursor-help">Free</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Usuarios pagantes do plano Pro. Principal fonte de receita individual." position="bottom">
+                  <span className="cursor-help">Pro</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Usuarios pagantes do plano Teams. Maior ticket medio por usuario." position="bottom">
+                  <span className="cursor-help">Teams</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Monthly Recurring Revenue — receita recorrente mensal. Soma de todas as assinaturas ativas." position="bottom">
+                  <span className="cursor-help">MRR</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Custos fixos mensais de infraestrutura (Supabase + Cloud Run), convertidos para BRL." position="bottom">
+                  <span className="cursor-help">Custo Fixo</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Custo variavel de IA (Gemini) proporcional ao uso dos usuarios. Cresce com a base." position="bottom">
+                  <span className="cursor-help">Custo AI</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Margem bruta = MRR - Custo Fixo - Custo AI. Positivo = lucro operacional." position="bottom">
+                  <span className="cursor-help">Margem</span>
+                </Tooltip>
+              </th>
+              <th className="text-right px-2">
+                <Tooltip text="Margem bruta em percentual do MRR. Acima de 70% e saudavel para SaaS." position="bottom">
+                  <span className="cursor-help">%</span>
+                </Tooltip>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -49,6 +92,7 @@ export function PLTab({ monthly, breakEvenMonth }: PLTabProps) {
                 className={`border-b border-ceramic-border/50 ${
                   row.month === breakEvenMonth ? 'bg-ceramic-success/10' : ''
                 }`}
+                title={row.month === breakEvenMonth ? 'Mes de break-even! A partir daqui a receita cobre todos os custos.' : undefined}
               >
                 <td className="py-1.5 px-2 font-medium">M{row.month}</td>
                 <td className="text-right px-2">{row.totalUsers}</td>
