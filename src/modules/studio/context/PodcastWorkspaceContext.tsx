@@ -677,8 +677,10 @@ export function PodcastWorkspaceProvider({
     deepResearch: async (depth: 'quick' | 'standard' | 'deep' = 'standard') => {
       dispatch({ type: 'START_DOSSIER_GENERATION' });
       try {
-        const { guestName, guestBio } = state.setup;
-        const result = await deepResearchGuest(guestName, guestBio || '', depth);
+        const { guestName, guestReference, guestBio, theme } = state.setup;
+        // Build guestContext from available fields — studio-deep-research requires non-empty string
+        const guestContext = guestBio || guestReference || theme || guestName;
+        const result = await deepResearchGuest(guestName, guestContext, depth);
 
         // Store deep research result and convert to dossier
         dispatch({
