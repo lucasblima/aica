@@ -18,17 +18,16 @@ import { useFlux } from '../context/FluxContext';
 import { useAthletes, type AthleteWithAdherence } from '../hooks/useAthletes';
 import { useCanvasWorkouts } from '../hooks/useCanvasWorkouts';
 import type { BusySlot } from '../hooks/useCanvasCalendar';
-import type { WorkoutTemplate, WorkoutSlot, PaceZone } from '../types/flow';
+import type { WorkoutTemplate, WorkoutSlot } from '../types/flow';
 import type { WeekWorkout } from '../components/canvas/WeeklyGrid';
 import { MicrocycleService } from '../services/microcycleService';
 
 // Canvas components
-import { WorkoutBlockEditor } from '../components/canvas/WorkoutBlockEditor';
 import { LoadCalculatorPopover } from '../components/canvas/LoadCalculatorPopover';
 import { CanvasLibrarySidebar } from '../components/canvas/CanvasLibrarySidebar';
 import { CanvasGridContainer } from '../components/canvas/CanvasGridContainer';
 import { CanvasEditorDrawer } from '../components/canvas/CanvasEditorDrawer';
-import type { WorkoutBlockData } from '../components/canvas/WorkoutBlock';
+import TemplateFormDrawer from '../components/forms/TemplateFormDrawer';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 // ============================================
@@ -181,22 +180,6 @@ function slotToWeekWorkout(slot: WorkoutSlot): WeekWorkout {
   };
 }
 
-function slotToWorkoutBlockData(slot: WorkoutSlot): WorkoutBlockData {
-  return {
-    id: slot.id,
-    name: slot.name,
-    duration: slot.duration,
-    intensity: slot.intensity as 'low' | 'medium' | 'high',
-    modality: slot.modality as WorkoutBlockData['modality'],
-    type: MODALITY_PT_LABELS[slot.modality] || slot.modality,
-    notes: slot.coach_notes,
-    ftp_percentage: slot.ftp_percentage,
-    pace_zone: slot.pace_zone,
-    css_percentage: slot.css_percentage,
-    templateId: slot.template_id,
-  };
-}
-
 // ============================================
 // Main CanvasEditorView
 // ============================================
@@ -209,8 +192,9 @@ export default function CanvasEditorView() {
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('weekly');
   const [currentWeek, setCurrentWeek] = useState(1);
-  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutBlockData | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
+  const [editingTemplateData, setEditingTemplateData] = useState<WorkoutTemplate | null>(null);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [pendingSlotTarget, setPendingSlotTarget] = useState<{
     dayOfWeek: number;
@@ -370,39 +354,75 @@ export default function CanvasEditorView() {
     (workoutId: string) => {
       const slot = slots.find((s) => s.id === workoutId);
       if (!slot) return;
-      setSelectedWorkout(slotToWorkoutBlockData(slot));
+      // Convert slot to WorkoutTemplate shape for TemplateFormDrawer
+      const templateData: WorkoutTemplate = {
+        id: slot.template_id || slot.id,
+        user_id: slot.user_id,
+        name: slot.name,
+        description: '',
+        category: 'main',
+        modality: slot.modality,
+        duration: slot.duration,
+        intensity: slot.intensity,
+        exercise_structure: slot.exercise_structure,
+        ftp_percentage: slot.ftp_percentage,
+        pace_zone: slot.pace_zone,
+        css_percentage: slot.css_percentage,
+        rpe: slot.rpe,
+        coach_notes: slot.coach_notes,
+        created_at: '',
+        updated_at: '',
+        usage_count: 0,
+      };
+      setEditingSlotId(slot.id);
+      setEditingTemplateData(templateData);
       setIsEditorOpen(true);
     },
     [slots]
   );
 
-  const handleSaveWorkout = useCallback(
-    async (updated: WorkoutBlockData) => {
-      if (!updated.id && pendingSlotTarget) {
+  // Handler for TemplateFormDrawer save (maps template back to slot update or create)
+  const handleTemplateFormSave = useCallback(
+    async (template: WorkoutTemplate) => {
+      if (editingSlotId) {
+        // Editing existing slot
+        await updateSlot({
+          id: editingSlotId,
+          name: template.name,
+          duration: template.duration,
+          intensity: template.intensity,
+          modality: template.modality,
+          exercise_structure: template.exercise_structure,
+          coach_notes: template.coach_notes,
+          ftp_percentage: template.ftp_percentage,
+          pace_zone: template.pace_zone,
+          css_percentage: template.css_percentage,
+          rpe: template.rpe,
+        });
+      } else if (pendingSlotTarget) {
+        // Creating new slot from empty cell
         await createSlot({
           week_number: currentWeek,
           day_of_week: pendingSlotTarget.dayOfWeek,
           start_time: pendingSlotTarget.startTime,
-          name: updated.name || 'Novo treino',
-          duration: updated.duration,
-          intensity: updated.intensity,
-          modality: updated.modality || athlete?.modality || 'running',
+          name: template.name || 'Novo treino',
+          duration: template.duration,
+          intensity: template.intensity,
+          modality: template.modality || athlete?.modality || 'running',
+          exercise_structure: template.exercise_structure,
+          coach_notes: template.coach_notes,
+          ftp_percentage: template.ftp_percentage,
+          pace_zone: template.pace_zone,
+          css_percentage: template.css_percentage,
+          rpe: template.rpe,
         });
         setPendingSlotTarget(null);
-      } else {
-        await updateSlot({
-          id: updated.id,
-          name: updated.name,
-          duration: updated.duration,
-          intensity: updated.intensity,
-          coach_notes: updated.notes,
-          ftp_percentage: updated.ftp_percentage,
-          pace_zone: updated.pace_zone as PaceZone | undefined,
-          css_percentage: updated.css_percentage,
-        });
       }
+      setIsEditorOpen(false);
+      setEditingSlotId(null);
+      setEditingTemplateData(null);
     },
-    [updateSlot, createSlot, pendingSlotTarget, currentWeek, athlete?.modality]
+    [editingSlotId, updateSlot, createSlot, pendingSlotTarget, currentWeek, athlete?.modality]
   );
 
   const handleDeleteWorkout = useCallback(
@@ -414,18 +434,13 @@ export default function CanvasEditorView() {
 
   const handleEmptySlotClick = useCallback(
     (dayOfWeek: number, startTime: string) => {
-      setSelectedWorkout({
-        id: '',
-        name: '',
-        duration: 60,
-        intensity: 'medium',
-        modality: (athlete?.modality as WorkoutBlockData['modality']) || 'running',
-        type: MODALITY_PT_LABELS[athlete?.modality || 'running'] || 'Corrida',
-      });
+      // For new slots, open TemplateFormDrawer in create mode
+      setEditingSlotId(null);
+      setEditingTemplateData(null);
       setIsEditorOpen(true);
       setPendingSlotTarget({ dayOfWeek, startTime });
     },
-    [athlete?.modality]
+    []
   );
 
   const handleWeekClick = useCallback((weekNumber: number) => {
@@ -549,16 +564,19 @@ export default function CanvasEditorView() {
           onWeekClick={handleWeekClick}
         />
 
-        {/* Right Drawer: Workout Editor */}
-        <WorkoutBlockEditor
-          workout={selectedWorkout}
+        {/* Right Drawer: Workout Editor (using TemplateFormDrawer for consistency with Biblioteca #611) */}
+        <TemplateFormDrawer
+          mode={editingSlotId ? 'edit' : 'create'}
+          initialData={editingTemplateData || undefined}
           isOpen={isEditorOpen}
           onClose={() => {
             setIsEditorOpen(false);
-            setSelectedWorkout(null);
+            setEditingSlotId(null);
+            setEditingTemplateData(null);
             setPendingSlotTarget(null);
           }}
-          onSave={handleSaveWorkout}
+          onSave={handleTemplateFormSave}
+          skipServiceSave
         />
       </div>
 

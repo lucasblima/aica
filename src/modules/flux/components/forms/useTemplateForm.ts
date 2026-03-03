@@ -36,6 +36,8 @@ interface UseTemplateFormProps {
   isOpen?: boolean;
   initialData?: WorkoutTemplate;
   onSuccess?: (template: WorkoutTemplate) => void;
+  /** When true, skip WorkoutTemplateService save and return form data directly via onSuccess */
+  skipServiceSave?: boolean;
 }
 
 const EMPTY_FORM_STATE: TemplateFormState = {
@@ -51,7 +53,7 @@ const EMPTY_FORM_STATE: TemplateFormState = {
   is_public: false, // #458: Default to private (safer)
 };
 
-export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTemplateFormProps = {}) {
+export function useTemplateForm({ mode, isOpen, initialData, onSuccess, skipServiceSave }: UseTemplateFormProps = {}) {
   // Form state
   const [formData, setFormData] = useState<TemplateFormState>(() => {
     if (initialData) {
@@ -267,6 +269,32 @@ export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTem
       const finalName = formData.name || autoName;
       const finalDescription = formData.description || autoDescription;
 
+      // #611: When skipServiceSave is true, return form data directly without DB save
+      // Used by Canvas editor to update workout slots instead of templates
+      if (skipServiceSave) {
+        const templateFromForm: WorkoutTemplate = {
+          ...(initialData || {
+            id: '',
+            user_id: '',
+            created_at: '',
+            updated_at: '',
+            usage_count: 0,
+          }),
+          name: finalName,
+          description: finalDescription,
+          modality,
+          category: 'main',
+          duration: initialData?.duration || 0,
+          intensity: initialData?.intensity || 'medium',
+          exercise_structure: formData.exercise_structure,
+          coach_notes: formData.coach_notes,
+          is_public: formData.is_public,
+        };
+        setIsDirty(false);
+        onSuccess?.(templateFromForm);
+        return { success: true, data: templateFromForm };
+      }
+
       const payload: CreateWorkoutTemplateV2Input = {
         name: finalName,
         description: finalDescription,
@@ -312,7 +340,7 @@ export function useTemplateForm({ mode, isOpen, initialData, onSuccess }: UseTem
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, initialData, onSuccess, validateAll]);
+  }, [formData, initialData, onSuccess, validateAll, skipServiceSave]);
 
   // Reset form
   const resetForm = useCallback(() => {

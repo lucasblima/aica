@@ -73,6 +73,8 @@ export function AicaChatFAB({
     sessions,
     messages,
     isLoading,
+    isStreaming,
+    streamedText,
     error,
     limitReached,
     limitInfo,
@@ -463,7 +465,16 @@ export function AicaChatFAB({
                 ))}
 
                 {isLoading && (
-                  <AicaThinkingIndicator />
+                  isStreaming && streamedText ? (
+                    <div className="aica-fab-message aica-fab-message--assistant">
+                      <div
+                        className="aica-fab-message__content"
+                        dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(streamedText) }}
+                      />
+                    </div>
+                  ) : (
+                    <AicaThinkingIndicator />
+                  )
                 )}
 
                 {error && (

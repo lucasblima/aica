@@ -250,8 +250,9 @@ export function useChatSession(): UseChatSessionReturn {
         responseActions = streamResult.actions
         tokensInput = streamResult.usage?.input
         tokensOutput = streamResult.usage?.output
-      } catch {
+      } catch (streamErr) {
         // Streaming failed — fallback to agent-proxy (ADK)
+        console.warn('[useChatSession] Streaming failed, falling back to agent-proxy:', streamErr)
         setIsStreaming(false)
         setStreamedText('')
         modelUsed = 'adk-agent-proxy'

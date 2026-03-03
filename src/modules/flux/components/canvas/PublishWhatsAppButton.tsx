@@ -127,14 +127,15 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
         <>
           {/* Overlay */}
           <div
-            className="fixed inset-0 bg-black/30 z-40"
+            className="fixed inset-0 bg-black/30 z-[60]"
             onClick={handleClose}
           />
 
-          {/* Modal */}
-          <div className="fixed inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-full max-w-lg bg-ceramic-base rounded-2xl shadow-2xl z-50 overflow-hidden">
+          {/* Modal — centered with proper constraints for mobile and desktop */}
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+            <div className="w-full max-w-lg max-h-[90vh] bg-ceramic-base rounded-2xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto">
             {/* Header */}
-            <div className="p-6 border-b border-ceramic-border bg-green-50">
+            <div className="p-6 border-b border-ceramic-border bg-green-50 flex-shrink-0">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="bg-green-500 p-3 rounded-xl">
@@ -158,8 +159,8 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
               </div>
             </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-5">
+            {/* Content — scrollable to handle tall content on small screens */}
+            <div className="p-6 space-y-5 flex-1 overflow-y-auto">
               {/* Success Banner */}
               {publishStatus === 'success' && (
                 <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
@@ -263,7 +264,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
 
             {/* Footer */}
             {publishStatus !== 'success' && (
-              <div className="p-6 border-t border-ceramic-border bg-ceramic-cool">
+              <div className="p-6 border-t border-ceramic-border bg-ceramic-cool flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleClose}
@@ -292,6 +293,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                 </div>
               </div>
             )}
+          </div>
           </div>
         </>
       )}

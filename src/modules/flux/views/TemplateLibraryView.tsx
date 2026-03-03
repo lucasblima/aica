@@ -140,7 +140,7 @@ export default function TemplateLibraryView() {
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
   const [groupByModality, setGroupByModality] = useState(false);
-  const [expandedModality, setExpandedModality] = useState<TrainingModality | null>(null);
+  const [collapsedModalities, setCollapsedModalities] = useState<Set<TrainingModality>>(new Set());
 
   // Apply filters
   useEffect(() => {
@@ -476,11 +476,21 @@ export default function TemplateLibraryView() {
                 const modTemplates = filteredTemplates.filter((t) => t.modality === mod);
                 if (modTemplates.length === 0) return null;
                 const config = MODALITY_CONFIG[mod];
-                const isExpanded = expandedModality === mod;
+                const isCollapsed = collapsedModalities.has(mod);
                 return (
                   <div key={mod} className="rounded-xl overflow-hidden ceramic-card">
                     <button
-                      onClick={() => setExpandedModality(isExpanded ? null : mod)}
+                      onClick={() => {
+                        setCollapsedModalities((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(mod)) {
+                            next.delete(mod);
+                          } else {
+                            next.add(mod);
+                          }
+                          return next;
+                        });
+                      }}
                       className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
                     >
                       <div className="flex items-center gap-3">
@@ -489,12 +499,10 @@ export default function TemplateLibraryView() {
                         <span className="text-sm text-ceramic-text-secondary">({modTemplates.length})</span>
                       </div>
                       <ChevronDown
-                        className={`w-5 h-5 text-ceramic-text-secondary transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                        className={`w-5 h-5 text-ceramic-text-secondary transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
                       />
                     </button>
-                    <div
-                      className={`transition-all duration-200 overflow-hidden ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}
-                    >
+                    {!isCollapsed && (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 pt-0">
                         {modTemplates.map((template) => (
                           <TemplateCard
@@ -512,7 +520,7 @@ export default function TemplateLibraryView() {
                           />
                         ))}
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })
