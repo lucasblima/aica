@@ -11,7 +11,6 @@ import type { AthleteCardProps, AthleteGroup } from '../types';
 import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
-import { ConnectionStatusDot } from './ConnectionStatusDot';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
 import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check } from 'lucide-react';
 
@@ -108,10 +107,11 @@ export function AthleteCard({
     <div
       onClick={onClick}
       className={`
-        ceramic-card relative overflow-hidden p-4
+        ceramic-card relative overflow-visible p-4
         hover:scale-[1.02] transition-all duration-300
         cursor-pointer group
         ${hasCriticalAlerts ? 'ring-2 ring-ceramic-error ring-offset-2' : ''}
+        ${isMenuOpen ? 'z-50' : ''}
       `}
     >
       {/* Background gradient for visual interest */}
@@ -174,19 +174,27 @@ export function AthleteCard({
                   {MODALITY_CONFIG[athlete.modality]?.icon}
                 </span>
               )}
-              <ConnectionStatusDot status={athlete.invitation_status} />
             </div>
           </div>
 
-          {/* Status Badge */}
+          {/* Status Badge — #693: hover tooltip for ATIVO/INATIVO */}
           <div
             className={`
-              px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex-shrink-0
+              px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex-shrink-0 cursor-default
               ${statusConfig.color === 'green' ? 'bg-ceramic-success/20 text-ceramic-success' : ''}
               ${statusConfig.color === 'yellow' ? 'bg-ceramic-warning/20 text-ceramic-warning' : ''}
               ${statusConfig.color === 'blue' ? 'bg-ceramic-info/20 text-ceramic-info' : ''}
               ${statusConfig.color === 'gray' ? 'bg-ceramic-cool text-ceramic-text-primary' : ''}
             `}
+            title={
+              athlete.status === 'active'
+                ? 'Atleta conectado ao Aica e seguindo treinos prescritos'
+                : athlete.status === 'churned'
+                  ? 'Atleta inativo — nao esta seguindo treinos prescritos'
+                  : athlete.status === 'paused'
+                    ? 'Atleta com treinos pausados temporariamente'
+                    : 'Atleta em periodo de teste'
+            }
           >
             {statusConfig.label}
           </div>

@@ -66,8 +66,14 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
-import { WeeklyBlocks } from '@/components/features/visualizations';
-import type { WeeklyDay } from '@/components/features/visualizations';
+import { CurrentWeekList } from '../components/athlete/CurrentWeekList';
+import type { CurrentWeekDay } from '../components/athlete/CurrentWeekList';
+import {
+  ShieldCheck,
+  Heart,
+  ClipboardCheck,
+  HeartPulse,
+} from 'lucide-react';
 
 export default function AthleteDetailView() {
   const navigate = useNavigate();
@@ -85,7 +91,7 @@ export default function AthleteDetailView() {
   const alerts: Alert[] = [];
   const activeBlock = null;
 
-  // Current week workout slots for WeeklyBlocks overview
+  // Current week workout slots for CurrentWeekList
   const [currentWeekSlots, setCurrentWeekSlots] = useState<Array<{
     day_of_week: number;
     name: string;
@@ -113,6 +119,9 @@ export default function AthleteDetailView() {
 
   // Block/unblock athlete state
   const [blockingAthlete, setBlockingAthlete] = useState(false);
+
+  // PAR-Q section collapse state (#678)
+  const [parqExpanded, setParqExpanded] = useState(false);
 
   // Payment / Financial state (#463)
   const [financeOpen, setFinanceOpen] = useState(false);
@@ -229,7 +238,7 @@ export default function AthleteDetailView() {
     return () => { cancelled = true; };
   }, [athleteId]);
 
-  // Load current week slots for WeeklyBlocks overview
+  // Load current week slots for CurrentWeekList
   useEffect(() => {
     if (!athleteId) return;
     let cancelled = false;
@@ -274,8 +283,17 @@ export default function AthleteDetailView() {
     7: { day: 'dom', label: 'Domingo' },
   };
 
-  // Transform workout slots into WeeklyDay[] for WeeklyBlocks
-  const weeklyDays = useMemo<WeeklyDay[]>(() => {
+  // Transform workout slots into CurrentWeekDay[] for CurrentWeekList
+  const currentWeekDays = useMemo<CurrentWeekDay[]>(() => {
+    // Build workout data from real slots
+    const slotsByDay = new Map<number, typeof currentWeekSlots[0]>();
+    for (const slot of currentWeekSlots) {
+      if (DAY_CONFIG[slot.day_of_week]) {
+        slotsByDay.set(slot.day_of_week, slot);
+      }
+    }
+
+    // If we have real data, build days from it
     if (currentWeekSlots.length > 0) {
       return currentWeekSlots
         .filter((slot) => DAY_CONFIG[slot.day_of_week])
@@ -286,13 +304,11 @@ export default function AthleteDetailView() {
             : slot.name;
           const hexColor = MODALITY_HEX[slot.modality] ?? '#6b7280';
 
-          // Map exercise_structure.series to simple WeeklyExercise[]
           const exercises = (slot.exercise_structure?.series ?? [])
-            .slice(0, 5) // cap at 5 exercises for display
+            .slice(0, 5)
             .map((s) => {
               const name = s.exercise_name ?? slot.name ?? 'Exercicio';
               const sets = s.repetitions ?? 1;
-              // Build reps string depending on series type
               const reps =
                 s.reps != null
                   ? String(s.reps)
@@ -305,34 +321,34 @@ export default function AthleteDetailView() {
             });
 
           return {
-            day: dayInfo.day,
-            label: dayInfo.label,
+            dayOfWeek: slot.day_of_week,
+            dayShort: dayInfo.day,
+            dayFull: dayInfo.label,
             modality: modalityLabel,
             color: hexColor,
+            workoutName: slot.name,
             exercises,
           };
         });
     }
 
-    // Fallback: build a demo week based on athlete's primary modality
-    // TODO: replace with real data once more athletes have active microcycles
+    // Fallback: build demo days based on athlete's primary modality
     if (!athlete) return [];
 
     const modalityLabel = MODALITY_CONFIG[athlete.modality]?.label ?? 'Treino';
     const hexColor = MODALITY_HEX[athlete.modality] ?? '#6b7280';
-    const daysWithWorkout = [
-      { day: 'seg', label: 'Segunda' },
-      { day: 'qua', label: 'Quarta' },
-      { day: 'sex', label: 'Sexta' },
-    ];
+    const fallbackDays = [1, 3, 5]; // Mon, Wed, Fri
 
-    return daysWithWorkout.map(({ day, label }) => ({
-      day,
-      label,
-      modality: modalityLabel,
-      color: hexColor,
-      exercises: [], // no exercises without real data
-    }));
+    return fallbackDays
+      .filter((dow) => DAY_CONFIG[dow])
+      .map((dow) => ({
+        dayOfWeek: dow,
+        dayShort: DAY_CONFIG[dow].day,
+        dayFull: DAY_CONFIG[dow].label,
+        modality: modalityLabel,
+        color: hexColor,
+        exercises: [],
+      }));
   }, [currentWeekSlots, athlete]);
 
   // Athlete profile calculator: BMI
@@ -562,7 +578,7 @@ export default function AthleteDetailView() {
         )}
 
         {/* Athlete Profile Card */}
-        <div className="ceramic-card p-6 space-y-4">
+        <div className="ceramic-card p-6 space-y-4" title="Informacoes de contato e status do atleta. Clique no icone de edicao para alterar nome, email e telefone.">
           {/* Avatar + Name + Level */}
           <div className="flex items-start gap-4">
             <div className="ceramic-inset w-20 h-20 flex-shrink-0 flex items-center justify-center overflow-hidden rounded-xl">
@@ -614,7 +630,9 @@ export default function AthleteDetailView() {
                   )}
                 </h1>
               )}
-              <LevelBadge level={athlete.level} size="md" />
+              <span title="Nivel de experiencia do atleta: iniciante, intermediario ou avancado">
+                <LevelBadge level={athlete.level} size="md" />
+              </span>
             </div>
 
             {/* Edit / Save / Cancel Buttons */}
@@ -639,6 +657,7 @@ export default function AthleteDetailView() {
               <button
                 onClick={handleStartEdit}
                 className="ceramic-card p-3 hover:scale-105 transition-transform"
+                title="Editar informacoes de contato do atleta (nome, email, telefone)"
               >
                 <Edit className="w-5 h-5 text-ceramic-text-primary" />
               </button>
@@ -707,38 +726,247 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
-      {/* Semana Atual — WeeklyBlocks overview */}
-      {weeklyDays.length > 0 && (
-        <div className="px-6 mb-6">
-          <div className="ceramic-card p-4 overflow-x-auto max-h-[28rem] overflow-y-auto">
-            <WeeklyBlocks
-              days={weeklyDays}
-              expandedByDefault={true}
-              title="Semana Atual"
-            />
+      {/* Semana Atual — 7-day list with accordion (#677) */}
+      <div className="px-6 mb-6" title="Visualizacao da semana atual de treinos. Clique em um dia para ver os exercicios detalhados.">
+        <div className="ceramic-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
+            <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+              Semana Atual
+            </h3>
+          </div>
+          <CurrentWeekList days={currentWeekDays} />
+        </div>
+      </div>
+
+      {/* Status de Documentos de Saude (#680) */}
+      <div className="px-6 mb-6" title="Status dos documentos de saude do atleta: PAR-Q, Atestado de Liberacao e Exame Cardiologico.">
+        <div className="ceramic-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Heart className="w-4 h-4 text-ceramic-text-secondary" />
+            <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+              Documentos de Saude
+            </h3>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {/* PAR-Q Status */}
+            <div className={`ceramic-inset p-3 rounded-lg text-center ${
+              parqStatus?.clearance_status === 'cleared' ? 'bg-ceramic-success/5' :
+              parqStatus?.clearance_status === 'expired' || parqStatus?.clearance_status === 'blocked' ? 'bg-ceramic-error/5' :
+              parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning/5' :
+              'bg-ceramic-cool/50'
+            }`} title="Status do questionario PAR-Q+ de saude">
+              <ShieldCheck className={`w-5 h-5 mx-auto mb-1 ${
+                parqStatus?.clearance_status === 'cleared' ? 'text-ceramic-success' :
+                parqStatus?.clearance_status === 'expired' || parqStatus?.clearance_status === 'blocked' ? 'text-ceramic-error' :
+                parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'text-ceramic-warning' :
+                'text-ceramic-text-secondary/40'
+              }`} />
+              <p className="text-[10px] font-bold text-ceramic-text-primary">PAR-Q</p>
+              <p className={`text-[10px] font-bold ${
+                parqStatus?.clearance_status === 'cleared' ? 'text-ceramic-success' :
+                parqStatus?.clearance_status === 'expired' ? 'text-ceramic-error' :
+                parqStatus?.clearance_status === 'blocked' ? 'text-ceramic-error' :
+                parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'text-ceramic-warning' :
+                'text-ceramic-text-secondary'
+              }`}>
+                {parqStatus?.clearance_status === 'cleared' ? 'OK' :
+                 parqStatus?.clearance_status === 'expired' ? 'Expirado' :
+                 parqStatus?.clearance_status === 'blocked' ? 'Bloqueado' :
+                 parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'Restrito' :
+                 !athlete.allow_parq_onboarding ? 'N/A' : 'Pendente'}
+              </p>
+            </div>
+
+            {/* Atestado de Liberacao */}
+            {(() => {
+              const hasLiberacao = docs.documents.some(d => d.document_type === 'liberacao_atividade');
+              const liberacaoDoc = docs.documents.find(d => d.document_type === 'liberacao_atividade');
+              const isApproved = liberacaoDoc?.review_status === 'approved';
+              const isExpired = liberacaoDoc?.expires_at ? new Date(liberacaoDoc.expires_at) < new Date() : false;
+              return (
+                <div className={`ceramic-inset p-3 rounded-lg text-center ${
+                  isApproved && !isExpired ? 'bg-ceramic-success/5' :
+                  isExpired ? 'bg-ceramic-error/5' :
+                  hasLiberacao ? 'bg-ceramic-warning/5' :
+                  athlete.requires_clearance_cert ? 'bg-ceramic-error/5' : 'bg-ceramic-cool/50'
+                }`} title="Atestado de liberacao para atividade fisica">
+                  <ClipboardCheck className={`w-5 h-5 mx-auto mb-1 ${
+                    isApproved && !isExpired ? 'text-ceramic-success' :
+                    isExpired ? 'text-ceramic-error' :
+                    hasLiberacao ? 'text-ceramic-warning' :
+                    athlete.requires_clearance_cert ? 'text-ceramic-error' : 'text-ceramic-text-secondary/40'
+                  }`} />
+                  <p className="text-[10px] font-bold text-ceramic-text-primary">Liberacao</p>
+                  <p className={`text-[10px] font-bold ${
+                    isApproved && !isExpired ? 'text-ceramic-success' :
+                    isExpired ? 'text-ceramic-error' :
+                    hasLiberacao ? 'text-ceramic-warning' :
+                    athlete.requires_clearance_cert ? 'text-ceramic-error' : 'text-ceramic-text-secondary'
+                  }`}>
+                    {isApproved && !isExpired ? 'OK' :
+                     isExpired ? 'Expirado' :
+                     hasLiberacao ? 'Pendente' :
+                     athlete.requires_clearance_cert ? 'Ausente' : 'N/A'}
+                  </p>
+                </div>
+              );
+            })()}
+
+            {/* Exame Cardiologico */}
+            {(() => {
+              const hasCardio = docs.documents.some(d => d.document_type === 'exame_cardiologico');
+              const cardioDoc = docs.documents.find(d => d.document_type === 'exame_cardiologico');
+              const isApproved = cardioDoc?.review_status === 'approved';
+              const isExpired = cardioDoc?.expires_at ? new Date(cardioDoc.expires_at) < new Date() : false;
+              return (
+                <div className={`ceramic-inset p-3 rounded-lg text-center ${
+                  isApproved && !isExpired ? 'bg-ceramic-success/5' :
+                  isExpired ? 'bg-ceramic-error/5' :
+                  hasCardio ? 'bg-ceramic-warning/5' :
+                  athlete.requires_cardio_exam ? 'bg-ceramic-error/5' : 'bg-ceramic-cool/50'
+                }`} title="Exame cardiologico do atleta">
+                  <HeartPulse className={`w-5 h-5 mx-auto mb-1 ${
+                    isApproved && !isExpired ? 'text-ceramic-success' :
+                    isExpired ? 'text-ceramic-error' :
+                    hasCardio ? 'text-ceramic-warning' :
+                    athlete.requires_cardio_exam ? 'text-ceramic-error' : 'text-ceramic-text-secondary/40'
+                  }`} />
+                  <p className="text-[10px] font-bold text-ceramic-text-primary">Cardio</p>
+                  <p className={`text-[10px] font-bold ${
+                    isApproved && !isExpired ? 'text-ceramic-success' :
+                    isExpired ? 'text-ceramic-error' :
+                    hasCardio ? 'text-ceramic-warning' :
+                    athlete.requires_cardio_exam ? 'text-ceramic-error' : 'text-ceramic-text-secondary'
+                  }`}>
+                    {isApproved && !isExpired ? 'OK' :
+                     isExpired ? 'Expirado' :
+                     hasCardio ? 'Pendente' :
+                     athlete.requires_cardio_exam ? 'Ausente' : 'N/A'}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* PAR-Q / Health Section (only when PAR-Q onboarding is enabled) */}
-      {athlete.allow_parq_onboarding && (
-        <div className="px-6 mb-6">
-          <ParQCoachView
-            athleteName={athlete.name}
-            parqStatus={parqStatus}
-            latestResponse={latestParQ}
-            documents={docs.documents}
-            isLoadingStatus={parqLoading}
-            onReviewDocument={docs.reviewDocument}
-            onViewDocument={async (doc) => docs.getDocumentUrl(doc)}
-            onUploadDocument={(input) => docs.uploadDocument(input)}
-            isUploading={docs.isUploading}
-          />
+      {/* Status de Pagamento (#680) */}
+      <div className="px-6 mb-6" title="Status do pagamento mensal do atleta. Verde = pago, amarelo = pendente, vermelho = atrasado.">
+        <div className="ceramic-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-4 h-4 text-ceramic-text-secondary" />
+            <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+              Status de Pagamento
+            </h3>
+          </div>
+          {(() => {
+            const pd = getPaymentData(athlete);
+            return (
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                  pd.payment_status === 'paid' ? 'bg-ceramic-success' :
+                  pd.payment_status === 'overdue' ? 'bg-ceramic-error animate-pulse' :
+                  'bg-ceramic-warning'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-bold ${
+                    pd.payment_status === 'paid' ? 'text-ceramic-success' :
+                    pd.payment_status === 'overdue' ? 'text-ceramic-error' :
+                    'text-ceramic-warning'
+                  }`}>
+                    {pd.payment_status === 'paid' ? 'Pago' :
+                     pd.payment_status === 'overdue' ? 'Atrasado' : 'Pendente'}
+                  </p>
+                  {pd.monthly_fee != null && pd.monthly_fee > 0 && (
+                    <p className="text-xs text-ceramic-text-secondary">
+                      R$ {pd.monthly_fee.toFixed(2).replace('.', ',')}
+                      {pd.payment_due_day ? ` · Venc. dia ${pd.payment_due_day}` : ''}
+                    </p>
+                  )}
+                </div>
+                {pd.last_payment_date && (
+                  <p className="text-[10px] text-ceramic-text-secondary/60 flex-shrink-0">
+                    Ultimo: {new Date(pd.last_payment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </div>
-      )}
+      </div>
+
+      {/* PAR-Q / Health Section — collapsible (#678), always visible */}
+      <div className="px-6 mb-6" title="Secao completa do questionario PAR-Q+. Clique para expandir e ver perguntas, respostas e documentos medicos.">
+        <div className="ceramic-card overflow-hidden">
+          {/* Collapsible header */}
+          <button
+            onClick={() => setParqExpanded(!parqExpanded)}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="ceramic-inset p-2">
+                <ShieldCheck className="w-5 h-5 text-ceramic-text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-ceramic-text-primary">PAR-Q Detalhado</p>
+                <p className="text-xs text-ceramic-text-secondary">
+                  Perguntas, respostas e documentos
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Status indicator */}
+              {athlete.allow_parq_onboarding && parqStatus && (
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                  parqStatus.clearance_status === 'cleared' ? 'bg-ceramic-success' :
+                  parqStatus.clearance_status === 'expired' || parqStatus.clearance_status === 'blocked' ? 'bg-ceramic-error' :
+                  parqStatus.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning' :
+                  'bg-ceramic-text-secondary/30'
+                }`} />
+              )}
+              {athlete.allow_parq_onboarding && !parqStatus && (
+                <span className="w-2.5 h-2.5 rounded-full bg-ceramic-error flex-shrink-0" />
+              )}
+              {!athlete.allow_parq_onboarding && (
+                <span className="text-[10px] font-bold text-ceramic-text-secondary bg-ceramic-text-secondary/10 px-2 py-0.5 rounded">
+                  Desativado
+                </span>
+              )}
+              <span className={`text-ceramic-text-secondary transition-transform ${parqExpanded ? 'rotate-180' : ''}`}>
+                &#9662;
+              </span>
+            </div>
+          </button>
+
+          {/* Expandable content */}
+          {parqExpanded && (
+            <div className="p-4 pt-0">
+              {athlete.allow_parq_onboarding ? (
+                <ParQCoachView
+                  athleteName={athlete.name}
+                  parqStatus={parqStatus}
+                  latestResponse={latestParQ}
+                  documents={docs.documents}
+                  isLoadingStatus={parqLoading}
+                  onReviewDocument={docs.reviewDocument}
+                  onViewDocument={async (doc) => docs.getDocumentUrl(doc)}
+                  onUploadDocument={(input) => docs.uploadDocument(input)}
+                  isUploading={docs.isUploading}
+                />
+              ) : (
+                <p className="text-sm text-ceramic-text-secondary">
+                  O onboarding PAR-Q esta desativado para este atleta.
+                  Ative nas configuracoes do atleta para que ele possa preencher o questionario.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Athlete Profile Calculator */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-6" title="Perfil fisico completo: peso, altura, IMC, modalidades praticadas e zonas de treino recomendadas.">
         <div className="ceramic-card overflow-hidden">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -948,7 +1176,7 @@ export default function AthleteDetailView() {
       </div>
 
       {/* Financeiro Section — #463 */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-6" title="Gerenciamento financeiro: configure mensalidade, dia de vencimento e acompanhe o status de pagamento do atleta.">
         <div className="ceramic-card overflow-hidden">
           <button
             onClick={() => setFinanceOpen(!financeOpen)}
@@ -1139,7 +1367,7 @@ export default function AthleteDetailView() {
       </div>
 
       {/* Canvas Access - Always visible */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-6" title="Barra de progresso do bloco atual de treinos. Mostra semana atual, total de treinos completados e taxa de aderencia.">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-ceramic-text-primary">
             {activeBlock ? 'Progresso Atual' : 'Prescrição de Treinos'}
@@ -1197,7 +1425,7 @@ export default function AthleteDetailView() {
       )}
 
       {/* Flow Tools Section */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-6" title="Ferramentas para prescrever treinos. Use o Canvas para criar planos de 4 semanas e libere o microciclo para o atleta acessar.">
         <h2 className="text-lg font-bold text-ceramic-text-primary mb-3 flex items-center gap-2">
           <Zap className="w-5 h-5 text-ceramic-accent" />
           Ferramentas de Prescrição
@@ -1206,6 +1434,7 @@ export default function AthleteDetailView() {
           <button
             onClick={() => navigate(`/flux/canvas/${athleteId}`)}
             className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
+            title="Abrir o Canvas de prescricao para criar e visualizar planos de treino de 4 semanas (microciclos)"
           >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center group-hover:bg-ceramic-info/20 transition-colors flex-shrink-0">
@@ -1236,6 +1465,7 @@ export default function AthleteDetailView() {
               }}
               disabled={activatingMicrocycle}
               className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left disabled:opacity-50"
+              title="Liberar o microciclo rascunho para que o atleta possa visualizar e registrar seus treinos no portal"
             >
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-ceramic-success/10 flex items-center justify-center group-hover:bg-ceramic-success/20 transition-colors flex-shrink-0">
@@ -1262,7 +1492,7 @@ export default function AthleteDetailView() {
       </div>
 
       {/* Gerenciamento Section — #464 */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-6" title="Gerencie o acesso do atleta. Bloqueie para pausar acesso aos treinos ou desbloqueie para reativar.">
         <h2 className="text-lg font-bold text-ceramic-text-primary mb-3">
           Gerenciamento
         </h2>
@@ -1275,6 +1505,7 @@ export default function AthleteDetailView() {
                 ? 'bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/20 border border-ceramic-success/20'
                 : 'bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 border border-ceramic-error/20'
             }`}
+            title={athlete.status === 'paused' ? 'Reativar o acesso do atleta ao portal e treinos' : 'Pausar o acesso do atleta — ele nao podera ver treinos ate ser desbloqueado'}
           >
             {blockingAthlete ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -1318,7 +1549,7 @@ export default function AthleteDetailView() {
       )}
 
       {/* Feedbacks Timeline */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-6" title="Historico de feedbacks do atleta. Mostra comentarios e RPE (percepcao de esforco) apos cada treino completado.">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="w-5 h-5 text-ceramic-text-primary" />
           <h2 className="text-lg font-bold text-ceramic-text-primary">

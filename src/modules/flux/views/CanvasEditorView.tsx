@@ -220,7 +220,10 @@ export default function CanvasEditorView() {
 
   const weekStartDate = useMemo(() => {
     if (!activeMicrocycle?.start_date) return new Date();
-    const start = new Date(activeMicrocycle.start_date);
+    // Parse as local date to avoid UTC offset causing off-by-one day
+    const dateStr = activeMicrocycle.start_date.split('T')[0];
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const start = new Date(y, m - 1, d);
     start.setDate(start.getDate() + (currentWeek - 1) * 7);
     return start;
   }, [activeMicrocycle?.start_date, currentWeek]);
