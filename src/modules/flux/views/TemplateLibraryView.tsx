@@ -639,8 +639,23 @@ function TemplateCard({
         <div className="pr-8">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">{modalityConfig?.icon}</span>
-            {/* Zone pills from exercise_structure */}
+            {/* Zone pills from exercise_structure — hide for strength (zones not applicable) */}
             {(() => {
+              if (template.modality === 'strength') {
+                // Strength only shows intensity label (low/medium/high), never zone pills
+                const intensityKey = ['low', 'medium', 'high'].includes(template.intensity)
+                  ? template.intensity
+                  : 'medium';
+                return (
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      INTENSITY_COLORS[intensityKey] || ''
+                    }`}
+                  >
+                    {INTENSITY_LABELS[intensityKey] || template.intensity}
+                  </span>
+                );
+              }
               const zones = getUniqueZones(template.exercise_structure);
               if (zones.length > 0) {
                 return zones.map((z) => (

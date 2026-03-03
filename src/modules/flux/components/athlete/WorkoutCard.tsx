@@ -1,13 +1,12 @@
 /**
  * WorkoutCard — Minimalist workout slot card (Jony Ive style)
  *
- * All info visible at a glance: completion toggle, emoji, name, duration,
+ * All info visible at a glance: emoji, name, duration,
  * exercise structure, coach notes. No accordion, no inline feedback.
+ * Completion toggle removed — treinos cumpridos counts past days.
  */
 
 import {
-  CheckCircle,
-  Circle,
   Loader2,
 } from 'lucide-react';
 import { MODALITY_CONFIG } from '../../types';
@@ -60,7 +59,8 @@ export interface WorkoutCardProps {
   isExpanded?: boolean;
   /** @deprecated No longer used */
   onToggleExpand?: () => void;
-  onToggleComplete: (slotId: string, currentlyCompleted: boolean) => void;
+  /** @deprecated Completion toggle removed — treinos cumpridos counts past days only */
+  onToggleComplete?: (slotId: string, currentlyCompleted: boolean) => void;
   /** @deprecated Feedback handled via AthleteFeedbackView */
   onSubmitFeedback?: (slotId: string, data: FeedbackData) => void;
   /** @deprecated Schedule editing removed from athlete portal */
@@ -153,7 +153,6 @@ function ExerciseStructureDisplay({
 
 export function WorkoutCard({
   slot,
-  onToggleComplete,
   isUpdating,
   modality,
 }: WorkoutCardProps) {
@@ -170,37 +169,16 @@ export function WorkoutCard({
   const existingRpe = slot.completion_data?.rpe_actual ?? slot.rpe;
 
   return (
-    <div
-      className={`bg-ceramic-base rounded-2xl shadow-sm transition-opacity ${
-        slot.is_completed ? 'opacity-50' : ''
-      }`}
-    >
-      {/* Header: toggle + emoji + name + duration */}
+    <div className="bg-ceramic-base rounded-2xl shadow-sm">
+      {/* Header: emoji + name + duration */}
       <div className="flex items-center gap-3 px-5 pt-5 pb-3">
-        <button
-          type="button"
-          onClick={() => onToggleComplete(slot.id, slot.is_completed)}
-          disabled={isUpdating}
-          className="flex-shrink-0"
-        >
-          {isUpdating ? (
-            <Loader2 className="w-5 h-5 text-ceramic-text-secondary animate-spin" />
-          ) : slot.is_completed ? (
-            <CheckCircle className="w-5 h-5 text-green-500" />
-          ) : (
-            <Circle className="w-5 h-5 text-ceramic-text-secondary/30" />
-          )}
-        </button>
+        {isUpdating ? (
+          <Loader2 className="w-5 h-5 text-ceramic-text-secondary animate-spin flex-shrink-0" />
+        ) : (
+          <span className="text-base flex-shrink-0">{emoji}</span>
+        )}
 
-        <span className="text-base flex-shrink-0">{emoji}</span>
-
-        <p
-          className={`flex-1 min-w-0 text-sm font-semibold truncate ${
-            slot.is_completed
-              ? 'text-ceramic-text-secondary line-through'
-              : 'text-ceramic-text-primary'
-          }`}
-        >
+        <p className="flex-1 min-w-0 text-sm font-semibold truncate text-ceramic-text-primary">
           {slot.template.name}
         </p>
 

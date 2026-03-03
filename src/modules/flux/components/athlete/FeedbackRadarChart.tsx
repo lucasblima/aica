@@ -105,10 +105,50 @@ function extractDimensions(q: QuestionnaireData): RadarDimension[] | null {
 
 // ---- Component ----
 
+/**
+ * Interpolate between cool (blue) and warm (red/amber) based on
+ * area coverage ratio (0 = coldest, 1 = warmest).
+ */
+function getHeatColor(ratio: number): string {
+  // Clamp ratio between 0 and 1
+  const t = Math.max(0, Math.min(1, ratio));
+  // Gradient: blue (cold) -> cyan -> green -> amber -> red (hot)
+  if (t < 0.25) {
+    // Blue to Cyan
+    const p = t / 0.25;
+    const r = Math.round(59 + (6 - 59) * p);
+    const g = Math.round(130 + (182 - 130) * p);
+    const b = Math.round(246 + (212 - 246) * p);
+    return `rgb(${r},${g},${b})`;
+  }
+  if (t < 0.5) {
+    // Cyan to Green
+    const p = (t - 0.25) / 0.25;
+    const r = Math.round(6 + (34 - 6) * p);
+    const g = Math.round(182 + (197 - 182) * p);
+    const b = Math.round(212 + (94 - 212) * p);
+    return `rgb(${r},${g},${b})`;
+  }
+  if (t < 0.75) {
+    // Green to Amber
+    const p = (t - 0.5) / 0.25;
+    const r = Math.round(34 + (245 - 34) * p);
+    const g = Math.round(197 + (158 - 197) * p);
+    const b = Math.round(94 + (11 - 94) * p);
+    return `rgb(${r},${g},${b})`;
+  }
+  // Amber to Red
+  const p = (t - 0.75) / 0.25;
+  const r = Math.round(245 + (239 - 245) * p);
+  const g = Math.round(158 + (68 - 158) * p);
+  const b = Math.round(11 + (68 - 11) * p);
+  return `rgb(${r},${g},${b})`;
+}
+
 export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
   questionnaire,
-  size = 220,
-  accentColor = '#F59E0B', // amber-500
+  size = 260,
+  accentColor,
   title,
   subtitle,
 }) => {
@@ -122,9 +162,14 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
 
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size / 2 - 32;
+  const radius = size / 2 - 48; // More padding for larger labels
 
-  const rings = [1, 2, 3, 4, 5];
+  const rings = [0, 1, 2, 3, 4, 5]; // Include 0 at center (#689)
+
+  // Calculate area ratio for heat color (#688)
+  const avgValue = values.reduce((s, v) => s + v, 0) / values.length;
+  const areaRatio = avgValue / MAX_VALUE;
+  const heatColor = accentColor || getHeatColor(areaRatio);
 
   // Radial grid lines from center to each vertex
   const gridLines = labels.map((_, i) => {
@@ -133,11 +178,11 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
     return { x, y };
   });
 
-  // Label positions (slightly outside the outermost ring)
+  // Label positions — pushed further out to avoid truncation (#689)
   const labelPositions = labels.map((label, i) => {
     const angle = (2 * Math.PI * i) / count;
-    const { x, y } = polarToCartesian(cx, cy, radius + 20, angle);
-    return { label, x, y };
+    const { x, y } = polarToCartesian(cx, cy, radius + 30, angle);
+    return { label, x, y, angle };
   });
 
   // Ideal (max) polygon -- dashed reference at 100%
@@ -164,27 +209,33 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
         width="100%"
         height="auto"
         viewBox={`0 0 ${size} ${size}`}
-        className="max-w-[220px]"
+        className="max-w-[260px]"
         role="img"
         aria-label="Radar de feedback do atleta"
       >
-        {/* Background rings */}
-        {rings.map((ring) => (
-          <polygon
-            key={ring}
-            points={buildPolygonPoints(
-              cx,
-              cy,
-              radius,
-              labels.map(() => ring),
-              MAX_VALUE,
-            )}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={0.5}
-            className="text-ceramic-border"
-          />
-        ))}
+        {/* Background rings — include ring 0 at center */}
+        {rings.map((ring) => {
+          if (ring === 0) {
+            // Center dot for 0
+            return <circle key={ring} cx={cx} cy={cy} r={2} fill="currentColor" className="text-ceramic-border" />;
+          }
+          return (
+            <polygon
+              key={ring}
+              points={buildPolygonPoints(
+                cx,
+                cy,
+                radius,
+                labels.map(() => ring),
+                MAX_VALUE,
+              )}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={0.5}
+              className="text-ceramic-border"
+            />
+          );
+        })}
 
         {/* Radial grid lines from center */}
         {gridLines.map((point, i) => (
@@ -210,12 +261,12 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
           className="text-ceramic-border"
         />
 
-        {/* Actual value polygon */}
+        {/* Actual value polygon — heat-colored (#688) */}
         <polygon
           points={valuePoints}
-          fill={accentColor}
-          fillOpacity={0.2}
-          stroke={accentColor}
+          fill={heatColor}
+          fillOpacity={0.25}
+          stroke={heatColor}
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -225,10 +276,10 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
           const angle = (2 * Math.PI * i) / count;
           const r = (v / MAX_VALUE) * radius;
           const { x, y } = polarToCartesian(cx, cy, r, angle);
-          return <circle key={i} cx={x} cy={y} r={3} fill={accentColor} />;
+          return <circle key={i} cx={x} cy={y} r={3.5} fill={heatColor} />;
         })}
 
-        {/* Numeric scale labels along first axis (12 o'clock) */}
+        {/* Numeric scale labels along first axis (12 o'clock) — include 0 (#689) */}
         {rings.map((ring) => {
           const r = (ring / MAX_VALUE) * radius;
           const { x, y } = polarToCartesian(cx, cy, r, 0);
@@ -239,26 +290,37 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
               y={y}
               textAnchor="start"
               dominantBaseline="middle"
-              className="fill-ceramic-text-secondary text-[8px] font-bold"
+              className="fill-ceramic-text-secondary text-[9px] font-bold"
             >
               {ring}
             </text>
           );
         })}
 
-        {/* Axis labels */}
-        {labelPositions.map(({ label, x, y }, i) => (
-          <text
-            key={i}
-            x={x}
-            y={y}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="fill-ceramic-text-secondary text-[9px] font-medium"
-          >
-            {label}
-          </text>
-        ))}
+        {/* Axis labels — larger font, no truncation (#689) */}
+        {labelPositions.map(({ label, x, y, angle }, i) => {
+          // Determine text anchor based on position to avoid cutoff
+          const normalizedAngle = angle % (2 * Math.PI);
+          let anchor: 'start' | 'middle' | 'end' = 'middle';
+          if (normalizedAngle > 0.3 && normalizedAngle < Math.PI - 0.3) {
+            anchor = 'start';
+          } else if (normalizedAngle > Math.PI + 0.3 && normalizedAngle < 2 * Math.PI - 0.3) {
+            anchor = 'end';
+          }
+
+          return (
+            <text
+              key={i}
+              x={x}
+              y={y}
+              textAnchor={anchor}
+              dominantBaseline="middle"
+              className="fill-ceramic-text-primary text-[11px] font-medium"
+            >
+              {label}
+            </text>
+          );
+        })}
       </svg>
     </div>
   );

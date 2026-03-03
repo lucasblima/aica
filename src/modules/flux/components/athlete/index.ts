@@ -23,3 +23,5 @@ export { FeedbackRadarChart } from './FeedbackRadarChart';
 export type { FeedbackRadarChartProps } from './FeedbackRadarChart';
 export { StressFatigueGauges } from './StressFatigueGauges';
 export type { StressFatigueGaugesProps } from './StressFatigueGauges';
+export { CurrentWeekList } from './CurrentWeekList';
+export type { CurrentWeekListProps, CurrentWeekDay, CurrentWeekExercise } from './CurrentWeekList';
