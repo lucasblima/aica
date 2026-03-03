@@ -12,6 +12,7 @@
 
 import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
+import { getCachedSession } from '@/services/authCacheService'
 import type { Dossier, WorkspaceCustomSource, DeepResearchResult } from '../types'
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -284,8 +285,17 @@ export async function deepResearchGuest(
 ): Promise<DeepResearchResult> {
   log.debug('[podcastAIService] Deep researching guest:', { guestName, guestContext, researchDepth });
 
+  // Get auth token explicitly to avoid 401 errors (#665)
+  const { session, error: sessionError } = await getCachedSession();
+  if (sessionError || !session?.access_token) {
+    throw new Error('Authentication required: Please log in again');
+  }
+
   const { data, error } = await supabase.functions.invoke('studio-deep-research', {
-    body: { guestName, guestContext, researchDepth }
+    body: { guestName, guestContext, researchDepth },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
   });
 
   if (error) throw new Error(error.message || 'Falha na pesquisa');

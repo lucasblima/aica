@@ -451,8 +451,40 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   </button>
                 </div>
 
+                {/* Search Loading Indicator (#661) */}
+                {isSearching && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="p-4 bg-amber-50 border border-amber-200 rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm animate-pulse flex-shrink-0">
+                        <Search className="w-5 h-5 text-white" aria-hidden="true" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-800">Buscando perfil com IA...</p>
+                        <p className="text-xs text-amber-600 mt-0.5">Analisando informacoes sobre {setup.guestName}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-1.5">
+                      {[0, 1, 2].map(i => (
+                        <div
+                          key={i}
+                          className="h-1 flex-1 bg-amber-200 rounded-full overflow-hidden"
+                        >
+                          <div
+                            className="h-full bg-amber-500 rounded-full animate-pulse"
+                            style={{ animationDelay: `${i * 0.4}s` }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Search Error */}
-                {searchError && (
+                {searchError && !isSearching && (
                   <div
                     role="alert"
                     aria-live="polite"
