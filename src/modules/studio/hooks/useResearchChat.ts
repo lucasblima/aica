@@ -71,21 +71,25 @@ Se sugerir informacao que deveria ser adicionada ao dossie, formate assim:
       if (!session?.access_token) throw new Error('Not authenticated');
 
       // Call gemini-chat with research context
+      // Legacy path expects: message, systemPrompt, history [{role, content}]
       const { data, error: fnError } = await supabase.functions.invoke('gemini-chat', {
         body: {
           message: content,
-          systemInstruction: buildContext(),
-          conversationHistory: messages.slice(-10).map(m => ({
+          systemPrompt: buildContext(),
+          history: messages.slice(-10).map(m => ({
             role: m.role,
-            parts: [{ text: m.content }],
+            content: m.content,
           })),
         },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError) {
+        log.error('gemini-chat error:', fnError);
+        throw new Error(fnError.message || 'Erro na funcao gemini-chat');
+      }
 
-      const responseText = data?.response || data?.text || 'Sem resposta';
+      const responseText = data?.response || data?.result?.response || data?.text || 'Sem resposta';
 
       // Parse any dossier suggestions from the response
       let suggestedCard: ChatMessage['suggestedCard'] | undefined;
