@@ -111,6 +111,7 @@ interface FileWithMetadata {
   processingStage?: string; // Added for message rotation
   analysisProgress?: PDFProgressUpdate | null; // Progressive analysis feedback
   transactionCount?: number; // Extracted transaction count for display
+  cachedParsed?: import('../types').ParsedStatement | null; // Cache AI parsing result to avoid duplicate calls
 }
 
 // =====================================================
@@ -240,7 +241,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         const month = monthStr;
         const year = yearStr;
 
-        // Update metadata in state
+        // Update metadata in state and cache parsed result to avoid re-parsing
         setFiles((prev) =>
           prev.map((f) =>
             f.file === fileWithMeta.file
@@ -252,6 +253,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
                   analyzed: true,
                   analysisProgress: null,
                   transactionCount: parsed.transactions?.length || 0,
+                  cachedParsed: parsed,
                 }
               : f
           )
@@ -333,12 +335,16 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           log.warn('Storage upload failed:', uploadError);
         }
 
-        // Step 4: Extract and parse PDF
-        updateFileProgress(i, { stage: 'extracting', progress: 50, message: 'Extraindo texto...' }, 'extracting');
-
-        // Step 5: AI Parsing
-        updateFileProgress(i, { stage: 'extracting', progress: 70, message: 'IA analisando...' }, 'ai_parsing');
-        const parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId);
+        // Step 4: Use cached parsed result or re-parse if not available
+        let parsed;
+        if (fileWithMeta.cachedParsed) {
+          updateFileProgress(i, { stage: 'extracting', progress: 70, message: 'Usando análise anterior...' }, 'ai_parsing');
+          parsed = fileWithMeta.cachedParsed;
+        } else {
+          updateFileProgress(i, { stage: 'extracting', progress: 50, message: 'Extraindo texto...' }, 'extracting');
+          updateFileProgress(i, { stage: 'extracting', progress: 70, message: 'IA analisando...' }, 'ai_parsing');
+          parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId);
+        }
 
         // Override with user metadata
         // Calculate last day of month (month is 1-indexed, but Date expects 0-indexed)

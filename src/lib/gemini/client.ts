@@ -172,13 +172,20 @@ export class GeminiClient {
 
     const token = await this.getAuthToken()
 
+    const streamHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    }
+
+    const streamAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    if (streamAnonKey) {
+      streamHeaders['apikey'] = streamAnonKey
+    }
+
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: streamHeaders,
         body: JSON.stringify({ ...request, stream: true })
       })
 
@@ -219,12 +226,20 @@ export class GeminiClient {
   ): Promise<GeminiChatResponse> {
     const token = await this.getAuthToken()
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    }
+
+    // Supabase Edge Functions require the apikey header
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    if (anonKey) {
+      headers['apikey'] = anonKey
+    }
+
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers,
       body: JSON.stringify(request)
     })
 

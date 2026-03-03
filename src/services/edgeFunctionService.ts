@@ -10,6 +10,7 @@
  */
 
 import { supabase } from './supabaseClient'
+import { getCachedSession } from './authCacheService'
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('EdgeFunctionService');
@@ -119,8 +120,8 @@ export async function invokeEdgeFunction<T = any>(
   const invokeFn = async () => {
     const startTime = Date.now()
 
-    // Get the current session to ensure we have a valid token
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get the current session using cached version to avoid auth lock contention
+    const { session, error: sessionError } = await getCachedSession()
 
     if (sessionError) {
       log.error(`[EdgeFunction] Session error:`, sessionError)
@@ -188,8 +189,8 @@ export async function callGeminiEdgeFunction<T = any>(
       ...(model && { model }),
     }
 
-    // Get the current session to ensure we have a valid token
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get the current session using cached version to avoid auth lock contention
+    const { session, error: sessionError } = await getCachedSession()
 
     if (sessionError) {
       log.error(`[EdgeFunction] Session error for action "${action}":`, sessionError)

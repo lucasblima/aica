@@ -197,15 +197,16 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
             {/* Format Info */}
             <div className="mt-6 p-4 bg-ceramic-cool rounded-xl border border-ceramic-border">
               <h4 className="text-sm font-medium text-ceramic-text-primary mb-2">
-                📋 Formatos Suportados
+                Formatos Suportados
               </h4>
               <ul className="text-xs text-ceramic-text-secondary space-y-1">
-                <li>• Nubank (date, title, amount)</li>
-                <li>• Banco Inter (Data;Descrição;Valor;Saldo)</li>
-                <li>• Itaú (data;lancamento;valor;saldo)</li>
+                <li>Nubank (date, title, amount)</li>
+                <li>Banco Inter (Data;Descricao;Valor;Saldo)</li>
+                <li>Itau (data;lancamento;valor;saldo)</li>
+                <li>CSV generico com colunas de data, descricao e valor</li>
               </ul>
               <p className="text-xs text-ceramic-text-secondary mt-3">
-                💡 O formato é detectado automaticamente
+                O formato e detectado automaticamente pelo cabecalho
               </p>
             </div>
 

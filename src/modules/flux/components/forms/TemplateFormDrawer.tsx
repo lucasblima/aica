@@ -25,6 +25,8 @@ interface TemplateFormDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (template: WorkoutTemplate) => void;
+  /** When true, skip DB save and return form data directly (used by Canvas slot editor) */
+  skipServiceSave?: boolean;
 }
 
 export default function TemplateFormDrawer({
@@ -33,6 +35,7 @@ export default function TemplateFormDrawer({
   isOpen,
   onClose,
   onSave,
+  skipServiceSave,
 }: TemplateFormDrawerProps) {
   const {
     formData,
@@ -52,6 +55,7 @@ export default function TemplateFormDrawer({
     onSuccess: (template) => {
       onSave(template);
     },
+    skipServiceSave,
   });
 
   const [submitError, setSubmitError] = useState<string | null>(null);

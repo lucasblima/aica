@@ -8,6 +8,8 @@ import { UnitEconomicsTab } from '../components/simulator/UnitEconomicsTab';
 import { PricingScenariosTab } from '../components/simulator/PricingScenariosTab';
 import { useSimulation } from '../components/simulator/useSimulation';
 import { useBaselineData } from '../components/simulator/useBaselineData';
+import { useExchangeRate } from '../components/simulator/useExchangeRate';
+import { ExchangeRateCard } from '../components/simulator/ExchangeRateCard';
 import { DEFAULT_SIMULATION } from '../components/simulator/simulatorDefaults';
 import type { SimulationInput } from '../components/simulator/types';
 
@@ -18,11 +20,25 @@ export function PricingSimulatorPage() {
   const { input: baselineInput, isLoading } = useBaselineData();
   const [input, setInput] = useState<SimulationInput>(DEFAULT_SIMULATION);
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('P&L Mensal');
+  const exchangeRate = useExchangeRate();
 
   // Merge baseline when loaded
   useEffect(() => {
     if (!isLoading) setInput(baselineInput);
   }, [isLoading, baselineInput]);
+
+  // Auto-apply live exchange rate on first load
+  useEffect(() => {
+    if (exchangeRate.data && !isLoading) {
+      setInput(prev => ({
+        ...prev,
+        costs: {
+          ...prev.costs,
+          exchangeRate: parseFloat(exchangeRate.data!.usdBrl.toFixed(2)),
+        },
+      }));
+    }
+  }, [exchangeRate.data, isLoading]);
 
   const handleUpdate = useCallback((patch: Partial<SimulationInput>) => {
     setInput(prev => ({
@@ -68,6 +84,22 @@ export function PricingSimulatorPage() {
                 Ajuste as variaveis na barra lateral e veja o impacto em tempo real.
               </p>
             </div>
+          </div>
+
+          {/* Exchange rate card */}
+          <div className="mb-6">
+            <ExchangeRateCard
+              data={exchangeRate.data}
+              isLoading={exchangeRate.isLoading}
+              error={exchangeRate.error}
+              currentSimRate={input.costs.exchangeRate}
+              onApplyRate={(rate) =>
+                setInput(prev => ({
+                  ...prev,
+                  costs: { ...prev.costs, exchangeRate: rate },
+                }))
+              }
+            />
           </div>
 
           {/* Tab bar */}
