@@ -754,14 +754,14 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                                           <button
                                             onClick={() => handleEditQuestion(q.id)}
                                             className="p-1 rounded hover:bg-orange-100 text-ceramic-tertiary hover:text-orange-600"
-                                            aria-label={`Editar pergunta: ${q.text.substring(0, 30)}`}
+                                            aria-label={`Editar pergunta: ${(q.text || '').substring(0, 30)}`}
                                           >
                                             <Edit3 className="w-4 h-4" aria-hidden="true" />
                                           </button>
                                           <button
                                             onClick={() => handleRemoveQuestion(q.id)}
                                             className="p-1 rounded hover:bg-ceramic-error-bg text-ceramic-tertiary hover:text-ceramic-error"
-                                            aria-label={`Remover pergunta: ${q.text.substring(0, 30)}`}
+                                            aria-label={`Remover pergunta: ${(q.text || '').substring(0, 30)}`}
                                           >
                                             <X className="w-4 h-4" aria-hidden="true" />
                                           </button>

@@ -194,7 +194,10 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { theme, guestName, additionalContext, depth }: DeepResearchRequest = await req.json()
+    // Supports both flat body { theme, guestName } and GeminiClient wrapper { action, payload: { theme, guestName } }
+    const body = await req.json()
+    const source = body.payload || body
+    const { theme, guestName, additionalContext, depth }: DeepResearchRequest = source
 
     if (!theme && !guestName) {
       return new Response(
