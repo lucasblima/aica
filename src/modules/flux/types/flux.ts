@@ -80,9 +80,9 @@ export interface Athlete {
   name: string;
   email?: string;
   phone: string; // WhatsApp format: +5511987654321
-  level: AthleteLevel;
+  level?: AthleteLevel;
   status: AthleteStatus;
-  modality: TrainingModality; // Primary training modality
+  modality?: TrainingModality; // Primary training modality
   trial_expires_at?: string; // ISO 8601
   onboarding_data?: Record<string, unknown>; // AI onboarding responses
   anamnesis?: AnamnesisData;
