@@ -152,12 +152,16 @@ export default function StudioMainView() {
   }, [actions, state.currentShowId]);
 
   /**
-   * Handler for going back to library
-   * Transitions: WORKSPACE/WIZARD -> LIBRARY
+   * Handler for going back from workspace/wizard
+   * If we have a current show context, go to SHOW_PAGE; otherwise go to LIBRARY
    */
   const handleBackToLibrary = useCallback(() => {
-    actions.goToLibrary();
-  }, [actions]);
+    if (state.currentShowId && state.currentShowTitle) {
+      actions.goToShowPage(state.currentShowId, state.currentShowTitle);
+    } else {
+      actions.goToLibrary();
+    }
+  }, [actions, state.currentShowId, state.currentShowTitle]);
 
   /**
    * Handler for completing wizard
