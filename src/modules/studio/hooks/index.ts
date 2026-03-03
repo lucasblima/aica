@@ -63,3 +63,12 @@ export type { UseGuestScoringResult, StoredGuestScore } from './useGuestScoring'
 
 export { useNarrativeAnalysis } from './useNarrativeAnalysis';
 export type { UseNarrativeAnalysisResult } from './useNarrativeAnalysis';
+
+// ============================================
+// RESEARCH UX (NotebookLM)
+// ============================================
+
+export { useSuggestionCards } from './useSuggestionCards';
+
+export { useResearchChat } from './useResearchChat';
+export type { ChatMessage } from './useResearchChat';

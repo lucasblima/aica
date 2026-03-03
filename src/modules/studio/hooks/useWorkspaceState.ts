@@ -112,6 +112,10 @@ export function useWorkspaceState({
             lastGenerated: episode.biography ? new Date(episode.updated_at) : null,
             error: null,
             deepResearch: episode.deep_research || null,
+            suggestionCards: [],
+            isAnalyzingGaps: false,
+            fileSearchStoreId: null,
+            chatOpen: false,
           },
 
           // Pauta stage

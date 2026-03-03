@@ -305,6 +305,18 @@ export interface ResearchState {
 
   /** Deep research result (from wizard or manual deep research) */
   deepResearch: import('../types/studio').DeepResearchResult | null;
+
+  /** Suggestion cards from gap analysis (NotebookLM UX) */
+  suggestionCards: import('./research').SuggestionCard[];
+
+  /** Whether gap analysis is running */
+  isAnalyzingGaps: boolean;
+
+  /** File Search store ID for custom sources RAG */
+  fileSearchStoreId: string | null;
+
+  /** Whether the research chat panel is open */
+  chatOpen: boolean;
 }
 
 /**
@@ -436,6 +448,15 @@ export type WorkspaceAction =
   | { type: 'FINISH_DOSSIER_GENERATION'; payload: Dossier }
   | { type: 'SET_RESEARCH_ERROR'; payload: string }
 
+  // Suggestion card actions (NotebookLM UX)
+  | { type: 'SET_SUGGESTION_CARDS'; payload: import('./research').SuggestionCard[] }
+  | { type: 'UPDATE_CARD_STATUS'; payload: { cardId: string; status: import('./research').SuggestionCardStatus } }
+  | { type: 'UPDATE_CARD_TEXT'; payload: { cardId: string; fullText: string } }
+  | { type: 'INSERT_CARD_TO_DOSSIER'; payload: { cardId: string; targetSection: string; text: string } }
+  | { type: 'SET_ANALYZING_GAPS'; payload: boolean }
+  | { type: 'SET_FILE_SEARCH_STORE'; payload: string | null }
+  | { type: 'TOGGLE_CHAT'; payload?: boolean }
+
   // Pauta actions
   | { type: 'UPDATE_PAUTA'; payload: Partial<PautaState> }
   | { type: 'SET_TOPICS'; payload: Topic[] }
@@ -503,6 +524,25 @@ export interface WorkspaceActions {
 
   /** Remove custom research source */
   removeCustomSource: (sourceId: string) => void;
+
+  // Suggestion card actions (NotebookLM UX)
+  /** Trigger gap analysis on current dossier */
+  analyzeGaps: () => Promise<void>;
+
+  /** Update a card's status (expanded, inserted, discarded) */
+  updateCardStatus: (cardId: string, status: import('./research').SuggestionCardStatus) => void;
+
+  /** Update a card's text before insertion */
+  updateCardText: (cardId: string, fullText: string) => void;
+
+  /** Insert card content into the appropriate dossier section */
+  insertCardToDossier: (cardId: string) => void;
+
+  /** Toggle the research chat panel */
+  toggleChat: (open?: boolean) => void;
+
+  /** Index custom sources for File Search RAG */
+  indexCustomSources: () => Promise<void>;
 
   // Pauta actions
   /** Add new topic to script */

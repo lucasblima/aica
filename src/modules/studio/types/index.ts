@@ -102,6 +102,25 @@ export type {
 export { PODCAST_STAGES } from './podcast-workspace';
 
 // ============================================
+// RESEARCH TYPES (NotebookLM UX)
+// ============================================
+
+export type {
+  SuggestionCardType,
+  SuggestionCardStatus,
+  SuggestionCard,
+  GapAnalysisRequest,
+  GapAnalysisResponse,
+  EnrichCardRequest,
+  EnrichCardResponse,
+  FileSearchRequest,
+  FileSearchResponse,
+  ResearchChatContext,
+} from './research';
+
+export { CARD_TYPE_CONFIG } from './research';
+
+// ============================================
 // TYPE GUARDS
 // ============================================
 
