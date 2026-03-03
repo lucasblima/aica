@@ -11,7 +11,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/services/supabaseClient'
-import { detectLocationFromIp } from '@/services/geolocationService'
+import { detectLocationFromIp, estimateLocationFromTimezone } from '@/services/geolocationService'
 import type { GeolocationData } from '@/lib/external-api'
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
@@ -41,7 +41,10 @@ async function resolveLocation(userId: string): Promise<GeolocationData | null> 
 
   // 2. Fall back to IP-based detection
   const ipLocation = await detectLocationFromIp()
-  return ipLocation
+  if (ipLocation) return ipLocation
+
+  // 3. Last resort: estimate from browser timezone
+  return estimateLocationFromTimezone()
 }
 
 export function useUserLocation() {
