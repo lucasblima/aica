@@ -29,6 +29,7 @@
 
 import React, { useMemo } from 'react';
 import { ArrowLeft, Save, Check } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 
 interface WorkspaceHeaderProps {
   showTitle: string;
@@ -71,15 +72,15 @@ export default function WorkspaceHeader({
   return (
     <header className="bg-ceramic-base border-b border-ceramic-border px-6 py-4">
       <div className="flex items-center justify-between">
-        {/* Left: Back button + Breadcrumb */}
-        <div className="flex items-center space-x-4">
+        {/* Left: Logo + Back button + Breadcrumb */}
+        <div className="flex items-center space-x-3">
+          <Logo width={32} onClick={onBack} className="rounded-lg" />
           <button
             onClick={onBack}
-            className="flex items-center space-x-2 text-ceramic-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded-lg px-2 py-1"
+            className="w-8 h-8 flex items-center justify-center rounded-full ceramic-card-flat hover:bg-ceramic-cool transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
             aria-label="Voltar ao dashboard do estúdio"
           >
-            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Voltar</span>
+            <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" aria-hidden="true" />
           </button>
 
           <div className="flex items-center space-x-2 text-sm">
