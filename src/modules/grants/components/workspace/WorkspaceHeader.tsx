@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { ArrowLeft, Save, Loader2, FileText, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, FileText, FolderOpen, Download } from 'lucide-react';
 
 interface WorkspaceHeaderProps {
   projectName: string;
@@ -15,6 +15,8 @@ interface WorkspaceHeaderProps {
   documentCount?: number;
   onShowPdf?: () => void;
   onShowDocuments?: () => void;
+  onExportPdf?: () => void;
+  isExportingPdf?: boolean;
 }
 
 export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
@@ -27,6 +29,8 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   documentCount = 0,
   onShowPdf,
   onShowDocuments,
+  onExportPdf,
+  isExportingPdf = false,
 }) => {
   return (
     <div className="flex-shrink-0 sticky top-0 z-20 bg-ceramic-base border-b border-[#5C554B]/10 shadow-sm">
@@ -74,6 +78,24 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 <span className="hidden sm:inline">Docs</span>
                 <span className="text-[10px] bg-ceramic-info-bg text-ceramic-info px-1.5 rounded-full">
                   {documentCount}
+                </span>
+              </button>
+            )}
+
+            {onExportPdf && (
+              <button
+                onClick={onExportPdf}
+                disabled={isExportingPdf}
+                className="ceramic-concave px-2 sm:px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-ceramic-accent hover:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Exportar apresentacao como PDF"
+              >
+                {isExportingPdf ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {isExportingPdf ? 'Exportando...' : 'Exportar PDF'}
                 </span>
               </button>
             )}
