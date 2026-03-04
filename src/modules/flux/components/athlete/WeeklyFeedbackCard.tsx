@@ -320,10 +320,17 @@ export function useDailyFeedback({
     }
   }, [dayEntries, userId, athleteId, microcycleId, weekNumber]);
 
+  const markDaySubmitted = useCallback((day: number) => {
+    setDayEntries((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], isSubmitted: true },
+    }));
+  }, []);
+
   return {
     dayEntries, expandedDay, submittingDay, isFutureWeek, daysToShow,
     getDateForDay, isDayFuture, handleSetRating, handleSetNotes, handleSubmitDay,
-    setExpandedDay,
+    setExpandedDay, markDaySubmitted,
   };
 }
 
