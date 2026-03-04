@@ -6,7 +6,7 @@ At the start of every session:
 
 1. **Suggest session name** (e.g., `feat-studio-teleprompter`) — wait for user approval
 2. **Sync** with remote: `git pull origin main`
-3. **Create feature branch** from main: `git checkout -b <branch-name>`
+3. **Create worktree** with feature branch (see Git Worktree Workflow below)
 
 ## Session End Protocol — ALWAYS Execute
 
@@ -80,6 +80,54 @@ Only merge when all comments are ✅ or explicitly dismissed by user.
 gh pr merge <pr-number> --squash --delete-branch
 git checkout main && git pull origin main
 ```
+
+## Git Worktree Workflow — ALWAYS Use
+
+**Every session uses a git worktree for isolation.** Never use `git checkout -b` directly on the main working tree.
+
+Worktree directory: `.worktrees/` (already exists, already in .gitignore).
+
+### Creating a Worktree
+
+```bash
+# Sync main first
+git pull origin main
+
+# Create worktree with feature branch
+git worktree add .worktrees/<branch-name> -b <branch-name>
+cd .worktrees/<branch-name>
+
+# Install dependencies (worktrees share git objects but NOT node_modules)
+npm install
+```
+
+### Working in a Worktree
+
+- All edits happen inside `.worktrees/<branch-name>/`
+- The main working tree stays clean on `main`
+- Multiple worktrees can coexist for parallel work
+
+### Finishing a Worktree
+
+After PR is merged:
+```bash
+# Return to main working tree
+cd /c/Users/lucas/repos/Aica_frontend
+
+# Clean up
+git worktree remove .worktrees/<branch-name>
+git branch -d <branch-name>  # if not already deleted by squash merge
+
+# Sync main
+git pull origin main
+```
+
+### Why Worktrees
+
+- **Isolation**: No risk of uncommitted changes on main polluting feature work
+- **Parallel work**: Multiple features can be in progress simultaneously
+- **Clean baseline**: Each worktree starts from a known good state
+- **Agent teams**: Each teammate can work in its own worktree without conflicts
 
 ## Commit Conventions
 

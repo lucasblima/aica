@@ -82,6 +82,7 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 - **ALWAYS** suggest a session name and wait for approval at session start
 - **ALWAYS** clarify information gaps before starting medium+ tasks
 - **ALWAYS** ask user if they want Agent Team activated (never auto-create teams)
+- **ALWAYS** use git worktrees (`.worktrees/`) for feature work — never `git checkout -b` on main tree
 - **ALWAYS** create Pull Requests — never push directly to main
 - **ALWAYS** read and address PR comments before merging
 - **NEVER** expose API keys in frontend — use Edge Functions
@@ -102,4 +103,4 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 - `docs/journey/EDGE_FUNCTIONS_MAP.md` — Journey AI integrations
 
 ---
-**Maintainers:** Lucas Boscacci Lima + Claude | **Updated:** Fevereiro 2026
+**Maintainers:** Lucas Boscacci Lima + Claude | **Updated:** Marco 2026
