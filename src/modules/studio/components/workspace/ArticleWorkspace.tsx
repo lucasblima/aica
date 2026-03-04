@@ -57,24 +57,24 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
   const handleGenerateOutline = useCallback(async (theme: string) => {
     setIsGeneratingOutline(true);
     try {
-      const { data, error } = await supabase.functions.invoke('studio-write-assist', {
-        body: {
-          projectId: project.id,
-          action: 'generate_outline',
-          theme,
-          notes: researchNotes,
-        },
+      // Extract target audience / style from metadata if available
+      const meta = project.metadata as unknown as Record<string, unknown>;
+      const targetAudience = (meta?.targetAudience as string) || '';
+      const style = (meta?.style as string) || 'informativo';
+
+      const { data, error } = await supabase.functions.invoke('studio-outline', {
+        body: { theme, targetAudience, style },
       });
       if (error) throw error;
-      if (data?.outline) {
-        setOutline(data.outline);
+      if (data?.data) {
+        setOutline(data.data);
       }
     } catch (err) {
       console.error('Error generating outline:', err);
     } finally {
       setIsGeneratingOutline(false);
     }
-  }, [project.id, researchNotes]);
+  }, [project.metadata]);
 
   const handleAIAssist = useCallback(async (instruction: string): Promise<string> => {
     setIsAssisting(true);
