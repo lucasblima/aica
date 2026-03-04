@@ -124,9 +124,17 @@ export function ExerciseQuestionnaireSheet({
         setVoiceTranscript(text);
         setNotes((prev) => prev ? `${prev}\n${text}` : text);
       }
-    } catch (err) {
+    } catch (err: any) {
       log.error('Transcription error:', err);
-      setError('Erro na transcricao. Use o campo de texto.');
+      // Distinguish auth errors from other failures (#723)
+      const isAuthError = err?.message?.includes('401') ||
+        err?.message?.includes('Sessao expirada') ||
+        err?.message?.includes('UNAUTHORIZED');
+      setError(
+        isAuthError
+          ? 'Sessao expirada. Recarregue a pagina e tente novamente.'
+          : 'Erro na transcricao. Use o campo de texto.'
+      );
     } finally {
       setIsTranscribing(false);
     }
