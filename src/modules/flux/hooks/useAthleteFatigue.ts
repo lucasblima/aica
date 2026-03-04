@@ -75,7 +75,8 @@ export function useAthleteFatigue({ athleteId }: UseAthleteFatigueOptions): UseA
     } catch (err) {
       const e = err instanceof Error ? err : new Error('Erro ao avaliar fadiga do atleta');
       setError(e);
-      log.error('Error assessing athlete fatigue:', err);
+      // Log as warning — edge function may not be deployed yet (#723)
+      log.warn('Could not assess athlete fatigue (edge function may not be deployed):', (err as any)?.name || err);
     } finally {
       setIsLoading(false);
     }
