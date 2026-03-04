@@ -4,15 +4,20 @@
  */
 
 const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://localhost:5173',
   'https://dev.aica.guru',
   'https://aica.guru',
 ];
 
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Allow any localhost port for local dev (Vite may pick 3000, 3001, 3002, 5173, etc.)
+  if (/^http:\/\/localhost:\d+$/.test(origin)) return true;
+  return false;
+}
+
 export function getCorsHeaders(request: Request): Record<string, string> {
   const origin = request.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  const allowedOrigin = isAllowedOrigin(origin) ? origin : '';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

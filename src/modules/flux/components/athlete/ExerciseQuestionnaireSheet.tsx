@@ -16,7 +16,7 @@ import {
   SkipForward,
 } from 'lucide-react';
 import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
-import { transcribeAudio } from '@/modules/journey/services/momentPersistenceService';
+import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ExerciseQuestionnaire');
@@ -119,12 +119,42 @@ export function ExerciseQuestionnaireSheet({
     setIsTranscribing(true);
     setError(null);
     try {
-      const text = await transcribeAudio(blob);
+      // Convert blob to base64 using FileReader (efficient, no byte-by-byte loop)
+      const audioBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          resolve(dataUrl.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const mimeType = blob.type || 'audio/webm';
+
+      log.debug('Transcribing audio', { mimeType, sizeBytes: blob.size });
+
+      // Call gemini-chat directly via supabase.functions.invoke (#723)
+      // This bypasses GeminiClient's raw fetch — supabase-js handles auth reliably
+      const { data, error: fnError } = await supabase.functions.invoke('gemini-chat', {
+        body: {
+          action: 'transcribe_audio',
+          payload: { audioBase64, mimeType },
+        },
+      });
+
+      if (fnError) {
+        log.error('Edge function error:', fnError);
+        throw fnError;
+      }
+
+      const raw = data?.result?.transcription || data?.result?.text || '';
+      const text = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim();
+
       if (text) {
         setVoiceTranscript(text);
         setNotes((prev) => prev ? `${prev}\n${text}` : text);
       }
-    } catch (err) {
+    } catch (err: any) {
       log.error('Transcription error:', err);
       setError('Erro na transcricao. Use o campo de texto.');
     } finally {

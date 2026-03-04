@@ -60,9 +60,20 @@ const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
 
 /**
  * Cliente Gemini singleton
+ *
+ * Auth protection (#723):
+ * - Serialized refresh: only one refreshSession() at a time to prevent TOKEN_REFRESHED cascade
+ * - Circuit breaker: after auth failure, fail fast for 10s to prevent 401 flood
  */
 export class GeminiClient {
   private static instance: GeminiClient
+
+  // Serialized refresh — only one refreshSession() runs at a time (#723)
+  private static refreshPromise: Promise<string | null> | null = null
+
+  // Circuit breaker — after auth failure, fail fast for cooldown period (#723)
+  private static authFailedAt = 0
+  private static readonly AUTH_COOLDOWN_MS = 10_000
 
   private constructor() { }
 
@@ -92,6 +103,15 @@ export class GeminiClient {
     request: GeminiChatRequest,
     options?: RetryOptions
   ): Promise<GeminiChatResponse> {
+    // Circuit breaker: fail fast if auth recently failed (#723)
+    if (GeminiClient.authFailedAt && Date.now() - GeminiClient.authFailedAt < GeminiClient.AUTH_COOLDOWN_MS) {
+      throw new GeminiError(
+        'Sessao expirada. Faca login novamente.',
+        'UNAUTHORIZED',
+        401
+      )
+    }
+
     // Check billing limit before every AI call (fail-open: errors allow the call through)
     try {
       const limit = await checkInteractionLimit()
@@ -220,7 +240,7 @@ export class GeminiClient {
 
   /**
    * Faz request HTTP ao backend
-   * Retries once on 401 with a fresh token (defense-in-depth for expired JWTs, #681)
+   * On 401, uses serialized refresh to prevent TOKEN_REFRESHED cascade (#723)
    */
   private async makeRequest(
     endpoint: string,
@@ -229,23 +249,22 @@ export class GeminiClient {
     const token = await this.getAuthToken()
     const response = await this.doFetch(endpoint, request, token)
 
-    // If 401, try refreshing the token once and retry
+    // If 401, try serialized refresh once and retry
     if (response.status === 401) {
-      log.debug('Received 401, attempting token refresh and retry...')
-      invalidateAuthCache()
-      try {
-        const { data, error } = await supabase.auth.refreshSession()
-        if (!error && data.session?.access_token && data.session.access_token !== token) {
-          const retryResponse = await this.doFetch(endpoint, request, data.session.access_token)
-          if (!retryResponse.ok) {
-            throw await this.handleError(retryResponse)
-          }
-          return retryResponse.json()
+      log.debug('Received 401, attempting serialized token refresh...')
+      const newToken = await this.refreshTokenOnce()
+      if (newToken && newToken !== token) {
+        // Clear circuit breaker on successful refresh
+        GeminiClient.authFailedAt = 0
+        const retryResponse = await this.doFetch(endpoint, request, newToken)
+        if (!retryResponse.ok) {
+          throw await this.handleError(retryResponse)
         }
-      } catch (retryErr) {
-        if (retryErr instanceof GeminiError) throw retryErr
-        // Refresh failed — throw original 401 error
+        return retryResponse.json()
       }
+      // Refresh failed or returned same token — activate circuit breaker
+      GeminiClient.authFailedAt = Date.now()
+      log.error('Auth failed — circuit breaker activated for', GeminiClient.AUTH_COOLDOWN_MS, 'ms')
       throw await this.handleError(response)
     }
 
@@ -285,7 +304,7 @@ export class GeminiClient {
   /**
    * Obtém token de autenticação do Supabase
    * Uses getCachedSession() to avoid auth lock contention (#660, #665)
-   * Proactively refreshes expired/expiring tokens to prevent 401 from Edge Functions (#681)
+   * Uses serialized refresh to prevent TOKEN_REFRESHED cascade (#723)
    */
   private async getAuthToken(): Promise<string> {
     const { session, error } = await getCachedSession()
@@ -299,21 +318,81 @@ export class GeminiClient {
     }
 
     // Check if token is expired or expiring within 60s — refresh proactively
-    // This prevents 401 from Edge Functions with verify_jwt = true
     if (this.isTokenExpiringSoon(session.access_token)) {
+      const tokenExpired = this.isTokenExpired(session.access_token)
       log.debug('Access token expired or expiring soon, refreshing...')
-      invalidateAuthCache()
-      try {
-        const { data, error: refreshError } = await supabase.auth.refreshSession()
-        if (!refreshError && data.session?.access_token) {
-          return data.session.access_token
-        }
-      } catch {
-        // Refresh failed — fall through with current token, let server decide
+
+      const newToken = await this.refreshTokenOnce()
+      if (newToken) {
+        GeminiClient.authFailedAt = 0 // Clear circuit breaker on success
+        return newToken
       }
+
+      // Refresh failed — if token is already expired, throw immediately
+      if (tokenExpired) {
+        GeminiClient.authFailedAt = Date.now()
+        throw new GeminiError(
+          'Sessao expirada. Faca login novamente.',
+          'UNAUTHORIZED',
+          401
+        )
+      }
+      // Token is expiring but not yet expired — fall through with current token
     }
 
     return session.access_token
+  }
+
+  /**
+   * Serialized token refresh — only one refreshSession() runs at a time.
+   * Concurrent callers share the same promise to prevent TOKEN_REFRESHED cascade (#723).
+   */
+  private async refreshTokenOnce(): Promise<string | null> {
+    // If a refresh is already in flight, wait for it
+    if (GeminiClient.refreshPromise) {
+      return GeminiClient.refreshPromise
+    }
+
+    GeminiClient.refreshPromise = (async () => {
+      invalidateAuthCache()
+      try {
+        const { data, error } = await supabase.auth.refreshSession()
+        if (!error && data.session?.access_token) {
+          return data.session.access_token
+        }
+        if (error) {
+          log.error('Token refresh failed:', error.message)
+        }
+        return null
+      } catch (err) {
+        log.error('Token refresh threw:', err)
+        return null
+      }
+    })()
+
+    // Keep result available for 2s so concurrent callers can use it
+    GeminiClient.refreshPromise.finally(() => {
+      setTimeout(() => {
+        GeminiClient.refreshPromise = null
+      }, 2000)
+    })
+
+    return GeminiClient.refreshPromise
+  }
+
+  /**
+   * Check if JWT access token is already expired (past exp time)
+   */
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payloadB64 = token.split('.')[1]
+      if (!payloadB64) return true
+      const payload = JSON.parse(atob(payloadB64))
+      const expiresAtMs = (payload.exp || 0) * 1000
+      return Date.now() > expiresAtMs
+    } catch {
+      return true // Assume expired if we can't parse
+    }
   }
 
   /**
@@ -322,12 +401,12 @@ export class GeminiClient {
   private isTokenExpiringSoon(token: string, thresholdSeconds = 60): boolean {
     try {
       const payloadB64 = token.split('.')[1]
-      if (!payloadB64) return false
+      if (!payloadB64) return true // Can't parse → assume expiring (#723)
       const payload = JSON.parse(atob(payloadB64))
       const expiresAtMs = (payload.exp || 0) * 1000
       return Date.now() > expiresAtMs - (thresholdSeconds * 1000)
     } catch {
-      return false
+      return true // Can't parse → assume expiring (#723)
     }
   }
 

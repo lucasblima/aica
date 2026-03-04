@@ -5,6 +5,8 @@
  * Radar/spider chart displaying all AICA domain scores.
  * Uses SVG for lightweight rendering without chart library dependency.
  * Follows Ceramic Design System.
+ *
+ * Restored: Issue #717 — accidentally deleted in PR #713.
  */
 
 import React, { useMemo } from 'react';

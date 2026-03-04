@@ -99,6 +99,7 @@ const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m =>
 const AdminPortalPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminPortalPage })));
 const AdminCouponsPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminCouponsPage })));
 const PricingSimulatorPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingSimulatorPage })));
+const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 
 // Invites Dashboard - Manage sent invites
 const InvitesPage = lazy(() => import('../pages/InvitesPage'));
@@ -113,6 +114,9 @@ const LifeRPGDetailView = lazy(() => import('../modules/liferpg/views/LifeRPGDet
 // Analytics/Settings - Rarely accessed
 const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
 const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => ({ default: m.default })));
+
+// Life Score Analytics - Issue #575
+const LifeScoreAnalyticsPage = lazy(() => import('../pages/LifeScoreAnalyticsPage'));
 
 // Legal Pages - Rarely accessed
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
@@ -820,6 +824,12 @@ export function AppRouter() {
                   element={<ProtectedRoute><FileSearchAnalyticsView userId={userId || ''} onBack={() => navigate('/')} mode="fullpage" /></ProtectedRoute>}
                />
 
+               {/* Life Score Analytics - Issue #575 */}
+               <Route
+                  path="/life-score"
+                  element={<ProtectedRoute><LifeScoreAnalyticsPage /></ProtectedRoute>}
+               />
+
                {/* Profile Page - Protected */}
                <Route
                   path="/profile"
@@ -840,6 +850,10 @@ export function AppRouter() {
                <Route
                   path="/manage-subscription"
                   element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
+               />
+               <Route
+                  path="/usage"
+                  element={<ProtectedRoute><UsageDashboardPage /></ProtectedRoute>}
                />
 
                {/* Admin Portal — admin-only routes */}

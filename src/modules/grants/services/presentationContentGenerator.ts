@@ -36,8 +36,6 @@ const DEFAULT_MAX_TOKENS = 2000; // Sufficient for most slides
 const MAX_RETRIES = 3; // Maximum retry attempts
 const RETRY_DELAY_MS = 1000; // Base delay between retries
 
-// Gemini model configuration
-const GEMINI_MODEL = 'gemini-2.5-flash'; // Fast model for content generation
 
 // =============================================================================
 // MAIN CONTENT GENERATION
@@ -275,73 +273,19 @@ export async function generateFullPresentation(
 
 /**
  * Call Gemini API for slide content generation
+ *
+ * NOTE: The `generate-slide-content` Edge Function does not exist yet.
+ * This stub throws until the EF is deployed.
  */
 async function callGeminiForSlideContent(
-  prompt: string,
-  temperature: number,
-  maxTokens: number
+  _prompt: string,
+  _temperature: number,
+  _maxTokens: number
 ): Promise<Record<string, unknown>> {
-  // Use environment variable for API endpoint
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const functionUrl = `${supabaseUrl}/functions/v1/generate-slide-content`;
-
-  // Get auth token
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
-    supabaseUrl,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
+  throw new Error(
+    'Edge Function generate-slide-content is not deployed. ' +
+    'Deploy it before using presentation content generation.'
   );
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error('No active session');
-  }
-
-  const response = await fetch(functionUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({
-      prompt,
-      model: GEMINI_MODEL,
-      temperature,
-      maxOutputTokens: maxTokens,
-      responseFormat: 'json',
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Gemini API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  // Parse JSON from Gemini response
-  let content: Record<string, unknown>;
-
-  try {
-    // Gemini might wrap JSON in markdown code blocks
-    const text = data.result?.text || data.text || '';
-    const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) {
-      throw new Error('No JSON found in Gemini response');
-    }
-
-    const jsonText = jsonMatch[1] || jsonMatch[0];
-    content = JSON.parse(jsonText);
-  } catch (error) {
-    log.error('Failed to parse Gemini JSON response', { error });
-    throw new Error('Invalid JSON response from Gemini');
-  }
-
-  return content;
 }
 
 // =============================================================================

@@ -69,6 +69,7 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 | `design-system.md` | When editing `src/components/` | Ceramic tokens, foundation components |
 | `database.md` | When editing `supabase/migrations/` | Migration checklist, RLS, table warnings |
 | `whatsapp.md` | When editing connections or webhooks | Pipeline, privacy, troubleshooting |
+| `domain-driven-design.md` | When editing `src/services/scoring/` or cross-module features | DDD: Aggregates, Value Objects, Bounded Contexts |
 
 ## Quality Targets
 
@@ -82,6 +83,7 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 - **ALWAYS** suggest a session name and wait for approval at session start
 - **ALWAYS** clarify information gaps before starting medium+ tasks
 - **ALWAYS** ask user if they want Agent Team activated (never auto-create teams)
+- **ALWAYS** use git worktrees (`.worktrees/`) for feature work — never `git checkout -b` on main tree
 - **ALWAYS** create Pull Requests — never push directly to main
 - **ALWAYS** read and address PR comments before merging
 - **NEVER** expose API keys in frontend — use Edge Functions
@@ -102,4 +104,4 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 - `docs/journey/EDGE_FUNCTIONS_MAP.md` — Journey AI integrations
 
 ---
-**Maintainers:** Lucas Boscacci Lima + Claude | **Updated:** Fevereiro 2026
+**Maintainers:** Lucas Boscacci Lima + Claude | **Updated:** Marco 2026

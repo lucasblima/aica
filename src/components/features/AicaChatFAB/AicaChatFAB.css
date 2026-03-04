@@ -91,6 +91,7 @@
   width: 100%;
   max-width: 380px;
   height: 70vh;
+  height: 70dvh;
   max-height: 560px;
 
   background: #faf9f7;
@@ -104,6 +105,7 @@
 
 .aica-fab-drawer--open {
   transform: translateY(0);
+  pointer-events: auto;
 }
 
 .aica-fab-drawer--left {
@@ -493,12 +495,15 @@
   height: 40px;
   padding: 0 14px;
 
+  -webkit-appearance: none;
+  touch-action: manipulation;
+
   background: rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 20px;
   outline: none;
 
-  font-size: 14px;
+  font-size: 16px;
   color: #1a1a1a;
 
   transition: border-color 0.2s ease;
@@ -546,6 +551,47 @@
 .aica-fab-send:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Mic button */
+.aica-fab-mic-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aica-fab-mic-btn:hover:not(:disabled) {
+  color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.aica-fab-mic-btn.listening {
+  color: #ef4444;
+  animation: pulse-mic 1.5s ease-in-out infinite;
+}
+
+.aica-fab-mic-btn.transcribing {
+  color: #f59e0b;
+}
+
+.aica-fab-mic-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@keyframes pulse-mic {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
 /* ============================================================================
@@ -746,6 +792,15 @@
 .aica-fab-action-btn svg {
   width: 12px;
   height: 12px;
+}
+
+.aica-fab-loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ============================================================================
@@ -1148,5 +1203,18 @@
   .aica-context-skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
     background-size: 200% 100%;
+  }
+
+  .aica-fab-mic-btn {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .aica-fab-mic-btn:hover:not(:disabled) {
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .aica-fab-mic-btn.listening {
+    color: #f87171;
   }
 }

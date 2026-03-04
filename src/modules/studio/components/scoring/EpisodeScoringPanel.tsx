@@ -7,9 +7,10 @@
  * Ceramic Design System compliant.
  */
 
-import React from 'react';
-import { BarChart3, Clock, CheckCircle2 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { BarChart3, Clock, CheckCircle2, ChevronDown, ChevronUp, UserPlus } from 'lucide-react';
 import { GuestScoreCard } from './GuestScoreCard';
+import { GuestScoreInputForm } from './GuestScoreInputForm';
 import { NarrativeTensionChart } from './NarrativeTensionChart';
 import type { GuestScoreResult, NarrativeAnalysis } from '../../services/guestScoring';
 
@@ -27,6 +28,10 @@ interface EpisodeScoringPanelProps {
   durationMinutes: number;
   /** Optional episode title */
   episodeTitle?: string;
+  /** Optional episode ID for scoring association */
+  episodeId?: string;
+  /** Callback when a new guest is scored via the input form */
+  onGuestScored?: (guestName: string, result: GuestScoreResult) => void;
   className?: string;
 }
 
@@ -63,8 +68,16 @@ export const EpisodeScoringPanel: React.FC<EpisodeScoringPanelProps> = ({
   narrativeAnalysis,
   durationMinutes,
   episodeTitle,
+  episodeId,
+  onGuestScored,
   className = '',
 }) => {
+  const [showScoreForm, setShowScoreForm] = useState(false);
+
+  const handleGuestScored = useCallback((guestName: string, result: GuestScoreResult) => {
+    onGuestScored?.(guestName, result);
+  }, [onGuestScored]);
+
   const durationOptimality = narrativeAnalysis?.durationOptimality ?? 0;
   const readiness = getReadinessScore(guests, narrativeAnalysis, durationOptimality);
   const durationLabel = getDurationLabel(durationMinutes);
@@ -113,6 +126,36 @@ export const EpisodeScoringPanel: React.FC<EpisodeScoringPanelProps> = ({
           aria-valuemax={100}
           aria-label={`Prontidao do episodio: ${readiness.score}%`}
         />
+      </div>
+
+      {/* Guest Score Input Form — Collapsible */}
+      <div className="border border-ceramic-border rounded-lg overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowScoreForm(prev => !prev)}
+          className="w-full flex items-center justify-between px-3 py-2.5 bg-ceramic-cool hover:bg-ceramic-cool/80 transition-colors"
+          aria-expanded={showScoreForm}
+        >
+          <div className="flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-amber-500" aria-hidden="true" />
+            <span className="text-xs font-medium text-ceramic-text-primary">
+              Avaliar Novo Convidado
+            </span>
+          </div>
+          {showScoreForm ? (
+            <ChevronUp className="w-4 h-4 text-ceramic-text-secondary" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-ceramic-text-secondary" />
+          )}
+        </button>
+        {showScoreForm && (
+          <div className="p-3 border-t border-ceramic-border">
+            <GuestScoreInputForm
+              episodeId={episodeId}
+              onScored={handleGuestScored}
+            />
+          </div>
+        )}
       </div>
 
       {/* Duration Optimality */}

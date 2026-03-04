@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight } from 'lucide-react'
+import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, Square, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
@@ -22,6 +22,7 @@ import { executeChatAction } from '@/services/chatActionService'
 import type { ChatAction } from '@/types/chatActions'
 import { useChatContextData } from '@/hooks/useChatContextData'
 import { ChatContextSidebar } from './ChatContextSidebar'
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder'
 import './AicaChatFAB.css'
 
 /** Progressive thinking indicator shown as an assistant message while AI is responding */
@@ -92,6 +93,26 @@ export function AicaChatFAB({
     : 'coordinator'
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
+
+  const { isListening, isTranscribing, isSupported, audioLevel, recordSeconds, toggle: toggleMic } = useVoiceRecorder({
+    onResult: (transcript) => {
+      setInput(prev => prev ? `${prev} ${transcript}` : transcript)
+    },
+  })
+
+  const waveformBars = useMemo(() => {
+    const bars = 6
+    return Array.from({ length: bars }, (_, i) => {
+      const variance = Math.sin((Date.now() / 200) + i) * 0.3 + 0.7
+      return Math.max(3, (audioLevel / 100) * 16 * variance)
+    })
+  }, [audioLevel])
+
+  const formatRecordTime = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
 
   // Track whether streak has been updated this session (fire once per chat session)
   const streakUpdatedRef = useRef(false)
@@ -183,7 +204,9 @@ export function AicaChatFAB({
   // Focus input when drawer opens
   useEffect(() => {
     if (isOpen && !showSessions) {
-      setTimeout(() => inputRef.current?.focus(), 400)
+      requestAnimationFrame(() => {
+        setTimeout(() => inputRef.current?.focus(), 300)
+      })
     }
   }, [isOpen, showSessions])
 
@@ -509,6 +532,30 @@ export function AicaChatFAB({
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* Recording / Transcribing strip */}
+              {isListening && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-ceramic-error/5 border-t border-ceramic-error/20">
+                  <div className="flex items-center gap-0.5 h-4">
+                    {waveformBars.map((h, i) => (
+                      <div
+                        key={i}
+                        className="w-0.5 bg-ceramic-error rounded-full transition-all duration-75"
+                        style={{ height: `${h}px` }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-mono text-ceramic-error">{formatRecordTime(recordSeconds)}</span>
+                  <div className="w-1.5 h-1.5 bg-ceramic-error rounded-full animate-pulse" />
+                  <span className="text-[10px] text-ceramic-text-secondary">Gravando...</span>
+                </div>
+              )}
+              {isTranscribing && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-t border-amber-200">
+                  <Loader2 className="w-3 h-3 text-amber-600 animate-spin" />
+                  <span className="text-[10px] text-amber-700">Transcrevendo...</span>
+                </div>
+              )}
+
               {/* Input */}
               <div className="aica-fab-input-bar">
                 <input
@@ -521,6 +568,27 @@ export function AicaChatFAB({
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
                 />
+                {isSupported && (
+                  <button
+                    className={cn(
+                      'aica-fab-mic-btn',
+                      isListening && 'listening',
+                      isTranscribing && 'transcribing',
+                    )}
+                    onClick={toggleMic}
+                    disabled={isLoading || isTranscribing}
+                    aria-label={isListening ? 'Parar gravacao' : isTranscribing ? 'Transcrevendo...' : 'Gravar voz'}
+                    title={isListening ? 'Parar' : isTranscribing ? 'Transcrevendo...' : 'Falar'}
+                  >
+                    {isTranscribing ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : isListening ? (
+                      <Square size={14} />
+                    ) : (
+                      <Mic size={16} />
+                    )}
+                  </button>
+                )}
                 <button
                   className="aica-fab-send"
                   onClick={handleSend}

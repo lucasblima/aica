@@ -1,25 +1,15 @@
 /**
  * useLifeScore Hook
- * Issue #575: Scientific foundations for AICA Life OS
+ * Issue #717: Recreate hook deleted in PR #713
  *
- * Hook for managing the composite Life Score:
- * - Fetch latest Life Score
- * - Fetch score history
- * - Compute fresh Life Score via scoring engine
- * - Manage domain weights
- *
- * @example
- * const {
- *   lifeScore,
- *   history,
- *   isLoading,
- *   refresh,
- *   updateWeights,
- * } = useLifeScore()
+ * Manages Life Score state: fetch, compute, history, and domain weights.
+ * Connects to lifeScoreService + scoringEngine backing services.
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
+import type { LifeScore, AicaDomain } from '@/services/scoring/types';
+import { DEFAULT_DOMAIN_WEIGHTS } from '@/services/scoring/types';
 import {
   getLatestLifeScore,
   getLifeScoreHistory,
@@ -27,117 +17,77 @@ import {
   saveUserDomainWeights,
 } from '@/services/scoring/lifeScoreService';
 import { computeAndStoreLifeScore } from '@/services/scoring/scoringEngine';
-import type { LifeScore, AicaDomain, AHPComparison } from '@/services/scoring/types';
-import { DEFAULT_DOMAIN_WEIGHTS } from '@/services/scoring/types';
 
 const log = createNamespacedLogger('useLifeScore');
 
-interface UseLifeScoreReturn {
-  /** Current Life Score (null if not yet computed) */
-  lifeScore: LifeScore | null;
-  /** Life Score history (most recent first) */
-  history: { composite: number; domainScores: Record<string, number>; trend: string; computedAt: string }[];
-  /** Current domain weights */
-  weights: Record<AicaDomain, number>;
-  /** Weighting method */
-  weightMethod: string;
-  /** Whether data is loading */
-  isLoading: boolean;
-  /** Whether computation is in progress */
-  isComputing: boolean;
-  /** Error message */
-  error: string | null;
-  /** Whether a spiral alert is active */
-  spiralAlert: boolean;
-  /** Refresh Life Score from database */
-  refresh: () => Promise<void>;
-  /** Compute a fresh Life Score */
-  compute: () => Promise<LifeScore | null>;
-  /** Update domain weights */
-  updateWeights: (
-    weights: Record<AicaDomain, number>,
-    method?: 'equal' | 'slider' | 'ahp',
-    ahpComparisons?: AHPComparison[]
-  ) => Promise<void>;
-  /** Fetch score history */
-  fetchHistory: (limit?: number) => Promise<void>;
+export interface LifeScoreHistoryEntry {
+  composite: number;
+  domainScores: Record<string, number>;
+  trend: string;
+  spiralDetected: boolean;
+  computedAt: string;
 }
 
-export function useLifeScore(options: {
-  autoFetch?: boolean;
-  historyLimit?: number;
-} = {}): UseLifeScoreReturn {
-  const { autoFetch = true, historyLimit = 30 } = options;
+export interface UseLifeScoreReturn {
+  lifeScore: LifeScore | null;
+  history: LifeScoreHistoryEntry[];
+  weights: Record<AicaDomain, number>;
+  spiralAlert: boolean;
+  isLoading: boolean;
+  isComputing: boolean;
+  error: string | null;
+  compute: () => Promise<LifeScore | null>;
+  refresh: () => Promise<void>;
+  fetchHistory: (limit?: number) => Promise<void>;
+  updateWeights: (
+    weights: Record<AicaDomain, number>,
+    method: 'equal' | 'slider' | 'ahp'
+  ) => Promise<void>;
+}
 
+export function useLifeScore(): UseLifeScoreReturn {
   const [lifeScore, setLifeScore] = useState<LifeScore | null>(null);
-  const [history, setHistory] = useState<{ composite: number; domainScores: Record<string, number>; trend: string; computedAt: string }[]>([]);
+  const [history, setHistory] = useState<LifeScoreHistoryEntry[]>([]);
   const [weights, setWeights] = useState<Record<AicaDomain, number>>({ ...DEFAULT_DOMAIN_WEIGHTS });
-  const [weightMethod, setWeightMethod] = useState('equal');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isComputing, setIsComputing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLatest = useCallback(async () => {
+  const spiralAlert = lifeScore?.spiralAlert ?? false;
+
+  const refresh = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-
-      const [score, weightData] = await Promise.all([
-        getLatestLifeScore(),
-        getUserDomainWeights(),
-      ]);
-
-      setLifeScore(score);
-      setWeights(weightData.weights);
-      setWeightMethod(weightData.method);
-
-      log.info('Life Score fetched:', {
-        composite: score?.composite?.toFixed(3),
-        trend: score?.trend,
-      });
+      const latest = await getLatestLifeScore();
+      setLifeScore(latest);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to fetch Life Score';
+      const msg = err instanceof Error ? err.message : 'Erro ao buscar Life Score';
+      log.error('refresh failed:', err);
       setError(msg);
-      log.error('Fetch error:', msg);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
-  const fetchHistory = useCallback(async (limit: number = historyLimit) => {
+  const fetchHistory = useCallback(async (limit = 30) => {
     try {
-      setIsLoading(true);
       const data = await getLifeScoreHistory(limit);
       setHistory(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to fetch history';
-      setError(msg);
-      log.error('History fetch error:', msg);
-    } finally {
-      setIsLoading(false);
+      log.error('fetchHistory failed:', err);
     }
-  }, [historyLimit]);
+  }, []);
 
   const compute = useCallback(async (): Promise<LifeScore | null> => {
+    setIsComputing(true);
+    setError(null);
     try {
-      setIsComputing(true);
-      setError(null);
-
       const result = await computeAndStoreLifeScore();
-
       if (result) {
         setLifeScore(result);
-        log.info('Life Score computed:', {
-          composite: result.composite.toFixed(3),
-          trend: result.trend,
-        });
       }
-
       return result;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Computation failed';
+      const msg = err instanceof Error ? err.message : 'Erro ao computar Life Score';
+      log.error('compute failed:', err);
       setError(msg);
-      log.error('Computation error:', msg);
       return null;
     } finally {
       setIsComputing(false);
@@ -146,48 +96,63 @@ export function useLifeScore(options: {
 
   const updateWeights = useCallback(async (
     newWeights: Record<AicaDomain, number>,
-    method: 'equal' | 'slider' | 'ahp' = 'slider',
-    ahpComparisons?: AHPComparison[]
+    method: 'equal' | 'slider' | 'ahp'
   ) => {
+    setError(null);
     try {
-      await saveUserDomainWeights(newWeights, method, ahpComparisons);
+      await saveUserDomainWeights(newWeights, method);
       setWeights(newWeights);
-      setWeightMethod(method);
-      log.info('Domain weights updated:', { method });
+      // Recompute with new weights
+      await refresh();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to save weights';
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar pesos';
+      log.error('updateWeights failed:', err);
       setError(msg);
-      log.error('Weight update error:', msg);
     }
+  }, [refresh]);
+
+  // Initial fetch on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      setIsLoading(true);
+      try {
+        const [latest, weightData] = await Promise.all([
+          getLatestLifeScore(),
+          getUserDomainWeights(),
+        ]);
+
+        if (cancelled) return;
+        setLifeScore(latest);
+        setWeights(weightData.weights);
+      } catch (err) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : 'Erro ao carregar Life Score';
+        log.error('init failed:', err);
+        setError(msg);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    init();
+    return () => { cancelled = true; };
   }, []);
 
-  const refresh = useCallback(async () => {
-    await fetchLatest();
-  }, [fetchLatest]);
-
-  // Auto-fetch on mount
-  useEffect(() => {
-    if (autoFetch) {
-      fetchLatest();
-    }
-  }, [autoFetch, fetchLatest]);
-
-  const returnValue = useMemo(() => ({
+  return {
     lifeScore,
     history,
     weights,
-    weightMethod,
+    spiralAlert,
     isLoading,
     isComputing,
     error,
-    spiralAlert: lifeScore?.spiralAlert ?? false,
-    refresh,
     compute,
-    updateWeights,
+    refresh,
     fetchHistory,
-  }), [lifeScore, history, weights, weightMethod, isLoading, isComputing, error, refresh, compute, updateWeights, fetchHistory]);
-
-  return returnValue;
+    updateWeights,
+  };
 }
 
 export default useLifeScore;

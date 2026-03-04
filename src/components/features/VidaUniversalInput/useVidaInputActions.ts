@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { classifyIntent, type IntentResult } from '@/lib/agents/intentClassifier'
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder'
 import { createMoment } from '@/modules/journey/services/momentService'
 import { supabase } from '@/services/supabaseClient'
 import { useAuth } from '@/hooks/useAuth'
@@ -88,14 +88,8 @@ export function useVidaInputActions() {
     })
   }, [updateIntent])
 
-  const handleSpeechInterim = useCallback((transcript: string) => {
-    // Show interim results but don't classify yet
-  }, [])
-
-  const speech = useSpeechRecognition({
-    lang: 'pt-BR',
+  const speech = useVoiceRecorder({
     onResult: handleSpeechResult,
-    onInterim: handleSpeechInterim,
   })
 
   // Clear success flash after 2s

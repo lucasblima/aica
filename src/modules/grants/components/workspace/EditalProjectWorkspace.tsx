@@ -5,13 +5,14 @@
 
 import React, { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, FileText, Loader2 } from 'lucide-react';
+import { X, FileText, Loader2, Presentation } from 'lucide-react';
 import { WorkspaceProvider, useWorkspace } from '../../context/WorkspaceContext';
 import { useWorkspaceState } from '../../hooks/useWorkspaceState';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { StageStepper } from './StageStepper';
 import { WorkspaceHeader } from './WorkspaceHeader';
 import { StageRenderer } from './StageRenderer';
+import { SponsorDeckGenerator } from '../SponsorDeckGenerator';
 import type { GrantProject, GrantOpportunity, GrantResponse } from '../../types';
 import type { StageId, EditalWorkspaceState } from '../../types/workspace';
 
@@ -30,10 +31,13 @@ interface EditalProjectWorkspaceProps {
 const WorkspaceContent: React.FC<{
   onBack: () => void;
   editalTextContent?: string | null;
-}> = ({ onBack, editalTextContent }) => {
+  projectId: string;
+  projectName: string;
+}> = ({ onBack, editalTextContent, projectId, projectName }) => {
   const { state, dispatch, actions, stageCompletions } = useWorkspace();
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [showDocsModal, setShowDocsModal] = useState(false);
+  const [showSponsorDeck, setShowSponsorDeck] = useState(false);
 
   // Auto-save setup
   const { isSaving, lastSaved } = useAutoSave({
@@ -77,6 +81,46 @@ const WorkspaceContent: React.FC<{
 
       {/* Stage Content */}
       <StageRenderer currentStage={state.currentStage} />
+
+      {/* Sponsor Deck — Floating Action Button */}
+      {!showSponsorDeck && (
+        <button
+          onClick={() => setShowSponsorDeck(true)}
+          className="fixed bottom-6 right-6 z-30 flex items-center gap-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          title="Gerar Deck de Patrocinio"
+        >
+          <Presentation className="w-5 h-5" />
+          <span className="hidden sm:inline">Gerar Deck</span>
+        </button>
+      )}
+
+      {/* Sponsor Deck Generator Overlay */}
+      <AnimatePresence>
+        {showSponsorDeck && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowSponsorDeck(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', duration: 0.3 }}
+              className="max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SponsorDeckGenerator
+                projectId={projectId}
+                projectName={projectName}
+                onClose={() => setShowSponsorDeck(false)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* PDF Content Modal */}
       <AnimatePresence>
@@ -211,6 +255,8 @@ export const EditalProjectWorkspace: React.FC<EditalProjectWorkspaceProps> = ({
       <WorkspaceContent
         onBack={onBack}
         editalTextContent={opportunity.edital_text_content}
+        projectId={project.id}
+        projectName={project.project_name}
       />
     </WorkspaceProvider>
   );

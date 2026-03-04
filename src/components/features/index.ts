@@ -34,8 +34,6 @@ export { default as EfficiencyScoreCard } from './EfficiencyScoreCard';
 // prettier-ignore
 export { default as EfficiencyTrendChart } from './EfficiencyTrendChart';
 // prettier-ignore
-export { default as GamificationWidget } from './GamificationWidget';
-// prettier-ignore
 export { default as GoogleCalendarConnect } from './GoogleCalendarConnect';
 // prettier-ignore
 export { default as GoogleCalendarEventsList } from './GoogleCalendarEventsList';
@@ -82,8 +80,8 @@ export { MementoMoriBar } from './MementoMoriBar';
 // Scientific Scoring Engine — Issue #575
 export { ScoreCard } from './ScoreCard';
 export { ScoreExplainer } from './ScoreExplainer';
-export { LifeScoreRadar } from './LifeScoreRadar';
 export { DomainWeightSliders } from './DomainWeightSliders';
+export { LifeScoreWidget } from './LifeScoreWidget';
 
 // Sprint 7 — Cross-Module Intelligence
 export { CrossDomainInsights } from './CrossDomainInsights';
