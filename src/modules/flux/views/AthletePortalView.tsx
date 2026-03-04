@@ -16,7 +16,7 @@ import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
 import { WorkoutSlotService } from '../services/workoutSlotService';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
-import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, WeeklyFeedbackCard } from '../components/athlete';
+import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, DayFeedbackCard, useDailyFeedback } from '../components/athlete';
 import { WeeklyGrid, type WeekWorkout } from '../components/canvas/WeeklyGrid';
 import type { FeedbackData } from '../components/athlete';
 import { useAuth } from '@/hooks/useAuth';
@@ -204,6 +204,21 @@ export default function AthletePortalView() {
     }
     return MODALITY_CONFIG[mod] ? [mod] : ['strength'];
   }, [profile?.modality]);
+
+  const currentWeekSlotDays = useMemo(() => {
+    const slots = micro?.slots?.filter((s) => s.week_number === selectedWeek) || [];
+    return [...new Set(slots.map(s => s.day_of_week))];
+  }, [micro?.slots, selectedWeek]);
+
+  const dailyFeedback = useDailyFeedback({
+    athleteId: profile?.athlete_id || '',
+    microcycleId: micro?.id || '',
+    weekNumber: selectedWeek,
+    userId: user?.id || '',
+    currentWeek: micro?.current_week || 1,
+    microcycleStartDate: micro?.start_date,
+    workoutDays: currentWeekSlotDays,
+  });
 
   // ── Early returns ──
 
@@ -517,6 +532,7 @@ export default function AthletePortalView() {
                 {[1, 2, 3, 4, 5, 6, 7].map((day) => {
                   const daySlots = slotsByDay.get(day) || [];
                   const date = getDateForDay(day);
+                  const feedbackEntry = dailyFeedback.dayEntries[day];
                   return (
                     <div key={day}>
                       <div className="flex items-center gap-2 py-3">
@@ -529,6 +545,20 @@ export default function AthletePortalView() {
                             <WorkoutCard key={slot.id} slot={slot}
                               isUpdating={updating === slot.id} modality={profile.modality} />
                           ))}
+                          {/* Inline daily feedback below exercises */}
+                          {feedbackEntry && user && (
+                            <DayFeedbackCard
+                              entry={feedbackEntry}
+                              dayDate={dailyFeedback.getDateForDay(day)}
+                              isFuture={dailyFeedback.isDayFuture(day)}
+                              isExpanded={dailyFeedback.expandedDay === day}
+                              isSubmitting={dailyFeedback.submittingDay === day}
+                              onToggleExpand={() => dailyFeedback.setExpandedDay(dailyFeedback.expandedDay === day ? null : day)}
+                              onSetRating={(rating) => dailyFeedback.handleSetRating(day, rating)}
+                              onSetNotes={(notes) => dailyFeedback.handleSetNotes(day, notes)}
+                              onSubmit={() => dailyFeedback.handleSubmitDay(day)}
+                            />
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 py-3 px-4 rounded-xl bg-ceramic-cool/50">
@@ -539,8 +569,6 @@ export default function AthletePortalView() {
                     </div>
                   );
                 })}
-
-                {/* Weekly volume removed (#692): formula not ready */}
               </motion.section>
             )
           ) : (
@@ -550,20 +578,6 @@ export default function AthletePortalView() {
                 <p className="text-sm font-medium text-ceramic-text-primary">Nenhum treino prescrito ainda</p>
                 <p className="text-xs text-ceramic-text-secondary leading-relaxed">Seu coach ainda nao prescreveu treinos. Fique tranquilo, voce sera notificado quando houver novidades!</p>
               </div>
-            </motion.section>
-          )}
-
-          {micro && user && (
-            <motion.section className="px-5 mt-8" custom={5} initial="hidden" animate="visible" variants={sectionVariants}>
-              <WeeklyFeedbackCard
-                athleteId={profile.athlete_id}
-                microcycleId={micro.id}
-                weekNumber={selectedWeek}
-                userId={user.id}
-                currentWeek={micro.current_week || 1}
-                microcycleStartDate={micro.start_date}
-                workoutDays={[...new Set(currentWeekSlots.map(s => s.day_of_week))]}
-              />
             </motion.section>
           )}
         </>
