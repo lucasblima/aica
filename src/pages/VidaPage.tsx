@@ -11,7 +11,7 @@ import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, typ
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
-// #440: LifeCouncilCard, PatternsSummary, LifeScoreWidget removed from /vida (moved to Journey)
+import { LifeScoreWidget } from '@/components/features/LifeScoreWidget';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -19,7 +19,6 @@ import { useWeatherInsight } from '@/hooks/useWeatherInsight';
 import { FluxCard } from '../modules/flux';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
-// #440: useLifeCouncil and useUserPatterns removed from /vida
 import { useGrantsHomeQuery } from '@/hooks/queries';
 import { ViewState } from '../../types';
 import { supabase } from '@/services/supabaseClient';
@@ -125,8 +124,6 @@ export default function VidaPage({
 
    // Identity data from Journey CP system
    const { stats: cpStats, progress: cpProgress } = useConsciousnessPoints();
-
-   // #440: Life Council and Patterns hooks removed — re-enable when data is sufficient
 
    // User metadata for avatar and profile
    const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
@@ -252,6 +249,18 @@ export default function VidaPage({
                      onOpenJourney={() => onNavigateToView('journey')}
                      stats={cpStats}
                   />
+               </motion.div>
+            )}
+
+            {/* Life Score — full width (cascade step 3) */}
+            {cascadeStep >= 3 && (
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={0.5}
+               >
+                  <LifeScoreWidget />
                </motion.div>
             )}
 
