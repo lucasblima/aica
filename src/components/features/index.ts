@@ -81,6 +81,7 @@ export { MementoMoriBar } from './MementoMoriBar';
 export { ScoreCard } from './ScoreCard';
 export { ScoreExplainer } from './ScoreExplainer';
 export { DomainWeightSliders } from './DomainWeightSliders';
+export { LifeScoreWidget } from './LifeScoreWidget';
 
 // Sprint 7 — Cross-Module Intelligence
 export { CrossDomainInsights } from './CrossDomainInsights';

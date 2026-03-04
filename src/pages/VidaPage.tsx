@@ -6,11 +6,13 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget } from '../components';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
+import { LifeScoreWidget } from '@/components/features/LifeScoreWidget';
 // #440: LifeCouncilCard and PatternsSummary removed from /vida
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
@@ -98,6 +100,7 @@ export default function VidaPage({
    onCreateAssociation
 }: VidaPageProps) {
    const { user } = useAuth();
+   const routerNavigate = useNavigate();
    const { weather, insight: weatherInsight } = useWeatherInsight();
 
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
@@ -267,12 +270,24 @@ export default function VidaPage({
 
             {/* #440: Life Council and Patterns removed from /vida — re-enable when data is sufficient */}
 
-            {/* Journey CTA — full width */}
+            {/* Life Score Widget — full width composite score overview */}
             <motion.div
                variants={cardVariants}
                initial="hidden"
                animate="visible"
                custom={0}
+            >
+               <LifeScoreWidget
+                  onViewDetails={() => routerNavigate('/life-score')}
+               />
+            </motion.div>
+
+            {/* Journey CTA — full width */}
+            <motion.div
+               variants={cardVariants}
+               initial="hidden"
+               animate="visible"
+               custom={1}
             >
                <JourneyHeroCard
                   onOpenJourney={() => onNavigateToView('journey')}

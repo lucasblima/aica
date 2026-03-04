@@ -114,6 +114,9 @@ const LifeRPGDetailView = lazy(() => import('../modules/liferpg/views/LifeRPGDet
 const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
 const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => ({ default: m.default })));
 
+// Life Score Analytics - Issue #575
+const LifeScoreAnalyticsPage = lazy(() => import('../pages/LifeScoreAnalyticsPage'));
+
 // Legal Pages - Rarely accessed
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
@@ -818,6 +821,12 @@ export function AppRouter() {
                <Route
                   path="/file-search"
                   element={<ProtectedRoute><FileSearchAnalyticsView userId={userId || ''} onBack={() => navigate('/')} mode="fullpage" /></ProtectedRoute>}
+               />
+
+               {/* Life Score Analytics - Issue #575 */}
+               <Route
+                  path="/life-score"
+                  element={<ProtectedRoute><LifeScoreAnalyticsPage /></ProtectedRoute>}
                />
 
                {/* Profile Page - Protected */}
