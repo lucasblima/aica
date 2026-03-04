@@ -76,12 +76,13 @@ Teammate 1-N: Each researches one alternative/approach
 
 ## Team Rules
 
-1. **File ownership**: Each teammate owns distinct files. NEVER assign two teammates to the same file.
-2. **Task granularity**: 3-6 tasks per teammate. Break large work into focused units.
-3. **Dependencies**: Use `addBlockedBy` to enforce ordering (e.g., migration before frontend).
-4. **Plan approval**: For features touching 5+ files, require plan approval before implementation.
-5. **Lead role**: The lead coordinates, synthesizes, and reports — does NOT implement directly.
-6. **Shutdown**: Always shut down teammates and clean up the team when work is complete.
+1. **Worktree isolation**: All team work happens in a git worktree (`.worktrees/<branch-name>`). Create worktree before spawning teammates.
+2. **File ownership**: Each teammate owns distinct files. NEVER assign two teammates to the same file.
+3. **Task granularity**: 3-6 tasks per teammate. Break large work into focused units.
+4. **Dependencies**: Use `addBlockedBy` to enforce ordering (e.g., migration before frontend).
+5. **Plan approval**: For features touching 5+ files, require plan approval before implementation.
+6. **Lead role**: The lead coordinates, synthesizes, and reports — does NOT implement directly.
+7. **Shutdown**: Always shut down teammates and clean up the team when work is complete.
 
 ## Teammate Agent Types
 
