@@ -16,7 +16,7 @@ import {
   SkipForward,
 } from 'lucide-react';
 import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
-import { transcribeAudio } from '@/modules/journey/services/momentPersistenceService';
+import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ExerciseQuestionnaire');
@@ -119,22 +119,37 @@ export function ExerciseQuestionnaireSheet({
     setIsTranscribing(true);
     setError(null);
     try {
-      const text = await transcribeAudio(blob);
+      // Convert blob to base64
+      const arrayBuffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const audioBase64 = btoa(binary);
+      const mimeType = blob.type || 'audio/webm';
+
+      // Call gemini-chat directly via supabase.functions.invoke (#723)
+      // This bypasses GeminiClient's raw fetch — supabase-js handles auth reliably
+      const { data, error: fnError } = await supabase.functions.invoke('gemini-chat', {
+        body: {
+          action: 'transcribe_audio',
+          payload: { audioBase64, mimeType },
+        },
+      });
+
+      if (fnError) throw fnError;
+
+      const raw = data?.result?.transcription || data?.result?.text || '';
+      const text = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim();
+
       if (text) {
         setVoiceTranscript(text);
         setNotes((prev) => prev ? `${prev}\n${text}` : text);
       }
     } catch (err: any) {
       log.error('Transcription error:', err);
-      // Distinguish auth errors from other failures (#723)
-      const isAuthError = err?.message?.includes('401') ||
-        err?.message?.includes('Sessao expirada') ||
-        err?.message?.includes('UNAUTHORIZED');
-      setError(
-        isAuthError
-          ? 'Sessao expirada. Recarregue a pagina e tente novamente.'
-          : 'Erro na transcricao. Use o campo de texto.'
-      );
+      setError('Erro na transcricao. Use o campo de texto.');
     } finally {
       setIsTranscribing(false);
     }
