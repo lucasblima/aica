@@ -14,8 +14,10 @@ import {
   Sparkles, ChevronRight, MessageCircleQuestion,
   Send, CheckCircle2, Loader2, Flame, Mic, MicOff,
 } from 'lucide-react'
-import { useDailyQuestion } from '../hooks/useDailyQuestion'
+import { useUnansweredQuestions } from '../hooks/useDailyQuestion'
+import { answerQuestion } from '../services/questionService'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
+import { useAuth } from '@/hooks/useAuth'
 import type { UserConsciousnessStats } from '../types/consciousnessPoints'
 
 interface JourneyHeroCardProps {
@@ -29,29 +31,37 @@ export function JourneyHeroCard({
   stats: statsProp,
   className = '',
 }: JourneyHeroCardProps) {
+  const { user } = useAuth()
   const resolvedStats = statsProp ?? null
   const isLoading = statsProp === undefined
 
-  const { question, answer, isSubmitting } = useDailyQuestion()
+  const { questions } = useUnansweredQuestions(5)
 
+  const [activeIndex, setActiveIndex] = useState(0)
   const [answerText, setAnswerText] = useState('')
   const [answered, setAnswered] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const speech = useSpeechRecognition({
     lang: 'pt-BR',
     onResult: (transcript) => setAnswerText(prev => prev ? `${prev} ${transcript}` : transcript),
   })
 
-  const hasUnansweredQuestion = question && !question.user_response && !answered
-
   const handleAnswerSubmit = async () => {
-    if (!answerText.trim() || isSubmitting) return
+    const activeQuestion = questions[activeIndex]
+    if (!answerText.trim() || isSubmitting || !activeQuestion || !user?.id) return
     try {
-      await answer(answerText.trim())
+      setIsSubmitting(true)
+      await answerQuestion(user.id, {
+        question_id: activeQuestion.id,
+        response_text: answerText.trim(),
+      })
       setAnswered(true)
       setAnswerText('')
     } catch {
-      // error is handled by useDailyQuestion
+      // error handled by service
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -101,30 +111,46 @@ export function JourneyHeroCard({
         <ChevronRight className="h-5 w-5 text-[#948D82] group-hover:text-[#5C554B] transition-colors" />
       </motion.div>
 
-      {/* Daily Question — inline input (v2) */}
+      {/* Daily Questions — carousel */}
       <AnimatePresence>
-        {hasUnansweredQuestion && (
+        {questions.length > 0 && !answered && (
           <motion.div
-            className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200/50"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <div className="flex items-start gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-amber-100 flex-shrink-0">
-                <MessageCircleQuestion className="h-5 w-5 text-amber-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-amber-700 mb-1">
-                  Pergunta do dia
-                </p>
-                <p className="text-sm font-medium text-[#5C554B]">
-                  "{question.question_text}"
-                </p>
-              </div>
+            {/* Scrollable question cards */}
+            <div
+              className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 -mx-1 px-1"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {questions.map((q, i) => (
+                <button
+                  key={q.id}
+                  onClick={() => setActiveIndex(i)}
+                  className={`snap-start shrink-0 w-[85%] p-3 rounded-2xl border text-left transition-all ${
+                    activeIndex === i
+                      ? 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-300'
+                      : 'bg-ceramic-cool border-ceramic-border hover:border-amber-200'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <MessageCircleQuestion className={`h-4 w-4 mt-0.5 shrink-0 ${
+                      activeIndex === i ? 'text-amber-600' : 'text-ceramic-text-secondary'
+                    }`} />
+                    <p className={`text-sm font-medium line-clamp-2 ${
+                      activeIndex === i ? 'text-[#5C554B]' : 'text-ceramic-text-secondary'
+                    }`}>
+                      {q.question_text}
+                    </p>
+                  </div>
+                </button>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Answer input for active question */}
+            <div className="flex items-center gap-2 mt-2">
               <input
                 type="text"
                 value={answerText}
@@ -137,9 +163,8 @@ export function JourneyHeroCard({
                 }}
                 placeholder="Sua resposta..."
                 disabled={isSubmitting}
-                className="flex-1 bg-white/60 rounded-xl px-3 py-2 text-sm text-[#5C554B] placeholder:text-amber-400/60 outline-none focus:ring-2 focus:ring-amber-400/30 disabled:opacity-60"
+                className="flex-1 bg-ceramic-cool rounded-xl px-3 py-2 text-sm text-[#5C554B] placeholder:text-ceramic-text-secondary/40 outline-none focus:ring-2 focus:ring-amber-400/30 disabled:opacity-60"
               />
-              {/* Mic button for voice answer */}
               {speech.isSupported && (
                 <button
                   onClick={speech.toggle}
@@ -147,7 +172,7 @@ export function JourneyHeroCard({
                   className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                     speech.isListening
                       ? 'bg-ceramic-error text-white animate-pulse'
-                      : 'bg-white/60 text-amber-600 hover:bg-white/80'
+                      : 'bg-ceramic-cool text-amber-600 hover:bg-amber-100'
                   } disabled:opacity-40`}
                   aria-label={speech.isListening ? 'Parar gravacao' : 'Ditar resposta'}
                 >
