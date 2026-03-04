@@ -6,14 +6,12 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
-import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget } from '../components';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, type LucideIcon } from 'lucide-react';
+import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
-import { LifeScoreWidget } from '@/components/features/LifeScoreWidget';
-// #440: LifeCouncilCard and PatternsSummary removed from /vida
+// #440: LifeCouncilCard, PatternsSummary, LifeScoreWidget removed from /vida (moved to Journey)
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -100,7 +98,26 @@ export default function VidaPage({
    onCreateAssociation
 }: VidaPageProps) {
    const { user } = useAuth();
-   const routerNavigate = useNavigate();
+
+
+   // Cascade loading — components appear in vertical order
+   const [cascadeStep, setCascadeStep] = useState(0);
+   useEffect(() => {
+      // Step 0: Header/CP/Avatar (immediate)
+      // Step 1: MementoMori (~80ms)
+      // Step 2: VidaUniversalInput (~160ms)
+      // Step 3: JourneyHeroCard (~240ms)
+      // Step 4: Module cards (~320ms)
+      const timers: ReturnType<typeof setTimeout>[] = [];
+      for (let step = 1; step <= 4; step++) {
+         timers.push(setTimeout(() => setCascadeStep(step), step * 80));
+      }
+      return () => timers.forEach(clearTimeout);
+   }, []);
+
+   // Defer non-critical fetches to after cascade completes
+   const deferredReady = cascadeStep >= 4;
+
    const { weather, insight: weatherInsight } = useWeatherInsight();
 
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
@@ -143,7 +160,7 @@ export default function VidaPage({
    };
 
    // Grants Card data via React Query
-   const { data: grantsData } = useGrantsHomeQuery(userId);
+   const { data: grantsData } = useGrantsHomeQuery(userId, deferredReady);
    const grantsActiveProjects = grantsData?.activeProjects ?? 0;
    const grantsUpcomingDeadlines = grantsData?.upcomingDeadlines ?? [];
    const grantsRecentProjects = grantsData?.recentProjects ?? [];
@@ -194,108 +211,52 @@ export default function VidaPage({
             onAvatarClick={() => setProfileDrawerOpen(true)}
          />
 
-         {/* Credit Balance - compact inline */}
-         {userId && (
-            <div className="px-6 pt-3 flex justify-end">
-               <CreditBalanceWidget compact showStats={false} />
-            </div>
-         )}
-
          <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
-            {/* Memento Mori — life progress bar */}
-            <motion.div
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.3 }}
-            >
-               <MementoMoriBar
-                  onSetBirthdate={() => setProfileDrawerOpen(true)}
-                  forecast={weather?.forecast}
-                  weatherInsight={weatherInsight}
-               />
-            </motion.div>
-
-            {/* Universal Input — text + voice + action pills */}
-            <motion.div
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.4, delay: 0.05 }}
-            >
-               <VidaUniversalInput />
-            </motion.div>
-
-            {/* Quick Stats — real-time user data */}
-            {cpStats && (
+            {/* Memento Mori — life progress bar (cascade step 1) */}
+            {cascadeStep >= 1 && (
                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                  className="grid grid-cols-3 gap-2"
+                  transition={{ duration: 0.3 }}
                >
-                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
-                     <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                        <Zap className="w-4 h-4 text-amber-500" />
-                     </div>
-                     <div className="min-w-0">
-                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
-                           {cpStats.total_points || 0}
-                        </p>
-                        <p className="text-[10px] text-ceramic-text-secondary truncate">Total CP</p>
-                     </div>
-                  </div>
-                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
-                     <div className="w-8 h-8 rounded-lg bg-ceramic-warning/10 flex items-center justify-center shrink-0">
-                        <Flame className="w-4 h-4 text-ceramic-warning" />
-                     </div>
-                     <div className="min-w-0">
-                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
-                           {cpStats.current_streak || 0}
-                        </p>
-                        <p className="text-[10px] text-ceramic-text-secondary truncate">Streak</p>
-                     </div>
-                  </div>
-                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
-                     <div className="w-8 h-8 rounded-lg bg-ceramic-info/10 flex items-center justify-center shrink-0">
-                        <TrendingUp className="w-4 h-4 text-ceramic-info" />
-                     </div>
-                     <div className="min-w-0">
-                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
-                           {cpStats.total_moments || 0}
-                        </p>
-                        <p className="text-[10px] text-ceramic-text-secondary truncate">Momentos</p>
-                     </div>
-                  </div>
+                  <MementoMoriBar
+                     onSetBirthdate={() => setProfileDrawerOpen(true)}
+                     forecast={weather?.forecast}
+                     weatherInsight={weatherInsight}
+                  />
                </motion.div>
             )}
 
-            {/* #440: Life Council and Patterns removed from /vida — re-enable when data is sufficient */}
+            {/* Universal Input — text + voice + action pills (cascade step 2) */}
+            {cascadeStep >= 2 && (
+               <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+               >
+                  <VidaUniversalInput />
+               </motion.div>
+            )}
 
-            {/* Life Score Widget — full width composite score overview */}
-            <motion.div
-               variants={cardVariants}
-               initial="hidden"
-               animate="visible"
-               custom={0}
-            >
-               <LifeScoreWidget
-                  onViewDetails={() => routerNavigate('/life-score')}
-               />
-            </motion.div>
+            {/* Quick Stats removed — CP is in header, Streak in JourneyHeroCard */}
 
-            {/* Journey CTA — full width */}
-            <motion.div
-               variants={cardVariants}
-               initial="hidden"
-               animate="visible"
-               custom={1}
-            >
-               <JourneyHeroCard
-                  onOpenJourney={() => onNavigateToView('journey')}
-                  stats={cpStats}
-               />
-            </motion.div>
+            {/* Journey CTA — full width (cascade step 3) */}
+            {cascadeStep >= 3 && (
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={0}
+               >
+                  <JourneyHeroCard
+                     onOpenJourney={() => onNavigateToView('journey')}
+                     stats={cpStats}
+                  />
+               </motion.div>
+            )}
 
-            {/* Module cards grid — all compact */}
+            {/* Module cards grid — all compact (cascade step 4) */}
+            {cascadeStep >= 4 && (<>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                {/* Finance */}
                <motion.div
@@ -500,6 +461,8 @@ export default function VidaPage({
                   }}
                />
             )}
+            {/* end cascade step 5 */}
+            </>)}
          </main>
 
          {/* Profile Drawer */}

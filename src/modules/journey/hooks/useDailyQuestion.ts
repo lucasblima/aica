@@ -106,6 +106,50 @@ export function useDailyQuestion() {
 }
 
 /**
+ * useUnansweredQuestions Hook
+ * Returns multiple unanswered questions for carousel display
+ */
+export function useUnansweredQuestions(limit: number = 5) {
+  const { user } = useAuth()
+  const [questions, setQuestions] = useState<QuestionWithResponse[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetchQuestions = useCallback(async () => {
+    if (!user?.id) return
+
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const allQuestions = await getAllQuestionsWithResponses(user.id)
+      const unanswered = allQuestions
+        .filter(q => !q.user_response)
+        .slice(0, limit)
+      setQuestions(unanswered)
+    } catch (err) {
+      setError(err as Error)
+      log.error('Error fetching unanswered questions:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user?.id, limit])
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchQuestions()
+    }
+  }, [user?.id, fetchQuestions])
+
+  return {
+    questions,
+    isLoading,
+    error,
+    refresh: fetchQuestions,
+  }
+}
+
+/**
  * useAllQuestions Hook
  * Hook for viewing all questions with responses
  */
