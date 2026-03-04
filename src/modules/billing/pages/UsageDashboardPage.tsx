@@ -5,9 +5,6 @@ import {
   BarChart2,
   Coins,
   CreditCard,
-  DollarSign,
-  Eye,
-  EyeOff,
   Gift,
   Loader2,
   RefreshCw,
@@ -29,7 +26,6 @@ interface UsageLog {
   model_used: string | null;
   tokens_input: number;
   tokens_output: number;
-  cost_brl: number;
   credits_used: number;
   created_at: string;
 }
@@ -47,7 +43,6 @@ interface DailyUsageSummary {
   interactions_today: number;
   daily_limit: number;
   plan_name: string;
-  total_cost_30d: number;
   total_credits_30d: number;
   total_interactions_30d: number;
 }
@@ -69,14 +64,6 @@ const CHART_DAYS = 14;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatCurrency(value: number): string {
-  return `R$ ${value.toFixed(4).replace('.', ',')}`;
-}
-
-function formatCurrencyShort(value: number): string {
-  return `R$ ${value.toFixed(2).replace('.', ',')}`;
-}
 
 function formatTimestamp(iso: string): string {
   const date = new Date(iso);
@@ -130,22 +117,6 @@ export function UsageDashboardPage() {
   const { user } = useAuth();
   const { balance, canClaimDaily, claimDaily } = useUserCredits();
 
-  const [advancedMode, setAdvancedMode] = useState(() => {
-    try {
-      return localStorage.getItem('usage_advanced_mode') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const toggleAdvancedMode = () => {
-    setAdvancedMode((prev) => {
-      const next = !prev;
-      try { localStorage.setItem('usage_advanced_mode', String(next)); } catch { /* noop */ }
-      return next;
-    });
-  };
-
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -155,7 +126,6 @@ export function UsageDashboardPage() {
     interactions_today: 0,
     daily_limit: 50,
     plan_name: 'Free',
-    total_cost_30d: 0,
     total_credits_30d: 0,
     total_interactions_30d: 0,
   });
@@ -194,7 +164,7 @@ export function UsageDashboardPage() {
         // --- Usage logs (first page) ---
         const { data: logs } = await supabase
           .from('usage_logs')
-          .select('id, action, module, model_used, tokens_input, tokens_output, cost_brl, credits_used, created_at')
+          .select('id, action, module, model_used, tokens_input, tokens_output, credits_used, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(0, INTERACTIONS_PAGE_SIZE); // fetch one extra to detect hasMore
@@ -235,11 +205,10 @@ export function UsageDashboardPage() {
 
         const { data: costData } = await supabase
           .from('usage_logs')
-          .select('cost_brl, credits_used')
+          .select('credits_used')
           .eq('user_id', user.id)
           .gte('created_at', thirtyDaysAgo.toISOString());
 
-        const totalCost30d = costData?.reduce((sum, row) => sum + (row.cost_brl || 0), 0) ?? 0;
         const totalCredits30d = costData?.reduce((sum, row) => sum + (row.credits_used || 0), 0) ?? 0;
         const totalInteractions30d = costData?.length ?? 0;
 
@@ -261,7 +230,6 @@ export function UsageDashboardPage() {
           interactions_today: todayCount ?? 0,
           daily_limit: subscription?.daily_interaction_limit ?? 50,
           plan_name: planNames[subscription?.plan_id ?? 'free'] ?? 'Free',
-          total_cost_30d: totalCost30d,
           total_credits_30d: totalCredits30d,
           total_interactions_30d: totalInteractions30d,
         });
@@ -318,7 +286,7 @@ export function UsageDashboardPage() {
     try {
       const { data: more } = await supabase
         .from('usage_logs')
-        .select('id, action, module, model_used, tokens_input, tokens_output, cost_brl, credits_used, created_at')
+        .select('id, action, module, model_used, tokens_input, tokens_output, credits_used, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .range(usageLogsOffset, usageLogsOffset + INTERACTIONS_PAGE_SIZE);
@@ -418,32 +386,18 @@ export function UsageDashboardPage() {
       title="Uso e Consumo"
       onBack={() => navigate(-1)}
       rightAction={
-        <div className="flex items-center gap-1">
-          <button
-            onClick={toggleAdvancedMode}
-            className="p-2 rounded-full hover:bg-ceramic-text-secondary/10 transition-colors"
-            aria-label={advancedMode ? 'Modo basico' : 'Modo avancado'}
-            title={advancedMode ? 'Modo basico' : 'Modo avancado'}
-          >
-            {advancedMode ? (
-              <EyeOff className="w-5 h-5 text-amber-600" />
-            ) : (
-              <Eye className="w-5 h-5 text-ceramic-text-secondary" />
-            )}
-          </button>
-          <button
-            onClick={() => loadData(true)}
-            disabled={isRefreshing}
-            className="p-2 rounded-full hover:bg-ceramic-text-secondary/10 transition-colors"
-            aria-label="Atualizar dados"
-          >
-            <RefreshCw
-              className={`w-5 h-5 text-ceramic-text-secondary ${
-                isRefreshing ? 'animate-spin' : ''
-              }`}
-            />
-          </button>
-        </div>
+        <button
+          onClick={() => loadData(true)}
+          disabled={isRefreshing}
+          className="p-2 rounded-full hover:bg-ceramic-text-secondary/10 transition-colors"
+          aria-label="Atualizar dados"
+        >
+          <RefreshCw
+            className={`w-5 h-5 text-ceramic-text-secondary ${
+              isRefreshing ? 'animate-spin' : ''
+            }`}
+          />
+        </button>
       }
     >
       {/* Claim Message */}
@@ -453,8 +407,8 @@ export function UsageDashboardPage() {
         </div>
       )}
 
-      {/* Stats Cards — 4 basic, 5 advanced */}
-      <div className={`grid grid-cols-2 ${advancedMode ? 'md:grid-cols-3 xl:grid-cols-5' : 'md:grid-cols-2 xl:grid-cols-4'} gap-4`}>
+      {/* Stats Cards — credits only */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <UsageStatsCard
           title="Interacoes Hoje"
           value={`${summary.interactions_today} / ${summary.daily_limit}`}
@@ -479,14 +433,6 @@ export function UsageDashboardPage() {
           subtitle={`${summary.total_interactions_30d} interacoes`}
           icon={<Coins className="w-5 h-5 text-amber-600" />}
         />
-        {advancedMode && (
-          <UsageStatsCard
-            title="Custo Real (30d)"
-            value={formatCurrencyShort(summary.total_cost_30d)}
-            subtitle="Ultimos 30 dias"
-            icon={<DollarSign className="w-5 h-5 text-amber-600" />}
-          />
-        )}
       </div>
 
       {/* Usage Progress Bar */}
@@ -641,19 +587,6 @@ export function UsageDashboardPage() {
                     <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
                       Creditos
                     </th>
-                    {advancedMode && (
-                      <>
-                        <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                          Modelo
-                        </th>
-                        <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                          Tokens (in/out)
-                        </th>
-                        <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                          Custo R$
-                        </th>
-                      </>
-                    )}
                     <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
                       Data
                     </th>
@@ -674,19 +607,6 @@ export function UsageDashboardPage() {
                       <td className="px-3 py-3 text-amber-600 text-right font-bold">
                         {log.credits_used || 1}
                       </td>
-                      {advancedMode && (
-                        <>
-                          <td className="px-3 py-3 text-ceramic-text-secondary">
-                            {log.model_used ?? '-'}
-                          </td>
-                          <td className="px-3 py-3 text-ceramic-text-secondary text-right">
-                            {log.tokens_input.toLocaleString('pt-BR')} / {log.tokens_output.toLocaleString('pt-BR')}
-                          </td>
-                          <td className="px-3 py-3 text-ceramic-text-primary text-right font-medium">
-                            {formatCurrency(log.cost_brl)}
-                          </td>
-                        </>
-                      )}
                       <td className="px-5 py-3 text-ceramic-text-secondary text-right text-xs">
                         {formatTimestamp(log.created_at)}
                       </td>

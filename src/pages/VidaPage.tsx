@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
@@ -106,18 +106,17 @@ export default function VidaPage({
       // Step 0: Header/CP/Avatar (immediate)
       // Step 1: MementoMori (~80ms)
       // Step 2: VidaUniversalInput (~160ms)
-      // Step 3: Quick Stats (~240ms)
-      // Step 4: JourneyHeroCard (~320ms)
-      // Step 5: Module cards (~400ms)
+      // Step 3: JourneyHeroCard (~240ms)
+      // Step 4: Module cards (~320ms)
       const timers: ReturnType<typeof setTimeout>[] = [];
-      for (let step = 1; step <= 5; step++) {
+      for (let step = 1; step <= 4; step++) {
          timers.push(setTimeout(() => setCascadeStep(step), step * 80));
       }
       return () => timers.forEach(clearTimeout);
    }, []);
 
    // Defer non-critical fetches to after cascade completes
-   const deferredReady = cascadeStep >= 5;
+   const deferredReady = cascadeStep >= 4;
 
    const { weather, insight: weatherInsight } = useWeatherInsight();
 
@@ -239,54 +238,10 @@ export default function VidaPage({
                </motion.div>
             )}
 
-            {/* Quick Stats — real-time user data (cascade step 3) */}
-            {cascadeStep >= 3 && cpStats && (
-               <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="grid grid-cols-3 gap-2"
-               >
-                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
-                     <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                        <Zap className="w-4 h-4 text-amber-500" />
-                     </div>
-                     <div className="min-w-0">
-                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
-                           {cpStats.total_points || 0}
-                        </p>
-                        <p className="text-[10px] text-ceramic-text-secondary truncate">Total CP</p>
-                     </div>
-                  </div>
-                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
-                     <div className="w-8 h-8 rounded-lg bg-ceramic-warning/10 flex items-center justify-center shrink-0">
-                        <Flame className="w-4 h-4 text-ceramic-warning" />
-                     </div>
-                     <div className="min-w-0">
-                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
-                           {cpStats.current_streak || 0}
-                        </p>
-                        <p className="text-[10px] text-ceramic-text-secondary truncate">Streak</p>
-                     </div>
-                  </div>
-                  <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
-                     <div className="w-8 h-8 rounded-lg bg-ceramic-info/10 flex items-center justify-center shrink-0">
-                        <TrendingUp className="w-4 h-4 text-ceramic-info" />
-                     </div>
-                     <div className="min-w-0">
-                        <p className="text-lg font-bold text-ceramic-text-primary leading-tight">
-                           {cpStats.total_moments || 0}
-                        </p>
-                        <p className="text-[10px] text-ceramic-text-secondary truncate">Momentos</p>
-                     </div>
-                  </div>
-               </motion.div>
-            )}
+            {/* Quick Stats removed — CP is in header, Streak in JourneyHeroCard */}
 
-            {/* #440: Life Council, Patterns, LifeScore removed from /vida */}
-
-            {/* Journey CTA — full width (cascade step 4) */}
-            {cascadeStep >= 4 && (
+            {/* Journey CTA — full width (cascade step 3) */}
+            {cascadeStep >= 3 && (
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
@@ -300,8 +255,8 @@ export default function VidaPage({
                </motion.div>
             )}
 
-            {/* Module cards grid — all compact (cascade step 5) */}
-            {cascadeStep >= 5 && (<>
+            {/* Module cards grid — all compact (cascade step 4) */}
+            {cascadeStep >= 4 && (<>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                {/* Finance */}
                <motion.div
