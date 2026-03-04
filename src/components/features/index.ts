@@ -84,6 +84,7 @@ export { ScoreCard } from './ScoreCard';
 export { ScoreExplainer } from './ScoreExplainer';
 export { LifeScoreRadar } from './LifeScoreRadar';
 export { DomainWeightSliders } from './DomainWeightSliders';
+export { LifeScoreWidget } from './LifeScoreWidget';
 
 // Sprint 7 — Cross-Module Intelligence
 export { CrossDomainInsights } from './CrossDomainInsights';
