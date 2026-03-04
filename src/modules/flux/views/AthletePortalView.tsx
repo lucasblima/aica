@@ -16,8 +16,7 @@ import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
 import { WorkoutSlotService } from '../services/workoutSlotService';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
-import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, useDailyFeedback } from '../components/athlete';
-import { ExerciseQuestionnaireSheet } from '../components/athlete/ExerciseQuestionnaireSheet';
+import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, WeeklyFeedbackCard } from '../components/athlete';
 import { WeeklyGrid, type WeekWorkout } from '../components/canvas/WeeklyGrid';
 import type { FeedbackData } from '../components/athlete';
 import { useAuth } from '@/hooks/useAuth';
@@ -84,8 +83,6 @@ export default function AthletePortalView() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'treinos' | 'feedback'>('treinos');
   const [feedbackSlotId, setFeedbackSlotId] = useState<string | null>(null);
-  const [questionnaireDay, setQuestionnaireDay] = useState<number | null>(null);
-  const [questionnaireSubmitting, setQuestionnaireSubmitting] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'list' | 'canvas'>(() => {
     try { return (localStorage.getItem('flux_athlete_view_mode') as 'list' | 'canvas') || 'list'; }
@@ -179,50 +176,6 @@ export default function AthletePortalView() {
     finally { setUpdating(null); }
   }, [refetch]);
 
-  // ── Hooks that must run before early returns (Rules of Hooks) ──
-
-  const micro = profile?.active_microcycle;
-
-  const pastWorkoutDays = useMemo(() => {
-    if (!micro?.slots?.length || !micro.start_date) return 0;
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const startDate = new Date(micro.start_date);
-    let count = 0;
-    for (const slot of micro.slots) {
-      const weekOffset = (slot.week_number - 1) * 7;
-      const dayOffset = slot.day_of_week - 1;
-      const slotDate = new Date(startDate);
-      slotDate.setDate(startDate.getDate() + weekOffset + dayOffset);
-      if (slotDate <= today) count++;
-    }
-    return count;
-  }, [micro?.slots, micro?.start_date]);
-
-  const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
-    const mod = profile?.modality as keyof typeof MODALITY_CONFIG;
-    if (!mod) return ['strength'];
-    if (mod === 'triathlon') {
-      return ['triathlon', 'swimming', 'running', 'cycling'];
-    }
-    return MODALITY_CONFIG[mod] ? [mod] : ['strength'];
-  }, [profile?.modality]);
-
-  const currentWeekSlotDays = useMemo(() => {
-    const slots = micro?.slots?.filter((s) => s.week_number === selectedWeek) || [];
-    return [...new Set(slots.map(s => s.day_of_week))];
-  }, [micro?.slots, selectedWeek]);
-
-  const dailyFeedback = useDailyFeedback({
-    athleteId: profile?.athlete_id || '',
-    microcycleId: micro?.id || '',
-    weekNumber: selectedWeek,
-    userId: user?.id || '',
-    currentWeek: micro?.current_week || 1,
-    microcycleStartDate: micro?.start_date,
-    workoutDays: currentWeekSlotDays,
-  });
-
   // ── Early returns ──
 
   if (isLoading) {
@@ -300,10 +253,39 @@ export default function AthletePortalView() {
     );
   }
 
-  // ── Data processing (micro, pastWorkoutDays, prescribedModalities hoisted above early returns) ──
+  // ── Data processing ──
 
+  const micro = profile.active_microcycle;
   const modalityConfig = MODALITY_CONFIG[profile.modality];
+
+  // Count past workout days (days that have already passed) instead of manual completions
+  const pastWorkoutDays = useMemo(() => {
+    if (!micro?.slots?.length || !micro.start_date) return 0;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const startDate = new Date(micro.start_date);
+    let count = 0;
+    for (const slot of micro.slots) {
+      const weekOffset = (slot.week_number - 1) * 7;
+      const dayOffset = slot.day_of_week - 1;
+      const slotDate = new Date(startDate);
+      slotDate.setDate(startDate.getDate() + weekOffset + dayOffset);
+      if (slotDate <= today) count++;
+    }
+    return count;
+  }, [micro?.slots, micro?.start_date]);
   const completionPct = micro ? Math.round((pastWorkoutDays / Math.max(micro.total_slots, 1)) * 100) : 0;
+
+  // Derive athlete modalities from profile.modality
+  // Template categories (warmup, main, cooldown) don't map to training modalities,
+  // so we use the athlete's declared modality and expand triathlon to its components.
+  const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
+    const mod = profile.modality as keyof typeof MODALITY_CONFIG;
+    if (mod === 'triathlon') {
+      return ['triathlon', 'swimming', 'running', 'cycling'];
+    }
+    return MODALITY_CONFIG[mod] ? [mod] : ['strength'];
+  }, [profile.modality]);
 
   const weeks = micro
     ? [1, 2, 3, 4].map((wk) => {
@@ -535,7 +517,6 @@ export default function AthletePortalView() {
                 {[1, 2, 3, 4, 5, 6, 7].map((day) => {
                   const daySlots = slotsByDay.get(day) || [];
                   const date = getDateForDay(day);
-                  const feedbackEntry = dailyFeedback.dayEntries[day];
                   return (
                     <div key={day}>
                       <div className="flex items-center gap-2 py-3">
@@ -548,23 +529,18 @@ export default function AthletePortalView() {
                             <WorkoutCard key={slot.id} slot={slot}
                               isUpdating={updating === slot.id} modality={profile.modality} />
                           ))}
-                          {/* Inline daily feedback below exercises */}
-                          {feedbackEntry && user && !dailyFeedback.isDayFuture(day) && (
-                            feedbackEntry.isSubmitted ? (
-                              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-ceramic-success/10 border border-ceramic-success/20">
-                                <CheckCircle className="w-3.5 h-3.5 text-ceramic-success flex-shrink-0" />
-                                <span className="text-xs font-bold text-ceramic-success">Feedback enviado</span>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setQuestionnaireDay(day)}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200/50 hover:bg-amber-100 transition-colors"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                                <span className="text-xs font-bold text-amber-700">Dar Feedback do Dia</span>
-                              </button>
-                            )
+                          {/* Day feedback — 8-question questionnaire right after this day's workouts */}
+                          {user && micro && (
+                            <WeeklyFeedbackCard
+                              athleteId={profile.athlete_id}
+                              microcycleId={micro.id}
+                              weekNumber={selectedWeek}
+                              userId={user.id}
+                              currentWeek={micro.current_week || 1}
+                              microcycleStartDate={micro.start_date}
+                              workoutDays={[day]}
+                              onFeedbackSubmitted={() => refetch()}
+                            />
                           )}
                         </div>
                       ) : (
@@ -576,6 +552,8 @@ export default function AthletePortalView() {
                     </div>
                   );
                 })}
+
+                {/* Weekly volume removed (#692): formula not ready */}
               </motion.section>
             )
           ) : (
@@ -587,50 +565,13 @@ export default function AthletePortalView() {
               </div>
             </motion.section>
           )}
+
         </>
       ) : (
         <motion.section className="px-5" custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
           <AthleteFeedbackView profile={profile} onRefetch={refetch} highlightSlotId={feedbackSlotId} selectedWeek={selectedWeek} />
         </motion.section>
       )}
-
-      {/* 8-question feedback sheet */}
-      {questionnaireDay != null && micro && user && (() => {
-        const daySlots = slotsByDay.get(questionnaireDay) || [];
-        const slotName = daySlots.map(s => s.template?.name || 'Treino').join(' + ');
-        const qDate = getDateForDay(questionnaireDay);
-        const dayLabel = `${DAY_NAMES[questionnaireDay]}${qDate ? ` - ${qDate.getDate().toString().padStart(2, '0')}/${(qDate.getMonth() + 1).toString().padStart(2, '0')}` : ''}`;
-        return (
-          <ExerciseQuestionnaireSheet
-            slotId={`day-${questionnaireDay}-week-${selectedWeek}`}
-            slotName={slotName}
-            dayLabel={dayLabel}
-            isSubmitting={questionnaireSubmitting}
-            onClose={() => setQuestionnaireDay(null)}
-            onSubmit={async ({ questionnaire, notes }) => {
-              setQuestionnaireSubmitting(true);
-              try {
-                await supabase.from('athlete_feedback_entries').insert({
-                  user_id: user.id,
-                  athlete_id: profile.athlete_id,
-                  microcycle_id: micro.id,
-                  feedback_type: 'daily',
-                  week_number: selectedWeek,
-                  day_of_week: questionnaireDay,
-                  questionnaire,
-                  notes: notes.trim() || null,
-                });
-                dailyFeedback.markDaySubmitted(questionnaireDay);
-                setQuestionnaireDay(null);
-              } catch (err) {
-                log.error('Failed to submit daily questionnaire:', err);
-              } finally {
-                setQuestionnaireSubmitting(false);
-              }
-            }}
-          />
-        );
-      })()}
     </div>
   );
 }
