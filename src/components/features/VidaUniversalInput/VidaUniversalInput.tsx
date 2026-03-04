@@ -11,10 +11,10 @@
  * 4. Quick chips allow explicit action selection
  */
 
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Mic, MicOff, Send, ClipboardList, CalendarPlus,
+  Mic, Square, Send, ClipboardList, CalendarPlus,
   Sparkles, MessageCircle, CheckCircle2, Loader2, AlertCircle,
 } from 'lucide-react'
 import { useVidaInputActions, type ActionType } from './useVidaInputActions'
@@ -68,6 +68,21 @@ export function VidaUniversalInput() {
     } else if (input.trim()) {
       openChat()
     }
+  }
+
+  // Waveform bars from audio level
+  const waveformBars = useMemo(() => {
+    const bars = 8
+    return Array.from({ length: bars }, (_, i) => {
+      const variance = Math.sin((Date.now() / 200) + i) * 0.3 + 0.7
+      return Math.max(4, (speech.audioLevel / 100) * 24 * variance)
+    })
+  }, [speech.audioLevel])
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
   }
 
   const isCreating = actionStatus === 'creating'
@@ -148,6 +163,48 @@ export function VidaUniversalInput() {
         )}
       </AnimatePresence>
 
+      {/* Recording waveform strip */}
+      <AnimatePresence>
+        {speech.isListening && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-ceramic-error/5 border-b border-ceramic-error/20"
+          >
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className="flex items-center gap-0.5 h-6">
+                {waveformBars.map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-1 bg-ceramic-error rounded-full transition-all duration-75"
+                    style={{ height: `${h}px` }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-mono text-ceramic-error min-w-[3ch]">
+                {formatTime(speech.recordSeconds)}
+              </span>
+              <div className="w-2 h-2 bg-ceramic-error rounded-full animate-pulse" />
+              <span className="text-xs text-ceramic-text-secondary flex-1">Gravando...</span>
+            </div>
+          </motion.div>
+        )}
+        {speech.isTranscribing && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-amber-50 border-b border-amber-200"
+          >
+            <div className="flex items-center gap-2 px-4 py-2">
+              <Loader2 className="w-4 h-4 text-amber-600 animate-spin" />
+              <span className="text-xs text-amber-700">Transcrevendo...</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Input row */}
       <div className="flex items-center gap-2 p-3">
         {/* Chat icon — opens fullscreen chat directly */}
@@ -166,8 +223,8 @@ export function VidaUniversalInput() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="O que voce quer fazer?"
-          disabled={isCreating}
+          placeholder={speech.isListening ? 'Gravando audio...' : 'O que voce quer fazer?'}
+          disabled={isCreating || speech.isListening}
           className="flex-1 bg-ceramic-cool rounded-xl px-4 py-3 text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/60 outline-none focus:ring-2 focus:ring-amber-500/30 transition-shadow disabled:opacity-60"
         />
 
@@ -188,7 +245,7 @@ export function VidaUniversalInput() {
             {speech.isTranscribing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : speech.isListening ? (
-              <MicOff className="w-4 h-4" />
+              <Square className="w-3.5 h-3.5" />
             ) : (
               <Mic className="w-4 h-4" />
             )}
