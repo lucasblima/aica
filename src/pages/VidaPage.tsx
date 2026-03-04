@@ -6,14 +6,12 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, Flame, Zap, TrendingUp, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
-import { LifeScoreWidget } from '@/components/features/LifeScoreWidget';
-// #440: LifeCouncilCard and PatternsSummary removed from /vida
+// #440: LifeCouncilCard, PatternsSummary, LifeScoreWidget removed from /vida (moved to Journey)
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -100,19 +98,26 @@ export default function VidaPage({
    onCreateAssociation
 }: VidaPageProps) {
    const { user } = useAuth();
-   const routerNavigate = useNavigate();
 
-   // Defer non-critical fetches to after first paint
-   const [deferredReady, setDeferredReady] = useState(false);
+
+   // Cascade loading — components appear in vertical order
+   const [cascadeStep, setCascadeStep] = useState(0);
    useEffect(() => {
-      const id = window.requestIdleCallback
-         ? window.requestIdleCallback(() => setDeferredReady(true))
-         : window.setTimeout(() => setDeferredReady(true), 100);
-      return () => {
-         if (window.requestIdleCallback) window.cancelIdleCallback(id);
-         else window.clearTimeout(id);
-      };
+      // Step 0: Header/CP/Avatar (immediate)
+      // Step 1: MementoMori (~80ms)
+      // Step 2: VidaUniversalInput (~160ms)
+      // Step 3: Quick Stats (~240ms)
+      // Step 4: JourneyHeroCard (~320ms)
+      // Step 5: Module cards (~400ms)
+      const timers: ReturnType<typeof setTimeout>[] = [];
+      for (let step = 1; step <= 5; step++) {
+         timers.push(setTimeout(() => setCascadeStep(step), step * 80));
+      }
+      return () => timers.forEach(clearTimeout);
    }, []);
+
+   // Defer non-critical fetches to after cascade completes
+   const deferredReady = cascadeStep >= 5;
 
    const { weather, insight: weatherInsight } = useWeatherInsight();
 
@@ -208,34 +213,38 @@ export default function VidaPage({
          />
 
          <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
-            {/* Memento Mori — life progress bar */}
-            <motion.div
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.3 }}
-            >
-               <MementoMoriBar
-                  onSetBirthdate={() => setProfileDrawerOpen(true)}
-                  forecast={weather?.forecast}
-                  weatherInsight={weatherInsight}
-               />
-            </motion.div>
-
-            {/* Universal Input — text + voice + action pills */}
-            <motion.div
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.4, delay: 0.05 }}
-            >
-               <VidaUniversalInput />
-            </motion.div>
-
-            {/* Quick Stats — real-time user data */}
-            {cpStats && (
+            {/* Memento Mori — life progress bar (cascade step 1) */}
+            {cascadeStep >= 1 && (
                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
+                  transition={{ duration: 0.3 }}
+               >
+                  <MementoMoriBar
+                     onSetBirthdate={() => setProfileDrawerOpen(true)}
+                     forecast={weather?.forecast}
+                     weatherInsight={weatherInsight}
+                  />
+               </motion.div>
+            )}
+
+            {/* Universal Input — text + voice + action pills (cascade step 2) */}
+            {cascadeStep >= 2 && (
+               <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+               >
+                  <VidaUniversalInput />
+               </motion.div>
+            )}
+
+            {/* Quick Stats — real-time user data (cascade step 3) */}
+            {cascadeStep >= 3 && cpStats && (
+               <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
                   className="grid grid-cols-3 gap-2"
                >
                   <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-3 flex items-center gap-2.5">
@@ -274,34 +283,25 @@ export default function VidaPage({
                </motion.div>
             )}
 
-            {/* #440: Life Council and Patterns removed from /vida — re-enable when data is sufficient */}
+            {/* #440: Life Council, Patterns, LifeScore removed from /vida */}
 
-            {/* Life Score Widget — full width composite score overview */}
-            <motion.div
-               variants={cardVariants}
-               initial="hidden"
-               animate="visible"
-               custom={0}
-            >
-               <LifeScoreWidget
-                  onViewDetails={() => routerNavigate('/life-score')}
-               />
-            </motion.div>
+            {/* Journey CTA — full width (cascade step 4) */}
+            {cascadeStep >= 4 && (
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={0}
+               >
+                  <JourneyHeroCard
+                     onOpenJourney={() => onNavigateToView('journey')}
+                     stats={cpStats}
+                  />
+               </motion.div>
+            )}
 
-            {/* Journey CTA — full width */}
-            <motion.div
-               variants={cardVariants}
-               initial="hidden"
-               animate="visible"
-               custom={1}
-            >
-               <JourneyHeroCard
-                  onOpenJourney={() => onNavigateToView('journey')}
-                  stats={cpStats}
-               />
-            </motion.div>
-
-            {/* Module cards grid — all compact */}
+            {/* Module cards grid — all compact (cascade step 5) */}
+            {cascadeStep >= 5 && (<>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                {/* Finance */}
                <motion.div
@@ -506,6 +506,8 @@ export default function VidaPage({
                   }}
                />
             )}
+            {/* end cascade step 5 */}
+            </>)}
          </main>
 
          {/* Profile Drawer */}
