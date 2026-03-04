@@ -100,6 +100,9 @@ const AdminPortalPage = lazy(() => import('../modules/billing').then(m => ({ def
 const AdminCouponsPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminCouponsPage })));
 const PricingSimulatorPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingSimulatorPage })));
 
+// AI Cost Dashboard - Usage and cost monitoring
+const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
+
 // Invites Dashboard - Manage sent invites
 const InvitesPage = lazy(() => import('../pages/InvitesPage'));
 
@@ -840,6 +843,12 @@ export function AppRouter() {
                <Route
                   path="/manage-subscription"
                   element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
+               />
+
+               {/* AI Cost Dashboard - Usage monitoring */}
+               <Route
+                  path="/ai-cost"
+                  element={<ProtectedRoute><AICostDashboard userId={userId || ''} onBack={() => navigate(-1)} /></ProtectedRoute>}
                />
 
                {/* Admin Portal — admin-only routes */}
