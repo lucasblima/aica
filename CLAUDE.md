@@ -69,6 +69,7 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 | `design-system.md` | When editing `src/components/` | Ceramic tokens, foundation components |
 | `database.md` | When editing `supabase/migrations/` | Migration checklist, RLS, table warnings |
 | `whatsapp.md` | When editing connections or webhooks | Pipeline, privacy, troubleshooting |
+| `domain-driven-design.md` | When editing `src/services/scoring/` or cross-module features | DDD: Aggregates, Value Objects, Bounded Contexts |
 
 ## Quality Targets
 
