@@ -202,21 +202,19 @@ function DayFeedbackCard({
   );
 }
 
-// ─── Main Component ─────────────────────────────────────────────
+// ─── Hook: useDailyFeedback ─────────────────────────────────────
 
-export interface WeeklyFeedbackCardProps {
+export interface UseDailyFeedbackOptions {
   athleteId: string;
   microcycleId: string;
   weekNumber: number;
   userId: string;
   currentWeek?: number;
-  /** Start date of the microcycle (ISO string) */
   microcycleStartDate?: string;
-  /** Days of week that have workouts in the selected week (1=Mon...7=Sun) */
   workoutDays?: number[];
 }
 
-export function WeeklyFeedbackCard({
+export function useDailyFeedback({
   athleteId,
   microcycleId,
   weekNumber,
@@ -224,41 +222,29 @@ export function WeeklyFeedbackCard({
   currentWeek,
   microcycleStartDate,
   workoutDays,
-}: WeeklyFeedbackCardProps) {
+}: UseDailyFeedbackOptions) {
   const isFutureWeek = currentWeek != null && weekNumber > currentWeek;
 
-  // All 7 days or only the ones with workouts
   const daysToShow = useMemo(() => {
     if (workoutDays?.length) return [...workoutDays].sort((a, b) => a - b);
     return [1, 2, 3, 4, 5, 6, 7];
   }, [workoutDays]);
 
-  // Per-day state
   const [dayEntries, setDayEntries] = useState<Record<number, DayFeedbackEntry>>({});
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [submittingDay, setSubmittingDay] = useState<number | null>(null);
 
-  // Initialize day entries
   useEffect(() => {
     const entries: Record<number, DayFeedbackEntry> = {};
     for (const day of daysToShow) {
-      entries[day] = {
-        dayOfWeek: day,
-        rating: null,
-        notes: '',
-        isSubmitted: false,
-        existingNotes: null,
-        existingRating: null,
-      };
+      entries[day] = { dayOfWeek: day, rating: null, notes: '', isSubmitted: false, existingNotes: null, existingRating: null };
     }
     setDayEntries(entries);
   }, [daysToShow]);
 
-  // Check for existing daily feedback entries
   useEffect(() => {
     if (!microcycleId || !weekNumber) return;
     let cancelled = false;
-
     const check = async () => {
       const { data } = await supabase
         .from('athlete_feedback_entries')
@@ -266,27 +252,19 @@ export function WeeklyFeedbackCard({
         .eq('microcycle_id', microcycleId)
         .eq('week_number', weekNumber)
         .eq('feedback_type', 'daily');
-
       if (cancelled || !data) return;
-
       setDayEntries((prev) => {
         const updated = { ...prev };
         for (const row of data) {
           const day = row.day_of_week as number;
           if (updated[day]) {
             const questionnaire = row.questionnaire as Record<string, number> | null;
-            updated[day] = {
-              ...updated[day],
-              isSubmitted: true,
-              existingNotes: row.notes || row.voice_transcript || null,
-              existingRating: questionnaire?.daily_rating ?? null,
-            };
+            updated[day] = { ...updated[day], isSubmitted: true, existingNotes: row.notes || row.voice_transcript || null, existingRating: questionnaire?.daily_rating ?? null };
           }
         }
         return updated;
       });
     };
-
     check();
     return () => { cancelled = true; };
   }, [microcycleId, weekNumber]);
@@ -310,48 +288,29 @@ export function WeeklyFeedbackCard({
   }, [getDateForDay]);
 
   const handleSetRating = useCallback((day: number, rating: number) => {
-    setDayEntries((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], rating },
-    }));
+    setDayEntries((prev) => ({ ...prev, [day]: { ...prev[day], rating } }));
   }, []);
 
   const handleSetNotes = useCallback((day: number, notes: string) => {
-    setDayEntries((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], notes },
-    }));
+    setDayEntries((prev) => ({ ...prev, [day]: { ...prev[day], notes } }));
   }, []);
 
   const handleSubmitDay = useCallback(async (day: number) => {
     const entry = dayEntries[day];
     if (!entry || entry.rating == null) return;
-
     setSubmittingDay(day);
     try {
       const { error: insertError } = await supabase
         .from('athlete_feedback_entries')
         .insert({
-          user_id: userId,
-          athlete_id: athleteId,
-          microcycle_id: microcycleId,
-          feedback_type: 'daily',
-          week_number: weekNumber,
-          day_of_week: day,
-          questionnaire: { daily_rating: entry.rating },
-          notes: entry.notes.trim() || null,
+          user_id: userId, athlete_id: athleteId, microcycle_id: microcycleId,
+          feedback_type: 'daily', week_number: weekNumber, day_of_week: day,
+          questionnaire: { daily_rating: entry.rating }, notes: entry.notes.trim() || null,
         });
-
       if (insertError) throw insertError;
-
       setDayEntries((prev) => ({
         ...prev,
-        [day]: {
-          ...prev[day],
-          isSubmitted: true,
-          existingRating: entry.rating,
-          existingNotes: entry.notes.trim() || null,
-        },
+        [day]: { ...prev[day], isSubmitted: true, existingRating: entry.rating, existingNotes: entry.notes.trim() || null },
       }));
       setExpandedDay(null);
     } catch (err) {
@@ -361,18 +320,47 @@ export function WeeklyFeedbackCard({
     }
   }, [dayEntries, userId, athleteId, microcycleId, weekNumber]);
 
-  // Count submitted days
+  return {
+    dayEntries, expandedDay, submittingDay, isFutureWeek, daysToShow,
+    getDateForDay, isDayFuture, handleSetRating, handleSetNotes, handleSubmitDay,
+    setExpandedDay,
+  };
+}
+
+// ─── Re-export DayFeedbackCard for inline use ───────────────────
+
+export { DayFeedbackCard };
+export type { DayFeedbackEntry, DayCardProps };
+
+// ─── Main Component (kept for backwards compatibility) ──────────
+
+export interface WeeklyFeedbackCardProps {
+  athleteId: string;
+  microcycleId: string;
+  weekNumber: number;
+  userId: string;
+  currentWeek?: number;
+  microcycleStartDate?: string;
+  workoutDays?: number[];
+}
+
+export function WeeklyFeedbackCard(props: WeeklyFeedbackCardProps) {
+  const {
+    dayEntries, expandedDay, submittingDay, isFutureWeek, daysToShow,
+    getDateForDay, isDayFuture, handleSetRating, handleSetNotes, handleSubmitDay,
+    setExpandedDay,
+  } = useDailyFeedback(props);
+
   const submittedCount = Object.values(dayEntries).filter(e => e.isSubmitted).length;
   const totalDays = daysToShow.length;
 
-  // ─── Future week — locked ───
   if (isFutureWeek) {
     return (
       <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-3 opacity-50">
         <Lock className="w-5 h-5 text-ceramic-text-secondary/50 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-ceramic-text-secondary">
-            Feedback Diario — Semana {weekNumber}
+            Feedback Diario — Semana {props.weekNumber}
           </h3>
           <p className="text-xs text-ceramic-text-secondary/60 mt-0.5">
             Disponivel quando a semana comecar
@@ -384,11 +372,10 @@ export function WeeklyFeedbackCard({
 
   return (
     <div className="space-y-2">
-      {/* Section header */}
       <div className="flex items-center justify-between px-1 mb-1">
         <h3 className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider flex items-center gap-1.5">
           <MessageSquare className="w-3 h-3" />
-          Feedback Diario — Semana {weekNumber}
+          Feedback Diario — Semana {props.weekNumber}
         </h3>
         {submittedCount > 0 && (
           <span className="text-[10px] text-ceramic-text-secondary">
@@ -396,25 +383,17 @@ export function WeeklyFeedbackCard({
           </span>
         )}
       </div>
-
-      {/* Day entries */}
       {daysToShow.map((day) => {
         const entry = dayEntries[day];
         if (!entry) return null;
-
         return (
-          <DayFeedbackCard
-            key={day}
-            entry={entry}
-            dayDate={getDateForDay(day)}
-            isFuture={isDayFuture(day)}
-            isExpanded={expandedDay === day}
+          <DayFeedbackCard key={day} entry={entry} dayDate={getDateForDay(day)}
+            isFuture={isDayFuture(day)} isExpanded={expandedDay === day}
             isSubmitting={submittingDay === day}
             onToggleExpand={() => setExpandedDay(expandedDay === day ? null : day)}
             onSetRating={(rating) => handleSetRating(day, rating)}
             onSetNotes={(notes) => handleSetNotes(day, notes)}
-            onSubmit={() => handleSubmitDay(day)}
-          />
+            onSubmit={() => handleSubmitDay(day)} />
         );
       })}
     </div>
