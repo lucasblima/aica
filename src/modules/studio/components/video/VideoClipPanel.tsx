@@ -5,19 +5,16 @@
  * aspect ratio options.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Scissors,
-  Loader2,
   Sparkles,
   AlertCircle,
   Smartphone,
   Square,
   Monitor,
 } from 'lucide-react';
-import { supabase } from '@/services/supabaseClient';
-
 interface VideoClipPanelProps {
   projectId: string;
   hasTranscription: boolean;
@@ -46,35 +43,13 @@ function formatTimestamp(seconds: number): string {
 }
 
 export default function VideoClipPanel({
-  projectId,
+  projectId: _projectId,
   hasTranscription,
 }: VideoClipPanelProps) {
-  const [clips, setClips] = useState<ClipSuggestion[]>([]);
+  const [clips] = useState<ClipSuggestion[]>([]);
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>('9:16');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleGenerateClips = useCallback(async () => {
-    if (!hasTranscription || isGenerating) return;
-    setIsGenerating(true);
-    setError(null);
-
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke('studio-suggest-clips', {
-        body: { projectId, aspectRatio: selectedRatio },
-      });
-
-      if (fnError) throw fnError;
-
-      if (data?.clips) {
-        setClips(data.clips);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao gerar sugestoes de clips.');
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [projectId, hasTranscription, isGenerating, selectedRatio]);
+  const [isGenerating] = useState(false);
+  const [error] = useState<string | null>(null);
 
   if (!hasTranscription) {
     return (
@@ -96,16 +71,12 @@ export default function VideoClipPanel({
             Sugestoes de Clips
           </h3>
           <button
-            onClick={handleGenerateClips}
-            disabled={isGenerating}
+            disabled
+            title="Edge Function studio-suggest-clips not yet deployed"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors disabled:opacity-50"
           >
-            {isGenerating ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5" />
-            )}
-            {isGenerating ? 'Gerando...' : 'Gerar Clips'}
+            <Sparkles className="w-3.5 h-3.5" />
+            Gerar Clips
           </button>
         </div>
 

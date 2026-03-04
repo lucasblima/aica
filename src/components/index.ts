@@ -71,8 +71,6 @@ export { default as EfficiencyScoreCard } from './features/EfficiencyScoreCard';
 // prettier-ignore
 export { default as EfficiencyTrendChart } from './features/EfficiencyTrendChart';
 // prettier-ignore
-export { default as GamificationWidget } from './features/GamificationWidget';
-// prettier-ignore
 export { default as GoogleCalendarConnect } from './features/GoogleCalendarConnect';
 // prettier-ignore
 export { default as GoogleCalendarEventsList } from './features/GoogleCalendarEventsList';
@@ -91,7 +89,6 @@ export { WeeklyCalendarView } from './features/WeeklyCalendarView';
 // Scientific Scoring Engine — Issue #575
 export { ScoreCard } from './features/ScoreCard';
 export { ScoreExplainer } from './features/ScoreExplainer';
-export { LifeScoreRadar } from './features/LifeScoreRadar';
 export { DomainWeightSliders } from './features/DomainWeightSliders';
 
 // ============ Domain-Specific ============
