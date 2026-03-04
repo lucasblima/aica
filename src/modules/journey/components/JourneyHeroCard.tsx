@@ -8,15 +8,15 @@
  * - Added streak nudge when streak > 0 but no moment today
  */
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, ChevronRight, MessageCircleQuestion,
-  Send, CheckCircle2, Loader2, Flame, Mic, MicOff,
+  Send, CheckCircle2, Loader2, Flame, Mic, Square,
 } from 'lucide-react'
 import { useUnansweredQuestions } from '../hooks/useDailyQuestion'
 import { answerQuestion } from '../services/questionService'
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder'
 import { useAuth } from '@/hooks/useAuth'
 import type { UserConsciousnessStats } from '../types/consciousnessPoints'
 
@@ -42,10 +42,23 @@ export function JourneyHeroCard({
   const [answered, setAnswered] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const speech = useSpeechRecognition({
-    lang: 'pt-BR',
+  const speech = useVoiceRecorder({
     onResult: (transcript) => setAnswerText(prev => prev ? `${prev} ${transcript}` : transcript),
   })
+
+  const waveformBars = useMemo(() => {
+    const bars = 6
+    return Array.from({ length: bars }, (_, i) => {
+      const variance = Math.sin((Date.now() / 200) + i) * 0.3 + 0.7
+      return Math.max(3, (speech.audioLevel / 100) * 18 * variance)
+    })
+  }, [speech.audioLevel])
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
 
   const handleAnswerSubmit = async () => {
     const activeQuestion = questions[activeIndex]
@@ -149,6 +162,46 @@ export function JourneyHeroCard({
               ))}
             </div>
 
+            {/* Recording waveform / transcribing strip */}
+            <AnimatePresence>
+              {speech.isListening && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="mt-2 rounded-xl bg-ceramic-error/5 border border-ceramic-error/20 overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 px-3 py-1.5">
+                    <div className="flex items-center gap-0.5 h-5">
+                      {waveformBars.map((h, i) => (
+                        <div
+                          key={i}
+                          className="w-0.5 bg-ceramic-error rounded-full transition-all duration-75"
+                          style={{ height: `${h}px` }}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-mono text-ceramic-error">{formatTime(speech.recordSeconds)}</span>
+                    <div className="w-1.5 h-1.5 bg-ceramic-error rounded-full animate-pulse" />
+                    <span className="text-[10px] text-ceramic-text-secondary">Gravando...</span>
+                  </div>
+                </motion.div>
+              )}
+              {speech.isTranscribing && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="mt-2 rounded-xl bg-amber-50 border border-amber-200 overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 px-3 py-1.5">
+                    <Loader2 className="w-3 h-3 text-amber-600 animate-spin" />
+                    <span className="text-[10px] text-amber-700">Transcrevendo...</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Answer input for active question */}
             <div className="flex items-center gap-2 mt-2">
               <input
@@ -161,22 +214,30 @@ export function JourneyHeroCard({
                     handleAnswerSubmit()
                   }
                 }}
-                placeholder="Sua resposta..."
-                disabled={isSubmitting}
+                placeholder={speech.isListening ? 'Gravando...' : 'Sua resposta...'}
+                disabled={isSubmitting || speech.isListening}
                 className="flex-1 bg-ceramic-cool rounded-xl px-3 py-2 text-sm text-[#5C554B] placeholder:text-ceramic-text-secondary/40 outline-none focus:ring-2 focus:ring-amber-400/30 disabled:opacity-60"
               />
               {speech.isSupported && (
                 <button
                   onClick={speech.toggle}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || speech.isTranscribing}
                   className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                     speech.isListening
                       ? 'bg-ceramic-error text-white animate-pulse'
-                      : 'bg-ceramic-cool text-amber-600 hover:bg-amber-100'
+                      : speech.isTranscribing
+                        ? 'bg-amber-100 text-amber-600'
+                        : 'bg-ceramic-cool text-amber-600 hover:bg-amber-100'
                   } disabled:opacity-40`}
-                  aria-label={speech.isListening ? 'Parar gravacao' : 'Ditar resposta'}
+                  aria-label={speech.isListening ? 'Parar gravacao' : speech.isTranscribing ? 'Transcrevendo...' : 'Ditar resposta'}
                 >
-                  {speech.isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                  {speech.isTranscribing ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : speech.isListening ? (
+                    <Square className="w-3 h-3" />
+                  ) : (
+                    <Mic className="w-3.5 h-3.5" />
+                  )}
                 </button>
               )}
               <button
