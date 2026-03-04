@@ -4,5 +4,6 @@
  */
 
 export { GuestScoreCard } from './GuestScoreCard';
+export { GuestScoreInputForm } from './GuestScoreInputForm';
 export { NarrativeTensionChart } from './NarrativeTensionChart';
 export { EpisodeScoringPanel } from './EpisodeScoringPanel';
