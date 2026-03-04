@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight } from 'lucide-react'
+import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, MicOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
@@ -22,6 +22,7 @@ import { executeChatAction } from '@/services/chatActionService'
 import type { ChatAction } from '@/types/chatActions'
 import { useChatContextData } from '@/hooks/useChatContextData'
 import { ChatContextSidebar } from './ChatContextSidebar'
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import './AicaChatFAB.css'
 
 /** Progressive thinking indicator shown as an assistant message while AI is responding */
@@ -92,6 +93,13 @@ export function AicaChatFAB({
     : 'coordinator'
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
+
+  const { isListening, isSupported, toggle: toggleMic } = useSpeechRecognition({
+    lang: 'pt-BR',
+    onResult: (transcript) => {
+      setInput(prev => prev ? `${prev} ${transcript}` : transcript)
+    },
+  })
 
   // Track whether streak has been updated this session (fire once per chat session)
   const streakUpdatedRef = useRef(false)
@@ -183,7 +191,9 @@ export function AicaChatFAB({
   // Focus input when drawer opens
   useEffect(() => {
     if (isOpen && !showSessions) {
-      setTimeout(() => inputRef.current?.focus(), 400)
+      requestAnimationFrame(() => {
+        setTimeout(() => inputRef.current?.focus(), 300)
+      })
     }
   }, [isOpen, showSessions])
 
@@ -521,6 +531,17 @@ export function AicaChatFAB({
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
                 />
+                {isSupported && (
+                  <button
+                    className={cn('aica-fab-mic-btn', isListening && 'listening')}
+                    onClick={toggleMic}
+                    disabled={isLoading}
+                    aria-label={isListening ? 'Parar gravacao' : 'Gravar voz'}
+                    title={isListening ? 'Parar' : 'Falar'}
+                  >
+                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                  </button>
+                )}
                 <button
                   className="aica-fab-send"
                   onClick={handleSend}
