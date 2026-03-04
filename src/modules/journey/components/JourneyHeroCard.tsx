@@ -14,12 +14,9 @@ import {
   Sparkles, ChevronRight, MessageCircleQuestion,
   Send, CheckCircle2, Loader2, Flame, Mic, MicOff,
 } from 'lucide-react'
-import { useConsciousnessPoints } from '../hooks/useConsciousnessPoints'
-import { useMoments } from '../hooks/useMoments'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import type { UserConsciousnessStats } from '../types/consciousnessPoints'
-import { isToday } from 'date-fns'
 
 interface JourneyHeroCardProps {
   onOpenJourney?: () => void
@@ -32,11 +29,9 @@ export function JourneyHeroCard({
   stats: statsProp,
   className = '',
 }: JourneyHeroCardProps) {
-  const internalCP = useConsciousnessPoints()
-  const resolvedStats = statsProp !== undefined ? statsProp : internalCP.stats
-  const isLoading = statsProp !== undefined ? false : internalCP.isLoading
+  const resolvedStats = statsProp ?? null
+  const isLoading = statsProp === undefined
 
-  const { moments } = useMoments({ limit: 1, autoFetch: true })
   const { question, answer, isSubmitting } = useDailyQuestion()
 
   const [answerText, setAnswerText] = useState('')
@@ -47,12 +42,7 @@ export function JourneyHeroCard({
     onResult: (transcript) => setAnswerText(prev => prev ? `${prev} ${transcript}` : transcript),
   })
 
-  const lastMoment = moments[0]
   const hasUnansweredQuestion = question && !question.user_response && !answered
-  const hasMomentToday = lastMoment && isToday(new Date(lastMoment.created_at))
-  const showStreakNudge = resolvedStats
-    && (resolvedStats.current_streak || 0) > 0
-    && !hasMomentToday
 
   const handleAnswerSubmit = async () => {
     if (!answerText.trim() || isSubmitting) return
@@ -87,7 +77,7 @@ export function JourneyHeroCard({
       transition={{ duration: 0.4, ease: 'easeOut' }}
       data-testid="journey-hero-card"
     >
-      {/* Header - clickable */}
+      {/* Header - clickable, with inline streak badge */}
       <motion.div
         className="flex items-center justify-between mb-4 cursor-pointer group"
         onClick={onOpenJourney}
@@ -99,30 +89,17 @@ export function JourneyHeroCard({
         <div className="flex items-center gap-3">
           <Sparkles className="h-6 w-6 text-amber-600" />
           <h3 className="text-xl font-bold text-etched">Minha Jornada</h3>
+          {resolvedStats && (resolvedStats.current_streak || 0) > 0 && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-ceramic-warning/10 border border-ceramic-warning/20">
+              <Flame className="h-3.5 w-3.5 text-ceramic-warning" />
+              <span className="text-xs font-bold text-ceramic-warning">
+                {resolvedStats.current_streak} dias
+              </span>
+            </div>
+          )}
         </div>
         <ChevronRight className="h-5 w-5 text-[#948D82] group-hover:text-[#5C554B] transition-colors" />
       </motion.div>
-
-      {/* Streak nudge — when streak active but no moment today */}
-      {showStreakNudge && (
-        <motion.div
-          className="mb-4 p-3 rounded-2xl bg-ceramic-warning/10 border border-ceramic-warning/20 cursor-pointer"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          onClick={onOpenJourney}
-        >
-          <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-ceramic-warning" />
-            {/* TODO: current_streak is calculated from user_stats table which primarily tracks
-                moments. Should be expanded on backend to include daily questions, chat interactions,
-                and task completions for a true "all interactions" streak. */}
-            <p className="text-xs font-medium text-ceramic-warning">
-              Streak de {resolvedStats!.current_streak} dias! Continue ativo para manter.
-            </p>
-          </div>
-        </motion.div>
-      )}
 
       {/* Daily Question — inline input (v2) */}
       <AnimatePresence>
