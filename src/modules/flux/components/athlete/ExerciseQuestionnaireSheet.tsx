@@ -119,15 +119,19 @@ export function ExerciseQuestionnaireSheet({
     setIsTranscribing(true);
     setError(null);
     try {
-      // Convert blob to base64
-      const arrayBuffer = await blob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const audioBase64 = btoa(binary);
+      // Convert blob to base64 using FileReader (efficient, no byte-by-byte loop)
+      const audioBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          resolve(dataUrl.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
       const mimeType = blob.type || 'audio/webm';
+
+      log.debug('Transcribing audio', { mimeType, sizeBytes: blob.size });
 
       // Call gemini-chat directly via supabase.functions.invoke (#723)
       // This bypasses GeminiClient's raw fetch — supabase-js handles auth reliably
@@ -138,7 +142,10 @@ export function ExerciseQuestionnaireSheet({
         },
       });
 
-      if (fnError) throw fnError;
+      if (fnError) {
+        log.error('Edge function error:', fnError);
+        throw fnError;
+      }
 
       const raw = data?.result?.transcription || data?.result?.text || '';
       const text = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim();
