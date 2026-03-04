@@ -529,6 +529,19 @@ export default function AthletePortalView() {
                             <WorkoutCard key={slot.id} slot={slot}
                               isUpdating={updating === slot.id} modality={profile.modality} />
                           ))}
+                          {/* Day feedback — 8-question questionnaire right after this day's workouts */}
+                          {user && micro && (
+                            <WeeklyFeedbackCard
+                              athleteId={profile.athlete_id}
+                              microcycleId={micro.id}
+                              weekNumber={selectedWeek}
+                              userId={user.id}
+                              currentWeek={micro.current_week || 1}
+                              microcycleStartDate={micro.start_date}
+                              workoutDays={[day]}
+                              onFeedbackSubmitted={() => refetch()}
+                            />
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 py-3 px-4 rounded-xl bg-ceramic-cool/50">
@@ -553,19 +566,6 @@ export default function AthletePortalView() {
             </motion.section>
           )}
 
-          {micro && user && (
-            <motion.section className="px-5 mt-8" custom={5} initial="hidden" animate="visible" variants={sectionVariants}>
-              <WeeklyFeedbackCard
-                athleteId={profile.athlete_id}
-                microcycleId={micro.id}
-                weekNumber={selectedWeek}
-                userId={user.id}
-                currentWeek={micro.current_week || 1}
-                microcycleStartDate={micro.start_date}
-                workoutDays={[...new Set(currentWeekSlots.map(s => s.day_of_week))]}
-              />
-            </motion.section>
-          )}
         </>
       ) : (
         <motion.section className="px-5" custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
