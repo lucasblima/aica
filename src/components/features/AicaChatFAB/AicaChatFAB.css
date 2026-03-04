@@ -580,6 +580,10 @@
   animation: pulse-mic 1.5s ease-in-out infinite;
 }
 
+.aica-fab-mic-btn.transcribing {
+  color: #f59e0b;
+}
+
 .aica-fab-mic-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;

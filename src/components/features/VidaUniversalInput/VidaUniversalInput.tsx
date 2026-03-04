@@ -175,15 +175,23 @@ export function VidaUniversalInput() {
         {speech.isSupported && (
           <button
             onClick={speech.toggle}
-            disabled={isCreating}
+            disabled={isCreating || speech.isTranscribing}
             className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
               speech.isListening
                 ? 'bg-ceramic-error text-white animate-pulse'
-                : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-border'
+                : speech.isTranscribing
+                  ? 'bg-amber-100 text-amber-600'
+                  : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-border'
             } disabled:opacity-40`}
-            aria-label={speech.isListening ? 'Parar gravacao' : 'Gravar voz'}
+            aria-label={speech.isListening ? 'Parar gravacao' : speech.isTranscribing ? 'Transcrevendo...' : 'Gravar voz'}
           >
-            {speech.isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {speech.isTranscribing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : speech.isListening ? (
+              <MicOff className="w-4 h-4" />
+            ) : (
+              <Mic className="w-4 h-4" />
+            )}
           </button>
         )}
 

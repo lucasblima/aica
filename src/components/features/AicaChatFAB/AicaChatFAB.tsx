@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, MicOff } from 'lucide-react'
+import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, MicOff, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
@@ -22,7 +22,7 @@ import { executeChatAction } from '@/services/chatActionService'
 import type { ChatAction } from '@/types/chatActions'
 import { useChatContextData } from '@/hooks/useChatContextData'
 import { ChatContextSidebar } from './ChatContextSidebar'
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder'
 import './AicaChatFAB.css'
 
 /** Progressive thinking indicator shown as an assistant message while AI is responding */
@@ -94,8 +94,7 @@ export function AicaChatFAB({
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
 
-  const { isListening, isSupported, toggle: toggleMic } = useSpeechRecognition({
-    lang: 'pt-BR',
+  const { isListening, isTranscribing, isSupported, toggle: toggleMic } = useVoiceRecorder({
     onResult: (transcript) => {
       setInput(prev => prev ? `${prev} ${transcript}` : transcript)
     },
@@ -533,13 +532,23 @@ export function AicaChatFAB({
                 />
                 {isSupported && (
                   <button
-                    className={cn('aica-fab-mic-btn', isListening && 'listening')}
+                    className={cn(
+                      'aica-fab-mic-btn',
+                      isListening && 'listening',
+                      isTranscribing && 'transcribing',
+                    )}
                     onClick={toggleMic}
-                    disabled={isLoading}
-                    aria-label={isListening ? 'Parar gravacao' : 'Gravar voz'}
-                    title={isListening ? 'Parar' : 'Falar'}
+                    disabled={isLoading || isTranscribing}
+                    aria-label={isListening ? 'Parar gravacao' : isTranscribing ? 'Transcrevendo...' : 'Gravar voz'}
+                    title={isListening ? 'Parar' : isTranscribing ? 'Transcrevendo...' : 'Falar'}
                   >
-                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                    {isTranscribing ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : isListening ? (
+                      <MicOff size={16} />
+                    ) : (
+                      <Mic size={16} />
+                    )}
                   </button>
                 )}
                 <button

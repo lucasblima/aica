@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useUnansweredQuestions } from '../hooks/useDailyQuestion'
 import { answerQuestion } from '../services/questionService'
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder'
 import { useAuth } from '@/hooks/useAuth'
 import type { UserConsciousnessStats } from '../types/consciousnessPoints'
 
@@ -42,8 +42,7 @@ export function JourneyHeroCard({
   const [answered, setAnswered] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const speech = useSpeechRecognition({
-    lang: 'pt-BR',
+  const speech = useVoiceRecorder({
     onResult: (transcript) => setAnswerText(prev => prev ? `${prev} ${transcript}` : transcript),
   })
 
@@ -168,15 +167,23 @@ export function JourneyHeroCard({
               {speech.isSupported && (
                 <button
                   onClick={speech.toggle}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || speech.isTranscribing}
                   className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                     speech.isListening
                       ? 'bg-ceramic-error text-white animate-pulse'
-                      : 'bg-ceramic-cool text-amber-600 hover:bg-amber-100'
+                      : speech.isTranscribing
+                        ? 'bg-amber-100 text-amber-600'
+                        : 'bg-ceramic-cool text-amber-600 hover:bg-amber-100'
                   } disabled:opacity-40`}
-                  aria-label={speech.isListening ? 'Parar gravacao' : 'Ditar resposta'}
+                  aria-label={speech.isListening ? 'Parar gravacao' : speech.isTranscribing ? 'Transcrevendo...' : 'Ditar resposta'}
                 >
-                  {speech.isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                  {speech.isTranscribing ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : speech.isListening ? (
+                    <MicOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Mic className="w-3.5 h-3.5" />
+                  )}
                 </button>
               )}
               <button
