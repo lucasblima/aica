@@ -99,6 +99,7 @@ const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m =>
 const AdminPortalPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminPortalPage })));
 const AdminCouponsPage = lazy(() => import('../modules/billing').then(m => ({ default: m.AdminCouponsPage })));
 const PricingSimulatorPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingSimulatorPage })));
+const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 
 // Invites Dashboard - Manage sent invites
 const InvitesPage = lazy(() => import('../pages/InvitesPage'));
@@ -849,6 +850,10 @@ export function AppRouter() {
                <Route
                   path="/manage-subscription"
                   element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
+               />
+               <Route
+                  path="/usage"
+                  element={<ProtectedRoute><UsageDashboardPage /></ProtectedRoute>}
                />
 
                {/* Admin Portal — admin-only routes */}

@@ -15,6 +15,7 @@ export { ManageSubscriptionPage } from './pages/ManageSubscriptionPage';
 export { AdminCouponsPage } from './pages/AdminCouponsPage';
 export { AdminPortalPage } from './pages/AdminPortalPage';
 export { PricingSimulatorPage } from './pages/PricingSimulatorPage';
+export { default as UsageDashboardPage } from './pages/UsageDashboardPage';
 
 // ============================================
 // COMPONENTS
