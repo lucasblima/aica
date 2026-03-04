@@ -64,3 +64,11 @@ export type { UseTrainingLoadOptions, UseTrainingLoadReturn } from './useTrainin
 
 export { useAthleteReadiness } from './useAthleteReadiness';
 export type { UseAthleteReadinessOptions, UseAthleteReadinessReturn } from './useAthleteReadiness';
+
+// Coach Availability (Edge Function: fetch-coach-availability)
+export { useCoachAvailability } from './useCoachAvailability';
+export type { CoachBusySlot, UseCoachAvailabilityOptions, UseCoachAvailabilityReturn } from './useCoachAvailability';
+
+// Athlete Fatigue Assessment (Edge Function: assess-athlete-fatigue)
+export { useAthleteFatigue } from './useAthleteFatigue';
+export type { FatigueAssessment, UseAthleteFatigueOptions, UseAthleteFatigueReturn } from './useAthleteFatigue';
