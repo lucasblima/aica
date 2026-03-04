@@ -101,6 +101,19 @@ export default function VidaPage({
 }: VidaPageProps) {
    const { user } = useAuth();
    const routerNavigate = useNavigate();
+
+   // Defer non-critical fetches to after first paint
+   const [deferredReady, setDeferredReady] = useState(false);
+   useEffect(() => {
+      const id = window.requestIdleCallback
+         ? window.requestIdleCallback(() => setDeferredReady(true))
+         : window.setTimeout(() => setDeferredReady(true), 100);
+      return () => {
+         if (window.requestIdleCallback) window.cancelIdleCallback(id);
+         else window.clearTimeout(id);
+      };
+   }, []);
+
    const { weather, insight: weatherInsight } = useWeatherInsight();
 
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
@@ -143,7 +156,7 @@ export default function VidaPage({
    };
 
    // Grants Card data via React Query
-   const { data: grantsData } = useGrantsHomeQuery(userId);
+   const { data: grantsData } = useGrantsHomeQuery(userId, deferredReady);
    const grantsActiveProjects = grantsData?.activeProjects ?? 0;
    const grantsUpcomingDeadlines = grantsData?.upcomingDeadlines ?? [];
    const grantsRecentProjects = grantsData?.recentProjects ?? [];
