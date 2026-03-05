@@ -347,3 +347,77 @@ export async function getTransactionsByDateRange(
         throw error;
     }
 }
+
+/**
+ * Get yearly aggregates — monthly breakdown for a full year
+ */
+export async function getYearlyAggregates(
+    userId: string,
+    year: number
+): Promise<import('../types').YearSummary> {
+    const startDate = `${year}-01-01`;
+    const endDate = `${year}-12-31`;
+
+    const transactions = await getTransactionsByDateRange(userId, startDate, endDate);
+
+    // Initialize 12 months
+    const months: import('../types').MonthlyAggregate[] = Array.from({ length: 12 }, (_, i) => ({
+        month: i,
+        income: 0,
+        expenses: 0,
+        balance: 0,
+        savingsRate: 0,
+        byCategory: {},
+        transactionCount: 0,
+    }));
+
+    const yearByCategory: Record<string, { income: number; expenses: number }> = {};
+    let totalIncome = 0;
+    let totalExpenses = 0;
+
+    for (const tx of transactions) {
+        const monthIdx = new Date(tx.transaction_date).getMonth();
+        const amount = Math.abs(Number(tx.amount));
+        const m = months[monthIdx];
+
+        if (tx.type === 'income') {
+            m.income += amount;
+            totalIncome += amount;
+        } else {
+            m.expenses += amount;
+            totalExpenses += amount;
+        }
+        m.transactionCount++;
+
+        // Category breakdown per month
+        if (!m.byCategory[tx.category]) {
+            m.byCategory[tx.category] = { income: 0, expenses: 0 };
+        }
+        m.byCategory[tx.category][tx.type === 'income' ? 'income' : 'expenses'] += amount;
+
+        // Year-level category breakdown
+        if (!yearByCategory[tx.category]) {
+            yearByCategory[tx.category] = { income: 0, expenses: 0 };
+        }
+        yearByCategory[tx.category][tx.type === 'income' ? 'income' : 'expenses'] += amount;
+    }
+
+    // Calculate balances and savings rates
+    for (const m of months) {
+        m.balance = m.income - m.expenses;
+        m.savingsRate = m.income > 0 ? ((m.income - m.expenses) / m.income) * 100 : 0;
+    }
+
+    const totalBalance = totalIncome - totalExpenses;
+    const avgSavingsRate = totalIncome > 0 ? (totalBalance / totalIncome) * 100 : 0;
+
+    return {
+        year,
+        totalIncome,
+        totalExpenses,
+        totalBalance,
+        avgSavingsRate,
+        months,
+        byCategory: yearByCategory,
+    };
+}
