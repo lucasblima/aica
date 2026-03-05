@@ -319,7 +319,6 @@ export const statementService = {
         statement_id: statementId,
         hash_id: await this.generateTransactionHash(userId, t.date, t.description, Math.abs(t.amount)),
         description: t.description,
-        original_description: t.description,
         amount: Math.abs(t.amount),
         type: t.type,
         category: t.suggestedCategory || 'other',
@@ -482,18 +481,19 @@ export const statementService = {
       log.debug('[CSV] Statement created:', statement.id);
 
       // 5. Insert transactions
-      const transactionsToInsert = parsed.transactions.map((tx, index) => ({
-        statement_id: statement.id,
-        user_id: userId,
-        transaction_date: tx.date,
-        description: tx.description,
-        raw_description: tx.description,
-        amount: tx.amount,
-        type: tx.type,
-        category: tx.category || 'other',
-        source_line_number: index + 2, // +2 for header + 0-index
-        created_at: new Date().toISOString()
-      }));
+      const transactionsToInsert = await Promise.all(
+        parsed.transactions.map(async (tx) => ({
+          statement_id: statement.id,
+          user_id: userId,
+          hash_id: await this.generateTransactionHash(userId, tx.date, tx.description, Math.abs(tx.amount)),
+          transaction_date: tx.date,
+          description: tx.description,
+          amount: tx.amount,
+          type: tx.type,
+          category: tx.category || 'other',
+          is_recurring: false,
+        }))
+      );
 
       const { error: txError } = await supabase
         .from('finance_transactions')
