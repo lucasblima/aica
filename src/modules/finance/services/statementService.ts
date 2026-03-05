@@ -240,6 +240,28 @@ export const statementService = {
     parsed: ParsedStatement,
     markdown: string
   ): Promise<void> {
+    // Check period overlap (excludes current statement being processed)
+    if (parsed.periodStart && parsed.periodEnd) {
+      const { hasOverlap, overlapping } = await this.checkPeriodOverlap(
+        userId, parsed.periodStart, parsed.periodEnd
+      );
+      // Filter out current statement from overlap check
+      const otherOverlaps = overlapping.filter(s => s.id !== statementId);
+      if (otherOverlaps.length > 0) {
+        const names = otherOverlaps.map(s => `${s.bank_name} (${s.file_name})`).join(', ');
+        // Mark current statement as failed
+        await this.updateStatement(statementId, {
+          processing_status: 'failed',
+          processing_error: `Período sobreposto com: ${names}`,
+          processing_completed_at: new Date().toISOString(),
+        });
+        throw new Error(
+          `Já existe extrato para este período: ${names}. ` +
+          `Delete o extrato existente antes de importar novamente.`
+        );
+      }
+    }
+
     // Validate that transactions were found
     if (!parsed.transactions || parsed.transactions.length === 0) {
       log.error('[statementService] No transactions found in ParsedStatement:', {
@@ -373,6 +395,39 @@ export const statementService = {
   },
 
   /**
+   * Check if a date range overlaps with existing completed statements.
+   * Returns overlapping statements so the UI can warn the user.
+   */
+  async checkPeriodOverlap(
+    userId: string,
+    periodStart: string,
+    periodEnd: string
+  ): Promise<{ hasOverlap: boolean; overlapping: { id: string; file_name: string; bank_name: string; period_start: string; period_end: string }[] }> {
+    const { data, error } = await supabase
+      .from('finance_statements')
+      .select('id, file_name, bank_name, statement_period_start, statement_period_end')
+      .eq('user_id', userId)
+      .eq('processing_status', 'completed')
+      .lte('statement_period_start', periodEnd)
+      .gte('statement_period_end', periodStart);
+
+    if (error) {
+      log.warn('[statementService] checkPeriodOverlap error:', error);
+      return { hasOverlap: false, overlapping: [] };
+    }
+
+    const overlapping = (data || []).map(s => ({
+      id: s.id,
+      file_name: s.file_name || '',
+      bank_name: s.bank_name || '',
+      period_start: s.statement_period_start,
+      period_end: s.statement_period_end,
+    }));
+
+    return { hasOverlap: overlapping.length > 0, overlapping };
+  },
+
+  /**
    * Get transactions for a statement
    */
   async getStatementTransactions(statementId: string): Promise<FinanceTransaction[]> {
@@ -441,10 +496,22 @@ export const statementService = {
         period: `${parsed.periodStart} to ${parsed.periodEnd}`
       });
 
-      // 2. Calculate file hash for deduplication
+      // 2. Check for period overlap with existing statements
+      const { hasOverlap, overlapping } = await this.checkPeriodOverlap(
+        userId, parsed.periodStart, parsed.periodEnd
+      );
+      if (hasOverlap) {
+        const names = overlapping.map(s => `${s.bank_name} (${s.file_name})`).join(', ');
+        throw new Error(
+          `Já existe extrato para este período: ${names}. ` +
+          `Delete o extrato existente antes de importar novamente.`
+        );
+      }
+
+      // 3. Calculate file hash for deduplication
       const fileHash = await this.calculateFileHash(file);
 
-      // 3. Check if statement already exists
+      // 4. Check if exact same file already exists
       const { data: existing } = await supabase
         .from('finance_statements')
         .select('id')
@@ -522,13 +589,14 @@ export const statementService = {
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // 7. Update statement as completed
+      // 7. Update statement as completed (recalculate closing balance from verified totals)
       const updatedStatement = await this.updateStatement(statement.id, {
         processing_status: 'completed',
         processing_completed_at: new Date().toISOString(),
         total_credits: totalCredits,
         total_debits: totalDebits,
-        transaction_count: parsed.transactions.length
+        transaction_count: parsed.transactions.length,
+        closing_balance: totalCredits - totalDebits,
       });
 
       const duration = Date.now() - startTime;
