@@ -6,13 +6,12 @@
  * workout cards, feedback tab (Momentos-style), and coach availability.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
 import { useParQ } from '../hooks/useParQ';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
-import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
 import { WorkoutSlotService } from '../services/workoutSlotService';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
@@ -35,6 +34,8 @@ import {
   MessageSquare,
   CheckCircle,
   FileText,
+  DollarSign,
+  Heart,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -89,6 +90,9 @@ export default function AthletePortalView() {
     catch { return 'list'; }
   });
 
+  const [highlightedSlotId, setHighlightedSlotId] = useState<string | null>(null);
+  const slotRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
   const welcomeParam = searchParams.get('welcome') === 'true';
   const [showWelcome, setShowWelcome] = useState(() => welcomeParam || !AthleteWelcome.hasBeenShown());
 
@@ -139,12 +143,24 @@ export default function AthletePortalView() {
     try { localStorage.setItem('flux_athlete_view_mode', mode); } catch { /* noop */ }
   }, []);
 
+  const handleGridWorkoutClick = useCallback((slotId: string) => {
+    handleViewModeChange('list');
+    setHighlightedSlotId(slotId);
+    setTimeout(() => {
+      const el = slotRefs.current.get(slotId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    setTimeout(() => setHighlightedSlotId(null), 2100);
+  }, [handleViewModeChange]);
+
   // ── Canvas hooks ──
 
   const canvasWeekStart = useMemo(() => {
     const micro = profile?.active_microcycle;
     if (!micro?.start_date) return weekStart;
-    const start = new Date(micro.start_date);
+    // Append T12:00:00 to avoid UTC midnight → previous day in BR timezone (UTC-3)
+    const dateStr = micro.start_date.includes('T') ? micro.start_date : `${micro.start_date}T12:00:00`;
+    const start = new Date(dateStr);
     const weekOffset = (selectedWeek - 1) * 7;
     const canvasStart = new Date(start);
     canvasStart.setDate(start.getDate() + weekOffset);
@@ -164,8 +180,6 @@ export default function AthletePortalView() {
     }));
   }, [profile?.active_microcycle, profile?.modality, selectedWeek]);
 
-  const calendar = useCanvasCalendar({ weekStartDate: canvasWeekStart, athleteId: viewMode === 'canvas' ? profile?.athlete_id : undefined });
-
   const handleCanvasReorder = useCallback(async (workoutId: string, _fromDay: number, toDay: number, toTime: string) => {
     setUpdating(workoutId);
     try {
@@ -178,22 +192,25 @@ export default function AthletePortalView() {
 
   // ── Hooks that MUST be above early returns (React Rules of Hooks) ──
 
-  const pastWorkoutDays = useMemo(() => {
+  // Count feedbacks responded for this microcycle
+  const [feedbackCount, setFeedbackCount] = useState(0);
+  const totalFeedbackDays = useMemo(() => {
     const micro = profile?.active_microcycle;
-    if (!micro?.slots?.length || !micro.start_date) return 0;
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const startDate = new Date(micro.start_date);
-    let count = 0;
-    for (const slot of micro.slots) {
-      const weekOffset = (slot.week_number - 1) * 7;
-      const dayOffset = slot.day_of_week - 1;
-      const slotDate = new Date(startDate);
-      slotDate.setDate(startDate.getDate() + weekOffset + dayOffset);
-      if (slotDate <= today) count++;
-    }
-    return count;
+    if (!micro?.slots?.length) return 0;
+    // Count unique day_of_week+week_number combos that have slots (i.e., training days needing feedback)
+    const days = new Set(micro.slots.map((s) => `${s.week_number}-${s.day_of_week}`));
+    return days.size;
   }, [profile?.active_microcycle]);
+
+  useEffect(() => {
+    const micro = profile?.active_microcycle;
+    if (!micro?.id) { setFeedbackCount(0); return; }
+    supabase
+      .from('athlete_feedback_entries')
+      .select('id', { count: 'exact', head: true })
+      .eq('microcycle_id', micro.id)
+      .then(({ count }) => setFeedbackCount(count || 0));
+  }, [profile?.active_microcycle?.id]);
 
   const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
     const mod = profile?.modality as keyof typeof MODALITY_CONFIG;
@@ -284,13 +301,15 @@ export default function AthletePortalView() {
 
   const micro = profile.active_microcycle;
   const modalityConfig = MODALITY_CONFIG[profile.modality];
-  const completionPct = micro ? Math.round((pastWorkoutDays / Math.max(micro.total_slots, 1)) * 100) : 0;
+  const completionPct = micro ? Math.round((feedbackCount / Math.max(totalFeedbackDays, 1)) * 100) : 0;
 
   const weeks = micro
     ? [1, 2, 3, 4].map((wk) => {
         let dateRange = '';
         if (micro.start_date) {
-          const start = new Date(micro.start_date);
+          // Append T12:00:00 to avoid UTC midnight → previous day in BR timezone (UTC-3)
+          const dateStr = micro.start_date.includes('T') ? micro.start_date : `${micro.start_date}T12:00:00`;
+          const start = new Date(dateStr);
           const ws = new Date(start); ws.setDate(start.getDate() + (wk - 1) * 7);
           const we = new Date(ws); we.setDate(ws.getDate() + 6);
           dateRange = `${ws.getDate().toString().padStart(2, '0')}/${(ws.getMonth() + 1).toString().padStart(2, '0')} - ${we.getDate().toString().padStart(2, '0')}/${(we.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -315,7 +334,9 @@ export default function AthletePortalView() {
 
   const getDateForDay = (dayOfWeek: number): Date | null => {
     if (!micro?.start_date) return null;
-    const start = new Date(micro.start_date);
+    // Append T12:00:00 to avoid UTC midnight → previous day in BR timezone (UTC-3)
+    const dateStr = micro.start_date.includes('T') ? micro.start_date : `${micro.start_date}T12:00:00`;
+    const start = new Date(dateStr);
     const weekOffset = (selectedWeek - 1) * 7;
     const dayOffset = dayOfWeek - 1;
     const date = new Date(start);
@@ -375,6 +396,19 @@ export default function AthletePortalView() {
                     </span>
                   ))}
                 </div>
+                {/* Alert badges for health/financial pending */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {profile.parq_clearance_status && ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
+                    <span className="w-5 h-5 rounded-full bg-ceramic-error/10 flex items-center justify-center" title="Pendencia de saude">
+                      <Heart className="w-3 h-3 text-ceramic-error" />
+                    </span>
+                  )}
+                  {(profile as unknown as Record<string, unknown>).hasPendingPayment && (
+                    <span className="w-5 h-5 rounded-full bg-amber-500/10 flex items-center justify-center" title="Pendencia financeira">
+                      <DollarSign className="w-3 h-3 text-amber-600" />
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <p className="text-xs text-ceramic-text-secondary">Prescrito por {profile.coach_name}</p>
@@ -386,13 +420,13 @@ export default function AthletePortalView() {
             </div>
           </div>
 
-          {/* Treinos Cumpridos — overall progress */}
+          {/* Feedbacks Concluidos — overall progress */}
           {micro && (
             <div className="space-y-2 pt-3 border-t border-ceramic-border/30">
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-ceramic-text-secondary inline-block" />
-                <span className="text-sm font-bold text-ceramic-text-primary">{pastWorkoutDays}/{micro.total_slots}</span>
-                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Treinos Cumpridos</span>
+                <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-sm font-bold text-ceramic-text-primary">{feedbackCount}/{totalFeedbackDays}</span>
+                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Feedbacks Concluidos</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-ceramic-text-secondary">Semana {micro.current_week}/4</span>
@@ -501,13 +535,11 @@ export default function AthletePortalView() {
             viewMode === 'canvas' ? (
               <motion.section className="px-5 flex-1" custom={4} initial="hidden" animate="visible" variants={sectionVariants}>
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
-                  <WeeklyGrid weekNumber={selectedWeek} workouts={canvasWorkouts} calendarEvents={calendar.busySlots}
-                    onReorderWorkout={handleCanvasReorder} onWorkoutClick={(id) => handleViewFeedback(id)}
-                    startDate={canvasWeekStart} isLoading={calendar.isLoading} />
+                  <WeeklyGrid weekNumber={selectedWeek} workouts={canvasWorkouts} calendarEvents={[]}
+                    onReorderWorkout={handleCanvasReorder} onWorkoutClick={(id) => handleGridWorkoutClick(id)}
+                    startDate={canvasWeekStart} isLoading={false} />
                 </div>
                 <div className="flex items-center gap-4 mt-3 px-1">
-                  <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#7B8FA2]/20" /><span className="text-[10px] text-ceramic-text-secondary">Coach ocupado</span></div>
-                  <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#C4883A]/20" /><span className="text-[10px] text-ceramic-text-secondary">Sua agenda</span></div>
                   <span className="text-[10px] text-ceramic-text-tertiary ml-auto">Arraste treinos para reorganizar</span>
                 </div>
               </motion.section>
@@ -525,21 +557,32 @@ export default function AthletePortalView() {
                       {daySlots.length > 0 ? (
                         <div className="space-y-2">
                           {daySlots.map((slot) => (
-                            <WorkoutCard key={slot.id} slot={slot}
-                              isUpdating={updating === slot.id} modality={profile.modality} />
+                            <div
+                              key={slot.id}
+                              ref={(el) => { if (el) slotRefs.current.set(slot.id, el); }}
+                              className={`transition-all duration-500 rounded-xl ${highlightedSlotId === slot.id ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''}`}
+                            >
+                              <WorkoutCard slot={slot}
+                                isUpdating={updating === slot.id} modality={profile.modality} />
+                            </div>
                           ))}
                           {/* Day feedback — 8-question questionnaire right after this day's workouts */}
                           {user && micro && (
-                            <WeeklyFeedbackCard
-                              athleteId={profile.athlete_id}
-                              microcycleId={micro.id}
-                              weekNumber={selectedWeek}
-                              userId={user.id}
-                              currentWeek={micro.current_week || 1}
-                              microcycleStartDate={micro.start_date}
-                              workoutDays={[day]}
-                              onFeedbackSubmitted={() => refetch()}
-                            />
+                            <>
+                              <div className="flex items-center justify-center py-2">
+                                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Feedback</span>
+                              </div>
+                              <WeeklyFeedbackCard
+                                athleteId={profile.athlete_id}
+                                microcycleId={micro.id}
+                                weekNumber={selectedWeek}
+                                userId={user.id}
+                                currentWeek={micro.current_week || 1}
+                                microcycleStartDate={micro.start_date}
+                                workoutDays={[day]}
+                                onFeedbackSubmitted={() => refetch()}
+                              />
+                            </>
                           )}
                         </div>
                       ) : (

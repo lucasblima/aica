@@ -7,7 +7,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Circle, X, Send, Loader2 } from 'lucide-react';
+import { X, Send, Loader2 } from 'lucide-react';
 import type { FeedbackSlotSummary } from '../../hooks/useAthleteFeedback';
 
 function getRpeBgClass(rpe: number): string {
@@ -132,7 +132,7 @@ export function FeedbackForm({
                       return (
                         <div key={slot.slotId} className="flex items-center gap-3 p-3 rounded-xl bg-ceramic-cool/40">
                           <button type="button" onClick={() => updateSlot(slot.slotId, { completed: !state?.completed })} className="flex-shrink-0">
-                            {state?.completed ? <CheckCircle className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-ceramic-border" />}
+                            <span className={`w-2.5 h-2.5 rounded-full inline-block ${state?.completed ? 'bg-green-500' : 'bg-ceramic-border'}`} />
                           </button>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-ceramic-text-primary truncate">{slot.templateName}</p>

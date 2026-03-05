@@ -13,7 +13,6 @@ import {
   MessageSquare,
   Send,
   Loader2,
-  Check,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
@@ -144,7 +143,7 @@ function DayFeedbackCard({
     return (
       <div className="bg-white rounded-xl shadow-sm px-4 py-3">
         <div className="flex items-center gap-2">
-          <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block flex-shrink-0" />
           <span className="text-xs font-bold text-ceramic-text-primary">{dayLabel}</span>
           {dateStr && <span className="text-[10px] text-ceramic-text-secondary">{dateStr}</span>}
           <span className="ml-auto text-[10px] text-ceramic-text-secondary">
@@ -299,7 +298,7 @@ function DayFeedbackCard({
                     {/* Summary */}
                     {answeredCount > 0 && (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200/50">
-                        <Check className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block flex-shrink-0" />
                         <span className="text-[10px] text-amber-700">
                           {answeredCount} de {QUESTIONS.length} perguntas respondidas
                         </span>
