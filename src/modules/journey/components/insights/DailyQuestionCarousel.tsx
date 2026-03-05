@@ -13,7 +13,7 @@ import {
   QUESTION_CATEGORY_ICONS,
 } from '../../types/dailyQuestion'
 import { AudioRecorder } from '../capture/AudioRecorder'
-import { transcribeAudio } from '../../services/momentPersistenceService'
+import { transcribeAudio } from '@/services/audioService'
 import {
   SparklesIcon,
   CheckCircleIcon,

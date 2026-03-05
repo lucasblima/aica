@@ -15,7 +15,7 @@ import {
 } from '../types/moment'
 import { SentimentAnalysis } from '../types/sentiment'
 import { mapAIMoodToValue } from '../types/emotionHelper'
-import { transcribeAudio } from './momentPersistenceService'
+import { transcribeAudio } from '@/services/audioService'
 import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluationService'
 
 const geminiClient = GeminiClient.getInstance()

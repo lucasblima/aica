@@ -342,69 +342,6 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-// =====================================================
-// AUDIO TRANSCRIPTION (Universal Input Funnel - Phase 0)
-// =====================================================
-
-/**
- * Transcribe audio blob to text using Gemini via gemini-chat Edge Function
- *
- * @param audioBlob - Audio Blob from MediaRecorder or file input
- * @returns Transcribed text string
- */
-export async function transcribeAudio(audioBlob: Blob): Promise<string> {
-  const startTime = Date.now()
-
-  try {
-    const audioBase64 = await blobToBase64(audioBlob)
-    const mimeType = audioBlob.type || 'audio/webm'
-
-    log.debug('[momentPersistenceService] Transcribing audio', {
-      mimeType,
-      sizeBytes: audioBlob.size,
-    })
-
-    const response = await geminiClient.call({
-      action: 'transcribe_audio',
-      payload: {
-        audioBase64,
-        mimeType,
-      },
-    })
-
-    const raw = response.result?.transcription || response.result?.text || ''
-    // Strip Gemini thinking tokens that may leak with 2.5 Flash
-    const transcription = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim()
-
-    // Track AI usage (non-blocking)
-    trackAIUsage({
-      operation_type: 'audio_transcription',
-      ai_model: 'gemini-2.5-flash',
-      input_tokens: response.usageMetadata?.promptTokenCount || 0,
-      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
-      module_type: 'journey',
-      duration_seconds: (Date.now() - startTime) / 1000,
-      request_metadata: {
-        function_name: 'transcribeAudio',
-        operation: 'audio_transcription',
-        audio_size_bytes: audioBlob.size,
-        audio_mime_type: mimeType,
-      },
-    }).catch(error => {
-      log.warn('[Journey AI Tracking] Non-blocking error:', error.message)
-    })
-
-    log.debug('[momentPersistenceService] Audio transcribed', {
-      transcriptionLength: transcription.length,
-      durationMs: Date.now() - startTime,
-    })
-
-    return transcription
-  } catch (error) {
-    log.error('[momentPersistenceService] Error transcribing audio:', error)
-    throw new Error('Falha na transcricao do audio. Tente novamente.')
-  }
-}
 
 /**
  * Describe an image using Gemini vision (OCR + description)
