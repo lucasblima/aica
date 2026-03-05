@@ -9,7 +9,7 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
 import { WeeklySummary } from '../../types/weeklySummary'
 import { AudioRecorder } from '../capture/AudioRecorder'
-import { transcribeAudio } from '../../services/momentPersistenceService'
+import { transcribeAudio } from '@/services/audioService'
 import { useStreakTrend } from '@/hooks/useStreakTrend'
 
 const log = createNamespacedLogger('WeeklySummaryCard')
