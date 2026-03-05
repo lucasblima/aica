@@ -60,9 +60,9 @@ interface ViewTab {
 }
 
 const VIEW_TABS: ViewTab[] = [
-  { key: 'history', label: 'Visao Geral', icon: BarChart3 },
-  { key: 'transactions', label: 'Transacoes', icon: List },
-  { key: 'budget', label: 'Orcamento', icon: Target },
+  { key: 'history', label: 'Visão Geral', icon: BarChart3 },
+  { key: 'transactions', label: 'Transações', icon: List },
+  { key: 'budget', label: 'Orçamento', icon: Target },
   { key: 'comparison', label: 'Comparativo', icon: GitCompare },
   { key: 'goals', label: 'Metas', icon: Trophy },
   { key: 'accounts', label: 'Contas', icon: Building2 },
@@ -604,10 +604,10 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">
-              Modulo
+              Módulo
             </p>
             <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
-              Financas
+              Finanças
             </h1>
           </div>
           <div className="flex gap-2">
@@ -687,7 +687,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                     Resumo Financeiro
                   </h3>
                   <p className="text-xs text-ceramic-text-secondary mt-1">
-                    Visao consolidada de todos os periodos
+                    Visão consolidada de todos os períodos
                   </p>
                 </div>
                 <div className="ceramic-concave w-12 h-12 flex items-center justify-center">
@@ -709,7 +709,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 </p>
                 {isValuesVisible && (
                   <p className="text-xs text-ceramic-text-secondary mt-3">
-                    {summary!.transactionCount} transacoes processadas
+                    {summary!.transactionCount} transações processadas
                   </p>
                 )}
               </div>
@@ -771,7 +771,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                       Burn Rate Mensal
                     </h3>
                     <p className="text-xs text-ceramic-text-secondary">
-                      Media dos ultimos 3 meses
+                      Média dos últimos 3 meses
                     </p>
                   </div>
                 </div>
@@ -927,7 +927,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                       {isCompleted && (
                         <div className="ceramic-card px-2 py-1 mb-2 bg-ceramic-base/80">
                           <p className="text-[11px] font-black text-ceramic-success">
-                            {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transacao' : 'transacoes'}
+                            {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transação' : 'transações'}
                           </p>
                         </div>
                       )}
@@ -986,7 +986,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           {monthlyData.some(m => !m.hasData) && (
             <div className="ceramic-tray p-4 text-center">
               <p className="text-xs text-ceramic-text-secondary mb-3">
-                Complete sua visao financeira fazendo upload dos extratos faltantes
+                Complete sua visão financeira fazendo upload dos extratos faltantes
               </p>
               <button
                 onClick={() => setShowUpload(true)}
@@ -1030,7 +1030,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                         {statement.file_name || 'Processando...'}
                       </p>
                       <p className="text-xs text-ceramic-info">
-                        A IA esta analisando este extrato...
+                        A IA está analisando este extrato...
                       </p>
                     </div>
                   </div>
@@ -1132,7 +1132,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                                   {statement.transaction_count || 0}
                                 </span>
                                 <span className="text-[10px] text-ceramic-text-secondary">
-                                  {statement.transaction_count === 1 ? 'transacao' : 'transacoes'}
+                                  {statement.transaction_count === 1 ? 'transação' : 'transações'}
                                 </span>
                               </div>
 

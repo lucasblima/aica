@@ -213,7 +213,7 @@ export class FinanceAgentService {
 **Principais categorias de gasto:**
 ${categoriesText || '  - Nenhuma transacao encontrada'}
 
-Use estas informacoes para responder as perguntas do usuario sobre suas financas.`
+Use estas informações para responder as perguntas do usuário sobre suas finanças.`
   }
 
   /**
@@ -351,7 +351,7 @@ Use estas informacoes para responder as perguntas do usuario sobre suas financas
     return this.chat(
       userId,
       crypto.randomUUID(),
-      'Identifique oportunidades de economia nas minhas financas. Quais gastos posso reduzir ou eliminar? Seja pratico e especifico.',
+      'Identifique oportunidades de economia nas minhas finanças. Quais gastos posso reduzir ou eliminar? Seja pratico e especifico.',
       [],
       context
     )
