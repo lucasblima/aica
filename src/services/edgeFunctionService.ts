@@ -10,7 +10,7 @@
  */
 
 import { supabase } from './supabaseClient'
-import { getCachedSession } from './authCacheService'
+import { getCachedSession, invalidateAuthCache } from './authCacheService'
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('EdgeFunctionService');
@@ -211,8 +211,43 @@ export async function callGeminiEdgeFunction<T = any>(
     })
 
     if (error) {
-      log.error(`[EdgeFunction] Error calling action "${action}":`, { error: error })
-      throw new Error(`Edge Function error: ${error.message || 'Unknown error'}`)
+      // Detect auth errors (401) — retry once with fresh session
+      const isAuthError = error.name === 'FunctionsHttpError'
+        || error.message?.includes('401')
+        || error.message?.includes('non-2xx');
+
+      if (isAuthError) {
+        log.warn(`[EdgeFunction] Auth error for action "${action}", retrying with fresh session`);
+        invalidateAuthCache();
+
+        const { data: freshData } = await supabase.auth.getSession();
+        if (freshData.session?.access_token) {
+          const { data: retryData, error: retryError } = await supabase.functions.invoke('gemini-chat', {
+            body,
+            headers: {
+              Authorization: `Bearer ${freshData.session.access_token}`
+            }
+          });
+
+          if (retryError) {
+            log.error(`[EdgeFunction] Retry failed for action "${action}":`, { error: retryError });
+            throw new Error(`Edge Function error: ${retryError.message || 'Unknown error'}`);
+          }
+
+          if (!retryData || !(retryData as EdgeFunctionResponse).success) {
+            throw new Error('Edge Function returned no data or success: false after retry');
+          }
+
+          const retryResponse = retryData as EdgeFunctionResponse<T>;
+          return {
+            ...retryResponse.result,
+            ...(retryResponse.usageMetadata && { __usageMetadata: retryResponse.usageMetadata })
+          } as T & { __usageMetadata?: EdgeFunctionResponse['usageMetadata'] };
+        }
+      }
+
+      log.error(`[EdgeFunction] Error calling action "${action}":`, { error });
+      throw new Error(`Edge Function error: ${error.message || 'Unknown error'}`);
     }
 
     if (!data) {

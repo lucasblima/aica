@@ -53,8 +53,8 @@ export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
             Comece sua jornada financeira
           </h2>
           <p className="text-sm text-ceramic-text-secondary max-w-md">
-            Organize suas financas de forma inteligente. Importe seus extratos,
-            configure orcamentos e deixe a IA trabalhar por voce.
+            Organize suas finanças de forma inteligente. Importe seus extratos,
+            configure orçamentos e deixe a IA trabalhar por você.
           </p>
         </div>
 
@@ -117,7 +117,7 @@ export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
               </span>
             </div>
             <h3 className="text-sm font-bold text-ceramic-text-primary mb-1">
-              Configure orcamentos
+              Configure orçamentos
             </h3>
             <p className="text-xs text-ceramic-text-secondary mb-4">
               Defina limites por categoria e acompanhe seus gastos em tempo real.
@@ -126,7 +126,7 @@ export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
               onClick={onNavigateBudget}
               className="flex items-center justify-center gap-2 w-full ceramic-inset rounded-lg px-3 py-2 text-xs font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors mt-auto"
             >
-              Configurar orcamentos
+              Configurar orçamentos
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -156,7 +156,7 @@ export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
             </p>
             <div className="w-full ceramic-inset rounded-lg px-3 py-2 mt-auto">
               <p className="text-[10px] text-ceramic-text-secondary italic">
-                "Quanto gastei com alimentacao esse mes?" "Onde posso economizar?"
+                "Quanto gastei com alimentação esse mês?" "Onde posso economizar?"
               </p>
             </div>
           </div>

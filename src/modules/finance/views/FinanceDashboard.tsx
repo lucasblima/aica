@@ -9,7 +9,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet, BarChart3, List, GitCompare, Trophy, Download } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Trophy } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
@@ -25,7 +25,6 @@ import { MonthComparisonView } from '../components/MonthComparisonView';
 import { GoalTracker } from '../components/GoalTracker';
 import { AccountManagement } from '../components/AccountManagement';
 import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange } from '../services/financeService';
-import { exportToCSV } from '../services/exportService';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement, BudgetAlert, FinanceTransaction } from '../types';
@@ -39,18 +38,6 @@ interface FinanceDashboardProps {
   onBack?: () => void;
 }
 
-interface MonthData {
-  month: number;
-  monthName: string;
-  year: number;
-  hasData: boolean;
-  transactionCount: number;
-  statementCount: number;
-  openingBalance: number;
-  closingBalance: number;
-  processingStatus: 'completed' | 'processing' | 'failed' | 'empty';
-}
-
 type DashboardView = 'history' | 'budget' | 'transactions' | 'comparison' | 'goals' | 'accounts';
 
 interface ViewTab {
@@ -60,9 +47,9 @@ interface ViewTab {
 }
 
 const VIEW_TABS: ViewTab[] = [
-  { key: 'history', label: 'Visao Geral', icon: BarChart3 },
-  { key: 'transactions', label: 'Transacoes', icon: List },
-  { key: 'budget', label: 'Orcamento', icon: Target },
+  { key: 'history', label: 'Visão Geral', icon: BarChart3 },
+  { key: 'transactions', label: 'Transações', icon: List },
+  { key: 'budget', label: 'Orçamento', icon: Target },
   { key: 'comparison', label: 'Comparativo', icon: GitCompare },
   { key: 'goals', label: 'Metas', icon: Trophy },
   { key: 'accounts', label: 'Contas', icon: Building2 },
@@ -96,6 +83,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [activeView, setActiveView] = useState<DashboardView>('history');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
   // Persist visibility toggle
   useEffect(() => {
@@ -125,10 +114,10 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     try {
       setLoading(true);
 
-      // Build a 6-month date range for trend data
+      // Build a 2-year date range for trend data (supports historical navigation)
       const now = new Date();
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-      const trendStart = sixMonthsAgo.toISOString().split('T')[0];
+      const twoYearsAgo = new Date(now.getFullYear() - 2, 0, 1);
+      const trendStart = twoYearsAgo.toISOString().split('T')[0];
       const trendEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
       const [summaryData, burnRateData, categoryData, statementsData, trendTransactions] = await Promise.all([
@@ -322,138 +311,49 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     return alerts;
   }, [summary, categoryBreakdown]);
 
-  // Process statements into monthly data
-  const monthlyData = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-
-    // Create map of month -> data with balances
-    const monthMap = new Map<string, {
-      transactionCount: number;
-      statementCount: number;
-      openingBalance: number;
-      closingBalance: number;
-      statements: FinanceStatement[];
-    }>();
-
-    log.debug('[FinanceDashboard] Processing statements for monthly data:', statements?.length || 0);
-
-    // Handle empty statements array
-    if (!statements || statements.length === 0) {
-      log.debug('[FinanceDashboard] No statements, returning empty month data');
-      const months: MonthData[] = [];
-      for (let month = 1; month <= 12; month++) {
-        months.push({
-          month,
-          monthName: monthNames[month - 1],
-          year: currentYear,
-          hasData: false,
-          transactionCount: 0,
-          statementCount: 0,
-          openingBalance: 0,
-          closingBalance: 0,
-          processingStatus: 'empty',
-        });
-      }
-      return months;
-    }
-
-    statements.forEach((statement) => {
-      log.debug('[FinanceDashboard] Statement:', {
-        id: statement.id,
-        file_name: statement.file_name,
-        statement_period_start: statement.statement_period_start,
-        transaction_count: statement.transaction_count,
-        processing_status: statement.processing_status,
-      });
-
-      if (statement.statement_period_start) {
-        // Parse date carefully to avoid timezone issues
-        const dateStr = statement.statement_period_start;
-        const [yearStr, monthStr] = dateStr.split('-');
-        const year = parseInt(yearStr);
-        const month = parseInt(monthStr);
-        const key = `${year}-${month}`;
-
-        log.debug('[FinanceDashboard] Parsed date:', { dateStr, year, month, key });
-
-        const existing = monthMap.get(key) || {
-          transactionCount: 0,
-          statementCount: 0,
-          openingBalance: 0,
-          closingBalance: 0,
-          statements: []
-        };
-
-        existing.statements.push(statement);
-
-        monthMap.set(key, {
-          transactionCount: existing.transactionCount + (statement.transaction_count || 0),
-          statementCount: existing.statementCount + 1,
-          openingBalance: existing.openingBalance,
-          closingBalance: existing.closingBalance,
-          statements: existing.statements,
-        });
-      } else {
-        log.warn('[FinanceDashboard] Statement missing period_start:', statement.id);
-      }
-    });
-
-    // Calculate opening and closing balances for each month
-    monthMap.forEach((data, key) => {
-      // Sort statements by period start to get first statement
-      const sortedStatements = data.statements.sort((a, b) =>
-        (a.statement_period_start || '').localeCompare(b.statement_period_start || '')
-      );
-
-      // Opening balance is from the first statement
-      data.openingBalance = sortedStatements[0]?.opening_balance || 0;
-
-      // Closing balance is from the last statement (or could be calculated from opening + credits - debits)
-      data.closingBalance = sortedStatements[sortedStatements.length - 1]?.closing_balance || 0;
-    });
-
-    log.debug('[FinanceDashboard] Month map:', Array.from(monthMap.entries()));
-
-    // Generate 12 months for current year
-    const months: MonthData[] = [];
-    for (let month = 1; month <= 12; month++) {
-      const key = `${currentYear}-${month}`;
-      const data = monthMap.get(key);
-
-      // Determine processing status
-      let processingStatus: 'completed' | 'processing' | 'failed' | 'empty' = 'empty';
-      if (data && data.statements.length > 0) {
-        const hasProcessing = data.statements.some(s => s.processing_status === 'processing');
-        const hasFailed = data.statements.some(s => s.processing_status === 'failed');
-        const hasCompleted = data.statements.some(s => s.processing_status === 'completed');
-
-        if (hasProcessing) {
-          processingStatus = 'processing';
-        } else if (hasFailed) {
-          processingStatus = 'failed';
-        } else if (hasCompleted) {
-          processingStatus = 'completed';
+  // Compute all available year-months from statements
+  const availableMonths = useMemo(() => {
+    if (!statements || statements.length === 0) return [];
+    const months = new Set<string>();
+    statements.forEach((s) => {
+      if (s.statement_period_start) {
+        const [y, m] = s.statement_period_start.split('-');
+        months.add(`${y}-${m}`);
+      } else if (allTransactions.length > 0) {
+        // Infer period from transactions when period_start is null
+        const stmtTransactions = allTransactions.filter(t => t.statement_id === s.id);
+        if (stmtTransactions.length > 0) {
+          const dates = stmtTransactions.map(t => new Date(t.transaction_date));
+          const earliest = new Date(Math.min(...dates.map(d => d.getTime())));
+          const y = earliest.getFullYear().toString();
+          const m = (earliest.getMonth() + 1).toString().padStart(2, '0');
+          months.add(`${y}-${m}`);
+          log.info('[FinanceDashboard] Inferred period for statement', s.id, `${y}-${m}`);
+        } else {
+          log.warn('[FinanceDashboard] Statement has no period_start and no transactions:', s.id);
         }
       }
+    });
+    return Array.from(months)
+      .map(key => { const [y, m] = key.split('-'); return { year: parseInt(y), month: parseInt(m) }; })
+      .sort((a, b) => a.year === b.year ? a.month - b.month : a.year - b.year);
+  }, [statements, allTransactions]);
 
-      months.push({
-        month,
-        monthName: monthNames[month - 1],
-        year: currentYear,
-        hasData: !!data,
-        transactionCount: data?.transactionCount || 0,
-        statementCount: data?.statementCount || 0,
-        openingBalance: data?.openingBalance || 0,
-        closingBalance: data?.closingBalance || 0,
-        processingStatus,
-      });
-    }
+  // Transactions for selected month
+  const selectedMonthTransactions = useMemo(() => {
+    if (!allTransactions) return [];
+    return allTransactions.filter(t => {
+      const d = new Date(t.transaction_date);
+      return d.getFullYear() === selectedYear && d.getMonth() + 1 === selectedMonth;
+    });
+  }, [allTransactions, selectedYear, selectedMonth]);
 
-    log.debug('[FinanceDashboard] Monthly data generated:', months);
-
-    return months;
-  }, [statements]);
+  // Summary for selected month
+  const selectedMonthSummary = useMemo(() => {
+    const income = selectedMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expenses = selectedMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    return { income, expenses, balance: income - expenses, count: selectedMonthTransactions.length };
+  }, [selectedMonthTransactions]);
 
   // Check if there's data to show
   const hasData = summary && summary.transactionCount > 0;
@@ -601,37 +501,71 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           })}
         </div>
 
+        {/* Compact Header with Period Navigator */}
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">
-              Modulo
-            </p>
-            <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
-              Financas
-            </h1>
+          <h1 className="text-xl font-black text-ceramic-text-primary text-etched">
+            Finanças
+          </h1>
+          {/* Period Navigator */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const prev = selectedMonth === 1
+                  ? { month: 12, year: selectedYear - 1 }
+                  : { month: selectedMonth - 1, year: selectedYear };
+                setSelectedMonth(prev.month);
+                setSelectedYear(prev.year);
+              }}
+              className="ceramic-inset w-8 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+            >
+              <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
+            </button>
+            <span className="text-sm font-bold text-ceramic-text-primary min-w-[100px] text-center">
+              {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][selectedMonth - 1]} {selectedYear}
+            </span>
+            <button
+              onClick={() => {
+                const next = selectedMonth === 12
+                  ? { month: 1, year: selectedYear + 1 }
+                  : { month: selectedMonth + 1, year: selectedYear };
+                setSelectedMonth(next.month);
+                setSelectedYear(next.year);
+              }}
+              className="ceramic-inset w-8 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+            >
+              <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary rotate-180" />
+            </button>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={toggleVisibility}
-              className="ceramic-concave p-3 hover:scale-95 transition-transform"
-              title={isValuesVisible ? 'Ocultar valores' : 'Mostrar valores'}
-            >
-              {isValuesVisible ? (
-                <EyeOff className="w-5 h-5 text-ceramic-text-secondary" />
-              ) : (
-                <Eye className="w-5 h-5 text-ceramic-text-secondary" />
-              )}
+            <button onClick={toggleVisibility} className="ceramic-concave p-2 hover:scale-95 transition-transform" title={isValuesVisible ? 'Ocultar valores' : 'Mostrar valores'}>
+              {isValuesVisible ? <EyeOff className="w-4 h-4 text-ceramic-text-secondary" /> : <Eye className="w-4 h-4 text-ceramic-text-secondary" />}
             </button>
-            <button
-              onClick={() => setShowUpload(!showUpload)}
-              className="ceramic-card p-3 hover:scale-105 transition-transform"
-              title="Upload de Extrato"
-            >
-              <Upload className="w-5 h-5 text-ceramic-text-primary" />
+            <button onClick={() => setShowUpload(!showUpload)} className="ceramic-card p-2 hover:scale-105 transition-transform" title="Upload de Extrato">
+              <Upload className="w-4 h-4 text-ceramic-text-primary" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Summary Cards */}
+      {hasData && (
+        <div className="px-6 pb-2">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="ceramic-tray p-3 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Receita</p>
+              <p className="text-lg font-black text-ceramic-success">{formatCurrency(selectedMonthSummary.income)}</p>
+            </div>
+            <div className="ceramic-tray p-3 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Despesa</p>
+              <p className="text-lg font-black text-ceramic-error">{formatCurrency(selectedMonthSummary.expenses)}</p>
+            </div>
+            <div className="ceramic-tray p-3 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Saldo</p>
+              <p className={`text-lg font-black ${selectedMonthSummary.balance >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}>{formatCurrency(selectedMonthSummary.balance)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-6 pb-40 space-y-6">
@@ -678,74 +612,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               <FinanceNotificationCard alerts={budgetAlerts} />
             )}
 
-            {/* Summary Section */}
-            <div className="ceramic-card p-8 space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-ceramic-text-secondary/10">
-                <div>
-                  <h3 className="text-lg font-black text-ceramic-text-primary text-etched">
-                    Resumo Financeiro
-                  </h3>
-                  <p className="text-xs text-ceramic-text-secondary mt-1">
-                    Visao consolidada de todos os periodos
-                  </p>
-                </div>
-                <div className="ceramic-concave w-12 h-12 flex items-center justify-center">
-                  <Wallet className="w-6 h-6 text-ceramic-text-primary" />
-                </div>
-              </div>
-
-              {/* Main Balance */}
-              <div className="ceramic-tray p-6 text-center">
-                <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
-                  Saldo Acumulado
-                </p>
-                <p
-                  className={`text-5xl font-black text-etched ${
-                    summary!.currentBalance >= 0 ? 'text-ceramic-positive' : 'text-ceramic-negative'
-                  }`}
-                >
-                  {formatCurrency(summary!.currentBalance)}
-                </p>
-                {isValuesVisible && (
-                  <p className="text-xs text-ceramic-text-secondary mt-3">
-                    {summary!.transactionCount} transacoes processadas
-                  </p>
-                )}
-              </div>
-
-              {/* Income & Expenses */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-ceramic-success" />
-                    </div>
-                    <span className="text-xs font-medium text-ceramic-text-secondary">
-                      Receitas
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-ceramic-success">
-                    {formatCurrency(summary!.totalIncome)}
-                  </p>
-                </div>
-
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-ceramic-error rotate-180" />
-                    </div>
-                    <span className="text-xs font-medium text-ceramic-text-secondary">
-                      Despesas
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-ceramic-error">
-                    {formatCurrency(summary!.totalExpenses)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Charts */}
             <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} monthlyTrend={trendData} />
 
@@ -771,7 +637,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                       Burn Rate Mensal
                     </h3>
                     <p className="text-xs text-ceramic-text-secondary">
-                      Media dos ultimos 3 meses
+                      Média dos últimos 3 meses
                     </p>
                   </div>
                 </div>
@@ -799,204 +665,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             )}
           </>
         )}
-
-        {/* Monthly Coverage Calendar — always shown */}
-        <div className="ceramic-card p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-ceramic-text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-ceramic-text-primary">
-                  Cobertura {new Date().getFullYear()}
-                </h3>
-                <p className="text-xs text-ceramic-text-secondary">
-                  {monthlyData.filter(m => m.hasData).length} de 12 meses com dados
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowUpload(true)}
-                className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
-                title="Upload PDF"
-              >
-                <FileText className="w-3.5 h-3.5 text-ceramic-accent" />
-                <span className="text-xs font-bold text-ceramic-accent">PDF</span>
-              </button>
-              <button
-                onClick={() => setShowCSVUpload(true)}
-                className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
-                title="Upload CSV"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-ceramic-success" />
-                <span className="text-xs font-bold text-ceramic-success">CSV</span>
-              </button>
-              {allTransactions.length > 0 && (
-                <button
-                  onClick={() => exportToCSV(allTransactions, `finance-export-${new Date().toISOString().slice(0, 10)}.csv`)}
-                  className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
-                  title="Exportar CSV"
-                >
-                  <Download className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-                  <span className="text-xs font-bold text-ceramic-text-secondary">Exportar</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Monthly Grid */}
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-            {monthlyData.map((monthData) => {
-              const isProcessing = monthData.processingStatus === 'processing';
-              const isCompleted = monthData.processingStatus === 'completed';
-              const isFailed = monthData.processingStatus === 'failed';
-              const isEmpty = monthData.processingStatus === 'empty';
-
-              return (
-                <button
-                  key={monthData.month}
-                  onClick={() => isEmpty && setShowUpload(true)}
-                  className={`
-                    ceramic-tray p-4 transition-all duration-200 relative overflow-hidden
-                    ${isCompleted
-                      ? 'bg-gradient-to-br from-ceramic-success/10 to-transparent hover:scale-105'
-                      : isProcessing
-                      ? 'bg-gradient-to-br from-ceramic-info/10 to-transparent animate-pulse'
-                      : isFailed
-                      ? 'bg-gradient-to-br from-ceramic-error/10 to-transparent hover:scale-105'
-                      : 'hover:scale-105 hover:bg-ceramic-highlight'
-                    }
-                  `}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    {/* Month Icon/Status */}
-                    {isCompleted && (
-                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-ceramic-success/10 shadow-ceramic-elevated">
-                        <CheckCircle2 className="w-6 h-6 text-ceramic-success" />
-                      </div>
-                    )}
-                    {isProcessing && (
-                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-ceramic-info/10 shadow-ceramic-elevated">
-                        <Loader2 className="w-6 h-6 text-ceramic-info animate-spin" />
-                      </div>
-                    )}
-                    {isFailed && (
-                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-ceramic-error/10 shadow-ceramic-elevated">
-                        <svg className="w-6 h-6 text-ceramic-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </div>
-                    )}
-                    {isEmpty && (
-                      <div className="ceramic-inset w-12 h-12 flex items-center justify-center opacity-40">
-                        <Upload className="w-5 h-5 text-ceramic-text-secondary" />
-                      </div>
-                    )}
-
-                    {/* Month Name */}
-                    <div className="text-center w-full">
-                      <p className={`text-sm font-black mb-1 ${
-                        isCompleted ? 'text-ceramic-success' :
-                        isProcessing ? 'text-ceramic-info' :
-                        isFailed ? 'text-ceramic-error' :
-                        'text-ceramic-text-secondary'
-                      }`}>
-                        {monthData.monthName}
-                      </p>
-
-                      {/* Status Message */}
-                      {isProcessing && (
-                        <p className="text-[11px] font-bold text-ceramic-info mb-2">
-                          Processando...
-                        </p>
-                      )}
-                      {isFailed && (
-                        <p className="text-[11px] font-bold text-ceramic-error mb-2">
-                          Erro
-                        </p>
-                      )}
-                      {isEmpty && (
-                        <p className="text-[11px] text-ceramic-text-secondary opacity-60">
-                          Sem dados
-                        </p>
-                      )}
-
-                      {/* Transaction Count - Highlighted */}
-                      {isCompleted && (
-                        <div className="ceramic-card px-2 py-1 mb-2 bg-ceramic-base/80">
-                          <p className="text-[11px] font-black text-ceramic-success">
-                            {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transacao' : 'transacoes'}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Balances - Highlighted */}
-                      {isCompleted && (
-                        <div className="space-y-1 mt-2">
-                          <div className="ceramic-inset px-2 py-1 rounded">
-                            <p className="text-[9px] text-ceramic-text-secondary uppercase tracking-wide">Inicial</p>
-                            <p className="text-[11px] font-black text-ceramic-text-primary">
-                              {formatCurrency(monthData.openingBalance)}
-                            </p>
-                          </div>
-                          <div className="ceramic-concave px-2 py-1 rounded bg-ceramic-success/10">
-                            <p className="text-[9px] text-ceramic-success uppercase tracking-wide">Final</p>
-                            <p className="text-[11px] font-black text-ceramic-success">
-                              {formatCurrency(monthData.closingBalance)}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-ceramic-text-secondary">
-                  Progresso anual
-                </p>
-                {monthlyData.filter(m => m.processingStatus === 'processing').length > 0 && (
-                  <p className="text-[10px] font-bold text-ceramic-info flex items-center gap-1 mt-0.5">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    {monthlyData.filter(m => m.processingStatus === 'processing').length} {monthlyData.filter(m => m.processingStatus === 'processing').length === 1 ? 'mes processando' : 'meses processando'}
-                  </p>
-                )}
-              </div>
-              <p className="text-xs font-bold text-ceramic-text-primary">
-                {Math.round((monthlyData.filter(m => m.processingStatus === 'completed').length / 12) * 100)}%
-              </p>
-            </div>
-            <div className="ceramic-trough p-1 rounded-full">
-              <div
-                className="h-2 rounded-full bg-gradient-to-r from-ceramic-success to-ceramic-success/80 transition-all duration-500"
-                style={{ width: `${(monthlyData.filter(m => m.processingStatus === 'completed').length / 12) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Call to Action for Empty Months */}
-          {monthlyData.some(m => !m.hasData) && (
-            <div className="ceramic-tray p-4 text-center">
-              <p className="text-xs text-ceramic-text-secondary mb-3">
-                Complete sua visao financeira fazendo upload dos extratos faltantes
-              </p>
-              <button
-                onClick={() => setShowUpload(true)}
-                className="ceramic-card px-6 py-2.5 hover:scale-105 transition-transform"
-              >
-                <span className="text-sm font-bold text-ceramic-accent">Enviar Extratos</span>
-              </button>
-            </div>
-          )}
-        </div>
 
         {/* Processing Statements (if any) */}
         {statements.some(s => s.processing_status === 'processing') && (
@@ -1030,7 +698,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                         {statement.file_name || 'Processando...'}
                       </p>
                       <p className="text-xs text-ceramic-info">
-                        A IA esta analisando este extrato...
+                        A IA está analisando este extrato...
                       </p>
                     </div>
                   </div>
@@ -1132,7 +800,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                                   {statement.transaction_count || 0}
                                 </span>
                                 <span className="text-[10px] text-ceramic-text-secondary">
-                                  {statement.transaction_count === 1 ? 'transacao' : 'transacoes'}
+                                  {statement.transaction_count === 1 ? 'transação' : 'transações'}
                                 </span>
                               </div>
 
