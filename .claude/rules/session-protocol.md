@@ -1,5 +1,11 @@
 # Session Protocol
 
+## Session Flow Overview
+
+```
+Name → Clarify → Brainstorm → Plan → Worktree → TDD/Execute → Verify → Review → Finish → PR
+```
+
 ## Session Start Protocol — ALWAYS Execute
 
 At the start of every session:
@@ -7,21 +13,41 @@ At the start of every session:
 1. **Suggest session name** (e.g., `feat-studio-teleprompter`) — wait for user approval
 2. **Sync** with remote: `git pull origin main`
 3. **Create worktree** with feature branch (see Git Worktree Workflow below)
+4. **Design phase** (non-trivial features only):
+   - Invoke `superpowers:brainstorming` — explore approaches, trade-offs, architecture options → produce a design doc
+   - Invoke `superpowers:writing-plans` — convert design into an implementation plan saved to `docs/plans/<session-name>.md`
+   - Wait for user approval of the plan before writing code
+5. **Simple fixes** (typo, config, obvious bug): skip step 4, go directly to implementation
+
+## Implementation Phase — TDD Required
+
+All implementation follows test-driven development:
+
+- **Solo work**: Follow `superpowers:test-driven-development` cycle (RED: write failing test → GREEN: minimal code to pass → REFACTOR: clean up)
+- **Agent Teams**: Use `superpowers:subagent-driven-development` pipeline — coordinator dispatches test-writing and implementation to separate teammates
+- **Bug fixes**: ALWAYS use `superpowers:systematic-debugging` (Phase 1: reproduce → Phase 2: isolate → Phase 3: root cause → Phase 4: fix + regression test) before attempting fixes
 
 ## Session End Protocol — ALWAYS Execute
 
 At the end of every session (when all tasks are complete):
 
-1. **Commit** all changes with descriptive message + co-authorship
-2. **Push** feature branch to origin
-3. **Create Pull Request** (see PR Workflow below) — MANDATORY
-4. **Wait** for PR feedback (automated checks + user review)
-5. **Read PR comments** using `gh pr view` and `gh api repos/.../pulls/.../comments`
-6. **Address comments** — fix issues, push new commits to the branch
-7. **Report status** to user: which comments were resolved, which need discussion
-8. **Push migrations** if any new `.sql` files were created
-9. **Deploy Edge Functions** if any were created/modified
-10. **Merge PR** only after all comments are addressed and user approves
+1. **Verify** — Invoke `superpowers:verification-before-completion`. Run `npm run build`, `npm run typecheck`, and `npm run test` with FRESH output. Paste the actual terminal output as evidence. NEVER claim "tests pass" without showing the output.
+2. **Code review** — Invoke `superpowers:requesting-code-review`. Dispatch a code review subagent to review all changes before creating the PR. Address any findings.
+3. **Commit** all changes with descriptive message + co-authorship
+4. **Push** feature branch to origin
+5. **Finish branch** — Invoke `superpowers:finishing-a-development-branch`. Present the user with 4 structured options:
+   - **Merge**: squash-merge into main (if PR approved)
+   - **PR**: create Pull Request for async review (default)
+   - **Keep**: leave branch open for continued work
+   - **Discard**: abandon branch and clean up
+6. **Create Pull Request** (if user chose PR or Merge) — see PR Workflow below — MANDATORY for code changes
+7. **Wait** for PR feedback (automated checks + user review)
+8. **Read PR comments** using `gh pr view` and `gh api repos/.../pulls/.../comments`
+9. **Address comments** — fix issues, push new commits to the branch
+10. **Report status** to user: which comments were resolved, which need discussion
+11. **Push migrations** if any new `.sql` files were created
+12. **Deploy Edge Functions** if any were created/modified
+13. **Merge PR** only after all comments are addressed and user approves
 
 Production deploy only happens when user validates staging and explicitly says "deploy producao".
 
@@ -163,8 +189,14 @@ Examples: `feature/feat-studio-teleprompter`, `fix/auth-redirect-loop`
 ## PR Checklist
 
 - [ ] Feature branch created (not committing to main directly)
-- [ ] `npm run build` passed
-- [ ] `npm run typecheck` passed
+- [ ] Design/brainstorm completed for non-trivial features (`superpowers:brainstorming`)
+- [ ] Implementation plan saved to `docs/plans/` (`superpowers:writing-plans`)
+- [ ] TDD cycle followed — tests written before implementation
+- [ ] `npm run build` passed (FRESH output as evidence)
+- [ ] `npm run typecheck` passed (FRESH output as evidence)
+- [ ] `npm run test` passed (FRESH output as evidence)
+- [ ] `superpowers:verification-before-completion` executed with evidence
+- [ ] `superpowers:requesting-code-review` dispatched and findings addressed
 - [ ] Commits follow Conventional Commits
 - [ ] Co-authorship included
 - [ ] PR created with summary + test plan
