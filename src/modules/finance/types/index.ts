@@ -408,3 +408,27 @@ export interface BudgetAlert {
   threshold?: number;
   created_at: string;
 }
+
+// =====================================================
+// Year Comparison Types
+// =====================================================
+
+export interface MonthlyAggregate {
+  month: number; // 0-11
+  income: number;
+  expenses: number;
+  balance: number;
+  savingsRate: number; // percentage 0-100
+  byCategory: Record<string, { income: number; expenses: number }>;
+  transactionCount: number;
+}
+
+export interface YearSummary {
+  year: number;
+  totalIncome: number;
+  totalExpenses: number;
+  totalBalance: number;
+  avgSavingsRate: number;
+  months: MonthlyAggregate[];
+  byCategory: Record<string, { income: number; expenses: number }>;
+}
