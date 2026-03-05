@@ -432,7 +432,7 @@ export default function AthleteFormDrawer({
                         <Target className="w-4 h-4 text-ceramic-text-primary" />
                       </div>
                       <span className="text-sm font-bold text-ceramic-text-primary">
-                        2. Modalidades *
+                        2. Modalidades
                       </span>
                     </div>
                     <ChevronDown
