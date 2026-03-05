@@ -146,8 +146,9 @@ export async function getBurnRate(userId: string): Promise<BurnRateData> {
         const monthlyExpenses: { [key: string]: number } = {};
 
         transactions.forEach(t => {
-            const date = new Date(t.transaction_date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            // Parse date string directly to avoid timezone shift
+            const [y, m] = t.transaction_date.split('-');
+            const monthKey = `${y}-${m}`;
 
             if (!monthlyExpenses[monthKey]) {
                 monthlyExpenses[monthKey] = 0;
@@ -376,7 +377,8 @@ export async function getYearlyAggregates(
     let totalExpenses = 0;
 
     for (const tx of transactions) {
-        const monthIdx = new Date(tx.transaction_date).getMonth();
+        // Parse month directly from date string to avoid timezone shift
+        const monthIdx = parseInt(tx.transaction_date.split('-')[1], 10) - 1;
         const amount = Math.abs(Number(tx.amount));
         const m = months[monthIdx];
 
