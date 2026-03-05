@@ -25,6 +25,7 @@ import { MicrocycleService } from '../services/microcycleService';
 // Canvas components
 import { LoadCalculatorPopover } from '../components/canvas/LoadCalculatorPopover';
 import { CanvasLibrarySidebar } from '../components/canvas/CanvasLibrarySidebar';
+import { CanvasFilterToolbar } from '../components/canvas/CanvasFilterToolbar';
 import { CanvasGridContainer } from '../components/canvas/CanvasGridContainer';
 import { CanvasEditorDrawer } from '../components/canvas/CanvasEditorDrawer';
 import TemplateFormDrawer from '../components/forms/TemplateFormDrawer';
@@ -202,6 +203,11 @@ export default function CanvasEditorView() {
   } | null>(null);
   const [isReleasing, setIsReleasing] = useState(false);
   const [microcycleStatus, setMicrocycleStatus] = useState<string | undefined>(undefined);
+
+  // Filter state (lifted from sidebar for shared toolbar)
+  const [libraryModality, setLibraryModality] = useState<string | null>(null);
+  const [zoneFilter, setZoneFilter] = useState('all');
+  const [volumeFilter, setVolumeFilter] = useState('all');
 
   // All hooks MUST be called before any conditional return
   const { athletes, isLoading: athletesLoading } = useAthletes();
@@ -538,6 +544,19 @@ export default function CanvasEditorView() {
         onOpenCalculator={() => setIsCalculatorOpen(true)}
       />
 
+      {/* Filter Toolbar */}
+      {athlete && (
+        <CanvasFilterToolbar
+          athleteModality={athlete.modality}
+          libraryModality={libraryModality}
+          onModalityChange={setLibraryModality}
+          zoneFilter={zoneFilter}
+          onZoneChange={setZoneFilter}
+          volumeFilter={volumeFilter}
+          onVolumeChange={setVolumeFilter}
+        />
+      )}
+
       {/* Main Content: 3-Column Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar */}
@@ -545,6 +564,9 @@ export default function CanvasEditorView() {
           <CanvasLibrarySidebar
             athlete={athlete}
             onTemplateSelect={handleTemplateSelect}
+            libraryModality={libraryModality}
+            zoneFilter={zoneFilter}
+            volumeFilter={volumeFilter}
           />
         )}
 
