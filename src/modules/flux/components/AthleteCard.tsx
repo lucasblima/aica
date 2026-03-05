@@ -12,7 +12,7 @@ import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } fr
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
-import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, Dumbbell } from 'lucide-react';
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
@@ -51,6 +51,7 @@ interface ExtendedAthleteCardProps extends Omit<AthleteCardProps, 'recentFeedbac
   onDelete?: () => void;
   onSendInvite?: () => void;
   onCopyLink?: () => void;
+  onPrescreverClick?: () => void;
   inviteStatus?: 'none' | 'sent' | 'delivered' | 'bounced' | 'failed';
   /** Group tags assigned to this athlete (from localStorage groups) */
   groupTags?: AthleteGroup[];
@@ -67,6 +68,7 @@ export function AthleteCard({
   onDelete,
   onSendInvite,
   onCopyLink,
+  onPrescreverClick,
   inviteStatus = 'none',
   groupTags = [],
 }: ExtendedAthleteCardProps) {
@@ -397,6 +399,19 @@ export function AthleteCard({
             >
               <MessageCircle className="w-4 h-4 text-ceramic-success" />
               <span className="text-xs font-bold text-ceramic-success">WhatsApp</span>
+            </button>
+          )}
+          {onPrescreverClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrescreverClick();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors"
+              title="Prescrever treino"
+            >
+              <Dumbbell className="w-4 h-4 text-amber-600" />
+              <span className="text-xs font-bold text-amber-600">Prescrever</span>
             </button>
           )}
         </div>
