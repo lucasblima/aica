@@ -11,6 +11,7 @@ import { Upload, FileText, CheckCircle, AlertCircle, Loader2, X } from 'lucide-r
 const log = createNamespacedLogger('StatementUpload');
 import { pdfProcessingService, type PDFProgressUpdate } from '../services/pdfProcessingService';
 import { statementService } from '../services/statementService';
+import { csvParserService } from '../services/csvParserService';
 import { addXP, awardAchievement } from '../../../services/gamificationService';
 import type { UploadProgress, FinanceStatement } from '../types';
 
@@ -112,6 +113,7 @@ interface FileWithMetadata {
   analysisProgress?: PDFProgressUpdate | null; // Progressive analysis feedback
   transactionCount?: number; // Extracted transaction count for display
   cachedParsed?: import('../types').ParsedStatement | null; // Cache AI parsing result to avoid duplicate calls
+  cachedCSV?: any; // Cached CSV parse result
 }
 
 // =====================================================
@@ -186,8 +188,10 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
 
     for (const file of selectedFiles) {
       // Validate file type
-      if (file.type !== 'application/pdf') {
-        onError?.(`${file.name}: Apenas arquivos PDF são aceitos.`);
+      const isCSV = file.type === 'text/csv' || file.name.endsWith('.csv');
+      const isPDF = file.type === 'application/pdf';
+      if (!isPDF && !isCSV) {
+        onError?.(`${file.name}: Apenas arquivos PDF ou CSV são aceitos.`);
         continue;
       }
 
@@ -222,6 +226,39 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
       const fileWithMeta = newFiles[i];
 
       try {
+        // CSV routing — detect and parse CSV before attempting PDF processing
+        const isCSV = fileWithMeta.file.name.endsWith('.csv') || fileWithMeta.file.type === 'text/csv';
+
+        if (isCSV) {
+          try {
+            const csvResult = await csvParserService.parseCSV(fileWithMeta.file);
+            const now = new Date();
+            const firstDate = csvResult.transactions[0]?.date;
+            const [yearStr, monthStr] = firstDate ? firstDate.split('-') : [String(now.getFullYear()), String(now.getMonth() + 1).padStart(2, '0')];
+
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.file === fileWithMeta.file
+                  ? {
+                      ...f,
+                      bankName: csvResult.bankName || 'Nubank',
+                      month: monthStr,
+                      year: yearStr,
+                      analyzed: true,
+                      transactionCount: csvResult.transactions.length,
+                      cachedCSV: csvResult,
+                    }
+                  : f
+              )
+            );
+            continue;
+          } catch (err) {
+            console.error('CSV parse error:', err);
+            onError?.(`${fileWithMeta.file.name}: Erro ao processar CSV`);
+            continue;
+          }
+        }
+
         // Progressive callback — updates UI in real-time as stages complete
         const onProgress = (update: PDFProgressUpdate) => {
           setFiles((prev) =>
@@ -313,6 +350,48 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         const isDuplicate = await statementService.checkDuplicate(userId, fileHash);
         if (isDuplicate) {
           updateFileProgress(i, { stage: 'error', progress: 0, message: 'Já enviado' });
+          continue;
+        }
+
+        // CSV processing path — bypass PDF pipeline entirely
+        const isCSV = fileWithMeta.file.name.endsWith('.csv') || fileWithMeta.file.type === 'text/csv';
+
+        if (isCSV && fileWithMeta.cachedCSV) {
+          const csvParsed = fileWithMeta.cachedCSV;
+          const periodStart = `${fileWithMeta.year}-${fileWithMeta.month}-01`;
+          const lastDay = new Date(parseInt(fileWithMeta.year!), parseInt(fileWithMeta.month!), 0).getDate();
+          const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${String(lastDay).padStart(2, '0')}`;
+
+          // Create statement record
+          updateFileProgress(i, { stage: 'uploading', progress: 20, message: 'Criando registro...' }, 'creating');
+          const statement = await statementService.createStatement({
+            user_id: userId,
+            file_name: fileWithMeta.file.name,
+            file_size_bytes: fileWithMeta.file.size,
+            file_hash: fileHash,
+            processing_status: 'processing',
+          });
+
+          const enhancedParsed = {
+            bankName: fileWithMeta.bankName,
+            accountType: 'checking' as const,
+            periodStart,
+            periodEnd,
+            openingBalance: 0,
+            closingBalance: 0,
+            currency: 'BRL',
+            transactions: csvParsed.transactions,
+          };
+
+          updateFileProgress(i, { stage: 'saving', progress: 90, message: 'Salvando CSV...' }, 'saving');
+          const markdown = `# Extrato CSV — ${fileWithMeta.bankName} ${fileWithMeta.month}/${fileWithMeta.year}\n\n${csvParsed.transactions.length} transações importadas`;
+          await statementService.saveParsedData(statement.id, userId, enhancedParsed, markdown);
+
+          updateFileProgress(i, { stage: 'complete', progress: 100, message: 'Concluído!' });
+          await addXP(userId, 25);
+
+          const updatedStatement = await statementService.getStatement(statement.id);
+          if (updatedStatement) onUploadComplete(updatedStatement);
           continue;
         }
 
@@ -485,10 +564,10 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           </div>
           <div className="text-center">
             <p className="text-sm font-bold text-ceramic-text-primary">
-              {isDragging ? 'Solte os arquivos aqui' : 'Arraste seus extratos PDF aqui'}
+              {isDragging ? 'Solte os arquivos aqui' : 'Arraste seus extratos PDF ou CSV aqui'}
             </p>
             <p className="text-xs text-ceramic-text-secondary mt-1">
-              ou clique para selecionar • Múltiplos arquivos aceitos • Max. 10MB cada
+              PDF e CSV aceitos • Múltiplos arquivos aceitos • Max. 10MB cada
             </p>
           </div>
         </div>
@@ -680,7 +759,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept="application/pdf"
+        accept="application/pdf,.csv,text/csv"
         multiple
         onChange={handleFileInputChange}
         className="hidden"
