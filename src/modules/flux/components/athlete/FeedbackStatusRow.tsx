@@ -6,7 +6,7 @@
  * Day grouping is handled by the parent — this component no longer shows day labels.
  */
 
-import { Check, ChevronRight, Lock } from 'lucide-react';
+import { ChevronRight, Lock } from 'lucide-react';
 
 export interface FeedbackStatusRowProps {
   type: 'exercise' | 'weekly';
@@ -49,18 +49,16 @@ export function FeedbackStatusRow({
         ${type === 'weekly' ? 'bg-ceramic-cool/30' : ''}
       `}
     >
-      {/* Status icon */}
+      {/* Status indicator */}
       <div className="flex-shrink-0">
         {locked ? (
-          <div className="w-5 h-5 rounded bg-ceramic-cool flex items-center justify-center">
+          <div className="w-5 h-5 rounded-full bg-ceramic-cool flex items-center justify-center">
             <Lock className="w-3 h-3 text-ceramic-text-secondary/50" />
           </div>
         ) : isSubmitted ? (
-          <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center">
-            <Check className="w-3 h-3 text-white" />
-          </div>
+          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
         ) : (
-          <div className="w-5 h-5 rounded border-2 border-ceramic-border" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
         )}
       </div>
 
