@@ -362,6 +362,14 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           const lastDay = new Date(parseInt(fileWithMeta.year!), parseInt(fileWithMeta.month!), 0).getDate();
           const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${String(lastDay).padStart(2, '0')}`;
 
+          // Check period overlap
+          const { hasOverlap, overlapping } = await statementService.checkPeriodOverlap(userId, periodStart, periodEnd);
+          if (hasOverlap) {
+            const names = overlapping.map(s => s.file_name).join(', ');
+            updateFileProgress(i, { stage: 'error', progress: 0, message: `Período já importado: ${names}` });
+            continue;
+          }
+
           // Create statement record
           updateFileProgress(i, { stage: 'uploading', progress: 20, message: 'Criando registro...' }, 'creating');
           const statement = await statementService.createStatement({

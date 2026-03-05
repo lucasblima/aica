@@ -57,6 +57,14 @@ const KNOWN_FORMATS: CSVBankFormat[] = [
   {
     bankName: 'Nubank',
     delimiter: ',',
+    dateFormat: 'DD/MM/YYYY',
+    decimalSeparator: '.',
+    columns: { date: 'Data', description: 'Descrição', amount: 'Valor' },
+    amountSign: 'auto'
+  },
+  {
+    bankName: 'Nubank',
+    delimiter: ',',
     dateFormat: 'YYYY-MM-DD',
     decimalSeparator: '.',
     columns: { date: 'date', description: 'title', amount: 'amount', category: 'category' },
