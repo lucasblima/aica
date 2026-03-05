@@ -185,6 +185,13 @@ export class CSVParserService {
 
     // Detect by header columns — try known bank formats first
     for (const format of KNOWN_FORMATS) {
+      // Verify delimiter match: if format expects ';' but header has more ',' than ';', skip
+      const semicolonCount = (headerRaw.match(/;/g) || []).length;
+      const commaCount = (headerRaw.match(/,/g) || []).length;
+      const actualDelimiter = semicolonCount > commaCount ? ';' : ',';
+
+      if (actualDelimiter !== format.delimiter) continue;
+
       const dateCol = typeof format.columns.date === 'string'
         ? format.columns.date.toLowerCase()
         : format.columns.date;
@@ -193,7 +200,9 @@ export class CSVParserService {
         : format.columns.description;
 
       if (typeof dateCol === 'string' && typeof descCol === 'string') {
-        if (header.includes(dateCol) && header.includes(descCol)) {
+        // Parse header columns for accurate matching
+        const headerCols = headerRaw.split(format.delimiter).map(c => c.trim().replace(/^["']|["']$/g, '').toLowerCase());
+        if (headerCols.includes(dateCol) && headerCols.includes(descCol)) {
           return format;
         }
       }
