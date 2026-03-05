@@ -146,6 +146,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
    return <AuthGuard><ActivationGuard>{children}</ActivationGuard></AuthGuard>;
 }
 
+// Finance route wrapper — gets userId from auth, navigates back to /
+function FinanceRoutePage() {
+   const { user } = useAuth();
+   const navigate = useNavigate();
+   if (!user) return <CeramicLoadingState variant="page" />;
+   return <FinanceDashboard userId={user.id} onBack={() => navigate('/')} />;
+}
+
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
    const [tasks, setTasks] = useState<any[]>([]);
@@ -419,7 +427,7 @@ export function AppRouter() {
             associations={associations}
             lifeAreas={lifeAreas}
             onLogout={() => supabase.auth.signOut()}
-            onNavigateToView={setCurrentView}
+            onNavigateToView={(view: ViewState) => view === 'finance' ? navigate('/financeiro') : setCurrentView(view)}
             onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
             onOpenAssociation={handleOpenAssociation}
             onSelectArchetype={handleSelectArchetype}
@@ -758,6 +766,9 @@ export function AppRouter() {
                      </ProtectedRoute>
                   }
                />
+
+               {/* Finance Module Route - Protected */}
+               <Route path="/financeiro" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Finanças" />}><FinanceRoutePage /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Flux Module Routes - Protected */}
                <Route path="/flux" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxDashboard /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
