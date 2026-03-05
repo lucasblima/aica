@@ -15,7 +15,7 @@ import {
   XMarkIcon,
   PaperAirplaneIcon,
 } from '@heroicons/react/24/solid'
-import { transcribeAudio } from '@/modules/journey/services/momentPersistenceService'
+import { transcribeAudio } from '@/services/audioService'
 
 // ─── Types ────────────────────────────────────────────────────────────
 

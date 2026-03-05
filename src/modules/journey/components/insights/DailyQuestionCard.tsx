@@ -7,7 +7,7 @@ import React, { useState, useCallback } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
 import { QuestionWithResponse } from '../../types/dailyQuestion'
 import { AudioRecorder } from '../capture/AudioRecorder'
-import { transcribeAudio } from '../../services/momentPersistenceService'
+import { transcribeAudio } from '@/services/audioService'
 
 const log = createNamespacedLogger('DailyQuestionCard')
 import {

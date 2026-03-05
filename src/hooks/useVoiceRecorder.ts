@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { transcribeAudio } from '@/modules/journey/services/momentPersistenceService'
+import { transcribeAudio } from '@/services/audioService'
 
 interface UseVoiceRecorderOptions {
   onResult: (transcript: string) => void

@@ -6,7 +6,7 @@
  */
 
 import { GeminiClient } from '@/lib/gemini'
-import { transcribeAudio } from '@/modules/journey/services/momentPersistenceService'
+import { transcribeAudio } from '@/services/audioService'
 import { createNamespacedLogger } from '@/lib/logger'
 
 const geminiClient = GeminiClient.getInstance()
