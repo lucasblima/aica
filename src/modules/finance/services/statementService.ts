@@ -325,7 +325,6 @@ export const statementService = {
         category: t.suggestedCategory || 'other',
         transaction_date: t.date,
         is_recurring: false,
-        balance_after: t.balance,
       }))
     );
 

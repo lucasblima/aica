@@ -26,7 +26,6 @@ export interface FinanceTransaction {
   notes?: string;
   ai_categorized?: boolean;
   ai_confidence?: number;
-  balance_after?: number;
   reference_number?: string;
   created_at: string;
   updated_at?: string;
