@@ -63,8 +63,8 @@ tests/e2e/test-results/
 tests/e2e/manual-login.ts
 tests/e2e/manual-login.mjs
 
-# Claude Code
-.claude
+# Claude Code (local-only files)
+.claude/settings.local.json
 
 # Backup files (Git is the source of truth)
 *.backup_*
