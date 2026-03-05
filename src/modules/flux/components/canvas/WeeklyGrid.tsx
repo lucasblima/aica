@@ -515,11 +515,6 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
     return map;
   }, [calendarEvents]);
 
-  const totalVolume = useMemo(
-    () => workouts.reduce((sum, w) => sum + w.duration, 0),
-    [workouts]
-  );
-
   if (isLoading) {
     return <WeeklyGridSkeleton />;
   }
@@ -544,25 +539,11 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
             <div>
               <h2 className="text-base font-bold text-ceramic-text-primary">
                 Semana {weekNumber}
-                {startDate && (() => {
-                  const end = new Date(startDate);
-                  end.setDate(end.getDate() + 6);
-                  const fmt = (d: Date) =>
-                    `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-                  return (
-                    <span className="ml-2 text-sm font-medium text-ceramic-text-secondary">
-                      {fmt(startDate)} - {fmt(end)}
-                    </span>
-                  );
-                })()}
               </h2>
             </div>
           </div>
           <div className="flex items-center gap-4 text-xs text-ceramic-text-secondary">
             <span>{workouts.length} treino(s)</span>
-            <span>
-              Volume: <span className="font-bold text-ceramic-text-primary">{totalVolume} min</span>
-            </span>
           </div>
         </div>
       </div>

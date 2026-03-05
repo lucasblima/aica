@@ -305,24 +305,13 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
               Semana
             </span>
             {[1, 2, 3, 4].map((week) => {
-              let weekDateLabel = '';
-              if (weekStartDate) {
-                const weekOffset = (week - currentWeek) * 7;
-                const tabStart = new Date(weekStartDate);
-                tabStart.setDate(tabStart.getDate() + weekOffset);
-                const tabEnd = new Date(tabStart);
-                tabEnd.setDate(tabEnd.getDate() + 6);
-                const fmt = (d: Date) =>
-                  `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-                weekDateLabel = `${fmt(tabStart)} - ${fmt(tabEnd)}`;
-              }
               return (
                 <button
                   key={week}
                   onClick={() => setCurrentWeek(week)}
                   className={`px-4 py-2 rounded-[12px] text-sm font-bold transition-all ${
                     currentWeek === week
-                      ? 'bg-ceramic-base text-ceramic-text-primary'
+                      ? 'bg-ceramic-base text-ceramic-text-primary border-b-2 border-amber-400'
                       : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary hover:bg-ceramic-text-secondary/5'
                   }`}
                   style={
@@ -335,11 +324,6 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
                   }
                 >
                   <span>Sem {week}</span>
-                  {weekDateLabel && (
-                    <span className="ml-1.5 text-[10px] font-medium text-ceramic-text-secondary">
-                      {weekDateLabel}
-                    </span>
-                  )}
                 </button>
               );
             })}

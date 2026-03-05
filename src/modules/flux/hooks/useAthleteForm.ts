@@ -246,10 +246,6 @@ export function useAthleteForm({
       newErrors.phone = 'Telefone invalido (formato: +5511987654321)';
     }
 
-    if (!formData.modalityLevels || formData.modalityLevels.length === 0) {
-      newErrors.modalityLevels = 'Selecione pelo menos uma modalidade';
-    }
-
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email invalido';
     }
@@ -342,8 +338,7 @@ export function useAthleteForm({
   const isFormValid =
     errorCount === 0 &&
     !!formData.name &&
-    !!formData.phone &&
-    formData.modalityLevels.length > 0;
+    !!formData.phone;
 
   return {
     formData,
