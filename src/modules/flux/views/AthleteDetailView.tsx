@@ -5,7 +5,7 @@
  * Contextual descent view with back button (no global nav).
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import { AthleteService } from '../services/athleteService';
@@ -18,7 +18,6 @@ import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { ParQStatus, ParQResponse } from '../types/parq';
 import type { SlotFeedback } from '../components/AthleteCard';
 import { LevelBadge } from '../components/LevelBadge';
-import { ProgressionBar } from '../components/ProgressionBar';
 import { AlertBadge } from '../components/AlertBadge';
 import { ConnectionStatusDot } from '../components/ConnectionStatusDot';
 import { ParQCoachView } from '../components/parq/ParQCoachView';
@@ -30,7 +29,6 @@ import {
   FileText,
   Activity,
   Edit,
-  Zap,
   Loader2,
   Scale,
   Ruler,
@@ -66,8 +64,6 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
-import { CurrentWeekList } from '../components/athlete/CurrentWeekList';
-import type { CurrentWeekDay } from '../components/athlete/CurrentWeekList';
 import {
   ShieldCheck,
   Heart,
@@ -89,17 +85,7 @@ export default function AthleteDetailView() {
   const [activeMicrocycle, setActiveMicrocycle] = useState<{ id: string; status: string; name?: string } | null>(null);
   const [activatingMicrocycle, setActivatingMicrocycle] = useState(false);
   const alerts: Alert[] = [];
-  const activeBlock = null;
 
-  // Current week workout slots for CurrentWeekList
-  const [currentWeekSlots, setCurrentWeekSlots] = useState<Array<{
-    day_of_week: number;
-    name: string;
-    modality: string;
-    exercise_structure?: {
-      series?: Array<{ exercise_name?: string; repetitions?: number; reps?: number; work_value?: number; work_unit?: string; distance_meters?: number }>;
-    } | null;
-  }>>([]);
 
   // Inline edit state
   const [isEditing, setIsEditing] = useState(false);
@@ -238,118 +224,6 @@ export default function AthleteDetailView() {
     return () => { cancelled = true; };
   }, [athleteId]);
 
-  // Load current week slots for CurrentWeekList
-  useEffect(() => {
-    if (!athleteId) return;
-    let cancelled = false;
-
-    const loadCurrentWeekSlots = async () => {
-      // Get the active microcycle first, then fetch its week 1 slots
-      const { data: microcycle } = await MicrocycleService.getActiveMicrocycle(athleteId);
-      if (cancelled || !microcycle) return;
-
-      const { data: slots, error } = await supabase
-        .from('workout_slots')
-        .select('day_of_week, name, modality, exercise_structure')
-        .eq('microcycle_id', microcycle.id)
-        .eq('week_number', 1)
-        .order('day_of_week');
-
-      if (cancelled || error || !slots) return;
-      setCurrentWeekSlots(slots as typeof currentWeekSlots);
-    };
-
-    loadCurrentWeekSlots();
-    return () => { cancelled = true; };
-  }, [athleteId]);
-
-  // Map modality to hex color (matches MODALITY_CONFIG colors)
-  const MODALITY_HEX: Record<string, string> = {
-    swimming:  '#06b6d4',
-    running:   '#10b981',
-    cycling:   '#f59e0b',
-    strength:  '#ef4444',
-    walking:   '#3b82f6',
-  };
-
-  // Portuguese day name lookup (day_of_week: 1=Mon..7=Sun)
-  const DAY_CONFIG: Record<number, { day: string; label: string }> = {
-    1: { day: 'seg', label: 'Segunda' },
-    2: { day: 'ter', label: 'Terca' },
-    3: { day: 'qua', label: 'Quarta' },
-    4: { day: 'qui', label: 'Quinta' },
-    5: { day: 'sex', label: 'Sexta' },
-    6: { day: 'sab', label: 'Sabado' },
-    7: { day: 'dom', label: 'Domingo' },
-  };
-
-  // Transform workout slots into CurrentWeekDay[] for CurrentWeekList
-  const currentWeekDays = useMemo<CurrentWeekDay[]>(() => {
-    // Build workout data from real slots
-    const slotsByDay = new Map<number, typeof currentWeekSlots[0]>();
-    for (const slot of currentWeekSlots) {
-      if (DAY_CONFIG[slot.day_of_week]) {
-        slotsByDay.set(slot.day_of_week, slot);
-      }
-    }
-
-    // If we have real data, build days from it
-    if (currentWeekSlots.length > 0) {
-      return currentWeekSlots
-        .filter((slot) => DAY_CONFIG[slot.day_of_week])
-        .map((slot) => {
-          const dayInfo = DAY_CONFIG[slot.day_of_week];
-          const modalityLabel = slot.modality
-            ? (MODALITY_CONFIG[slot.modality as keyof typeof MODALITY_CONFIG]?.label ?? slot.modality)
-            : slot.name;
-          const hexColor = MODALITY_HEX[slot.modality] ?? '#6b7280';
-
-          const exercises = (slot.exercise_structure?.series ?? [])
-            .slice(0, 5)
-            .map((s) => {
-              const name = s.exercise_name ?? slot.name ?? 'Exercicio';
-              const sets = s.repetitions ?? 1;
-              const reps =
-                s.reps != null
-                  ? String(s.reps)
-                  : s.distance_meters != null
-                  ? `${s.distance_meters}m`
-                  : s.work_value != null && s.work_unit != null
-                  ? `${s.work_value} ${s.work_unit}`
-                  : '';
-              return { name, sets, reps };
-            });
-
-          return {
-            dayOfWeek: slot.day_of_week,
-            dayShort: dayInfo.day,
-            dayFull: dayInfo.label,
-            modality: modalityLabel,
-            color: hexColor,
-            workoutName: slot.name,
-            exercises,
-          };
-        });
-    }
-
-    // Fallback: build demo days based on athlete's primary modality
-    if (!athlete) return [];
-
-    const modalityLabel = MODALITY_CONFIG[athlete.modality]?.label ?? 'Treino';
-    const hexColor = MODALITY_HEX[athlete.modality] ?? '#6b7280';
-    const fallbackDays = [1, 3, 5]; // Mon, Wed, Fri
-
-    return fallbackDays
-      .filter((dow) => DAY_CONFIG[dow])
-      .map((dow) => ({
-        dayOfWeek: dow,
-        dayShort: DAY_CONFIG[dow].day,
-        dayFull: DAY_CONFIG[dow].label,
-        modality: modalityLabel,
-        color: hexColor,
-        exercises: [],
-      }));
-  }, [currentWeekSlots, athlete]);
 
   // Athlete profile calculator: BMI
   const calcBMI = () => {
@@ -551,7 +425,7 @@ export default function AthleteDetailView() {
 
   return (
     <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Detalhes do Atleta" />}>
-    <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
+    <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32 max-w-5xl mx-auto">
       {/* Header */}
       <div className="pt-8 px-6 pb-6">
         <button
@@ -726,21 +600,74 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
-      {/* Semana Atual — 7-day list with accordion (#677) */}
-      <div className="px-6 mb-6" title="Visualizacao da semana atual de treinos. Clique em um dia para ver os exercicios detalhados.">
-        <div className="ceramic-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
-            <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Semana Atual
-            </h3>
-          </div>
-          <CurrentWeekList days={currentWeekDays} />
+      {/* Ferramentas de Prescrição — moved up per #767 */}
+      <div className="px-6 mb-6" title="Ferramentas para prescrever treinos. Use o Canvas para criar planos de 4 semanas e libere o microciclo para o atleta acessar.">
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate(`/flux/canvas/${athleteId}`)}
+            className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
+            title="Abrir o Canvas de prescricao para criar e visualizar planos de treino de 4 semanas (microciclos)"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center group-hover:bg-ceramic-info/20 transition-colors flex-shrink-0">
+                <Calendar className="w-5 h-5 text-ceramic-info" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-ceramic-text-primary">Prescrever e ver Treinos</p>
+                <p className="text-xs text-ceramic-text-secondary">Plano de 4 semanas</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Liberar Treino — #381 */}
+          {activeMicrocycle?.status === 'draft' && (
+            <button
+              onClick={async () => {
+                setActivatingMicrocycle(true);
+                try {
+                  const { error } = await MicrocycleService.activateMicrocycle(activeMicrocycle.id);
+                  if (!error) {
+                    setActiveMicrocycle(prev => prev ? { ...prev, status: 'active' } : null);
+                  } else {
+                    console.error('[AthleteDetail] Error activating microcycle:', error);
+                  }
+                } finally {
+                  setActivatingMicrocycle(false);
+                }
+              }}
+              disabled={activatingMicrocycle}
+              className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left disabled:opacity-50"
+              title="Liberar o microciclo rascunho para que o atleta possa visualizar e registrar seus treinos no portal"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-ceramic-success/10 flex items-center justify-center group-hover:bg-ceramic-success/20 transition-colors flex-shrink-0">
+                  {activatingMicrocycle ? (
+                    <Loader2 className="w-5 h-5 text-ceramic-success animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 text-ceramic-success" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-ceramic-text-primary">Liberar Treino</p>
+                  <p className="text-xs text-ceramic-text-secondary">Ativar microciclo para o atleta</p>
+                </div>
+              </div>
+            </button>
+          )}
+          {activeMicrocycle?.status === 'active' && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-ceramic-success/10 rounded-xl">
+              <CheckCircle className="w-4 h-4 text-ceramic-success" />
+              <span className="text-xs font-bold text-ceramic-success">Treino Liberado</span>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Summary Cards — side by side on desktop */}
+      <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
       {/* Status de Documentos de Saude (#680) */}
-      <div className="px-6 mb-6" title="Status dos documentos de saude do atleta: PAR-Q, Atestado de Liberacao e Exame Cardiologico.">
+      <div title="Status dos documentos de saude do atleta: PAR-Q, Atestado de Liberacao e Exame Cardiologico.">
         <div className="ceramic-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Heart className="w-4 h-4 text-ceramic-text-secondary" />
@@ -852,7 +779,7 @@ export default function AthleteDetailView() {
       </div>
 
       {/* Status de Pagamento (#680) */}
-      <div className="px-6 mb-6" title="Status do pagamento mensal do atleta. Verde = pago, amarelo = pendente, vermelho = atrasado.">
+      <div title="Status do pagamento mensal do atleta. Verde = pago, amarelo = pendente, vermelho = atrasado.">
         <div className="ceramic-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <DollarSign className="w-4 h-4 text-ceramic-text-secondary" />
@@ -896,8 +823,13 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
+      </div>{/* end Summary Cards grid */}
+
+      {/* Collapsible Sections — 2-col on desktop */}
+      <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
       {/* PAR-Q / Health Section — collapsible (#678), always visible */}
-      <div className="px-6 mb-6" title="Secao completa do questionario PAR-Q+. Clique para expandir e ver perguntas, respostas e documentos medicos.">
+      <div title="Secao completa do questionario PAR-Q+. Clique para expandir e ver perguntas, respostas e documentos medicos.">
         <div className="ceramic-card overflow-hidden">
           {/* Collapsible header */}
           <button
@@ -966,7 +898,7 @@ export default function AthleteDetailView() {
       </div>
 
       {/* Athlete Profile Calculator */}
-      <div className="px-6 mb-6" title="Perfil fisico completo: peso, altura, IMC, modalidades praticadas e zonas de treino recomendadas.">
+      <div title="Perfil fisico completo: peso, altura, IMC, modalidades praticadas e zonas de treino recomendadas.">
         <div className="ceramic-card overflow-hidden">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -1176,7 +1108,7 @@ export default function AthleteDetailView() {
       </div>
 
       {/* Financeiro Section — #463 */}
-      <div className="px-6 mb-6" title="Gerenciamento financeiro: configure mensalidade, dia de vencimento e acompanhe o status de pagamento do atleta.">
+      <div title="Gerenciamento financeiro: configure mensalidade, dia de vencimento e acompanhe o status de pagamento do atleta.">
         <div className="ceramic-card overflow-hidden">
           <button
             onClick={() => setFinanceOpen(!financeOpen)}
@@ -1366,130 +1298,7 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
-      {/* Canvas Access - Always visible */}
-      <div className="px-6 mb-6" title="Barra de progresso do bloco atual de treinos. Mostra semana atual, total de treinos completados e taxa de aderencia.">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-ceramic-text-primary">
-            {activeBlock ? 'Progresso Atual' : 'Prescrição de Treinos'}
-          </h2>
-        </div>
-
-      {/* Progression Bar */}
-      {activeBlock && (
-        <div className="mb-4">
-          <ProgressionBar
-            currentWeek={1}
-            totalWeeks={12}
-            adherenceRate={0}
-            completedWorkouts={8}
-            totalWorkouts={12}
-          />
-        </div>
-      )}
-      </div>
-
-      {/* Active Block Info */}
-      {activeBlock && (
-        <div className="px-6 mb-6">
-          <div className="ceramic-card p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="ceramic-inset p-2">
-                <Calendar className="w-5 h-5 text-ceramic-text-secondary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                  Bloco Atual
-                </p>
-                <p className="text-base font-bold text-ceramic-text-primary">
-                  {activeBlock.title}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-text-secondary/10">
-              <div>
-                <span className="font-medium">Inicio:</span>{' '}
-                {new Date(activeBlock.start_date).toLocaleDateString('pt-BR')}
-              </div>
-              <div>
-                <span className="font-medium">Fim:</span>{' '}
-                {new Date(activeBlock.end_date).toLocaleDateString('pt-BR')}
-              </div>
-            </div>
-            {activeBlock.progression_notes && (
-              <p className="text-sm text-ceramic-text-secondary font-light pt-2 border-t border-ceramic-text-secondary/10">
-                {activeBlock.progression_notes}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Flow Tools Section */}
-      <div className="px-6 mb-6" title="Ferramentas para prescrever treinos. Use o Canvas para criar planos de 4 semanas e libere o microciclo para o atleta acessar.">
-        <h2 className="text-lg font-bold text-ceramic-text-primary mb-3 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-ceramic-accent" />
-          Ferramentas de Prescrição
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => navigate(`/flux/canvas/${athleteId}`)}
-            className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
-            title="Abrir o Canvas de prescricao para criar e visualizar planos de treino de 4 semanas (microciclos)"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center group-hover:bg-ceramic-info/20 transition-colors flex-shrink-0">
-                <Calendar className="w-5 h-5 text-ceramic-info" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-ceramic-text-primary">Prescrever e ver Treinos</p>
-                <p className="text-xs text-ceramic-text-secondary">Plano de 4 semanas</p>
-              </div>
-            </div>
-          </button>
-
-          {/* Liberar Treino — #381 */}
-          {activeMicrocycle?.status === 'draft' && (
-            <button
-              onClick={async () => {
-                setActivatingMicrocycle(true);
-                try {
-                  const { error } = await MicrocycleService.activateMicrocycle(activeMicrocycle.id);
-                  if (!error) {
-                    setActiveMicrocycle(prev => prev ? { ...prev, status: 'active' } : null);
-                  } else {
-                    console.error('[AthleteDetail] Error activating microcycle:', error);
-                  }
-                } finally {
-                  setActivatingMicrocycle(false);
-                }
-              }}
-              disabled={activatingMicrocycle}
-              className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left disabled:opacity-50"
-              title="Liberar o microciclo rascunho para que o atleta possa visualizar e registrar seus treinos no portal"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-ceramic-success/10 flex items-center justify-center group-hover:bg-ceramic-success/20 transition-colors flex-shrink-0">
-                  {activatingMicrocycle ? (
-                    <Loader2 className="w-5 h-5 text-ceramic-success animate-spin" />
-                  ) : (
-                    <CheckCircle className="w-5 h-5 text-ceramic-success" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-ceramic-text-primary">Liberar Treino</p>
-                  <p className="text-xs text-ceramic-text-secondary">Ativar microciclo para o atleta</p>
-                </div>
-              </div>
-            </button>
-          )}
-          {activeMicrocycle?.status === 'active' && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-ceramic-success/10 rounded-xl">
-              <CheckCircle className="w-4 h-4 text-ceramic-success" />
-              <span className="text-xs font-bold text-ceramic-success">Treino Liberado</span>
-            </div>
-          )}
-        </div>
-      </div>
+      </div>{/* end Collapsible Sections grid */}
 
       {/* Gerenciamento Section — #464 */}
       <div className="px-6 mb-6" title="Gerencie o acesso do atleta. Bloqueie para pausar acesso aos treinos ou desbloqueie para reativar.">
