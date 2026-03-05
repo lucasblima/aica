@@ -211,10 +211,10 @@ export async function callGeminiEdgeFunction<T = any>(
     })
 
     if (error) {
-      // Detect auth errors (401) — retry once with fresh session
-      const isAuthError = error.name === 'FunctionsHttpError'
-        || error.message?.includes('401')
-        || error.message?.includes('non-2xx');
+      // Detect auth errors (actual 401) — retry once with fresh session
+      // FunctionsHttpError can be any non-2xx (500, 502, etc.) — only retry on 401
+      const isAuthError = error.message?.includes('401')
+        || (error.name === 'FunctionsHttpError' && (error as any).context?.status === 401);
 
       if (isAuthError) {
         log.warn(`[EdgeFunction] Auth error for action "${action}", retrying with fresh session`);

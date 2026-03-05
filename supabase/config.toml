@@ -12,9 +12,10 @@ port = 54321
 # ============================================================================
 
 # gemini-chat: AI operations via Gemini API
-# Requires user authentication to track usage and apply rate limits
+# JWT verification disabled — function extracts userId from JWT internally (best-effort)
+# MUST deploy with --no-verify-jwt to match this setting
 [functions.gemini-chat]
-verify_jwt = true
+verify_jwt = false
 
 # sync-whatsapp-contacts: Sync contacts from Evolution API to database
 # Requires user authentication (function validates token internally)
