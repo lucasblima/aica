@@ -1166,6 +1166,7 @@ export default function CRMCommandCenterView() {
                     onDelete={() => handleDeleteClick(athlete)}
                     onSendInvite={() => handleSendInvite(athlete)}
                     onCopyLink={() => {}}
+                    onPrescreverClick={() => navigate('/flux/canvas/' + athlete.id)}
                     groupTags={athleteGroupTags}
                   />
 
