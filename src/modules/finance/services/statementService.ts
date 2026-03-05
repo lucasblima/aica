@@ -482,16 +482,18 @@ export const statementService = {
 
       // 5. Insert transactions
       const transactionsToInsert = await Promise.all(
-        parsed.transactions.map(async (tx) => ({
+        parsed.transactions.map(async (tx, index) => ({
           statement_id: statement.id,
           user_id: userId,
           hash_id: await this.generateTransactionHash(userId, tx.date, tx.description, Math.abs(tx.amount)),
           transaction_date: tx.date,
           description: tx.description,
+          raw_description: tx.description,
           amount: tx.amount,
           type: tx.type,
           category: tx.category || 'other',
           is_recurring: false,
+          source_line_number: index + 2,
         }))
       );
 
