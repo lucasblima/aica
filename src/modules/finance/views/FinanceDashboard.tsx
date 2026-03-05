@@ -340,11 +340,12 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   }, [statements, allTransactions]);
 
   // Transactions for selected month
+  // Parse date string directly to avoid timezone shift (new Date('2026-03-01') → Feb 28 in BRT)
   const selectedMonthTransactions = useMemo(() => {
     if (!allTransactions) return [];
     return allTransactions.filter(t => {
-      const d = new Date(t.transaction_date);
-      return d.getFullYear() === selectedYear && d.getMonth() + 1 === selectedMonth;
+      const [y, m] = t.transaction_date.split('-').map(Number);
+      return y === selectedYear && m === selectedMonth;
     });
   }, [allTransactions, selectedYear, selectedMonth]);
 
