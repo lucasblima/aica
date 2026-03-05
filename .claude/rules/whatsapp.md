@@ -45,10 +45,6 @@ User exports WhatsApp chat (.txt) → email to `import@import.aica.guru` OR web 
 
 ## Troubleshooting
 
-### Webhook not updating status
-- Evolution API does NOT send HMAC signatures (confirmed)
-- Event names normalized: `CONNECTION_UPDATE` → `connection.update`
-
 ### Real-time lag
 - Check Supabase Dashboard → Database → Replication
 - Enable replication for `whatsapp_sessions` table

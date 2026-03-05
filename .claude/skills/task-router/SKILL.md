@@ -1,6 +1,7 @@
 ---
 name: task-router
 description: Roteamento inteligente de tarefas para agentes especializados. Use /task-router para delegar automaticamente qualquer task ao agente correto.
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash, Agent
 ---
 
 # Task Router - Delegacao Inteligente

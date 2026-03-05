@@ -112,7 +112,7 @@ npm install
 After PR is merged:
 ```bash
 # Return to main working tree
-cd /c/Users/lucas/repos/Aica_frontend
+cd /c/Users/lucas/repos/aica
 
 # Clean up
 git worktree remove .worktrees/<branch-name>
