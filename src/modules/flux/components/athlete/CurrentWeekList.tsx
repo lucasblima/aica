@@ -57,19 +57,20 @@ const ALL_DAYS: { dayOfWeek: number; dayShort: string; dayFull: string }[] = [
   { dayOfWeek: 7, dayShort: 'dom', dayFull: 'Domingo' },
 ];
 
-const COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
-  '#ef4444': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-  '#3b82f6': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-  '#f59e0b': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-  '#10b981': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  '#06b6d4': { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
-  '#6b7280': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
+const NEUTRAL_COLOR = {
+  bg: 'bg-ceramic-cool',
+  text: 'text-ceramic-text-primary',
+  border: 'border-ceramic-border',
 };
 
-const DEFAULT_COLOR = { bg: 'bg-ceramic-cool', text: 'text-ceramic-text-secondary', border: 'border-ceramic-border' };
+const DEFAULT_COLOR = {
+  bg: 'bg-ceramic-cool/50',
+  text: 'text-ceramic-text-secondary',
+  border: 'border-ceramic-border/30',
+};
 
-function getColors(hex: string) {
-  return COLOR_MAP[hex?.toLowerCase()] ?? DEFAULT_COLOR;
+function getColors(_hex: string) {
+  return NEUTRAL_COLOR;
 }
 
 // ============================================================================
