@@ -176,6 +176,33 @@ export default function AthletePortalView() {
     finally { setUpdating(null); }
   }, [refetch]);
 
+  // ── Hooks that MUST be above early returns (React Rules of Hooks) ──
+
+  const pastWorkoutDays = useMemo(() => {
+    const micro = profile?.active_microcycle;
+    if (!micro?.slots?.length || !micro.start_date) return 0;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const startDate = new Date(micro.start_date);
+    let count = 0;
+    for (const slot of micro.slots) {
+      const weekOffset = (slot.week_number - 1) * 7;
+      const dayOffset = slot.day_of_week - 1;
+      const slotDate = new Date(startDate);
+      slotDate.setDate(startDate.getDate() + weekOffset + dayOffset);
+      if (slotDate <= today) count++;
+    }
+    return count;
+  }, [profile?.active_microcycle]);
+
+  const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
+    const mod = profile?.modality as keyof typeof MODALITY_CONFIG;
+    if (mod === 'triathlon') {
+      return ['triathlon', 'swimming', 'running', 'cycling'];
+    }
+    return mod && MODALITY_CONFIG[mod] ? [mod] : ['strength'];
+  }, [profile?.modality]);
+
   // ── Early returns ──
 
   if (isLoading) {
@@ -257,35 +284,7 @@ export default function AthletePortalView() {
 
   const micro = profile.active_microcycle;
   const modalityConfig = MODALITY_CONFIG[profile.modality];
-
-  // Count past workout days (days that have already passed) instead of manual completions
-  const pastWorkoutDays = useMemo(() => {
-    if (!micro?.slots?.length || !micro.start_date) return 0;
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const startDate = new Date(micro.start_date);
-    let count = 0;
-    for (const slot of micro.slots) {
-      const weekOffset = (slot.week_number - 1) * 7;
-      const dayOffset = slot.day_of_week - 1;
-      const slotDate = new Date(startDate);
-      slotDate.setDate(startDate.getDate() + weekOffset + dayOffset);
-      if (slotDate <= today) count++;
-    }
-    return count;
-  }, [micro?.slots, micro?.start_date]);
   const completionPct = micro ? Math.round((pastWorkoutDays / Math.max(micro.total_slots, 1)) * 100) : 0;
-
-  // Derive athlete modalities from profile.modality
-  // Template categories (warmup, main, cooldown) don't map to training modalities,
-  // so we use the athlete's declared modality and expand triathlon to its components.
-  const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
-    const mod = profile.modality as keyof typeof MODALITY_CONFIG;
-    if (mod === 'triathlon') {
-      return ['triathlon', 'swimming', 'running', 'cycling'];
-    }
-    return MODALITY_CONFIG[mod] ? [mod] : ['strength'];
-  }, [profile.modality]);
 
   const weeks = micro
     ? [1, 2, 3, 4].map((wk) => {
