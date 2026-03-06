@@ -30,7 +30,7 @@ import { GeminiClient } from '@/lib/gemini';
 import * as momentService from '../momentService';
 
 // Mock Supabase
-vi.mock('@/lib/supabase', () => ({
+vi.mock('@/services/supabaseClient', () => ({
   supabase: {
     from: vi.fn(),
     rpc: vi.fn(),

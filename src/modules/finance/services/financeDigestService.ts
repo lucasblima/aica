@@ -79,14 +79,23 @@ export async function getMonthlyDigest(
     })
 
     if (error) {
-      log.error('Edge Function invocation error:', error)
+      // Try to extract detailed error from response context
+      let detail = error.message || 'Erro ao gerar resumo'
+      try {
+        if (error.context && typeof error.context.json === 'function') {
+          const body = await error.context.json()
+          detail = body?.error || detail
+          log.error('Edge Function error detail:', body)
+        }
+      } catch { /* ignore parse errors */ }
+      log.error('Edge Function invocation error:', detail)
       return {
         success: false,
         digest: null,
         month: month || 0,
         year: year || 0,
         monthName: '',
-        error: error.message || 'Erro ao gerar resumo',
+        error: detail,
       }
     }
 

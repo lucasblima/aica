@@ -10,8 +10,48 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { GeminiClient } from '../../src/lib/gemini/client'
 import { callWithRetry } from '../../src/lib/gemini/retry'
+
+// Mock authCacheService before importing GeminiClient
+vi.mock('../../src/services/authCacheService', () => ({
+  getCachedSession: vi.fn().mockResolvedValue({
+    session: { access_token: 'mock-test-token.eyJleHAiOjk5OTk5OTk5OTl9.sig' },
+    error: null,
+  }),
+  invalidateAuthCache: vi.fn(),
+}))
+
+// Mock billingService
+vi.mock('../../src/services/billingService', () => ({
+  checkInteractionLimit: vi.fn().mockResolvedValue({ allowed: true }),
+}))
+
+// Mock supabaseClient
+vi.mock('../../src/services/supabaseClient', () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: { access_token: 'mock-test-token.eyJleHAiOjk5OTk5OTk5OTl9.sig' } },
+      }),
+      refreshSession: vi.fn().mockResolvedValue({
+        data: { session: { access_token: 'refreshed-token.eyJleHAiOjk5OTk5OTk5OTl9.sig' } },
+        error: null,
+      }),
+    },
+  },
+}))
+
+// Mock logger
+vi.mock('../../src/lib/logger', () => ({
+  createNamespacedLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+}))
+
+import { GeminiClient } from '../../src/lib/gemini/client'
 
 // Mock fetch
 global.fetch = vi.fn()
@@ -34,8 +74,10 @@ describe('GeminiClient', () => {
     })
 
     it('should have private constructor', () => {
-      // @ts-expect-error - Testing private constructor
-      expect(() => new GeminiClient()).toThrow()
+      // TypeScript private is compile-time only; verify singleton pattern instead
+      const instance = GeminiClient.getInstance()
+      expect(instance).toBeDefined()
+      expect(instance).toBe(GeminiClient.getInstance())
     })
   })
 
@@ -85,30 +127,19 @@ describe('GeminiClient', () => {
 
       const client = GeminiClient.getInstance()
 
-      // PDF processing should use Python server
+      // Actions without explicit model get auto-selected
       await client.call({
-        action: 'parse_statement',
+        action: 'suggest_guest',
         payload: {}
       })
 
-      // Check that it went to Python server endpoint
-      expect(mockFetch.mock.calls[0][0]).toContain('8001')
+      // Should go to Edge Function endpoint
+      expect(mockFetch.mock.calls[0][0]).toContain('/functions/v1/gemini-chat')
     })
   })
 
   describe('Request Building', () => {
     it('should include authorization header', async () => {
-      // Mock Supabase session
-      vi.mock('../../src/services/supabaseClient', () => ({
-        supabase: {
-          auth: {
-            getSession: vi.fn().mockResolvedValue({
-              data: { session: { access_token: 'test-token' } }
-            })
-          }
-        }
-      }))
-
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ result: 'test' })
@@ -160,7 +191,7 @@ describe('GeminiClient', () => {
       expect(url).toContain('/functions/v1/gemini-chat')
     })
 
-    it('should use correct endpoint for Python server actions', async () => {
+    it('should use dedicated Edge Function for deep_research', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ result: 'test' })
@@ -169,12 +200,12 @@ describe('GeminiClient', () => {
 
       const client = GeminiClient.getInstance()
       await client.call({
-        action: 'parse_statement', // Python server action
+        action: 'deep_research',
         payload: {}
       })
 
       const url = mockFetch.mock.calls[0][0]
-      expect(url).toContain(':8001')
+      expect(url).toContain('/functions/v1/deep-research')
     })
   })
 
@@ -314,7 +345,7 @@ describe('Retry Logic', () => {
       callCount++
       if (callCount < 3) {
         const error: any = new Error('Rate limited')
-        error.status = 429
+        error.statusCode = 429
         throw error
       }
       return 'success'
@@ -343,7 +374,7 @@ describe('Retry Logic', () => {
 
       if (callCount < 3) {
         const error: any = new Error('Rate limited')
-        error.status = 429
+        error.statusCode = 429
         throw error
       }
       return 'success'
@@ -365,7 +396,7 @@ describe('Retry Logic', () => {
   it('should not retry on non-retryable errors', async () => {
     const mockFn = vi.fn(async () => {
       const error: any = new Error('Bad request')
-      error.status = 400
+      error.statusCode = 400
       throw error
     })
 
@@ -379,7 +410,7 @@ describe('Retry Logic', () => {
   it('should respect maxRetries limit', async () => {
     const mockFn = vi.fn(async () => {
       const error: any = new Error('Rate limited')
-      error.status = 429
+      error.statusCode = 429
       throw error
     })
 

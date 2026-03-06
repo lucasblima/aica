@@ -29,7 +29,7 @@ vi.mock('@/lib/gemini/client', () => ({
 }));
 
 // Mock Supabase
-vi.mock('@/lib/supabase', () => ({
+vi.mock('@/services/supabaseClient', () => ({
   supabase: {
     from: vi.fn().mockReturnValue({
       insert: vi.fn().mockReturnThis(),

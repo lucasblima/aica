@@ -9,7 +9,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Trophy } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Trophy, AlertTriangle, RefreshCw } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
@@ -24,7 +24,7 @@ import { TransactionListView } from '../components/TransactionListView';
 import { MonthComparisonView } from '../components/MonthComparisonView';
 import { GoalTracker } from '../components/GoalTracker';
 import { AccountManagement } from '../components/AccountManagement';
-import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange } from '../services/financeService';
+import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, recategorizeTransactions } from '../services/financeService';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement, BudgetAlert, FinanceTransaction } from '../types';
@@ -380,6 +380,32 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     return { income, expenses, balance, count: selectedMonthTransactions.length, hasStatement: !!monthStatement };
   }, [selectedMonthTransactions, statements, selectedYear, selectedMonth]);
 
+  // Poorly categorized transactions for selected month
+  const poorlyCategorized = useMemo(() => {
+    return selectedMonthTransactions.filter(
+      t => t.type === 'expense' && (t.category === 'transfer' || t.category === 'other' || !t.category)
+    );
+  }, [selectedMonthTransactions]);
+
+  const [isRecategorizing, setIsRecategorizing] = useState(false);
+
+  const handleRecategorize = async () => {
+    try {
+      setIsRecategorizing(true);
+      const result = await recategorizeTransactions(userId, selectedMonth, selectedYear);
+      if (result.error) {
+        log.error('Recategorization error:', result.error);
+      } else if (result.updated > 0) {
+        log.info(`Recategorized ${result.updated} of ${result.total} transactions`);
+        await loadData();
+      }
+    } catch (err) {
+      log.error('Recategorization failed:', err);
+    } finally {
+      setIsRecategorizing(false);
+    }
+  };
+
   // Check if there's data to show
   const hasData = summary && summary.transactionCount > 0;
 
@@ -633,6 +659,42 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           <>
             {/* Monthly Digest — AI Insights */}
             <MonthlyDigestCard userId={userId} />
+
+            {/* Proactive Categorization Alert */}
+            {poorlyCategorized.length > 0 && (
+              <div className="ceramic-card p-5 border-l-4 border-amber-400">
+                <div className="flex items-start gap-3">
+                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-ceramic-text-primary">
+                      {poorlyCategorized.length} {poorlyCategorized.length === 1 ? 'transacao precisa' : 'transacoes precisam'} de categorizacao
+                    </h3>
+                    <p className="text-xs text-ceramic-text-secondary mt-1">
+                      Transacoes classificadas como "transfer" ou "other" podem ser re-categorizadas pela IA para melhor analise.
+                    </p>
+                    <button
+                      onClick={handleRecategorize}
+                      disabled={isRecategorizing}
+                      className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      {isRecategorizing ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Re-categorizando...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Re-categorizar com IA
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Budget Alerts / Notifications */}
             {budgetAlerts.length > 0 && (

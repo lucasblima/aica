@@ -439,3 +439,86 @@ export async function getYearlyAggregates(
         byCategory: yearByCategory,
     };
 }
+
+/**
+ * Re-categorize transactions using AI.
+ * Fetches poorly categorized transactions (transfer, other) for a given month
+ * and sends them through the AI categorizer, then updates the database.
+ * Returns the count of transactions updated.
+ */
+export async function recategorizeTransactions(
+    userId: string,
+    month?: number,
+    year?: number
+): Promise<{ updated: number; total: number; error?: string }> {
+    try {
+        // Default to current month
+        const now = new Date();
+        const targetMonth = month ?? (now.getMonth() + 1);
+        const targetYear = year ?? now.getFullYear();
+        const monthPadded = String(targetMonth).padStart(2, '0');
+        const startDate = `${targetYear}-${monthPadded}-01`;
+        const endDate = `${targetYear}-${monthPadded}-31`;
+
+        // Fetch poorly categorized transactions
+        const { data: transactions, error: fetchErr } = await supabase
+            .from('finance_transactions')
+            .select('id, description, amount, type, category')
+            .eq('user_id', userId)
+            .gte('transaction_date', startDate)
+            .lte('transaction_date', endDate)
+            .or('category.eq.transfer,category.eq.other,category.is.null');
+
+        if (fetchErr) throw fetchErr;
+        if (!transactions || transactions.length === 0) {
+            return { updated: 0, total: 0 };
+        }
+
+        log.info(`[Recategorize] Found ${transactions.length} poorly categorized transactions for ${targetYear}-${monthPadded}`);
+
+        // Send to AI categorizer in batches of 50
+        const BATCH_SIZE = 50;
+        let totalUpdated = 0;
+
+        for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+            const batch = transactions.slice(i, i + BATCH_SIZE);
+
+            const { data: catResult, error: catErr } = await supabase.functions.invoke('gemini-chat', {
+                body: {
+                    action: 'categorize_transactions',
+                    payload: {
+                        transactions: batch.map(t => ({
+                            description: t.description,
+                            amount: t.amount,
+                            type: t.type,
+                        })),
+                    },
+                },
+            });
+
+            if (catErr || !catResult?.categories?.length) {
+                log.warn('[Recategorize] AI batch failed, skipping', catErr);
+                continue;
+            }
+
+            // Update each transaction with new category
+            for (let j = 0; j < batch.length; j++) {
+                const newCat = catResult.categories[j];
+                if (newCat && newCat !== batch[j].category && newCat !== 'other') {
+                    const { error: updateErr } = await supabase
+                        .from('finance_transactions')
+                        .update({ category: newCat, ai_categorized: true })
+                        .eq('id', batch[j].id);
+
+                    if (!updateErr) totalUpdated++;
+                }
+            }
+        }
+
+        log.info(`[Recategorize] Updated ${totalUpdated} of ${transactions.length} transactions`);
+        return { updated: totalUpdated, total: transactions.length };
+    } catch (err) {
+        log.error('[Recategorize] Error:', err);
+        return { updated: 0, total: 0, error: err instanceof Error ? err.message : 'Erro ao recategorizar' };
+    }
+}
