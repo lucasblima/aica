@@ -80,18 +80,6 @@ const MODALITY_COLORS: Record<string, { bg: string; border: string; text: string
   triathlon: { bg: 'rgba(251,113,133,0.12)', border: 'rgb(251,113,133)', text: '#881337' },
 };
 
-const INTENSITY_DOTS: Record<string, string> = {
-  low: 'bg-[#6B7B5C]',
-  medium: 'bg-amber-500',
-  high: 'bg-[#9B4D3A]',
-};
-
-const INTENSITY_LABELS: Record<string, string> = {
-  low: 'Leve',
-  medium: 'Moderado',
-  high: 'Intenso',
-};
-
 const MODALITY_ICONS: Record<string, string> = {
   swimming: '\u{1F3CA}',
   running: '\u{1F3C3}',
@@ -240,18 +228,11 @@ const PositionedWorkoutCard = React.forwardRef<HTMLDivElement, PositionedWorkout
             />
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          {workout.start_time && (
-            <span className="text-[9px] font-medium text-ceramic-text-secondary">
-              {workout.start_time}–{endTime}
-            </span>
-          )}
-          <span className="text-[9px] text-ceramic-text-tertiary">{workout.duration}min</span>
-          <span className={`w-1.5 h-1.5 rounded-full ${INTENSITY_DOTS[workout.intensity] || ''}`} />
-          <span className="text-[8px] font-medium text-ceramic-text-secondary">
-            {INTENSITY_LABELS[workout.intensity] || ''}
+        {workout.start_time && (
+          <span className="text-[9px] font-medium text-ceramic-text-secondary">
+            {workout.start_time}–{endTime}
           </span>
-        </div>
+        )}
       </div>
     </motion.div>
   );
