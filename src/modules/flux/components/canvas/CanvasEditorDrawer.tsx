@@ -76,9 +76,10 @@ type ViewMode = 'weekly' | 'microcycle';
 interface ViewToggleProps {
   mode: ViewMode;
   onChange: (mode: ViewMode) => void;
+  weeklyDisabled?: boolean;
 }
 
-const ViewToggle: React.FC<ViewToggleProps> = ({ mode, onChange }) => (
+const ViewToggle: React.FC<ViewToggleProps> = ({ mode, onChange, weeklyDisabled }) => (
   <div
     className="flex rounded-[12px] p-1"
     style={{
@@ -87,20 +88,24 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ mode, onChange }) => (
     }}
   >
     <button
-      onClick={() => onChange('weekly')}
+      onClick={() => !weeklyDisabled && onChange('weekly')}
+      disabled={weeklyDisabled}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[10px] font-bold uppercase tracking-wider transition-all ${
-        mode === 'weekly'
+        weeklyDisabled
+          ? 'text-ceramic-text-tertiary/40 cursor-not-allowed'
+          : mode === 'weekly'
           ? 'bg-ceramic-base text-ceramic-text-primary'
           : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary'
       }`}
       style={
-        mode === 'weekly'
+        mode === 'weekly' && !weeklyDisabled
           ? {
               boxShadow:
                 '2px 2px 6px rgba(163,158,145,0.15), -2px -2px 6px rgba(255,255,255,0.9)',
             }
           : {}
       }
+      title={weeklyDisabled ? 'Atleta ainda nao organizou os horarios na semana' : undefined}
     >
       <List size={11} />
       Semana
@@ -153,6 +158,7 @@ export interface CanvasEditorDrawerProps {
   microcycleStatus?: string;
   onReleaseMicrocycle?: () => void;
   isReleasing?: boolean;
+  athleteHasScheduled?: boolean;
   // Actions
   onBack: () => void;
   onOpenCalculator: () => void;
@@ -171,6 +177,7 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
   microcycleStatus,
   onReleaseMicrocycle,
   isReleasing,
+  athleteHasScheduled,
   onBack,
 }) => {
   const hasFinancialPending =
@@ -257,7 +264,7 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            <ViewToggle mode={viewMode} onChange={setViewMode} />
+            <ViewToggle mode={viewMode} onChange={setViewMode} weeklyDisabled={athleteHasScheduled === false} />
 
             {/* Liberar Treino / Status Badge */}
             {microcycleStatus === 'draft' && onReleaseMicrocycle && (

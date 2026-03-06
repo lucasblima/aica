@@ -285,6 +285,12 @@ export default function CanvasEditorView() {
     return map;
   }, [slots]);
 
+  // Check if athlete has scheduled any workout times (#796)
+  const athleteHasScheduled = useMemo(() => {
+    if (slots.length === 0) return false;
+    return slots.some((s) => s.start_time != null && s.start_time !== '');
+  }, [slots]);
+
   // Handlers
   const handleBack = useCallback(() => {
     if (athlete) {
@@ -589,6 +595,7 @@ export default function CanvasEditorView() {
         microcycleStatus={microcycleStatus}
         onReleaseMicrocycle={handleReleaseMicrocycle}
         isReleasing={isReleasing}
+        athleteHasScheduled={athleteHasScheduled}
         onBack={handleBack}
         onOpenCalculator={() => setIsCalculatorOpen(true)}
       />
