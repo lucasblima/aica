@@ -20,6 +20,7 @@ import {
   getDailyQuestionsForCarousel,
   saveDailyResponse,
   logDailyQuestionUsage,
+  markQuestionTextAnswered,
 } from '../services/dailyQuestionService'
 import { answerQuestion as saveQuestionResponse } from '../services/questionService'
 
@@ -122,6 +123,7 @@ export function useDailyQuestionAI() {
         } else {
           // AI/template/pool question with synthetic ID — use heuristic CP scoring
           await saveDailyResponse(user.id, state.question.id, responseText, state.source as 'ai' | 'journey' | 'pool')
+          markQuestionTextAnswered(state.question.question_text)
 
           // Use the same heuristic-quality approach as qualityEvaluationService
           // for consistency between DB-question and AI/pool-question scoring paths
@@ -286,6 +288,7 @@ export function useDailyQuestionCarousel(count: number = 5) {
           })
         } else {
           await saveDailyResponse(user.id, question.id, responseText, source)
+          markQuestionTextAnswered(question.question_text)
 
           // Quality-aware heuristic CP scoring
           const words = responseText.trim().split(/\s+/).filter(w => w.length > 0)

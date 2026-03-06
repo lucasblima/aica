@@ -99,7 +99,7 @@ export function AddMemberSheet({ isOpen, onClose, spaceId, onMemberAdded }: AddM
 
           {/* Sheet */}
           <motion.div
-            className="fixed bottom-0 left-0 right-0 z-50 ceramic-card rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 z-50 ceramic-card rounded-t-2xl p-6 pb-24 sm:pb-6 max-h-[80vh] overflow-y-auto"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
