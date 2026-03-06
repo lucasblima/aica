@@ -206,8 +206,7 @@ export default function CanvasEditorView() {
 
   // Filter state (lifted from sidebar for shared toolbar)
   const [libraryModality, setLibraryModality] = useState<string | null>(null);
-  const [zoneFilter, setZoneFilter] = useState('all');
-  const [volumeFilter, setVolumeFilter] = useState('all');
+  const [zoneFilter, setZoneFilter] = useState<string[]>([]);
 
   // All hooks MUST be called before any conditional return
   const { athletes, isLoading: athletesLoading } = useAthletes();
@@ -551,9 +550,11 @@ export default function CanvasEditorView() {
           libraryModality={libraryModality}
           onModalityChange={setLibraryModality}
           zoneFilter={zoneFilter}
-          onZoneChange={setZoneFilter}
-          volumeFilter={volumeFilter}
-          onVolumeChange={setVolumeFilter}
+          onZoneToggle={(zone) =>
+            setZoneFilter((prev) =>
+              prev.includes(zone) ? prev.filter((z) => z !== zone) : [...prev, zone]
+            )
+          }
         />
       )}
 
@@ -566,7 +567,6 @@ export default function CanvasEditorView() {
             onTemplateSelect={handleTemplateSelect}
             libraryModality={libraryModality}
             zoneFilter={zoneFilter}
-            volumeFilter={volumeFilter}
           />
         )}
 

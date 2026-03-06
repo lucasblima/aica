@@ -9,7 +9,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { GripVertical, Trash2 } from 'lucide-react';
 import { springHover } from '@/lib/animations/ceramic-motion';
 
 // ============================================
@@ -502,33 +502,6 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-ceramic-base">
-      {/* Week Header */}
-      <div
-        className="px-5 py-3 border-b border-ceramic-text-secondary/10 flex-shrink-0"
-        style={{ background: '#F0EFE9' }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="p-2 rounded-[12px]"
-              style={{
-                boxShadow: 'inset 2px 2px 5px rgba(163,158,145,0.2), inset -2px -2px 5px rgba(255,255,255,0.9)',
-              }}
-            >
-              <Calendar className="w-4 h-4 text-[#7B8FA2]" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-ceramic-text-primary">
-                Semana {weekNumber}
-              </h2>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-xs text-ceramic-text-secondary">
-            <span>{workouts.length} treino(s)</span>
-          </div>
-        </div>
-      </div>
-
       {/* Time Grid */}
       <div className="flex-1 overflow-auto">
         <div className="flex min-w-[800px]">
