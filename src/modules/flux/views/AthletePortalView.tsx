@@ -8,14 +8,14 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, type Variants } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
 import { useParQ } from '../hooks/useParQ';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { WorkoutSlotService } from '../services/workoutSlotService';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
-import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, WeeklyFeedbackCard } from '../components/athlete';
+import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, ExerciseQuestionnaireSheet } from '../components/athlete';
 import { WeeklyGrid, type WeekWorkout } from '../components/canvas/WeeklyGrid';
 import type { FeedbackData } from '../components/athlete';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,6 +36,7 @@ import {
   FileText,
   DollarSign,
   Heart,
+  Lock,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -92,6 +93,9 @@ export default function AthletePortalView() {
 
   const [highlightedSlotId, setHighlightedSlotId] = useState<string | null>(null);
   const slotRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [feedbackSheetDay, setFeedbackSheetDay] = useState<number | null>(null);
+  const [dayFeedbackMap, setDayFeedbackMap] = useState<Record<string, boolean>>({});
+  const [sheetSubmitting, setSheetSubmitting] = useState(false);
 
   const welcomeParam = searchParams.get('welcome') === 'true';
   const [showWelcome, setShowWelcome] = useState(() => welcomeParam || !AthleteWelcome.hasBeenShown());
@@ -211,6 +215,55 @@ export default function AthletePortalView() {
       .eq('microcycle_id', micro.id)
       .then(({ count }) => setFeedbackCount(count || 0));
   }, [profile?.active_microcycle?.id]);
+
+  // Track which days already have daily feedback for the selected week
+  useEffect(() => {
+    const micro = profile?.active_microcycle;
+    if (!micro?.id || !selectedWeek) return;
+    let cancelled = false;
+    supabase
+      .from('athlete_feedback_entries')
+      .select('day_of_week')
+      .eq('microcycle_id', micro.id)
+      .eq('week_number', selectedWeek)
+      .eq('feedback_type', 'daily')
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const map: Record<string, boolean> = {};
+        for (const row of data) {
+          map[`${selectedWeek}-${row.day_of_week}`] = true;
+        }
+        setDayFeedbackMap(prev => ({ ...prev, ...map }));
+      });
+    return () => { cancelled = true; };
+  }, [profile?.active_microcycle?.id, selectedWeek]);
+
+  // Submit day feedback via ExerciseQuestionnaireSheet bottom sheet
+  const handleDayFeedbackSubmit = useCallback(async (data: { slotId: string; questionnaire: Record<string, number | undefined>; notes: string }) => {
+    if (!feedbackSheetDay || !user || !profile?.active_microcycle) return;
+    setSheetSubmitting(true);
+    try {
+      const { error: insertErr } = await supabase.from('athlete_feedback_entries').insert({
+        user_id: user.id,
+        athlete_id: profile.athlete_id,
+        microcycle_id: profile.active_microcycle.id,
+        feedback_type: 'daily',
+        week_number: selectedWeek,
+        day_of_week: feedbackSheetDay,
+        questionnaire: data.questionnaire,
+        notes: data.notes.trim() || null,
+      });
+      if (insertErr) throw insertErr;
+      setDayFeedbackMap(prev => ({ ...prev, [`${selectedWeek}-${feedbackSheetDay}`]: true }));
+      setFeedbackSheetDay(null);
+      setFeedbackCount(prev => prev + 1);
+      refetch();
+    } catch (err) {
+      log.error('Failed to submit day feedback:', err);
+    } finally {
+      setSheetSubmitting(false);
+    }
+  }, [feedbackSheetDay, user, profile?.active_microcycle, profile?.athlete_id, selectedWeek, refetch]);
 
   const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
     const mod = profile?.modality as keyof typeof MODALITY_CONFIG;
@@ -343,6 +396,9 @@ export default function AthletePortalView() {
     date.setDate(start.getDate() + weekOffset + dayOffset);
     return date;
   };
+
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
 
   // ── Render ──
 
@@ -566,24 +622,41 @@ export default function AthletePortalView() {
                                 isUpdating={updating === slot.id} modality={profile.modality} />
                             </div>
                           ))}
-                          {/* Day feedback — 8-question questionnaire right after this day's workouts */}
-                          {user && micro && (
-                            <>
-                              <div className="flex items-center justify-center py-2">
-                                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Feedback</span>
-                              </div>
-                              <WeeklyFeedbackCard
-                                athleteId={profile.athlete_id}
-                                microcycleId={micro.id}
-                                weekNumber={selectedWeek}
-                                userId={user.id}
-                                currentWeek={micro.current_week || 1}
-                                microcycleStartDate={micro.start_date}
-                                workoutDays={[day]}
-                                onFeedbackSubmitted={() => refetch()}
-                              />
-                            </>
-                          )}
+                          {/* Inline day feedback — compact button or submitted badge (#770) */}
+                          {user && micro && (() => {
+                            const feedbackKey = `${selectedWeek}-${day}`;
+                            const hasFeedback = dayFeedbackMap[feedbackKey];
+                            const isDayFuture = date ? date > todayMidnight : false;
+
+                            if (hasFeedback) {
+                              return (
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-ceramic-success/10 border border-ceramic-success/20">
+                                  <CheckCircle className="w-3.5 h-3.5 text-ceramic-success flex-shrink-0" />
+                                  <span className="text-xs font-bold text-ceramic-success">Feedback enviado</span>
+                                </div>
+                              );
+                            }
+
+                            if (isDayFuture) {
+                              return (
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-ceramic-cool/40 opacity-50">
+                                  <Lock className="w-3.5 h-3.5 text-ceramic-text-secondary/50 flex-shrink-0" />
+                                  <span className="text-xs text-ceramic-text-secondary">Feedback disponivel no dia</span>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setFeedbackSheetDay(day)}
+                                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                                <span className="text-xs font-bold text-amber-700">Dar Feedback do Dia</span>
+                              </button>
+                            );
+                          })()}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 py-3 px-4 rounded-xl bg-ceramic-cool/50">
@@ -614,6 +687,25 @@ export default function AthletePortalView() {
           <AthleteFeedbackView profile={profile} onRefetch={refetch} highlightSlotId={feedbackSlotId} selectedWeek={selectedWeek} />
         </motion.section>
       )}
+
+      {/* Day feedback bottom sheet (#770) */}
+      <AnimatePresence>
+        {feedbackSheetDay && micro && (
+          <ExerciseQuestionnaireSheet
+            slotId={`day-${selectedWeek}-${feedbackSheetDay}`}
+            slotName="Feedback do Dia"
+            dayLabel={(() => {
+              const dayDate = getDateForDay(feedbackSheetDay);
+              return dayDate
+                ? `${DAY_NAMES[feedbackSheetDay]}, ${dayDate.getDate()} ${MONTH_NAMES[dayDate.getMonth()]}`
+                : DAY_NAMES[feedbackSheetDay];
+            })()}
+            onSubmit={handleDayFeedbackSubmit}
+            onClose={() => setFeedbackSheetDay(null)}
+            isSubmitting={sheetSubmitting}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
