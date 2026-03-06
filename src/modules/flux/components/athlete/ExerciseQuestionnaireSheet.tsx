@@ -87,6 +87,23 @@ const QUESTIONS: QuestionDef[] = [
 
 const TOTAL_STEPS = QUESTIONS.length + 1; // 8 questions + 1 notes step
 
+/**
+ * Detects and removes duplicated transcript text from Gemini responses.
+ * e.g. "Os exercícios foram bons.Os exercícios foram bons." → "Os exercícios foram bons."
+ */
+function deduplicateTranscript(text: string): string {
+  if (!text || text.length < 10) return text;
+  const len = text.length;
+  // Check if the text is roughly the same phrase repeated (within half ±5 chars)
+  for (let mid = Math.floor(len / 2) - 5; mid <= Math.ceil(len / 2) + 5; mid++) {
+    if (mid <= 0 || mid >= len) continue;
+    const first = text.slice(0, mid).trim();
+    const second = text.slice(mid).trim();
+    if (first.length > 10 && first === second) return first;
+  }
+  return text;
+}
+
 // ─── Props ─────────────────────────────────────────
 
 export interface ExerciseQuestionnaireSheetProps {
@@ -148,11 +165,15 @@ export function ExerciseQuestionnaireSheet({
       }
 
       const raw = data?.result?.transcription || data?.result?.text || '';
-      const text = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim();
+      const cleaned = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim();
+
+      // Deduplicate if Gemini returned repeated text (e.g. "abc.abc." → "abc.")
+      const text = deduplicateTranscript(cleaned);
 
       if (text) {
         setVoiceTranscript(text);
-        setNotes((prev) => prev ? `${prev}\n${text}` : text);
+        // Replace notes with transcript (not append) to prevent duplication on re-record
+        setNotes(text);
       }
     } catch (err: any) {
       log.error('Transcription error:', err);

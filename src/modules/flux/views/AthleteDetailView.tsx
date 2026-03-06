@@ -40,8 +40,11 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { PaymentRuler } from '../components/athlete/PaymentRuler';
+import { FeedbackRadarChart } from '../components/athlete/FeedbackRadarChart';
+import { StressFatigueGauges } from '../components/athlete/StressFatigueGauges';
 import { getPaymentData } from '../services/athleteService';
 import type { AthletePaymentData } from '../services/athleteService';
+import type { QuestionnaireData, FeedbackEntryRow } from '../hooks/useAthleteFeedback';
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
@@ -82,6 +85,8 @@ export default function AthleteDetailView() {
   const [latestParQ, setLatestParQ] = useState<ParQResponse | null>(null);
   const [parqLoading, setParqLoading] = useState(false);
   const [feedbacks, setFeedbacks] = useState<SlotFeedback[]>([]);
+  const [feedbackEntries, setFeedbackEntries] = useState<FeedbackEntryRow[]>([]);
+  const [aggregatedQuestionnaire, setAggregatedQuestionnaire] = useState<QuestionnaireData | null>(null);
   const [activeMicrocycle, setActiveMicrocycle] = useState<{ id: string; status: string; name?: string } | null>(null);
   const [activatingMicrocycle, setActivatingMicrocycle] = useState(false);
   const alerts: Alert[] = [];
@@ -188,7 +193,7 @@ export default function AthleteDetailView() {
     return () => { cancelled = true; };
   }, [athleteId, athlete?.allow_parq_onboarding]);
 
-  // Load recent feedbacks from workout_slots
+  // Load recent feedbacks from workout_slots (legacy)
   useEffect(() => {
     if (!athleteId) return;
     let cancelled = false;
@@ -209,6 +214,59 @@ export default function AthleteDetailView() {
     loadFeedbacks();
     return () => { cancelled = true; };
   }, [athleteId]);
+
+  // Load structured feedback entries + compute aggregated radar (#781)
+  useEffect(() => {
+    if (!activeMicrocycle?.id) return;
+    let cancelled = false;
+
+    const loadFeedbackEntries = async () => {
+      const { data, error } = await supabase
+        .from('athlete_feedback_entries')
+        .select('*')
+        .eq('microcycle_id', activeMicrocycle.id)
+        .order('created_at', { ascending: false });
+
+      if (cancelled || error || !data) return;
+      const rows = data as FeedbackEntryRow[];
+      setFeedbackEntries(rows);
+
+      // Compute aggregated questionnaire averages
+      const KEYS: (keyof QuestionnaireData)[] = [
+        'volume_adequate', 'volume_completed', 'intensity_adequate', 'intensity_completed',
+        'fatigue', 'stress', 'nutrition', 'sleep',
+      ];
+      const withQ = rows.filter((r) => {
+        if (!r.questionnaire) return false;
+        return KEYS.filter((k) => (r.questionnaire as QuestionnaireData)?.[k] != null).length >= 3;
+      });
+      if (withQ.length === 0) { setAggregatedQuestionnaire(null); return; }
+
+      const sums: Record<string, { total: number; count: number }> = {};
+      for (const row of withQ) {
+        for (const key of KEYS) {
+          const val = (row.questionnaire as QuestionnaireData)?.[key];
+          if (val != null) {
+            if (!sums[key]) sums[key] = { total: 0, count: 0 };
+            sums[key].total += val;
+            sums[key].count += 1;
+          }
+        }
+      }
+      const result: QuestionnaireData = {};
+      let populated = 0;
+      for (const key of KEYS) {
+        if (sums[key] && sums[key].count > 0) {
+          (result as Record<string, number>)[key] = Math.round((sums[key].total / sums[key].count) * 10) / 10;
+          populated++;
+        }
+      }
+      setAggregatedQuestionnaire(populated >= 3 ? result : null);
+    };
+
+    loadFeedbackEntries();
+    return () => { cancelled = true; };
+  }, [activeMicrocycle?.id]);
 
   // Load active/draft microcycle for "Liberar Treino" button (#381)
   useEffect(() => {
@@ -1366,11 +1424,95 @@ export default function AthleteDetailView() {
           </h2>
         </div>
 
-        {feedbacks.length > 0 ? (
+        {/* Aggregated Radar Chart + Gauges (#781) */}
+        {aggregatedQuestionnaire && (
+          <div className="ceramic-card p-4 mb-4 space-y-4">
+            <FeedbackRadarChart
+              questionnaire={aggregatedQuestionnaire}
+              size={220}
+              title="Visao Geral"
+              subtitle="Media dos feedbacks do atleta"
+            />
+            <StressFatigueGauges
+              stress={aggregatedQuestionnaire.stress}
+              fatigue={aggregatedQuestionnaire.fatigue}
+            />
+          </div>
+        )}
+
+        {/* Structured feedback entries from athlete_feedback_entries */}
+        {feedbackEntries.length > 0 && (
+          <div className="space-y-3 mb-4">
+            {feedbackEntries.slice(0, 10).map((entry) => (
+              <div key={entry.id} className="ceramic-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-ceramic-text-secondary" />
+                    <p className="text-sm font-bold text-ceramic-text-primary">
+                      {entry.feedback_type === 'weekly' ? `Feedback Semanal (Sem ${entry.week_number})` : `Feedback de Exercicio`}
+                    </p>
+                  </div>
+                  <p className="text-xs text-ceramic-text-secondary">
+                    {new Date(entry.created_at).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
+                  </p>
+                </div>
+
+                {/* Questionnaire summary badges */}
+                {entry.questionnaire && (
+                  <div className="flex flex-wrap gap-2">
+                    {entry.questionnaire.fatigue != null && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                        entry.questionnaire.fatigue >= 4 ? 'bg-red-100 text-red-700' :
+                        entry.questionnaire.fatigue >= 2 ? 'bg-amber-100 text-amber-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        Cansaco: {entry.questionnaire.fatigue}/5
+                      </span>
+                    )}
+                    {entry.questionnaire.stress != null && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                        entry.questionnaire.stress >= 4 ? 'bg-red-100 text-red-700' :
+                        entry.questionnaire.stress >= 2 ? 'bg-amber-100 text-amber-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        Stress: {entry.questionnaire.stress}/5
+                      </span>
+                    )}
+                    {entry.questionnaire.sleep != null && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                        entry.questionnaire.sleep >= 3 ? 'bg-green-100 text-green-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        Sono: {entry.questionnaire.sleep}/5
+                      </span>
+                    )}
+                    {entry.questionnaire.nutrition != null && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                        entry.questionnaire.nutrition >= 3 ? 'bg-green-100 text-green-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        Nutricao: {entry.questionnaire.nutrition}/5
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Notes / Voice transcript */}
+                {(entry.notes || entry.voice_transcript) && (
+                  <p className="text-sm text-ceramic-text-primary font-light italic">
+                    &ldquo;{entry.notes || entry.voice_transcript}&rdquo;
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Legacy feedback from workout_slots (backward compat) */}
+        {feedbackEntries.length === 0 && feedbacks.length > 0 && (
           <div className="space-y-3">
             {feedbacks.map((fb) => (
               <div key={fb.id} className="ceramic-card p-4 space-y-3">
-                {/* Header: slot name + date */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Activity className="w-4 h-4 text-ceramic-text-secondary" />
@@ -1387,13 +1529,9 @@ export default function AthleteDetailView() {
                     </p>
                   )}
                 </div>
-
-                {/* Athlete feedback text */}
                 <p className="text-sm text-ceramic-text-primary font-light">
                   {fb.athlete_feedback}
                 </p>
-
-                {/* RPE if available */}
                 {fb.rpe != null && (
                   <div className="flex items-center gap-2 text-xs pt-2 border-t border-ceramic-text-secondary/10">
                     <span className="text-ceramic-text-secondary">RPE:</span>
@@ -1409,7 +1547,9 @@ export default function AthleteDetailView() {
               </div>
             ))}
           </div>
-        ) : (
+        )}
+
+        {feedbackEntries.length === 0 && feedbacks.length === 0 && (
           <div className="ceramic-inset p-8 text-center">
             <p className="text-sm text-ceramic-text-secondary font-light">
               Nenhum feedback registrado ainda
