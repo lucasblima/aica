@@ -280,14 +280,19 @@ Vento maximo: ${maxWind.toFixed(0)} km/h
 
 Responda SOMENTE com a frase, sem aspas nem explicacao.`;
 
-  const result = await model.generateContent({
+  // Race Gemini call against timeout to prevent 504 gateway timeouts
+  const geminiPromise = model.generateContent({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
       maxOutputTokens: 256,
       temperature: 0.7,
     },
   });
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Gemini insight timeout (8s)')), 8000)
+  );
 
+  const result = await Promise.race([geminiPromise, timeoutPromise]);
   const text = result.response.text().trim();
   // Ensure insight is not too long
   return text.length > 150 ? text.substring(0, 147) + '...' : text;
