@@ -4,13 +4,12 @@
  * Left sidebar for the Canvas editor: search bar + template library.
  * Templates are draggable into the grid.
  *
- * Filters (modality, zone, volume) have been moved to CanvasFilterToolbar (#698).
+ * Filters (modality, zone) have been moved to CanvasFilterToolbar (#698).
  */
 
 import React, { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { useWorkoutTemplates } from '../../hooks/useWorkoutTemplates';
-import { MODALITY_ICONS, MODALITY_PT_LABELS, VOLUME_OPTIONS } from './CanvasFilterToolbar';
 import type { WorkoutTemplate } from '../../types/flow';
 import type { Athlete } from '../../types/flux';
 
@@ -33,8 +32,7 @@ interface CanvasLibrarySidebarProps {
   onTemplateSelect: (template: WorkoutTemplate) => void;
   // Filter state lifted to parent
   libraryModality: string | null;
-  zoneFilter: string;
-  volumeFilter: string;
+  zoneFilter: string[];
 }
 
 export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
@@ -42,7 +40,6 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
   onTemplateSelect,
   libraryModality,
   zoneFilter,
-  volumeFilter,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,8 +52,8 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
   const filtered = useMemo(() => {
     let result = templates;
 
-    // Zone filter: match against intensity mapping (Z1-Z2 = low, Z3 = medium, Z4-Z5 = high)
-    if (zoneFilter !== 'all') {
+    // Zone filter: multi-select toggle (empty = show all)
+    if (zoneFilter.length > 0) {
       const zoneIntensityMap: Record<string, string[]> = {
         Z1: ['low'],
         Z2: ['low'],
@@ -64,16 +61,8 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
         Z4: ['high'],
         Z5: ['high'],
       };
-      const intensities = zoneIntensityMap[zoneFilter] || [];
-      result = result.filter((t) => intensities.includes(t.intensity));
-    }
-
-    // Volume filter
-    if (volumeFilter !== 'all') {
-      const vol = VOLUME_OPTIONS.find((v) => v.key === volumeFilter);
-      if (vol) {
-        result = result.filter((t) => t.duration >= vol.min && t.duration < vol.max);
-      }
+      const allowedIntensities = new Set(zoneFilter.flatMap((z) => zoneIntensityMap[z] || []));
+      result = result.filter((t) => allowedIntensities.has(t.intensity));
     }
 
     // Search filter
@@ -87,32 +76,12 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
     }
 
     return result;
-  }, [templates, zoneFilter, volumeFilter, searchQuery]);
+  }, [templates, zoneFilter, searchQuery]);
 
   return (
     <div className="flex flex-col w-80 h-full border-r border-ceramic-text-secondary/10">
-      {/* Header + Search */}
-      <div className="p-4 border-b border-ceramic-text-secondary/10 space-y-3 bg-ceramic-base flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div
-            className="p-2 rounded-[12px]"
-            style={{
-              boxShadow:
-                'inset 2px 2px 5px rgba(163,158,145,0.2), inset -2px -2px 5px rgba(255,255,255,0.9)',
-            }}
-          >
-            <span className="text-xl">{MODALITY_ICONS[modality] || '\u{1F3C3}'}</span>
-          </div>
-          <div>
-            <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-              Biblioteca
-            </p>
-            <h3 className="text-lg font-bold text-ceramic-text-primary capitalize">
-              {MODALITY_PT_LABELS[modality] || modality}
-            </h3>
-          </div>
-        </div>
-
+      {/* Search */}
+      <div className="p-4 border-b border-ceramic-text-secondary/10 bg-ceramic-base flex-shrink-0">
         {/* Search Input */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-secondary" />
