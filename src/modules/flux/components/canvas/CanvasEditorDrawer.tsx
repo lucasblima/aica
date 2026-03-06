@@ -297,39 +297,6 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
         </div>
       </div>
 
-      {/* Bottom row: Week tabs (all weeks visible) */}
-      {viewMode === 'weekly' && (
-        <div className="px-6 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-ceramic-text-secondary font-bold uppercase tracking-wider mr-1">
-              Semana
-            </span>
-            {[1, 2, 3, 4].map((week) => {
-              return (
-                <button
-                  key={week}
-                  onClick={() => setCurrentWeek(week)}
-                  className={`px-4 py-2 rounded-[12px] text-sm font-bold transition-all ${
-                    currentWeek === week
-                      ? 'bg-ceramic-base text-ceramic-text-primary border-b-2 border-amber-400'
-                      : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary hover:bg-ceramic-text-secondary/5'
-                  }`}
-                  style={
-                    currentWeek === week
-                      ? {
-                          boxShadow:
-                            '3px 3px 8px rgba(163,158,145,0.12), -3px -3px 8px rgba(255,255,255,0.9)',
-                        }
-                      : {}
-                  }
-                >
-                  <span>Sem {week}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
