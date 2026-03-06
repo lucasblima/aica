@@ -40,52 +40,63 @@ export const ZONE_OPTIONS = [
 // ============================================
 
 interface CanvasFilterToolbarProps {
-  athleteModality?: string;
-  libraryModality: string | null;
-  onModalityChange: (mod: string | null) => void;
+  modalityFilter: string[];
+  onModalityToggle: (mod: string) => void;
   zoneFilter: string[];
   onZoneToggle: (zone: string) => void;
+  // Week tabs (moved from CanvasEditorDrawer #783)
+  currentWeek: number;
+  onWeekChange: (week: number) => void;
+  viewMode: 'weekly' | 'microcycle';
 }
 
 export const CanvasFilterToolbar: React.FC<CanvasFilterToolbarProps> = ({
-  athleteModality,
-  libraryModality,
-  onModalityChange,
+  modalityFilter,
+  onModalityToggle,
   zoneFilter,
   onZoneToggle,
+  currentWeek,
+  onWeekChange,
+  viewMode,
 }) => {
-  const activeModality = libraryModality || athleteModality;
-
-  // Build modality list: athlete's modality first, then others
-  const modalityItems = [
-    ...(athleteModality
-      ? [
-          {
-            key: athleteModality,
-            icon: MODALITY_ICONS[athleteModality] || '\u{1F3C3}',
-            label: MODALITY_PT_LABELS[athleteModality] || athleteModality,
-          },
-        ]
-      : []),
-    ...Object.entries(MODALITY_ICONS)
-      .filter(([k]) => k !== athleteModality)
-      .map(([k, icon]) => ({
-        key: k,
-        icon,
-        label: MODALITY_PT_LABELS[k] || k,
-      })),
-  ];
+  const modalityItems = Object.entries(MODALITY_ICONS).map(([k, icon]) => ({
+    key: k,
+    icon,
+    label: MODALITY_PT_LABELS[k] || k,
+  }));
 
   return (
     <div className="flex items-center gap-4 px-5 py-2 border-b border-ceramic-border/30 bg-ceramic-cool/30">
-      {/* Modality pills */}
+      {/* Week tabs (only in weekly mode) */}
+      {viewMode === 'weekly' && (
+        <>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4].map((week) => (
+              <button
+                key={week}
+                onClick={() => onWeekChange(week)}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                  currentWeek === week
+                    ? 'bg-ceramic-base text-ceramic-text-primary shadow-sm border-b-2 border-amber-400'
+                    : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary'
+                }`}
+              >
+                Sem {week}
+              </button>
+            ))}
+          </div>
+          <div className="w-px h-5 bg-ceramic-border/30" />
+        </>
+      )}
+
+      {/* Modality pills (multi-select toggle: empty = show all) */}
       <div className="flex items-center gap-1">
         {modalityItems.map(({ key, icon, label }) => (
           <button
             key={key}
-            onClick={() => onModalityChange(key === athleteModality ? null : key)}
+            onClick={() => onModalityToggle(key)}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
-              activeModality === key
+              modalityFilter.includes(key)
                 ? 'bg-ceramic-base text-ceramic-text-primary shadow-sm'
                 : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary'
             }`}

@@ -31,26 +31,33 @@ interface CanvasLibrarySidebarProps {
   athlete: Athlete;
   onTemplateSelect: (template: WorkoutTemplate) => void;
   // Filter state lifted to parent
-  libraryModality: string | null;
+  modalityFilter: string[];
   zoneFilter: string[];
 }
 
 export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
   athlete,
   onTemplateSelect,
-  libraryModality,
+  modalityFilter,
   zoneFilter,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const modality = libraryModality || athlete.modality;
+  // When no modality filter, use athlete's modality for template fetching
+  // When modalities selected, fetch all and filter client-side
+  const fetchModality = modalityFilter.length === 0 ? athlete.modality : undefined;
 
   const { templates, isLoading } = useWorkoutTemplates(
-    modality ? { modality: modality as 'swimming' | 'running' | 'cycling' | 'strength' | 'walking' } : undefined
+    fetchModality ? { modality: fetchModality as 'swimming' | 'running' | 'cycling' | 'strength' | 'walking' } : undefined
   );
 
   const filtered = useMemo(() => {
     let result = templates;
+
+    // Modality filter: multi-select toggle (empty = show all)
+    if (modalityFilter.length > 0) {
+      result = result.filter((t) => modalityFilter.includes(t.modality));
+    }
 
     // Zone filter: multi-select toggle (empty = show all)
     if (zoneFilter.length > 0) {
@@ -76,7 +83,7 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
     }
 
     return result;
-  }, [templates, zoneFilter, searchQuery]);
+  }, [templates, modalityFilter, zoneFilter, searchQuery]);
 
   return (
     <div className="flex flex-col w-80 h-full border-r border-ceramic-text-secondary/10">
@@ -170,9 +177,11 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
 
       {/* Footer */}
       <div className="p-4 border-t border-ceramic-text-secondary/10 bg-ceramic-base">
-        <div className="flex items-center justify-between text-xs text-ceramic-text-secondary">
-          <span className="font-medium">{filtered.length} treino(s)</span>
-          <span className="text-ceramic-text-tertiary">Arraste para o grid</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-ceramic-text-secondary font-medium">{filtered.length} treino(s)</span>
+          <span className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
+            <span className="text-sm">👆</span> Arraste para a agenda
+          </span>
         </div>
       </div>
     </div>
