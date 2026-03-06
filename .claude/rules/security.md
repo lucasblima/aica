@@ -38,6 +38,12 @@ const result = await client.call({ action: 'generate', payload: {...} });
 - No PII in migrations (passwords, tokens, etc.)
 - Privacy-first: raw WhatsApp text NEVER stored, only `intent_summary` (100 chars max)
 
+## Verification
+
+- **ALWAYS** verify RLS policies work with test queries after creation
+- Use `superpowers:verification-before-completion` — no security claims without evidence
+- Run `SELECT * FROM table WHERE user_id != auth.uid()` to confirm RLS blocks unauthorized access
+
 ## Absolute Prohibitions
 
 - **NEVER** create backup files (.backup, .bak, .old, ~) — Git is the backup

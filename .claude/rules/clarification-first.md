@@ -1,6 +1,6 @@
 # Clarification-First Protocol
 
-## Rule: Session Start → Name → Clarify → Ask About Team
+## Rule: Session Start → Name → Clarify → Ask Team → Brainstorm → Plan → Execute
 
 Every session follows this exact sequence:
 
@@ -16,12 +16,22 @@ After clarification answers are received (or if task is trivially clear), you MU
 
 Include a brief suggestion of team composition so the user can decide with context.
 
+### Step 3 — Brainstorm (non-trivial tasks)
+For features, refactors, or multi-file changes, invoke `superpowers:brainstorming` to explore approaches before writing code. Produce a design doc with trade-offs and a recommended approach. Wait for user approval.
+
+### Step 4 — Implementation Plan (non-trivial tasks)
+After design is approved, invoke `superpowers:writing-plans` to create a concrete implementation plan. Save to `docs/plans/<session-name>.md`. The plan defines file-level tasks, ordering, and test strategy.
+
+### Step 5 — Execute with TDD
+Implement following `superpowers:test-driven-development` (RED-GREEN-REFACTOR cycle). See `session-protocol.md` for full implementation and verification details.
+
 **Do NOT:**
 - Explain why you need to ask questions
 - Describe the clarification protocol
 - Output text before the AskUserQuestion call
 - Say "I need to clarify..." — just ASK
 - Auto-create Agent Teams without asking the user first
+- Start coding before brainstorming design (for non-trivial tasks)
 
 **DO:**
 - Suggest session name first, wait for approval
@@ -29,6 +39,7 @@ Include a brief suggestion of team composition so the user can decide with conte
 - Call `AskUserQuestion` for clarification
 - After answers, ask if user wants a team activated
 - Only create team after user confirms
+- Brainstorm before coding (design before implementation)
 
 ## 6 Dimensions to Evaluate
 
@@ -90,6 +101,14 @@ Skip ONLY when ALL are true:
 - No design or architecture decisions involved
 - The user gave explicit, detailed instructions
 
+## When to Skip Brainstorming
+
+Skip brainstorming (Steps 3-4) ONLY when ALL are true:
+- The task is trivially clear AND no design decisions involved
+- Implementation approach is obvious (single pattern, no trade-offs)
+- No architectural or cross-module impact
+- Simple bug fix, config change, or typo correction
+
 ## Flow Diagram
 
 ```
@@ -104,7 +123,12 @@ New session starts
     │          ├─ User says Yes → Create team with suggested composition
     │          └─ User says No  → Execute solo
     │
-    └─ Step 3: Execute → PR → Review comments → Resolve → Merge/Close
+    ├─ Step 3: Non-trivial? → `superpowers:brainstorming` → design doc → user approval
+    │          Trivial?     → Skip to Step 5
+    │
+    ├─ Step 4: `superpowers:writing-plans` → implementation plan → docs/plans/
+    │
+    └─ Step 5: Execute (TDD) → Verify → Review → Finish → PR → Merge/Close
 ```
 
 ## Anti-Patterns (NEVER Do These)
@@ -114,3 +138,5 @@ New session starts
 - **Assume priority**: "I'll make it production-ready" — NO, ask if MVP is acceptable
 - **Over-ask**: 10 questions about a 3-line change — NO, use judgment
 - **Under-ask**: Start a multi-module feature with zero clarification — NO, always ask for medium+ tasks
+- **Skip brainstorming**: Start coding a feature without exploring design trade-offs — NO, brainstorm first for non-trivial tasks
+- **Code without a plan**: Jump to implementation without `superpowers:writing-plans` — NO, plan defines what TDD tests to write

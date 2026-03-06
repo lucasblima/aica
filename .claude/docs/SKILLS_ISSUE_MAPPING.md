@@ -2,8 +2,9 @@
 
 Mapeamento entre skills e dominios do projeto AICA Life OS.
 
-**Ultima Atualizacao:** Fevereiro 2026
+**Ultima Atualizacao:** Marco 2026
 **Skills Ativas:** 2 (supabase-database, task-router)
+**Superpowers Integrados:** 11 (brainstorming, writing-plans, TDD, systematic-debugging, verification, code-review, git-worktrees, subagent-dev, parallel-agents, finishing-branch, receiving-review)
 
 ---
 
@@ -87,6 +88,24 @@ Mapeamento entre skills e dominios do projeto AICA Life OS.
 
 ---
 
+## Superpowers nas Regras
+
+| Superpower | Regras que Referenciam |
+|------------|----------------------|
+| `superpowers:brainstorming` | CLAUDE.md, clarification-first, design-system, whatsapp, DDD |
+| `superpowers:writing-plans` | CLAUDE.md, clarification-first, session-protocol, project-structure |
+| `superpowers:test-driven-development` | CLAUDE.md, session-protocol, agent-teams, code-patterns, ai-integration, whatsapp |
+| `superpowers:systematic-debugging` | CLAUDE.md, session-protocol, agent-teams, architecture, database, environments |
+| `superpowers:verification-before-completion` | CLAUDE.md, session-protocol, code-patterns, security, database, deploy-pipeline, ai-integration, whatsapp |
+| `superpowers:requesting-code-review` | CLAUDE.md, session-protocol, agent-teams, code-patterns |
+| `superpowers:receiving-code-review` | CLAUDE.md, code-patterns |
+| `superpowers:subagent-driven-development` | CLAUDE.md, agent-teams |
+| `superpowers:dispatching-parallel-agents` | CLAUDE.md, agent-teams |
+| `superpowers:finishing-a-development-branch` | CLAUDE.md, session-protocol |
+| `superpowers:using-git-worktrees` | CLAUDE.md, session-protocol |
+
+---
+
 ## Historico de Evolucao
 
 ### Jan 2026 (Criacao Inicial)
@@ -101,3 +120,13 @@ Mapeamento entre skills e dominios do projeto AICA Life OS.
 - settings.json: hooks melhorados, co-author atualizado para Opus 4.6
 - Removido: UserPromptSubmit hook (overhead sem beneficio real)
 - Adicionado: deploy guard hook, env file guard hook
+
+### Mar 2026 (Superpowers Integration)
+- 11 superpowers integrados em 14 regras + CLAUDE.md
+- Workflow expandido de 6 para 11 steps (Name->Clarify->Team->Brainstorm->Plan->Worktree->TDD->Verify->Review->Finish->PR)
+- CLAUDE.md: tabela de Superpowers Integration, Critical Rules reorganizadas
+- session-protocol.md: TDD obrigatorio, verification com evidencia, finishing-branch
+- clarification-first.md: gate de brainstorming apos clarificacao
+- agent-teams.md: execution strategies (subagent-driven, parallel, executing-plans), two-stage review
+- code-patterns.md: TDD, code review, e verification patterns com exemplos
+- 10 supporting rules: referencias targeted (3-8 linhas cada)

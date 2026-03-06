@@ -67,3 +67,5 @@ const response = await client.models.generateContent({
 4. Use `aiUsageTrackingService` for tracking
 5. Implement retry with exponential backoff
 6. Use `withHealthTracking()` wrapper from `_shared/health-tracker.ts`
+7. Write failing tests first (`superpowers:test-driven-development`)
+8. Verify with evidence before claiming complete (`superpowers:verification-before-completion`)

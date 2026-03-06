@@ -43,6 +43,13 @@ User exports WhatsApp chat (.txt) → email to `import@import.aica.guru` OR web 
 
 `ConnectionsWhatsAppTab.tsx` — Contacts tab shows dossier + group analytics + timeline; Overview tab shows EntityInbox.
 
+## Development Workflow
+
+WhatsApp features are complex (4 phases, multiple Edge Functions). Always:
+- Start with `superpowers:brainstorming` for new WhatsApp features
+- Follow `superpowers:test-driven-development` for Edge Functions
+- Verify pipeline end-to-end with `superpowers:verification-before-completion`
+
 ## Troubleshooting
 
 ### Real-time lag

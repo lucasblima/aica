@@ -17,6 +17,13 @@
 **NUNCA** deploy direto para producao sem staging validado primeiro.
 **NUNCA** deploy staging + producao simultaneamente.
 
+## Verificacao Obrigatoria
+
+Antes de qualquer deploy, use `superpowers:verification-before-completion`:
+- `npm run build` — mostrar output completo (exit 0)
+- `npm run typecheck` — mostrar output completo (0 errors)
+- **NUNCA** dizer "build passa" sem ter rodado o comando nesta sessao
+
 ## Commands
 
 ### Commit & Push
