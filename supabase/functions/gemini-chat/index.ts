@@ -2318,6 +2318,73 @@ ${rawText.substring(0, 15000).trim()}`
 }
 
 // ============================================================================
+// CATEGORIZE TRANSACTIONS HANDLER (CSV imports)
+// ============================================================================
+
+interface CategorizeTransactionsPayload {
+  transactions: Array<{ description: string; amount: number; type: 'income' | 'expense' }>
+}
+
+async function handleCategorizeTransactions(genAI: GoogleGenerativeAI, payload: CategorizeTransactionsPayload): Promise<any> {
+  const { transactions } = payload || {}
+
+  if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+    throw new Error('Campo "transactions" e obrigatorio e deve conter pelo menos uma transacao.')
+  }
+
+  console.log(`[categorize_transactions] Starting. Count: ${transactions.length}`)
+
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens: 8192,
+    },
+  })
+
+  // Build compact list for the prompt
+  const txList = transactions.map((t, i) =>
+    `${i}|${t.type}|${t.amount}|${t.description}`
+  ).join('\n')
+
+  const prompt = `Voce e um classificador de transacoes bancarias brasileiras.
+
+Para cada transacao abaixo, retorne a categoria mais adequada.
+
+CATEGORIAS VALIDAS: food, transport, housing, health, education, entertainment, shopping, bills, salary, freelance, investment, transfer, pets, personal_care, subscription, travel, other
+
+REGRAS:
+- PIX para pessoas fisicas sem contexto = transfer
+- Supermercado, restaurante, iFood, padaria = food
+- Uber, 99, combustivel, estacionamento = transport
+- Aluguel, condominio, luz, agua, gas = housing (ou bills se for conta de servico)
+- Farmacia, medico, plano de saude = health
+- Salario, pagamento recebido = salary
+- Netflix, Spotify, Disney+ = subscription
+- Pet shop, veterinario, racao = pets
+
+Retorne APENAS um JSON array com as categorias na mesma ordem:
+["category1", "category2", ...]
+
+TRANSACOES (indice|tipo|valor|descricao):
+${txList}`
+
+  try {
+    const result = await model.generateContent(prompt)
+    const text = result.response.text()
+    const categories = extractJSON(text)
+
+    console.log(`[categorize_transactions] Done. Categories: ${Array.isArray(categories) ? categories.length : 'invalid'}`)
+
+    return { categories: Array.isArray(categories) ? categories : [] }
+  } catch (err) {
+    const error = err as Error
+    console.error(`[categorize_transactions] FAILED:`, error.message)
+    return { categories: [] }
+  }
+}
+
+// ============================================================================
 // PODCAST GUEST RESEARCH HANDLER
 // ============================================================================
 
@@ -2956,6 +3023,9 @@ serve(async (req) => {
           break
         case 'parse_statement':
           result = await handleParseStatement(genAI, payload as ParseStatementPayload)
+          break
+        case 'categorize_transactions':
+          result = await handleCategorizeTransactions(genAI, payload as CategorizeTransactionsPayload)
           break
         case 'generate_daily_question':
           result = await handleGenerateDailyQuestion(genAI, payload as GenerateDailyQuestionPayload)

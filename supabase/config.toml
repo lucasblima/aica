@@ -50,3 +50,8 @@ verify_jwt = false
 # Function handles its own JWT validation for better error messages
 [functions.query-edital]
 verify_jwt = false
+
+# finance-monthly-digest: Monthly financial digest with AI insights
+# Function handles its own JWT validation for better error messages
+[functions.finance-monthly-digest]
+verify_jwt = false

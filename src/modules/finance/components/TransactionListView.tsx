@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   Search,
   Filter,
@@ -15,11 +15,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Receipt,
+  Calendar,
 } from 'lucide-react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { useTransactions } from '../hooks/useTransactions';
-import type { FinanceTransaction, TransactionFilters, TransactionCategory } from '../types';
-import { TRANSACTION_CATEGORIES } from '../types';
+import type { FinanceTransaction, TransactionFilters } from '../types';
 import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
 
 const log = createNamespacedLogger('TransactionListView');
@@ -51,10 +51,14 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   userId,
   onClose,
 }) => {
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editData, setEditData] = useState<{
     category: string;
@@ -64,13 +68,30 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // Debounce search input (400ms)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => setSearchTerm(searchInput.trim()), 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
+
+  // All categories that exist in CATEGORY_LABELS (superset of TRANSACTION_CATEGORIES)
+  const allCategories = useMemo(() =>
+    Object.keys(CATEGORY_LABELS).sort((a, b) =>
+      (CATEGORY_LABELS[a] || a).localeCompare(CATEGORY_LABELS[b] || b)
+    ),
+    []
+  );
+
   const filters: TransactionFilters = useMemo(() => {
     const f: TransactionFilters = {};
-    if (searchTerm.trim()) f.searchTerm = searchTerm.trim();
+    if (searchTerm) f.searchTerm = searchTerm;
     if (typeFilter !== 'all') f.type = typeFilter;
     if (categoryFilter) f.category = categoryFilter;
+    if (startDate) f.startDate = startDate;
+    if (endDate) f.endDate = endDate;
     return f;
-  }, [searchTerm, typeFilter, categoryFilter]);
+  }, [searchTerm, typeFilter, categoryFilter, startDate, endDate]);
 
   const {
     transactions,
@@ -203,8 +224,8 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         <input
           type="text"
           placeholder="Buscar por descricao..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 rounded-lg ceramic-inset text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
         />
       </div>
@@ -256,7 +277,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
               >
                 Todas as categorias
               </button>
-              {TRANSACTION_CATEGORIES.map((cat) => (
+              {allCategories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => {
@@ -276,13 +297,30 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           )}
         </div>
 
+        {/* Date range toggle */}
+        <button
+          onClick={() => setShowDateFilter(!showDateFilter)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            startDate || endDate
+              ? 'bg-amber-500 text-white'
+              : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
+          }`}
+        >
+          <Calendar className="w-3 h-3" />
+          {startDate || endDate ? 'Período' : 'Período'}
+        </button>
+
         {/* Clear filters */}
-        {(typeFilter !== 'all' || categoryFilter || searchTerm) && (
+        {(typeFilter !== 'all' || categoryFilter || searchInput || startDate || endDate) && (
           <button
             onClick={() => {
               setTypeFilter('all');
               setCategoryFilter('');
+              setSearchInput('');
               setSearchTerm('');
+              setStartDate('');
+              setEndDate('');
+              setShowDateFilter(false);
             }}
             className="px-3 py-1.5 rounded-full text-xs font-medium text-ceramic-error hover:bg-ceramic-error/10 transition-colors"
           >
@@ -290,6 +328,26 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           </button>
         )}
       </div>
+
+      {/* ── Date range filter ── */}
+      {showDateFilter && (
+        <div className="flex items-center gap-2 mb-4 ceramic-inset p-3 rounded-lg">
+          <span className="text-xs text-ceramic-text-secondary whitespace-nowrap">De:</span>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="flex-1 text-xs ceramic-card px-2 py-1.5 rounded text-ceramic-text-primary bg-transparent"
+          />
+          <span className="text-xs text-ceramic-text-secondary whitespace-nowrap">Até:</span>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="flex-1 text-xs ceramic-card px-2 py-1.5 rounded text-ceramic-text-primary bg-transparent"
+          />
+        </div>
+      )}
 
       {/* ── Transaction list ── */}
       <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
