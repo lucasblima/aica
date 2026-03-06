@@ -240,13 +240,23 @@ serve(async (req: Request) => {
       )
     }
 
-    // Fetch previous month for comparison
-    const { data: prevTransactions } = await supabase
-      .from('finance_transactions')
-      .select('id, description, amount, type, category, transaction_date, merchant_name, is_recurring')
-      .eq('user_id', user.id)
-      .gte('transaction_date', prevStartDate)
-      .lte('transaction_date', prevEndDate)
+    // Fetch previous month for comparison (non-critical — continue if fails)
+    let prevTransactions: typeof transactions = null
+    try {
+      const { data, error: prevError } = await supabase
+        .from('finance_transactions')
+        .select('id, description, amount, type, category, transaction_date, merchant_name, is_recurring')
+        .eq('user_id', user.id)
+        .gte('transaction_date', prevStartDate)
+        .lte('transaction_date', prevEndDate)
+      if (prevError) {
+        console.warn('[finance-monthly-digest] Previous month query failed:', prevError.message)
+      } else {
+        prevTransactions = data
+      }
+    } catch (prevErr) {
+      console.warn('[finance-monthly-digest] Previous month query error:', prevErr)
+    }
 
     // Calculate stats
     const { current, previous, percentChange } = calculateStats(
@@ -310,20 +320,29 @@ Regras:
     // Call Gemini 2.5 Flash via REST API
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`
 
-    const geminiResponse = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: 4096,
-          temperature: 0.3,
-        },
-        thinkingConfig: {
-          thinkingBudget: 0,
-        },
-      }),
-    })
+    const abortController = new AbortController()
+    const geminiTimeout = setTimeout(() => abortController.abort(), 25000)
+
+    let geminiResponse: Response
+    try {
+      geminiResponse = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: abortController.signal,
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 4096,
+            temperature: 0.3,
+          },
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        }),
+      })
+    } finally {
+      clearTimeout(geminiTimeout)
+    }
 
     if (!geminiResponse.ok) {
       const errText = await geminiResponse.text()

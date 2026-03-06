@@ -514,7 +514,9 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     <div className="flex items-start space-x-3 mb-3">
                       <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" aria-hidden="true" />
                       <div className="flex-1">
-                        <h3 className="font-semibold text-ceramic-text-primary mb-1">Perfil encontrado!</h3>
+                        <h3 className="font-semibold text-ceramic-text-primary mb-1">
+                          Perfil encontrado — é essa pessoa?
+                        </h3>
                         {profileData.full_name && (
                           <p className="text-sm text-ceramic-text-primary">
                             <strong>Nome completo:</strong> {profileData.full_name}
@@ -531,17 +533,22 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                           </p>
                         )}
                         {profileData.bio_summary && (
-                          <p className="text-sm text-ceramic-secondary mt-2">{profileData.bio_summary}</p>
+                          <p className="text-sm text-ceramic-text-secondary mt-2 italic">
+                            &ldquo;{profileData.bio_summary}&rdquo;
+                          </p>
                         )}
                       </div>
                     </div>
+                    <p className="text-xs text-ceramic-text-secondary mb-3">
+                      Confirme se este é o convidado que você procura, ou busque novamente com outro nome/referência.
+                    </p>
                     <div className="flex space-x-3">
                       <button
                         type="button"
                         onClick={handleConfirmProfile}
                         className="px-4 py-2 bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success/90 transition-colors text-sm focus:outline-none focus:ring-4 focus:ring-ceramic-success/20"
                       >
-                        Confirmar Perfil
+                        Sim, é essa pessoa
                       </button>
                       <button
                         type="button"
@@ -551,7 +558,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                         }}
                         className="px-4 py-2 bg-ceramic-surface-hover text-ceramic-text-primary rounded-lg hover:bg-ceramic-disabled transition-colors text-sm focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20"
                       >
-                        Buscar Novamente
+                        Não, buscar novamente
                       </button>
                     </div>
                   </div>
