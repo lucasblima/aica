@@ -164,9 +164,9 @@ export function QuickCapture({
         showPhoto
       />
 
-      {/* AI Suggestion (appears after 3s of no typing) */}
+      {/* AI Suggestion (appears after 3s of no typing) — question type removed (#703) */}
       <AnimatePresence>
-        {aiSuggestion && (
+        {aiSuggestion && aiSuggestion.type !== 'question' && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}

@@ -757,6 +757,32 @@ function addRecentlyShownId(id: string): void {
   } catch { /* ignore */ }
 }
 
+/**
+ * Track answered question texts in sessionStorage to prevent showing
+ * the same question again after the user answers it.
+ * This is needed because pool/AI questions use synthetic IDs that
+ * aren't stored in the DB, so we can't check question_responses.
+ */
+function getAnsweredQuestionTexts(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const stored = sessionStorage.getItem('daily_question_answered_texts')
+    if (stored) return new Set(JSON.parse(stored))
+  } catch { /* ignore */ }
+  return new Set()
+}
+
+export function markQuestionTextAnswered(text: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    const answered = getAnsweredQuestionTexts()
+    answered.add(text.toLowerCase().trim())
+    const arr = Array.from(answered)
+    if (arr.length > 30) arr.splice(0, arr.length - 30)
+    sessionStorage.setItem('daily_question_answered_texts', JSON.stringify(arr))
+  } catch { /* ignore */ }
+}
+
 function getPoolQuestion(userId: string): DailyQuestion {
   const hour = new Date().getHours()
   const timeOfDay = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 18 ? 'afternoon' : 'evening'
@@ -1002,7 +1028,8 @@ export async function getDailyQuestionsForCarousel(
 ): Promise<DailyQuestionResult[]> {
   const generatedAt = new Date().toISOString()
   const results: DailyQuestionResult[] = []
-  const usedTexts = new Set<string>()
+  const answeredTexts = getAnsweredQuestionTexts()
+  const usedTexts = new Set<string>(answeredTexts)
 
   // Fetch user context ONCE
   let userContext: UserContext
