@@ -180,7 +180,7 @@ export default function AthletePortalView() {
       id: slot.id, day_of_week: slot.day_of_week, start_time: slot.time_of_day || undefined,
       name: slot.template?.name || 'Treino', duration: slot.custom_duration || slot.template?.duration || 60,
       intensity: (['low', 'medium', 'high'].includes(slot.template?.intensity || '') ? slot.template.intensity : 'medium') as 'low' | 'medium' | 'high',
-      modality: (['swimming', 'running', 'cycling', 'strength'].includes(profile?.modality || '') ? profile?.modality : 'strength') as WeekWorkout['modality'],
+      modality: (['swimming', 'running', 'cycling', 'strength', 'walking', 'triathlon'].includes(profile?.modality || '') ? profile?.modality : 'strength') as WeekWorkout['modality'],
     }));
   }, [profile?.active_microcycle, profile?.modality, selectedWeek]);
 
@@ -412,12 +412,12 @@ export default function AthletePortalView() {
             <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
           </button>
           {activeTab === 'treinos' && (
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-ceramic-cool/60">
-              <button onClick={() => handleViewModeChange('list')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-white text-ceramic-text-primary shadow-sm' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}>
-                <List className="w-3.5 h-3.5" />Lista
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-ceramic-cool shadow-sm border border-ceramic-border/40">
+              <button onClick={() => handleViewModeChange('list')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-white text-ceramic-text-primary shadow-md' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-white/50'}`}>
+                <List className="w-4 h-4" />Lista
               </button>
-              <button onClick={() => handleViewModeChange('canvas')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'canvas' ? 'bg-white text-ceramic-text-primary shadow-sm' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}>
-                <LayoutGrid className="w-3.5 h-3.5" />Grade
+              <button onClick={() => handleViewModeChange('canvas')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'canvas' ? 'bg-white text-ceramic-text-primary shadow-md' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-white/50'}`}>
+                <LayoutGrid className="w-4 h-4" />Grade
               </button>
             </div>
           )}
@@ -476,23 +476,6 @@ export default function AthletePortalView() {
             </div>
           </div>
 
-          {/* Feedbacks Concluidos — overall progress */}
-          {micro && (
-            <div className="space-y-2 pt-3 border-t border-ceramic-border/30">
-              <div className="flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-sm font-bold text-ceramic-text-primary">{feedbackCount}/{totalFeedbackDays}</span>
-                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Feedbacks Concluidos</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-ceramic-text-secondary">Semana {micro.current_week}/4</span>
-                <span className="text-xs font-bold text-ceramic-text-primary">{completionPct}%</span>
-              </div>
-              <div className="h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
-                <motion.div className="h-full bg-amber-400 rounded-full" initial={{ width: 0 }} animate={{ width: `${completionPct}%` }} transition={{ duration: 0.6, delay: 0.2 }} />
-              </div>
-            </div>
-          )}
         </div>
       </motion.section>
 
@@ -604,11 +587,13 @@ export default function AthletePortalView() {
                 {[1, 2, 3, 4, 5, 6, 7].map((day) => {
                   const daySlots = slotsByDay.get(day) || [];
                   const date = getDateForDay(day);
+                  const isToday = date != null && date.getFullYear() === todayMidnight.getFullYear() && date.getMonth() === todayMidnight.getMonth() && date.getDate() === todayMidnight.getDate();
                   return (
                     <div key={day}>
                       <div className="flex items-center gap-2 py-3">
                         <span className="text-xs font-black text-ceramic-text-primary uppercase">{DAY_NAMES[day]}</span>
                         {date && <span className="text-xs text-ceramic-text-secondary">{date.getDate()} {MONTH_NAMES[date.getMonth()]}</span>}
+                        {isToday && <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Hoje</span>}
                       </div>
                       {daySlots.length > 0 ? (
                         <div className="space-y-2">
@@ -616,7 +601,8 @@ export default function AthletePortalView() {
                             <div
                               key={slot.id}
                               ref={(el) => { if (el) slotRefs.current.set(slot.id, el); }}
-                              className={`transition-all duration-500 rounded-xl ${highlightedSlotId === slot.id ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''}`}
+                              className={`transition-all duration-500 rounded-2xl ${highlightedSlotId === slot.id ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''} ${isToday && highlightedSlotId !== slot.id ? 'ring-2 ring-amber-400/60' : ''}`}
+                              style={isToday && highlightedSlotId !== slot.id ? { background: 'linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(251,191,36,0.04) 40%, transparent 70%)' } : undefined}
                             >
                               <WorkoutCard slot={slot}
                                 isUpdating={updating === slot.id} modality={profile.modality} />
