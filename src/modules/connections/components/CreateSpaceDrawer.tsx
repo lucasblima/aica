@@ -218,7 +218,7 @@ export function CreateSpaceDrawer({
             </form>
 
             {/* Footer (fixed) */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-ceramic-border bg-ceramic-cool/20">
+            <div className="flex items-center justify-end gap-3 p-6 pb-24 sm:pb-6 border-t border-ceramic-border bg-ceramic-cool/20">
               <button
                 type="button"
                 onClick={handleClose}
