@@ -349,12 +349,36 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     });
   }, [allTransactions, selectedYear, selectedMonth]);
 
-  // Summary for selected month
+  // Summary for selected month — uses statement closing_balance as the real account balance
   const selectedMonthSummary = useMemo(() => {
     const income = selectedMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const expenses = selectedMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-    return { income, expenses, balance: income - expenses, count: selectedMonthTransactions.length };
-  }, [selectedMonthTransactions]);
+
+    // Find statement(s) whose period overlaps the selected month
+    const monthPadded = String(selectedMonth).padStart(2, '0');
+    const firstOfMonth = `${selectedYear}-${monthPadded}-01`;
+    const lastOfMonth = `${selectedYear}-${monthPadded}-31`; // safe for string comparison
+
+    const monthStatements = statements
+      .filter(s =>
+        s.processing_status === 'completed' &&
+        s.statement_period_start &&
+        s.statement_period_end &&
+        s.statement_period_start <= lastOfMonth &&
+        s.statement_period_end >= firstOfMonth
+      )
+      .sort((a, b) => (b.statement_period_end || '').localeCompare(a.statement_period_end || ''));
+
+    const monthStatement = monthStatements[0];
+
+    // Account balance = closing_balance from the statement (authoritative)
+    // Falls back to net flow (income - expenses) when no statement exists
+    const balance = monthStatement?.closing_balance != null
+      ? monthStatement.closing_balance
+      : income - expenses;
+
+    return { income, expenses, balance, count: selectedMonthTransactions.length, hasStatement: !!monthStatement };
+  }, [selectedMonthTransactions, statements, selectedYear, selectedMonth]);
 
   // Check if there's data to show
   const hasData = summary && summary.transactionCount > 0;
@@ -561,7 +585,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               <p className="text-lg font-black text-ceramic-error">{formatCurrency(selectedMonthSummary.expenses)}</p>
             </div>
             <div className="ceramic-tray p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Saldo</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                {selectedMonthSummary.hasStatement ? 'Saldo Final' : 'Resultado'}
+              </p>
               <p className={`text-lg font-black ${selectedMonthSummary.balance >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}>{formatCurrency(selectedMonthSummary.balance)}</p>
             </div>
           </div>
