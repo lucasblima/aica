@@ -205,7 +205,7 @@ export default function CanvasEditorView() {
   const [microcycleStatus, setMicrocycleStatus] = useState<string | undefined>(undefined);
 
   // Filter state (lifted from sidebar for shared toolbar)
-  const [libraryModality, setLibraryModality] = useState<string | null>(null);
+  const [modalityFilter, setModalityFilter] = useState<string[]>([]);
   const [zoneFilter, setZoneFilter] = useState<string[]>([]);
 
   // All hooks MUST be called before any conditional return
@@ -544,19 +544,23 @@ export default function CanvasEditorView() {
       />
 
       {/* Filter Toolbar */}
-      {athlete && (
-        <CanvasFilterToolbar
-          athleteModality={athlete.modality}
-          libraryModality={libraryModality}
-          onModalityChange={setLibraryModality}
-          zoneFilter={zoneFilter}
-          onZoneToggle={(zone) =>
-            setZoneFilter((prev) =>
-              prev.includes(zone) ? prev.filter((z) => z !== zone) : [...prev, zone]
-            )
-          }
-        />
-      )}
+      <CanvasFilterToolbar
+        modalityFilter={modalityFilter}
+        onModalityToggle={(mod) =>
+          setModalityFilter((prev) =>
+            prev.includes(mod) ? prev.filter((m) => m !== mod) : [...prev, mod]
+          )
+        }
+        zoneFilter={zoneFilter}
+        onZoneToggle={(zone) =>
+          setZoneFilter((prev) =>
+            prev.includes(zone) ? prev.filter((z) => z !== zone) : [...prev, zone]
+          )
+        }
+        currentWeek={currentWeek}
+        onWeekChange={setCurrentWeek}
+        viewMode={viewMode}
+      />
 
       {/* Main Content: 3-Column Layout */}
       <div className="flex flex-1 overflow-hidden">
@@ -565,7 +569,7 @@ export default function CanvasEditorView() {
           <CanvasLibrarySidebar
             athlete={athlete}
             onTemplateSelect={handleTemplateSelect}
-            libraryModality={libraryModality}
+            modalityFilter={modalityFilter}
             zoneFilter={zoneFilter}
           />
         )}
