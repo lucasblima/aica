@@ -7,6 +7,7 @@
 import { supabase } from '../../../services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { csvParserService } from './csvParserService';
+import { ensureAccountExists } from './accountService';
 
 const log = createNamespacedLogger('StatementService');
 import type {
@@ -283,6 +284,14 @@ export const statementService = {
       );
     }
 
+    // Auto-create account from bank info (PDF path)
+    let accountId: string | undefined;
+    try {
+      accountId = await ensureAccountExists(userId, parsed.bankName, parsed.accountType || 'checking');
+    } catch (accError) {
+      log.warn('[PDF] Account auto-creation failed:', accError);
+    }
+
     // Update statement with parsed metadata
     await this.updateStatement(statementId, {
       bank_name: parsed.bankName,
@@ -306,7 +315,7 @@ export const statementService = {
     });
 
     // Save transactions
-    await this.saveTransactions(statementId, userId, parsed.transactions);
+    await this.saveTransactions(statementId, userId, parsed.transactions, accountId);
   },
 
   /**
@@ -332,18 +341,21 @@ export const statementService = {
   async saveTransactions(
     statementId: string,
     userId: string,
-    transactions: ParsedTransaction[]
+    transactions: ParsedTransaction[],
+    accountId?: string
   ): Promise<void> {
     // Generate hash_id for each transaction
     const transactionRecords: Partial<FinanceTransaction>[] = await Promise.all(
       transactions.map(async (t) => ({
         user_id: userId,
         statement_id: statementId,
+        account_id: accountId || null,
         hash_id: await this.generateTransactionHash(userId, t.date, t.description, Math.abs(t.amount)),
         description: t.description,
         amount: Math.abs(t.amount),
         type: t.type,
         category: t.suggestedCategory || 'other',
+        ai_categorized: !!(t.suggestedCategory && t.suggestedCategory !== 'other'),
         transaction_date: t.date,
         is_recurring: false,
       }))
@@ -523,6 +535,47 @@ export const statementService = {
         throw new Error('Este extrato já foi importado anteriormente.');
       }
 
+      // 3b. AI categorize transactions that have no category
+      const uncategorized = parsed.transactions.filter(t => !t.category || t.category === 'other');
+      if (uncategorized.length > 0) {
+        try {
+          log.debug('[CSV] AI categorizing', uncategorized.length, 'transactions');
+          const { data: catResult } = await supabase.functions.invoke('gemini-chat', {
+            body: {
+              action: 'categorize_transactions',
+              payload: {
+                transactions: uncategorized.map(t => ({
+                  description: t.description,
+                  amount: t.amount,
+                  type: t.type,
+                })),
+              },
+            },
+          });
+
+          if (catResult?.categories && Array.isArray(catResult.categories)) {
+            let applied = 0;
+            uncategorized.forEach((t, i) => {
+              if (catResult.categories[i] && catResult.categories[i] !== 'other') {
+                t.category = catResult.categories[i];
+                applied++;
+              }
+            });
+            log.debug('[CSV] AI categorized', applied, 'of', uncategorized.length, 'transactions');
+          }
+        } catch (catError) {
+          log.warn('[CSV] AI categorization failed, using defaults:', catError);
+        }
+      }
+
+      // 3c. Auto-create account from bank info
+      let accountId: string | undefined;
+      try {
+        accountId = await ensureAccountExists(userId, parsed.bankName, parsed.accountType || 'checking');
+      } catch (accError) {
+        log.warn('[CSV] Account auto-creation failed:', accError);
+      }
+
       // 4. Create statement record
       const statement = await this.createStatement({
         user_id: userId,
@@ -552,6 +605,7 @@ export const statementService = {
         parsed.transactions.map(async (tx, index) => ({
           statement_id: statement.id,
           user_id: userId,
+          account_id: accountId || null,
           hash_id: await this.generateTransactionHash(userId, tx.date, tx.description, Math.abs(tx.amount)),
           transaction_date: tx.date,
           description: tx.description,
@@ -559,6 +613,7 @@ export const statementService = {
           amount: tx.amount,
           type: tx.type,
           category: tx.category || 'other',
+          ai_categorized: !!(tx.category && tx.category !== 'other'),
           is_recurring: false,
           source_line_number: index + 2,
         }))

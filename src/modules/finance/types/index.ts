@@ -261,6 +261,7 @@ export interface ParsedTransaction {
   amount: number;
   type: 'income' | 'expense';
   balance?: number;
+  category?: string;
   suggestedCategory?: string;
 }
 

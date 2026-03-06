@@ -108,6 +108,44 @@ export async function deleteAccount(accountId: string): Promise<void> {
 }
 
 /**
+ * Ensure an account exists for a given bank + type. Returns account ID.
+ * If one already exists, returns existing. If not, creates it.
+ */
+export async function ensureAccountExists(
+  userId: string,
+  bankName: string,
+  accountType: FinanceAccount['account_type']
+): Promise<string> {
+  try {
+    // Check if account already exists for this bank
+    const { data: existing } = await supabase
+      .from('finance_accounts')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('bank_name', bankName)
+      .eq('account_type', accountType)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (existing) return existing.id;
+
+    // Create new account
+    const account = await createAccount(userId, {
+      account_name: `${bankName} - ${accountType === 'checking' ? 'Conta Corrente' : accountType === 'savings' ? 'Poupança' : accountType === 'credit_card' ? 'Cartão de Crédito' : bankName}`,
+      bank_name: bankName,
+      account_type: accountType,
+      is_default: false,
+    });
+
+    log.info('[AccountService] Auto-created account:', account.id, bankName, accountType);
+    return account.id;
+  } catch (error) {
+    log.error('Error ensuring account exists:', error);
+    throw error;
+  }
+}
+
+/**
  * Set a specific account as the default, unsetting any existing default.
  */
 export async function setDefaultAccount(
