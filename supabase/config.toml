@@ -55,3 +55,8 @@ verify_jwt = false
 # Function handles its own JWT validation for better error messages
 [functions.finance-monthly-digest]
 verify_jwt = false
+
+# assess-athlete-fatigue: Computes CTL/ATL/TSB fatigue metrics for athletes
+# Function handles its own JWT validation
+[functions.assess-athlete-fatigue]
+verify_jwt = false

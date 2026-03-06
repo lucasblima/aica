@@ -196,8 +196,8 @@ export default function AthleteDetailView() {
     const loadFeedbacks = async () => {
       const { data, error } = await supabase
         .from('workout_slots')
-        .select('id, name, athlete_feedback, completed_at, rpe')
-        .eq('athlete_id', athleteId)
+        .select('id, name, athlete_feedback, completed_at, rpe, microcycles!inner(athlete_id)')
+        .eq('microcycles.athlete_id', athleteId)
         .not('athlete_feedback', 'is', null)
         .order('completed_at', { ascending: false })
         .limit(10);
