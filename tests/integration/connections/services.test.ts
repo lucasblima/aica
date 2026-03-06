@@ -37,7 +37,7 @@ import {
 } from '@/modules/connections/services/invitationService';
 
 // Mock the supabase module
-vi.mock('@/lib/supabase', () => {
+vi.mock('@/services/supabaseClient', () => {
   const mockSupabase = createMockSupabase({
     user: createMockUser({ id: 'test-user-123', email: 'test@example.com' })
   });
@@ -52,7 +52,7 @@ describe('SpaceService Integration Tests', () => {
 
   beforeEach(async () => {
     // Reset mock database and user before each test
-    const { supabase } = await import('@/lib/supabase');
+    const { supabase } = await import('@/services/supabaseClient');
     mockDb = (supabase as any)._mockDb;
     mockDb.reset();
 
@@ -123,7 +123,7 @@ describe('SpaceService Integration Tests', () => {
 
     it('should throw error when user not authenticated', async () => {
       // Arrange: Remove user
-      const { supabase } = await import('@/lib/supabase');
+      const { supabase } = await import('@/services/supabaseClient');
       (supabase as any)._mockSetUser(null);
 
       // Act & Assert
@@ -233,7 +233,7 @@ describe('SpaceService Integration Tests', () => {
 
     it('should throw error when user not authenticated', async () => {
       // Arrange
-      const { supabase } = await import('@/lib/supabase');
+      const { supabase } = await import('@/services/supabaseClient');
       (supabase as any)._mockSetUser(null);
 
       // Act & Assert
@@ -352,7 +352,7 @@ describe('MemberService Integration Tests', () => {
   let mockUser: any;
 
   beforeEach(async () => {
-    const { supabase } = await import('@/lib/supabase');
+    const { supabase } = await import('@/services/supabaseClient');
     mockDb = (supabase as any)._mockDb;
     mockDb.reset();
 
@@ -628,7 +628,7 @@ describe('InvitationService Integration Tests', () => {
   let mockUser: any;
 
   beforeEach(async () => {
-    const { supabase } = await import('@/lib/supabase');
+    const { supabase } = await import('@/services/supabaseClient');
     mockDb = (supabase as any)._mockDb;
     mockDb.reset();
 
@@ -736,7 +736,7 @@ describe('InvitationService Integration Tests', () => {
   describe('acceptInvitation', () => {
     it('should update status and add member', async () => {
       // Arrange
-      const { supabase } = await import('@/lib/supabase');
+      const { supabase } = await import('@/services/supabaseClient');
       (supabase as any)._mockSetUser({
         id: 'invitee-user',
         email: 'invitee@example.com'

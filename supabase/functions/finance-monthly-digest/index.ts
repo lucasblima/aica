@@ -33,7 +33,6 @@ interface TransactionRow {
   type: 'income' | 'expense'
   category: string
   transaction_date: string
-  merchant_name?: string
   is_recurring?: boolean
 }
 
@@ -115,7 +114,7 @@ function calculateStats(
     // Top 5 expenses
     const topExpenses = expenses
       .map(t => ({
-        description: t.description || t.merchant_name || 'Sem descricao',
+        description: t.description || 'Sem descricao',
         amount: Math.abs(Number(t.amount)),
         category: t.category || 'outros',
       }))
@@ -161,7 +160,27 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Auth
+    // 1. Parse body first (before auth, to avoid body-consumed issues)
+    let body: DigestRequest
+    try {
+      body = await req.json()
+    } catch (parseErr) {
+      console.error('[finance-monthly-digest] Body parse error:', parseErr)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request body', step: 'parse_body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { action } = body
+    if (action !== 'generate_digest') {
+      return new Response(
+        JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 2. Auth
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(
@@ -173,10 +192,23 @@ serve(async (req: Request) => {
     const token = authHeader.replace('Bearer ', '')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')!
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    // Validate env vars
+    if (!supabaseUrl || !supabaseAnonKey || !geminiApiKey) {
+      console.error('[finance-monthly-digest] Missing env vars:', {
+        url: !!supabaseUrl, anon: !!supabaseAnonKey, gemini: !!geminiApiKey, service: !!supabaseServiceKey
+      })
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error', step: 'env_vars' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // JWT validation
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey)
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token)
 
     if (authError || !user) {
       return new Response(
@@ -185,15 +217,10 @@ serve(async (req: Request) => {
       )
     }
 
-    const body: DigestRequest = await req.json()
-    const { action } = body
-
-    if (action !== 'generate_digest') {
-      return new Response(
-        JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // 3. Service role client for data queries (bypasses RLS)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
     // Determine target month
     const defaultMonth = getLastCompletedMonth()
@@ -217,13 +244,15 @@ serve(async (req: Request) => {
     // Fetch transactions for target month
     const { data: transactions, error: txError } = await supabase
       .from('finance_transactions')
-      .select('id, description, amount, type, category, transaction_date, merchant_name, is_recurring')
+      .select('id, description, amount, type, category, transaction_date, is_recurring')
       .eq('user_id', user.id)
       .gte('transaction_date', startDate)
       .lte('transaction_date', endDate)
+      .or('is_duplicate.eq.false,is_duplicate.is.null')
       .order('amount', { ascending: false })
 
     if (txError) {
+      console.error('[finance-monthly-digest] Transaction query error:', txError)
       throw new Error(`Failed to fetch transactions: ${txError.message}`)
     }
 
@@ -245,10 +274,11 @@ serve(async (req: Request) => {
     try {
       const { data, error: prevError } = await supabase
         .from('finance_transactions')
-        .select('id, description, amount, type, category, transaction_date, merchant_name, is_recurring')
+        .select('id, description, amount, type, category, transaction_date, is_recurring')
         .eq('user_id', user.id)
         .gte('transaction_date', prevStartDate)
         .lte('transaction_date', prevEndDate)
+        .or('is_duplicate.eq.false,is_duplicate.is.null')
       if (prevError) {
         console.warn('[finance-monthly-digest] Previous month query failed:', prevError.message)
       } else {
@@ -335,9 +365,6 @@ Regras:
             maxOutputTokens: 4096,
             temperature: 0.3,
           },
-          thinkingConfig: {
-            thinkingBudget: 0,
-          },
         }),
       })
     } finally {
@@ -393,13 +420,16 @@ Regras:
 
   } catch (error) {
     console.error('[finance-monthly-digest] Error:', error)
-    const corsHeaders = getCorsHeaders(req)
+    const errCorsHeaders = getCorsHeaders(req)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('[finance-monthly-digest] Stack:', errorStack)
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...errCorsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

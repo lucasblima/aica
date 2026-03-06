@@ -47,7 +47,7 @@ vi.mock('@/lib/gemini/client', () => ({
 }));
 
 // Mock Supabase
-vi.mock('@/lib/supabase', () => ({
+vi.mock('@/services/supabaseClient', () => ({
   supabase: {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
@@ -440,7 +440,7 @@ describe('Journey AI Tracking Integration', () => {
       vi.mocked(getMomentsMock.getMoments).mockResolvedValueOnce(mockMoments);
 
       // Mock Supabase upsert chain
-      const { supabase } = await import('@/lib/supabase');
+      const { supabase } = await import('@/services/supabaseClient');
       vi.mocked(supabase.from).mockReturnValueOnce({
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
@@ -495,7 +495,7 @@ describe('Journey AI Tracking Integration', () => {
       const getMomentsMock = await import('../momentService');
       vi.mocked(getMomentsMock.getMoments).mockResolvedValueOnce(mockMoments);
 
-      const { supabase } = await import('@/lib/supabase');
+      const { supabase } = await import('@/services/supabaseClient');
       vi.mocked(supabase.from).mockReturnValueOnce({
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: { id: 's1' }, error: null }),

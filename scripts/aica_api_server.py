@@ -1,5 +1,11 @@
 import os
 import sys
+
+# Ensure project root is in sys.path so 'scripts' is found as a package
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import hmac
 import hashlib
 import json
@@ -16,17 +22,8 @@ from supabase import create_client, Client
 import httpx
 import uvicorn
 
-# Import logic from other scripts
-# Note: we assume the script is run from project root: python -m scripts.aica_api_server
-try:
-    from scripts.generate_daily_report import DailyReportGenerator
-    from scripts.process_message import MessageProcessor
-except ImportError:
-    # If running directly from within scripts folder, path adjustment might be needed
-    # But standard way is running as module from root
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from scripts.generate_daily_report import DailyReportGenerator
-    from scripts.process_message import MessageProcessor
+from scripts.generate_daily_report import DailyReportGenerator
+from scripts.process_message import MessageProcessor
 
 # Configure logging
 logging.basicConfig(

@@ -2347,21 +2347,53 @@ async function handleCategorizeTransactions(genAI: GoogleGenerativeAI, payload: 
     `${i}|${t.type}|${t.amount}|${t.description}`
   ).join('\n')
 
-  const prompt = `Voce e um classificador de transacoes bancarias brasileiras.
+  const prompt = `Voce e um classificador especialista de transacoes bancarias brasileiras.
 
-Para cada transacao abaixo, retorne a categoria mais adequada.
+Para cada transacao, retorne a categoria mais adequada.
 
 CATEGORIAS VALIDAS: food, transport, housing, health, education, entertainment, shopping, bills, salary, freelance, investment, transfer, pets, personal_care, subscription, travel, other
 
-REGRAS:
-- PIX para pessoas fisicas sem contexto = transfer
-- Supermercado, restaurante, iFood, padaria = food
-- Uber, 99, combustivel, estacionamento = transport
-- Aluguel, condominio, luz, agua, gas = housing (ou bills se for conta de servico)
-- Farmacia, medico, plano de saude = health
-- Salario, pagamento recebido = salary
-- Netflix, Spotify, Disney+ = subscription
-- Pet shop, veterinario, racao = pets
+REGRAS DE CLASSIFICACAO (ORDEM DE PRIORIDADE):
+
+1. RECEITAS (type=income):
+   - Salario, pagamento, vencimento, folha = salary
+   - Freelance, servico prestado, honorarios = freelance
+   - Rendimento, dividendo, CDB, CDI, juros = investment
+   - PIX RECEBIDO de empresas = salary ou freelance (inferir pelo valor: >R$1000 provavel salary)
+   - PIX RECEBIDO de pessoas fisicas = salary (na duvida, nao usar 'other')
+
+2. DESPESAS (type=expense) - PADROES COMUNS:
+   - iFood, Rappi, restaurante, lanchonete, padaria, supermercado, mercado, acougue, hortifruti, cafe = food
+   - Uber, 99, Cabify, combustivel, gasolina, Shell, posto, estacionamento, pedagio, IPVA, seguro auto = transport
+   - Aluguel, condominio, IPTU, imobiliaria = housing
+   - Luz, energia, CEMIG, CPFL, agua, SABESP, gas, Comgas, internet, telefone, celular, Vivo, Claro, Tim = bills
+   - Farmacia, drogaria, Droga Raia, medico, consulta, exame, laboratorio, plano saude, Unimed, Amil = health
+   - Escola, faculdade, curso, livro, Udemy, Coursera, material escolar = education
+   - Netflix, Spotify, Disney+, Amazon Prime, YouTube Premium, HBO, Apple TV, iCloud, Google One = subscription
+   - Cinema, teatro, show, ingresso, jogo, lazer, bar, balada, festa = entertainment
+   - Roupa, Renner, C&A, Zara, sapato, eletronico, Mercado Livre, Amazon, Magazine Luiza, Shopee = shopping
+   - Pet shop, veterinario, racao, Petz, Cobasi = pets
+   - Cabelo, barbearia, estetica, manicure, academia, Smart Fit = personal_care
+   - Hotel, passagem, Booking, Airbnb, Latam, Gol, Azul, CVC = travel
+
+3. TRANSFER (usar SOMENTE quando):
+   - Transferencia entre contas PROPRIAS do usuario (ex: "TED ENTRE CONTAS", "TRANSF CC/POUP")
+   - Aplicacao/resgate entre contas proprias
+   - NAO usar para PIX de pagamento de servicos ou compras
+   - NAO usar para pagamentos a terceiros
+
+4. PIX - REGRAS ESPECIAIS:
+   - PIX com nome de empresa/loja = categorizar pela empresa (food, shopping, etc)
+   - PIX com valor tipico de compra (R$10-500) = inferir pela descricao ou usar shopping
+   - PIX de valor alto sem contexto (>R$1000 expense) = bills (provavelmente conta/servico)
+   - "COMPRA CARTAO" ou "PAG*" seguido de nome = categorizar pelo nome do estabelecimento
+   - EVITE usar 'transfer' e 'other' — tente sempre inferir a melhor categoria
+
+5. QUANDO EM DUVIDA:
+   - Prefira 'shopping' a 'other' para compras genericas
+   - Prefira 'bills' a 'other' para pagamentos genericos
+   - Use 'other' APENAS como ultimo recurso (<5% das transacoes)
+   - NUNCA use 'transfer' como categoria padrao
 
 Retorne APENAS um JSON array com as categorias na mesma ordem:
 ["category1", "category2", ...]
