@@ -30,6 +30,7 @@ interface CanvasGridContainerProps {
   isLoading: boolean;
   onWorkoutClick: (workoutId: string) => void;
   onWorkoutDelete: (workoutId: string) => void;
+  onWorkoutDuplicate?: (workoutId: string) => void;
   onEmptySlotClick: (dayOfWeek: number, startTime: string) => void;
   onDropWorkout: (dayOfWeek: number, startTime: string, templateData: string) => void;
   onReorderWorkout: (workoutId: string, fromDay: number, toDay: number, toTime: string) => void;
@@ -48,6 +49,7 @@ export const CanvasGridContainer: React.FC<CanvasGridContainerProps> = ({
   isLoading,
   onWorkoutClick,
   onWorkoutDelete,
+  onWorkoutDuplicate,
   onEmptySlotClick,
   onDropWorkout,
   onReorderWorkout,
@@ -100,6 +102,7 @@ export const CanvasGridContainer: React.FC<CanvasGridContainerProps> = ({
                 calendarEvents={busySlots}
                 currentWeek={currentWeek}
                 onWorkoutClick={onWorkoutClick}
+                onWorkoutDuplicate={onWorkoutDuplicate}
                 onDropWorkout={onMicrocycleDropWorkout}
                 onWeekClick={onWeekClick}
                 isLoading={isLoading}
