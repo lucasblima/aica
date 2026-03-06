@@ -191,7 +191,7 @@ export default function CanvasEditorView() {
   const { actions } = useFlux();
 
   // State
-  const [viewMode, setViewMode] = useState<ViewMode>('weekly');
+  const [viewMode, setViewMode] = useState<ViewMode>('microcycle');
   const [currentWeek, setCurrentWeek] = useState(1);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
@@ -356,6 +356,56 @@ export default function CanvasEditorView() {
       await updateSlot({ id: workoutId, day_of_week: toDay, start_time: toTime });
     },
     [updateSlot]
+  );
+
+  // Duplicate workout + open for editing (#791)
+  const handleDuplicateWorkout = useCallback(
+    async (workoutId: string) => {
+      const slot = slots.find((s) => s.id === workoutId);
+      if (!slot) return;
+      // Create a duplicate slot on the same day/week
+      const newSlot = await createSlot({
+        week_number: slot.week_number,
+        day_of_week: slot.day_of_week,
+        start_time: slot.start_time || '08:00',
+        name: `${slot.name} (copia)`,
+        duration: slot.duration,
+        intensity: slot.intensity,
+        modality: slot.modality,
+        exercise_structure: slot.exercise_structure,
+        coach_notes: slot.coach_notes,
+        ftp_percentage: slot.ftp_percentage,
+        pace_zone: slot.pace_zone,
+        css_percentage: slot.css_percentage,
+        rpe: slot.rpe,
+      });
+      // Open the new slot for editing
+      if (newSlot?.id) {
+        const templateData: WorkoutTemplate = {
+          id: newSlot.template_id || newSlot.id,
+          user_id: newSlot.user_id,
+          name: newSlot.name,
+          description: '',
+          category: 'main',
+          modality: newSlot.modality,
+          duration: newSlot.duration,
+          intensity: newSlot.intensity,
+          exercise_structure: newSlot.exercise_structure,
+          ftp_percentage: newSlot.ftp_percentage,
+          pace_zone: newSlot.pace_zone,
+          css_percentage: newSlot.css_percentage,
+          rpe: newSlot.rpe,
+          coach_notes: newSlot.coach_notes,
+          created_at: '',
+          updated_at: '',
+          usage_count: 0,
+        };
+        setEditingSlotId(newSlot.id);
+        setEditingTemplateData(templateData);
+        setIsEditorOpen(true);
+      }
+    },
+    [slots, createSlot]
   );
 
   const handleWorkoutClick = useCallback(
@@ -586,6 +636,7 @@ export default function CanvasEditorView() {
           isLoading={workoutsLoading}
           onWorkoutClick={handleWorkoutClick}
           onWorkoutDelete={handleDeleteWorkout}
+          onWorkoutDuplicate={handleDuplicateWorkout}
           onEmptySlotClick={handleEmptySlotClick}
           onDropWorkout={handleDropWorkout}
           onReorderWorkout={handleReorderWorkout}

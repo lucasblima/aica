@@ -9,7 +9,7 @@
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Eye } from 'lucide-react';
+import { Eye, Copy } from 'lucide-react';
 import {
   springHover,
   staggerContainer,
@@ -51,6 +51,7 @@ interface MicrocycleGridProps {
   calendarEvents?: BusySlot[];
   currentWeek: number; // Which week is "active" (1-4)
   onWorkoutClick?: (workoutId: string) => void;
+  onWorkoutDuplicate?: (workoutId: string) => void;
   onDropWorkout?: (weekNumber: number, dayOfWeek: number, templateData: string) => void;
   onWeekClick?: (weekNumber: number) => void;
   isLoading?: boolean;
@@ -138,25 +139,37 @@ const MiniBusySlot: React.FC<MiniBusySlotProps> = ({ slot }) => {
 interface WorkoutPillProps {
   workout: WeekWorkout;
   onClick?: () => void;
+  onDuplicate?: () => void;
 }
 
-const WorkoutPill: React.FC<WorkoutPillProps> = ({ workout, onClick }) => {
+const WorkoutPill: React.FC<WorkoutPillProps> = ({ workout, onClick, onDuplicate }) => {
   const style = MODALITY_PILL_STYLES[workout.modality];
   const icon = MODALITY_ICONS[workout.modality] || '\u{1F3CB}\u{FE0F}';
 
   return (
-    <motion.button
-      onClick={onClick}
-      className="w-full text-left px-1.5 py-1 rounded-lg text-[9px] font-semibold truncate"
-      whileHover={{ scale: 1.03, transition: springHover }}
-      title={`${workout.name} - ${workout.duration}min`}
-      style={{
-        background: style.bg,
-        color: style.text,
-      }}
-    >
-      {icon} {workout.name} <span className="opacity-70">{workout.duration}&prime;</span>
-    </motion.button>
+    <div className="group/pill relative w-full">
+      <motion.button
+        onClick={onClick}
+        className="w-full text-left px-1.5 py-1 rounded-lg text-[9px] font-semibold truncate"
+        whileHover={{ scale: 1.03, transition: springHover }}
+        title={`${workout.name} - ${workout.duration}min`}
+        style={{
+          background: style.bg,
+          color: style.text,
+        }}
+      >
+        {icon} {workout.name} <span className="opacity-70">{workout.duration}&prime;</span>
+      </motion.button>
+      {onDuplicate && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center opacity-0 group-hover/pill:opacity-100 transition-opacity shadow-sm"
+          title="Duplicar e Editar"
+        >
+          <Copy size={8} />
+        </button>
+      )}
+    </div>
   );
 };
 
@@ -170,6 +183,7 @@ interface MiniDayCellProps {
   busySlots: BusySlot[];
   weekNumber: number;
   onWorkoutClick?: (workoutId: string) => void;
+  onWorkoutDuplicate?: (workoutId: string) => void;
   onDrop?: (templateData: string) => void;
 }
 
@@ -177,6 +191,7 @@ const MiniDayCell: React.FC<MiniDayCellProps> = ({
   workouts,
   busySlots,
   onWorkoutClick,
+  onWorkoutDuplicate,
   onDrop,
 }) => {
   const handleDragOver = (e: React.DragEvent) => {
@@ -220,6 +235,7 @@ const MiniDayCell: React.FC<MiniDayCellProps> = ({
           key={workout.id}
           workout={workout}
           onClick={() => onWorkoutClick?.(workout.id)}
+          onDuplicate={onWorkoutDuplicate ? () => onWorkoutDuplicate(workout.id) : undefined}
         />
       ))}
     </div>
@@ -236,6 +252,7 @@ interface WeekStripProps {
   calendarEvents: BusySlot[];
   isCurrent: boolean;
   onWorkoutClick?: (workoutId: string) => void;
+  onWorkoutDuplicate?: (workoutId: string) => void;
   onDropWorkout?: (dayOfWeek: number, templateData: string) => void;
   onWeekClick?: () => void;
 }
@@ -246,6 +263,7 @@ const WeekStrip: React.FC<WeekStripProps> = ({
   calendarEvents,
   isCurrent,
   onWorkoutClick,
+  onWorkoutDuplicate,
   onDropWorkout,
   onWeekClick,
 }) => {
@@ -336,6 +354,7 @@ const WeekStrip: React.FC<WeekStripProps> = ({
             workouts={workoutsByDay[dayNum]}
             busySlots={eventsByDay[dayNum]}
             onWorkoutClick={onWorkoutClick}
+            onWorkoutDuplicate={onWorkoutDuplicate}
             onDrop={(data) => onDropWorkout?.(dayNum, data)}
           />
         ))}
@@ -354,6 +373,7 @@ export const MicrocycleGrid: React.FC<MicrocycleGridProps> = ({
   calendarEvents = [],
   currentWeek,
   onWorkoutClick,
+  onWorkoutDuplicate,
   onDropWorkout,
   onWeekClick,
   isLoading = false,
@@ -396,6 +416,7 @@ export const MicrocycleGrid: React.FC<MicrocycleGridProps> = ({
             calendarEvents={calendarEvents}
             isCurrent={weekNum === currentWeek}
             onWorkoutClick={onWorkoutClick}
+            onWorkoutDuplicate={onWorkoutDuplicate}
             onDropWorkout={(dayOfWeek, templateData) =>
               onDropWorkout?.(weekNum, dayOfWeek, templateData)
             }
