@@ -1,15 +1,16 @@
 /**
  * FeedbackRadarChart -- Pure SVG radar/spider chart for feedback questionnaire data.
  *
- * Shows exactly 6 indicators from the athlete questionnaire:
- *   1. Volume adequado
- *   2. Intensidade adequada
- *   3. Cuidado com alimentacao
- *   4. Cumpriu com volume
- *   5. Cumpriu com intensidade
- *   6. Qualidade do sono
+ * Shows exactly 6 scientific training indicators:
+ *   1. Volume      (volume_adequate — coach prescription vs perception)
+ *   2. Intensidade (intensity_adequate — coach prescription vs perception)
+ *   3. Aderencia   (average of volume_completed + intensity_completed)
+ *   4. Carga sRPE  (session RPE derived from stress, scaled 0-5)
+ *   5. Recuperacao  (Hooper-inspired: avg of sleep + inverted fatigue)
+ *   6. Alimentacao (nutrition)
  *
- * Stress and fatigue are displayed as separate gauges (StressFatigueGauges).
+ * Stress and fatigue feed into derived axes (sRPE and Recovery).
+ * Raw stress/fatigue + ACWR are displayed as separate gauges (StressFatigueGauges).
  *
  * Reference implementation: EntityStatRadar.tsx (Life RPG module)
  */
@@ -71,36 +72,58 @@ interface RadarDimension {
 const MAX_VALUE = 5;
 
 /**
- * Derive exactly 6 radar dimensions from the raw questionnaire fields.
- * Returns null if fewer than 3 fields are populated (not enough data to render).
+ * Derive exactly 6 scientific radar dimensions from the raw questionnaire fields.
+ * Returns null if fewer than 3 source fields are populated (not enough data to render).
  *
- * The 6 indicators are:
- *   1. Volume adequado   (volume_adequate)
- *   2. Intensidade adequada (intensity_adequate)
- *   3. Cuidado com alimentacao (nutrition)
- *   4. Cumpriu com volume (volume_completed)
- *   5. Cumpriu com intensidade (intensity_completed)
- *   6. Qualidade do sono  (sleep)
+ * The 6 scientific axes (#769):
+ *   1. Volume        — volume_adequate (prescription perception)
+ *   2. Intensidade   — intensity_adequate (prescription perception)
+ *   3. Aderencia     — avg(volume_completed, intensity_completed) (compliance)
+ *   4. Carga (sRPE)  — stress field as session RPE proxy, scaled 0-5
+ *   5. Recuperacao   — Hooper-inspired: avg(sleep, 5-fatigue)
+ *   6. Alimentacao   — nutrition
  */
 function extractDimensions(q: QuestionnaireData): RadarDimension[] | null {
-  const dims: { label: string; raw: number | undefined }[] = [
-    { label: 'Volume adequado', raw: q.volume_adequate },
-    { label: 'Intensidade adequada', raw: q.intensity_adequate },
-    { label: 'Alimentacao', raw: q.nutrition },
-    { label: 'Cumpriu volume', raw: q.volume_completed },
-    { label: 'Cumpriu intensidade', raw: q.intensity_completed },
-    { label: 'Qualidade do sono', raw: q.sleep },
+  // Count raw source fields that have data
+  const sources = [
+    q.volume_adequate,
+    q.intensity_adequate,
+    q.volume_completed,
+    q.intensity_completed,
+    q.stress,
+    q.sleep,
+    q.fatigue,
+    q.nutrition,
   ];
+  const populated = sources.filter((v) => v != null).length;
+  if (populated < 3) return null;
 
-  // Need at least 3 populated dimensions
-  const populated = dims.filter((d) => d.raw != null);
-  if (populated.length < 3) return null;
+  // Derived: Aderencia = average of compliance metrics
+  const adherence =
+    q.volume_completed != null && q.intensity_completed != null
+      ? (q.volume_completed + q.intensity_completed) / 2
+      : q.volume_completed ?? q.intensity_completed ?? 0;
 
-  // Fill missing with 0 so the polygon still closes
-  return dims.map((d) => ({
-    label: d.label,
-    value: d.raw ?? 0,
-  }));
+  // Derived: Carga (sRPE proxy) — stress 0-5 mapped directly
+  const load = q.stress ?? 0;
+
+  // Derived: Recuperacao (Hooper-inspired) — avg(sleep, inverted fatigue)
+  // Higher = better recovery. Fatigue inverted: 5 - fatigue.
+  const sleepVal = q.sleep ?? 0;
+  const invertedFatigue = q.fatigue != null ? MAX_VALUE - q.fatigue : 0;
+  const recovery =
+    q.sleep != null || q.fatigue != null
+      ? (sleepVal + invertedFatigue) / (q.sleep != null && q.fatigue != null ? 2 : 1)
+      : 0;
+
+  return [
+    { label: 'Volume', value: q.volume_adequate ?? 0 },
+    { label: 'Intensidade', value: q.intensity_adequate ?? 0 },
+    { label: 'Aderencia', value: adherence },
+    { label: 'Carga (sRPE)', value: load },
+    { label: 'Recuperacao', value: recovery },
+    { label: 'Alimentacao', value: q.nutrition ?? 0 },
+  ];
 }
 
 // ---- Component ----
