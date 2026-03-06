@@ -55,3 +55,11 @@ serve(async (req) => {
 4. Log errors with context
 5. Return JSON with `success` boolean
 6. Use `extractJSON()` helper for Gemini response parsing
+
+## Troubleshooting
+
+When architectural issues arise (token cascades, CORS failures, Edge Function errors), use `superpowers:systematic-debugging`:
+- Phase 1: Read error messages, reproduce, check recent changes
+- Phase 2: Compare against working examples in codebase
+- Phase 3: Form single hypothesis, test minimally
+- Never apply multiple fixes at once

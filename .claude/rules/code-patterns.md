@@ -49,3 +49,55 @@ When modifying modules:
 3. Use TypeScript types from `src/types.ts` or module `types/index.ts`
 4. Follow Ceramic Design System
 5. Test with authenticated user
+
+## Testing Pattern (`superpowers:test-driven-development`)
+
+**Iron law: No production code without a failing test first.**
+
+Follow the RED-GREEN-REFACTOR cycle:
+1. **RED** — Write a test that describes the desired behavior. Run it. It must fail.
+2. **GREEN** — Write the minimum production code to make the test pass. Nothing more.
+3. **REFACTOR** — Clean up both test and production code. Tests must still pass.
+
+```typescript
+// Example: testing a Supabase service call
+import { describe, it, expect, vi } from 'vitest';
+import { fetchWorkItems } from '@/modules/atlas/services/workItemService';
+
+describe('fetchWorkItems', () => {
+  it('returns items filtered by user_id', async () => {
+    // RED: this test defines the expected behavior
+    const items = await fetchWorkItems(mockUserId);
+    expect(items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ user_id: mockUserId })
+    ]));
+    expect(items.every(i => i.user_id === mockUserId)).toBe(true);
+  });
+});
+```
+
+For Edge Functions, test the request/response contract. For React hooks, test state transitions. For services, test data transformations and error paths.
+
+## Code Review Pattern (`superpowers:requesting-code-review`, `superpowers:receiving-code-review`)
+
+**Before PR**: Request a code review — either from a teammate (in team mode) or a self-review subagent (in solo mode). The review checks:
+- Spec compliance (does it match requirements?)
+- Code quality (types, error handling, naming, Ceramic tokens)
+- Security (no exposed keys, RLS on new tables, auth patterns)
+- Test coverage (are edge cases covered?)
+
+**When receiving review**: No performative agreement. For each finding:
+1. Verify technically — is the reviewer correct?
+2. If yes: fix the issue, commit with `fix(review): <description>`
+3. If no: push back with technical reasoning — disagreement is healthy
+
+## Verification Pattern (`superpowers:verification-before-completion`)
+
+**Iron law: No completion claims without fresh verification evidence.**
+
+Before claiming any task is done, you MUST:
+1. Run `npm run build && npm run typecheck` — show actual terminal output
+2. Run `npm run test` (if tests exist for modified code) — show actual output
+3. Verify the feature works as specified (manual check or test output)
+
+**Never say** "build passes" or "tests pass" from memory. Always run the commands fresh and include the output as evidence. Stale results from earlier in the session do not count.

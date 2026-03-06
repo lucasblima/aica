@@ -8,7 +8,7 @@ globs: supabase/migrations/**
 Before creating any migration:
 - [ ] RLS policies defined for new tables
 - [ ] SECURITY DEFINER functions reviewed
-- [ ] Migration tested locally first (`npx supabase db push`)
+- [ ] Migration tested locally (`npx supabase db push` output as evidence — `superpowers:verification-before-completion`)
 - [ ] Rollback plan documented
 - [ ] No PII in migration (passwords, tokens, etc.)
 - [ ] Verify RPCs exist after push (not just migration status)
@@ -63,3 +63,11 @@ npx supabase migration repair  # Fix state
 ## Lesson Learned
 
 Previous migrations were marked as applied but RPCs didn't exist (partial failure). **Always verify RPCs exist** after migration push.
+
+## Debugging Migrations
+
+When migrations fail unexpectedly, use `superpowers:systematic-debugging`:
+1. Read error messages completely (Phase 1)
+2. Check recent changes with `git diff` (Phase 1)
+3. Form hypothesis and test minimally (Phase 3)
+4. Never blindly retry — find root cause first

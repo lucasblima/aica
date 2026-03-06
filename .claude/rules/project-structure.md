@@ -40,6 +40,10 @@ supabase/
 | Connections | `src/modules/connections/` | WhatsApp integration |
 | Flux | `src/modules/flux/` | Training management for coaches |
 
+## Plans
+
+Implementation plans are saved in `docs/plans/YYYY-MM-DD-<topic>.md` (created by `superpowers:writing-plans`).
+
 ## Import Patterns
 
 ```typescript

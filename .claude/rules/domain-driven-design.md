@@ -81,6 +81,7 @@ When modules need data from other modules, they go through:
 - Complex domain logic with invariants (scoring engine, spiral detection)
 - Aggregate boundaries that protect consistency (workout blocks, grant projects)
 - New domain services that span multiple entities
+- New cross-module features — start with `superpowers:brainstorming` to explore bounded context boundaries
 
 ### NO — Keep It Simple
 - Simple CRUD operations within a single module

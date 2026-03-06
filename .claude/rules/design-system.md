@@ -48,3 +48,7 @@ globs: src/components/**
 - `.claude/design/DESIGN_VISION.md` — vision and rationale
 - `.claude/design/DESIGN_TOKENS.md` — complete token list
 - `.claude/design/MODULE_GUIDES.md` — per-module guidance
+
+## New Components
+
+When creating new Ceramic components, consider using the `frontend-design` skill for production-grade design quality. For complex UI features, start with `superpowers:brainstorming` to explore design alternatives before implementing.

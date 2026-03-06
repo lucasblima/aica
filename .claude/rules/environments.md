@@ -28,6 +28,8 @@
 
 ## Common Fixes
 
+When fixes don't work, use `superpowers:systematic-debugging` instead of trying random solutions.
+
 ### Import errors
 ```bash
 rm -rf node_modules/.vite && npm install && npm run dev
