@@ -19,8 +19,10 @@ import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, ExerciseQuestionnai
 import { WeeklyGrid, type WeekWorkout } from '../components/canvas/WeeklyGrid';
 import type { FeedbackData } from '../components/athlete';
 import { useAuth } from '@/hooks/useAuth';
+import { useGoogleCalendarEvents } from '@/hooks/useGoogleCalendarEvents';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
+import type { BusySlot } from '../hooks/useCanvasCalendar';
 import { createNamespacedLogger } from '@/lib/logger';
 import {
   Loader2,
@@ -34,9 +36,11 @@ import {
   MessageSquare,
   CheckCircle,
   FileText,
+  CalendarDays,
   DollarSign,
   Heart,
   Lock,
+  MoveHorizontal,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -171,6 +175,57 @@ export default function AthletePortalView() {
     canvasStart.setHours(0, 0, 0, 0);
     return canvasStart;
   }, [profile?.active_microcycle?.start_date, selectedWeek, weekStart]);
+
+  const canvasWeekEnd = useMemo(() => {
+    const end = new Date(canvasWeekStart);
+    end.setDate(end.getDate() + 7);
+    return end;
+  }, [canvasWeekStart]);
+
+  // Google Calendar integration (#796)
+  const {
+    events: calendarEvents,
+    isConnected: calendarConnected,
+  } = useGoogleCalendarEvents({
+    autoSync: true,
+    syncInterval: 300,
+    startDate: canvasWeekStart,
+    endDate: canvasWeekEnd,
+  });
+
+  const calendarBusySlots = useMemo<BusySlot[]>(() => {
+    if (!calendarConnected || !calendarEvents.length) return [];
+    return calendarEvents
+      .filter((e) => !e.aicaModule) // exclude AICA events to avoid duplication
+      .filter((e) => {
+        const start = new Date(e.startTime);
+        return start >= canvasWeekStart && start < canvasWeekEnd;
+      })
+      .map((e) => {
+        const jsDay = new Date(e.startTime).getDay();
+        const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+        const fmtTime = (iso: string) => {
+          const d = new Date(iso);
+          return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        };
+        return {
+          dayOfWeek,
+          startTime: e.isAllDay ? '00:00' : fmtTime(e.startTime),
+          endTime: e.isAllDay ? '23:59' : fmtTime(e.endTime),
+          title: e.title,
+          source: 'athlete' as const,
+          isAllDay: e.isAllDay,
+        };
+      });
+  }, [calendarEvents, calendarConnected, canvasWeekStart, canvasWeekEnd]);
+
+  // Check if athlete has unscheduled workouts (no time set) (#796)
+  const hasUnscheduledWorkouts = useMemo(() => {
+    const micro = profile?.active_microcycle;
+    if (!micro?.slots?.length) return false;
+    const weekSlots = micro.slots.filter((s) => s.week_number === selectedWeek);
+    return weekSlots.some((s) => !s.time_of_day);
+  }, [profile?.active_microcycle, selectedWeek]);
 
   const canvasWorkouts = useMemo<WeekWorkout[]>(() => {
     const micro = profile?.active_microcycle;
@@ -573,12 +628,36 @@ export default function AthletePortalView() {
           {micro ? (
             viewMode === 'canvas' ? (
               <motion.section className="px-5 flex-1" custom={4} initial="hidden" animate="visible" variants={sectionVariants}>
+                {/* Scheduling prompt (#796) */}
+                {hasUnscheduledWorkouts && (
+                  <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
+                    <MoveHorizontal className="w-4 h-4 text-ceramic-info flex-shrink-0" />
+                    <p className="text-xs text-blue-800 leading-relaxed">
+                      <span className="font-bold">Organize seus horarios!</span> Arraste os treinos para os horarios que funcionam melhor para voce.
+                      {!calendarConnected && ' Conecte o Google Calendar para ver seus compromissos.'}
+                    </p>
+                    {!calendarConnected && (
+                      <a
+                        href="/agenda?connect=google"
+                        className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-ceramic-info text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-blue-600 transition-colors"
+                      >
+                        <CalendarDays className="w-3 h-3" />
+                        Conectar
+                      </a>
+                    )}
+                  </div>
+                )}
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
-                  <WeeklyGrid weekNumber={selectedWeek} workouts={canvasWorkouts} calendarEvents={[]}
+                  <WeeklyGrid weekNumber={selectedWeek} workouts={canvasWorkouts} calendarEvents={calendarBusySlots}
                     onReorderWorkout={handleCanvasReorder} onWorkoutClick={(id) => handleGridWorkoutClick(id)}
                     startDate={canvasWeekStart} isLoading={false} />
                 </div>
                 <div className="flex items-center gap-4 mt-3 px-1">
+                  {calendarConnected && (
+                    <span className="text-[10px] text-ceramic-text-tertiary flex items-center gap-1">
+                      <CalendarDays className="w-3 h-3" /> Google Calendar sincronizado
+                    </span>
+                  )}
                   <span className="text-[10px] text-ceramic-text-tertiary ml-auto">Arraste treinos para reorganizar</span>
                 </div>
               </motion.section>
