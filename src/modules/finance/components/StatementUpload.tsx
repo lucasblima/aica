@@ -362,6 +362,14 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           const lastDay = new Date(parseInt(fileWithMeta.year!), parseInt(fileWithMeta.month!), 0).getDate();
           const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${String(lastDay).padStart(2, '0')}`;
 
+          // Check period overlap
+          const { hasOverlap, overlapping } = await statementService.checkPeriodOverlap(userId, periodStart, periodEnd);
+          if (hasOverlap) {
+            const names = overlapping.map(s => s.file_name).join(', ');
+            updateFileProgress(i, { stage: 'error', progress: 0, message: `Período já importado: ${names}` });
+            continue;
+          }
+
           // Create statement record
           updateFileProgress(i, { stage: 'uploading', progress: 20, message: 'Criando registro...' }, 'creating');
           const statement = await statementService.createStatement({
@@ -417,12 +425,16 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         // Step 4: Use cached parsed result or re-parse if not available
         let parsed;
         if (fileWithMeta.cachedParsed) {
-          updateFileProgress(i, { stage: 'extracting', progress: 70, message: 'Usando análise anterior...' }, 'ai_parsing');
+          updateFileProgress(i, { stage: 'extracting', progress: 75, message: 'Usando análise anterior...' }, 'ai_parsing');
           parsed = fileWithMeta.cachedParsed;
         } else {
-          updateFileProgress(i, { stage: 'extracting', progress: 50, message: 'Extraindo texto...' }, 'extracting');
-          updateFileProgress(i, { stage: 'extracting', progress: 70, message: 'IA analisando...' }, 'ai_parsing');
-          parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId);
+          updateFileProgress(i, { stage: 'extracting', progress: 40, message: 'Extraindo texto do PDF...' }, 'extracting');
+          // Progress callback for AI parsing stage
+          const onProgress = (update: PDFProgressUpdate) => {
+            const aiProgress = 50 + (update.progress / 100) * 35; // Map 0-100 → 50-85
+            updateFileProgress(i, { stage: 'extracting', progress: aiProgress, message: update.message }, 'ai_parsing');
+          };
+          parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId, onProgress);
         }
 
         // Override with user metadata
@@ -512,28 +524,89 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
   };
 
   /**
-   * FileProgressDisplay - Shows rotating messages during processing
+   * FileProgressDisplay - Shows rotating messages, elapsed time, and step indicator
    */
   const FileProgressDisplay: React.FC<{ fileWithMeta: FileWithMetadata }> = ({ fileWithMeta }) => {
     const rotatingMessage = useRotatingMessage(fileWithMeta.processingStage || null, 2500);
+    const [elapsed, setElapsed] = useState(0);
+    const [smoothProgress, setSmoothProgress] = useState(0);
+
+    // Elapsed time counter
+    useEffect(() => {
+      if (!fileWithMeta.progress || fileWithMeta.progress.stage === 'complete' || fileWithMeta.progress.stage === 'error') {
+        setElapsed(0);
+        return;
+      }
+      const start = Date.now();
+      const timer = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+      return () => clearInterval(timer);
+    }, [fileWithMeta.progress?.stage === 'complete', fileWithMeta.progress?.stage === 'error', !fileWithMeta.progress]);
+
+    // Smooth progress interpolation — gradually fills between target stages
+    useEffect(() => {
+      const target = fileWithMeta.progress?.progress || 0;
+      if (target <= smoothProgress) { setSmoothProgress(target); return; }
+      const timer = setInterval(() => {
+        setSmoothProgress(prev => {
+          const next = prev + 0.5;
+          if (next >= target) { clearInterval(timer); return target; }
+          return next;
+        });
+      }, 50);
+      return () => clearInterval(timer);
+    }, [fileWithMeta.progress?.progress]);
 
     if (!fileWithMeta.progress) return null;
 
     const displayMessage = rotatingMessage || fileWithMeta.progress.message;
+    const isActive = fileWithMeta.progress.stage !== 'error' && fileWithMeta.progress.stage !== 'complete';
+
+    // Step mapping for user-friendly display
+    const STEP_MAP: Record<string, { step: number; total: number; label: string }> = {
+      uploading: { step: 1, total: 5, label: 'Verificação' },
+      creating: { step: 2, total: 5, label: 'Registro' },
+      storage: { step: 2, total: 5, label: 'Upload' },
+      extracting: { step: 3, total: 5, label: 'Extração' },
+      ai_parsing: { step: 4, total: 5, label: 'Análise IA' },
+      saving: { step: 5, total: 5, label: 'Salvando' },
+    };
+    const stepInfo = STEP_MAP[fileWithMeta.processingStage || ''];
+
+    const formatElapsed = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s / 60)}m${s % 60}s`;
 
     return (
       <div className="space-y-2">
+        {/* Step indicator + elapsed time */}
+        {isActive && (
+          <div className="flex items-center justify-between">
+            {stepInfo && (
+              <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Passo {stepInfo.step}/{stepInfo.total} — {stepInfo.label}
+              </span>
+            )}
+            <span className="text-[10px] text-ceramic-text-secondary tabular-nums">
+              {formatElapsed(elapsed)}
+            </span>
+          </div>
+        )}
+
+        {/* Message + icon */}
         <div className="flex items-center gap-2">
           {getStatusIcon(fileWithMeta.progress?.stage)}
-          <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300">
+          <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300 flex-1">
             {displayMessage}
           </p>
+          {fileWithMeta.progress.stage === 'complete' && (
+            <span className="text-[10px] text-ceramic-success">{formatElapsed(elapsed)}</span>
+          )}
         </div>
-        {fileWithMeta.progress.stage !== 'error' && fileWithMeta.progress.stage !== 'complete' && (
+
+        {/* Smooth progress bar */}
+        {isActive && (
           <div className="ceramic-trough p-1 rounded-full">
             <div
-              className="h-1.5 rounded-full bg-ceramic-warning transition-all duration-500"
-              style={{ width: `${fileWithMeta.progress.progress}%` }}
+              className="h-1.5 rounded-full bg-ceramic-warning transition-[width] duration-300 ease-out"
+              style={{ width: `${smoothProgress}%` }}
             />
           </div>
         )}

@@ -89,6 +89,17 @@ export async function getCurrentMonthSummary(userId: string): Promise<FinanceSum
 
         if (error) throw error;
 
+        // Fetch statement for this month to get closing_balance
+        const { data: stmts } = await supabase
+            .from('finance_statements')
+            .select('closing_balance')
+            .eq('user_id', userId)
+            .eq('processing_status', 'completed')
+            .lte('statement_period_start', lastDayStr)
+            .gte('statement_period_end', firstDayStr)
+            .order('statement_period_end', { ascending: false })
+            .limit(1);
+
         const transactions = data || [];
 
         // Calculate summary
@@ -100,8 +111,13 @@ export async function getCurrentMonthSummary(userId: string): Promise<FinanceSum
             .filter(t => t.type === 'expense')
             .reduce((sum, t) => sum + Number(t.amount), 0);
 
+        // Use closing_balance from statement when available
+        const currentBalance = stmts && stmts.length > 0
+            ? Number(stmts[0].closing_balance)
+            : totalIncome - totalExpenses;
+
         return {
-            currentBalance: totalIncome - totalExpenses,
+            currentBalance,
             totalIncome,
             totalExpenses,
             transactionCount: transactions.length
