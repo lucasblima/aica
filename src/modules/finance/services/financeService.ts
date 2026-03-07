@@ -441,18 +441,28 @@ export async function getYearlyAggregates(
 }
 
 /**
- * Re-categorize transactions using AI.
- * Fetches poorly categorized transactions (transfer, other) for a given month
- * and sends them through the AI categorizer, then updates the database.
- * Returns the count of transactions updated.
+ * Suggestion returned by AI for a single transaction re-categorization.
  */
-export async function recategorizeTransactions(
+export interface CategorySuggestion {
+    id: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense';
+    currentCategory: string;
+    suggestedCategory: string;
+    accepted?: boolean;
+}
+
+/**
+ * Get AI category suggestions for poorly categorized transactions.
+ * Does NOT update the database — returns suggestions for user review.
+ */
+export async function getCategorySuggestions(
     userId: string,
     month?: number,
     year?: number
-): Promise<{ updated: number; total: number; error?: string }> {
+): Promise<{ suggestions: CategorySuggestion[]; error?: string }> {
     try {
-        // Default to current month
         const now = new Date();
         const targetMonth = month ?? (now.getMonth() + 1);
         const targetYear = year ?? now.getFullYear();
@@ -460,7 +470,6 @@ export async function recategorizeTransactions(
         const startDate = `${targetYear}-${monthPadded}-01`;
         const endDate = `${targetYear}-${monthPadded}-31`;
 
-        // Fetch poorly categorized transactions
         const { data: transactions, error: fetchErr } = await supabase
             .from('finance_transactions')
             .select('id, description, amount, type, category')
@@ -471,14 +480,13 @@ export async function recategorizeTransactions(
 
         if (fetchErr) throw fetchErr;
         if (!transactions || transactions.length === 0) {
-            return { updated: 0, total: 0 };
+            return { suggestions: [] };
         }
 
         log.info(`[Recategorize] Found ${transactions.length} poorly categorized transactions for ${targetYear}-${monthPadded}`);
 
-        // Send to AI categorizer in batches of 50
+        const suggestions: CategorySuggestion[] = [];
         const BATCH_SIZE = 50;
-        let totalUpdated = 0;
 
         for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
             const batch = transactions.slice(i, i + BATCH_SIZE);
@@ -501,24 +509,72 @@ export async function recategorizeTransactions(
                 continue;
             }
 
-            // Update each transaction with new category
             for (let j = 0; j < batch.length; j++) {
                 const newCat = catResult.categories[j];
-                if (newCat && newCat !== batch[j].category && newCat !== 'other') {
-                    const { error: updateErr } = await supabase
-                        .from('finance_transactions')
-                        .update({ category: newCat, ai_categorized: true })
-                        .eq('id', batch[j].id);
-
-                    if (!updateErr) totalUpdated++;
+                if (newCat && newCat !== batch[j].category) {
+                    suggestions.push({
+                        id: batch[j].id,
+                        description: batch[j].description,
+                        amount: batch[j].amount,
+                        type: batch[j].type,
+                        currentCategory: batch[j].category || 'sem categoria',
+                        suggestedCategory: newCat,
+                    });
                 }
             }
         }
 
-        log.info(`[Recategorize] Updated ${totalUpdated} of ${transactions.length} transactions`);
-        return { updated: totalUpdated, total: transactions.length };
+        return { suggestions };
     } catch (err) {
-        log.error('[Recategorize] Error:', err);
-        return { updated: 0, total: 0, error: err instanceof Error ? err.message : 'Erro ao recategorizar' };
+        log.error('[Recategorize] Error getting suggestions:', err);
+        return { suggestions: [], error: err instanceof Error ? err.message : 'Erro ao buscar sugestoes' };
     }
+}
+
+/**
+ * Apply user-approved category suggestions to the database.
+ */
+export async function applyCategorySuggestions(
+    suggestions: CategorySuggestion[]
+): Promise<{ updated: number; error?: string }> {
+    try {
+        const approved = suggestions.filter(s => s.accepted);
+        let updated = 0;
+
+        for (const s of approved) {
+            const { error: updateErr } = await supabase
+                .from('finance_transactions')
+                .update({ category: s.suggestedCategory, ai_categorized: true })
+                .eq('id', s.id);
+
+            if (!updateErr) updated++;
+        }
+
+        log.info(`[Recategorize] Applied ${updated} of ${approved.length} approved suggestions`);
+        return { updated };
+    } catch (err) {
+        log.error('[Recategorize] Error applying suggestions:', err);
+        return { updated: 0, error: err instanceof Error ? err.message : 'Erro ao salvar categorias' };
+    }
+}
+
+/**
+ * Re-categorize transactions using AI (batch, no user review).
+ * Kept for backward compatibility.
+ */
+export async function recategorizeTransactions(
+    userId: string,
+    month?: number,
+    year?: number
+): Promise<{ updated: number; total: number; error?: string }> {
+    const { suggestions, error } = await getCategorySuggestions(userId, month, year);
+    if (error) return { updated: 0, total: 0, error };
+
+    // Auto-accept all (except 'other')
+    const autoApproved = suggestions
+        .filter(s => s.suggestedCategory !== 'other')
+        .map(s => ({ ...s, accepted: true }));
+
+    const { updated } = await applyCategorySuggestions(autoApproved);
+    return { updated, total: suggestions.length };
 }
