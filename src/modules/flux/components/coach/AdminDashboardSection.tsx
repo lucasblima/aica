@@ -8,8 +8,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, AlertTriangle, DollarSign, MessageSquare, BookOpen, Dumbbell } from 'lucide-react';
-import type { Athlete, TrainingModality, AthleteLevel } from '../../types/flux';
-import { MODALITY_CONFIG, LEVEL_LABELS } from '../../types/flux';
+import type { Athlete } from '../../types/flux';
 
 interface AdminDashboardSectionProps {
   athletes: Athlete[];
@@ -64,22 +63,6 @@ export function AdminDashboardSection({ athletes, templateCount }: AdminDashboar
       filterKey: 'no_block',
     },
   ];
-
-  // --- Modality groups ---
-  const modalityCounts = activeAthletes.reduce<Record<TrainingModality, number>>((acc, a) => {
-    const mod = a.modality || 'strength';
-    acc[mod] = (acc[mod] || 0) + 1;
-    return acc;
-  }, {} as Record<TrainingModality, number>);
-
-  const totalActive = activeAthletes.length || 1; // avoid divide by zero
-
-  // --- Level groups ---
-  const levelCounts = activeAthletes.reduce<Record<AthleteLevel, number>>((acc, a) => {
-    const lvl = a.level || 'iniciante';
-    acc[lvl] = (acc[lvl] || 0) + 1;
-    return acc;
-  }, {} as Record<AthleteLevel, number>);
 
   if (athletes.length === 0) {
     return null;
@@ -154,86 +137,6 @@ export function AdminDashboardSection({ athletes, templateCount }: AdminDashboar
         </div>
       </div>
 
-      {/* Modality + Level side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* By modality */}
-        <div className="bg-ceramic-50 rounded-xl p-6 shadow-ceramic-emboss">
-          <h3 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider mb-4">
-            Por Modalidade
-          </h3>
-          <div className="space-y-3">
-            {(Object.keys(MODALITY_CONFIG) as TrainingModality[]).map((mod) => {
-              const count = modalityCounts[mod] || 0;
-              if (count === 0) return null;
-              const pct = Math.round((count / totalActive) * 100);
-              const config = MODALITY_CONFIG[mod];
-              return (
-                <button
-                  key={mod}
-                  onClick={() => navigate(`/flux/crm?modality=${mod}`)}
-                  className="flex items-center gap-3 w-full text-left hover:bg-white/50 rounded-lg p-1 -m-1 transition-colors cursor-pointer"
-                >
-                  <span className="text-lg">{config.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-ceramic-text-primary">{config.label}</span>
-                      <span className="text-xs text-ceramic-text-secondary">{count} ({pct}%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-ceramic-border/30 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-ceramic-info rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-            {Object.values(modalityCounts).every((c) => c === 0) && (
-              <p className="text-sm text-ceramic-text-secondary">Nenhum atleta ativo</p>
-            )}
-          </div>
-        </div>
-
-        {/* By level */}
-        <div className="bg-ceramic-50 rounded-xl p-6 shadow-ceramic-emboss">
-          <h3 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider mb-4">
-            Por Nivel
-          </h3>
-          <div className="space-y-3">
-            {(Object.keys(LEVEL_LABELS) as AthleteLevel[]).map((lvl) => {
-              const count = levelCounts[lvl] || 0;
-              const pct = Math.round((count / totalActive) * 100);
-              const colorMap: Record<AthleteLevel, string> = {
-                iniciante: 'bg-ceramic-success',
-                intermediario: 'bg-ceramic-warning',
-                avancado: 'bg-ceramic-error',
-              };
-              return (
-                <button
-                  key={lvl}
-                  onClick={() => navigate(`/flux/crm?level=${lvl}`)}
-                  className="flex items-center gap-3 w-full text-left hover:bg-white/50 rounded-lg p-1 -m-1 transition-colors cursor-pointer"
-                >
-                  <div className={`w-3 h-3 rounded-full ${colorMap[lvl]}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-ceramic-text-primary">{LEVEL_LABELS[lvl]}</span>
-                      <span className="text-xs text-ceramic-text-secondary">{count} ({pct}%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-ceramic-border/30 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${colorMap[lvl]} rounded-full transition-all`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
