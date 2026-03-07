@@ -466,16 +466,6 @@ export default function AthletePortalView() {
             <ArrowLeft className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
           </button>
-          {activeTab === 'treinos' && (
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-ceramic-cool shadow-sm border border-ceramic-border/40">
-              <button onClick={() => handleViewModeChange('list')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-white text-ceramic-text-primary shadow-md' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-white/50'}`}>
-                <List className="w-4 h-4" />Lista
-              </button>
-              <button onClick={() => handleViewModeChange('canvas')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'canvas' ? 'bg-white text-ceramic-text-primary shadow-md' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-white/50'}`}>
-                <LayoutGrid className="w-4 h-4" />Grade
-              </button>
-            </div>
-          )}
         </div>
       </header>
 
@@ -531,6 +521,21 @@ export default function AthletePortalView() {
             </div>
           </div>
 
+          {/* Microcycle Status Badge — inside profile card */}
+          {micro && micro.status === 'draft' && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+              <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span className="text-sm font-bold text-amber-700">Treino Pendente</span>
+              <span className="text-xs text-amber-600">Aguardando liberacao do coach</span>
+            </div>
+          )}
+          {micro && micro.status === 'active' && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
+              <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0" />
+              <span className="text-sm font-bold text-ceramic-success">Treino Liberado</span>
+            </div>
+          )}
+
         </div>
       </motion.section>
 
@@ -539,25 +544,6 @@ export default function AthletePortalView() {
         <motion.section className="px-5 mb-4" custom={1} initial="hidden" animate="visible" variants={sectionVariants}>
           <ProgressTimeline weeks={weeks} currentWeek={micro.current_week || 1} microcycleName={micro.name} status={micro.status} selectedWeek={selectedWeek} onWeekSelect={setSelectedWeek} />
         </motion.section>
-      )}
-
-      {/* Microcycle Status Badge — #381: PENDENTE / LIBERADO */}
-      {micro && micro.status === 'draft' && (
-        <motion.div className="px-5 mb-3" custom={1.5} initial="hidden" animate="visible" variants={sectionVariants}>
-          <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-            <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span className="text-sm font-bold text-amber-700">Treino Pendente</span>
-            <span className="text-xs text-amber-600">Aguardando liberacao do coach</span>
-          </div>
-        </motion.div>
-      )}
-      {micro && micro.status === 'active' && (
-        <motion.div className="px-5 mb-3" custom={1.5} initial="hidden" animate="visible" variants={sectionVariants}>
-          <div className="flex items-center gap-2 px-3 py-2 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
-            <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0" />
-            <span className="text-sm font-bold text-ceramic-success">Treino Liberado</span>
-          </div>
-        </motion.div>
       )}
 
       {/* Document Pending Banner — #381 */}
@@ -616,6 +602,18 @@ export default function AthletePortalView() {
 
       {activeTab === 'treinos' ? (
         <>
+          {/* Lista / Grade sub-toggle inside Treinos tab */}
+          <div className="px-5 mb-3">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-ceramic-cool/40 w-fit">
+              <button onClick={() => handleViewModeChange('list')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-white text-ceramic-text-primary shadow-sm' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-white/50'}`}>
+                <List className="w-3.5 h-3.5" />Lista
+              </button>
+              <button onClick={() => handleViewModeChange('canvas')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'canvas' ? 'bg-white text-ceramic-text-primary shadow-sm' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-white/50'}`}>
+                <LayoutGrid className="w-3.5 h-3.5" />Grade
+              </button>
+            </div>
+          </div>
+
           {micro?.status === 'draft' && (
             <motion.div className="px-5 mb-4" custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
