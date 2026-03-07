@@ -4,26 +4,26 @@
 
 Every session follows this exact sequence:
 
-### Step 0 — Session Name (MANDATORY, every session)
-Your **very first action** in every new session MUST be to suggest a descriptive session name (e.g., `feat-studio-teleprompter`, `fix-auth-redirect`, `refactor-billing`) and wait for user approval before doing anything else.
+### Step 1 — Session Name (MANDATORY for Standard/Complex)
+Your **very first action** in every new Standard/Complex session MUST be to suggest a descriptive session name (e.g., `feat-studio-teleprompter`, `fix-auth-redirect`, `refactor-billing`) and wait for user approval before doing anything else.
 
-### Step 1 — Clarification (for non-trivial tasks)
+### Step 2 — Clarification (for non-trivial tasks)
 After session name is confirmed, call `AskUserQuestion` with 2-4 targeted questions about the task.
 
-### Step 2 — Ask About Agent Team (MANDATORY)
-After clarification answers are received (or if task is trivially clear), you MUST **always ask the user** if they want an Agent Team activated. Never auto-create teams without asking. Use `AskUserQuestion` with an option like:
+### Step 3 — Ask About Agent Team (Standard/Complex tasks)
+For Standard and Complex tasks, you MUST ask the user if they want an Agent Team. Skip for Micro tasks (always solo). Use `AskUserQuestion` with an option like:
 - "Ativar Agent Team para esta tarefa?" → Yes (com composicao sugerida) / No (trabalho solo)
 
 Include a brief suggestion of team composition so the user can decide with context.
 
-### Step 3 — Brainstorm (non-trivial tasks)
+### Step 4 — Brainstorm (non-trivial tasks)
 For features, refactors, or multi-file changes, invoke `superpowers:brainstorming` to explore approaches before writing code. Produce a design doc with trade-offs and a recommended approach. Wait for user approval.
 
-### Step 4 — Implementation Plan (non-trivial tasks)
+### Step 5 — Implementation Plan (non-trivial tasks)
 After design is approved, invoke `superpowers:writing-plans` to create a concrete implementation plan. Save to `docs/plans/<session-name>.md`. The plan defines file-level tasks, ordering, and test strategy.
 
-### Step 5 — Execute with TDD
-Implement following `superpowers:test-driven-development` (RED-GREEN-REFACTOR cycle). See `session-protocol.md` for full implementation and verification details.
+### Step 6 — Execute with TDD
+Implement following `superpowers:test-driven-development` (RED-GREEN-REFACTOR cycle). For bug fixes: use `superpowers:systematic-debugging` before TDD. See `session-protocol.md` for full implementation and verification details.
 
 **Do NOT:**
 - Explain why you need to ask questions
@@ -103,7 +103,7 @@ Skip ONLY when ALL are true:
 
 ## When to Skip Brainstorming
 
-Skip brainstorming (Steps 3-4) ONLY when ALL are true:
+Skip brainstorming (Steps 4-5) ONLY when ALL are true:
 - The task is trivially clear AND no design decisions involved
 - Implementation approach is obvious (single pattern, no trade-offs)
 - No architectural or cross-module impact
@@ -114,21 +114,26 @@ Skip brainstorming (Steps 3-4) ONLY when ALL are true:
 ```
 New session starts
     │
-    ├─ Step 0: Suggest session name → Wait for approval
+    ├─ Micro task? (1-5 lines, 1 file) → Fix → Verify (build) → Commit → Push → Done
     │
-    ├─ Step 1: Trivially clear? → Skip clarification
-    │          Any ambiguity?   → Ask 2-4 targeted questions → Wait for answers
+    ├─ Investigation? (no code changes) → Name → Clarify → Investigate → Report → Done
     │
-    ├─ Step 2: Ask user: "Ativar Agent Team?" (ALWAYS ask, never auto-create)
-    │          ├─ User says Yes → Create team with suggested composition
-    │          └─ User says No  → Execute solo
-    │
-    ├─ Step 3: Non-trivial? → `superpowers:brainstorming` → design doc → user approval
-    │          Trivial?     → Skip to Step 5
-    │
-    ├─ Step 4: `superpowers:writing-plans` → implementation plan → docs/plans/
-    │
-    └─ Step 5: Execute (TDD) → Verify → Review → Finish → PR → Merge/Close
+    ├─ Standard/Complex:
+    │   ├─ Step 1: Suggest session name → Wait for approval
+    │   │
+    │   ├─ Step 2: Trivially clear? → Skip clarification
+    │   │          Any ambiguity?   → Ask 2-4 targeted questions → Wait for answers
+    │   │
+    │   ├─ Step 3: Ask user: "Ativar Agent Team?" (never auto-create)
+    │   │          ├─ User says Yes → Create team with suggested composition
+    │   │          └─ User says No  → Execute solo
+    │   │
+    │   ├─ Step 4: Non-trivial? → `superpowers:brainstorming` → design doc → user approval
+    │   │          Trivial?     → Skip to Step 6
+    │   │
+    │   ├─ Step 5: `superpowers:writing-plans` → implementation plan → docs/plans/
+    │   │
+    │   └─ Step 6: Execute (TDD) → Verify → Review → Finish (merge/PR/keep/discard)
 ```
 
 ## Anti-Patterns (NEVER Do These)
@@ -140,3 +145,4 @@ New session starts
 - **Under-ask**: Start a multi-module feature with zero clarification — NO, always ask for medium+ tasks
 - **Skip brainstorming**: Start coding a feature without exploring design trade-offs — NO, brainstorm first for non-trivial tasks
 - **Code without a plan**: Jump to implementation without `superpowers:writing-plans` — NO, plan defines what TDD tests to write
+- **Full ceremony on micro tasks**: 10-step workflow for a 3-line typo fix — NO, assess tier first

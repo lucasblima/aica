@@ -3,21 +3,25 @@
 ## Session Flow Overview
 
 ```
-Name → Clarify → Brainstorm → Plan → Worktree → TDD/Execute → Verify → Review → Finish → PR
+Micro:            Fix → Verify (build) → Commit → Push
+Standard/Complex: Name → Clarify → Ask Team → Brainstorm → Plan → Worktree → TDD/Execute → Verify → Review → Finish
 ```
 
 ## Session Start Protocol — ALWAYS Execute
 
-At the start of every session:
+At the start of every Standard/Complex session:
 
 1. **Suggest session name** (e.g., `feat-studio-teleprompter`) — wait for user approval
 2. **Sync** with remote: `git pull origin main`
-3. **Create worktree** with feature branch (see Git Worktree Workflow below)
-4. **Design phase** (non-trivial features only):
+3. **Ask Team** (Standard/Complex tasks) — ask if user wants Agent Team activated (see `clarification-first.md`)
+4. **Create worktree** with feature branch (see Git Worktree Workflow below)
+5. **Design phase** (non-trivial features only):
    - Invoke `superpowers:brainstorming` — explore approaches, trade-offs, architecture options → produce a design doc
    - Invoke `superpowers:writing-plans` — convert design into an implementation plan saved to `docs/plans/<session-name>.md`
    - Wait for user approval of the plan before writing code
-5. **Simple fixes** (typo, config, obvious bug): skip step 4, go directly to implementation
+6. **Simple fixes** (typo, config, obvious bug): skip step 5, go directly to implementation
+
+Micro tasks (1-5 lines, 1 file): skip all ceremony — just fix, verify, commit, push.
 
 ## Implementation Phase — TDD Required
 
@@ -27,34 +31,51 @@ All implementation follows test-driven development:
 - **Agent Teams**: Use `superpowers:subagent-driven-development` pipeline — coordinator dispatches test-writing and implementation to separate teammates
 - **Bug fixes**: ALWAYS use `superpowers:systematic-debugging` (Phase 1: reproduce → Phase 2: isolate → Phase 3: root cause → Phase 4: fix + regression test) before attempting fixes
 
+## Hotfix Protocol — Production Emergencies
+
+When the user reports a production outage or critical bug:
+
+1. **Skip ceremony** — No Name, Clarify, or Team steps. Start immediately.
+2. **Reproduce** — Check production logs: Supabase Dashboard → Logs, Cloud Run → Logs
+3. **Debug** — `superpowers:systematic-debugging` Phase 1-4
+4. **Fix** — Minimal fix, regression test if time permits
+5. **Verify** — `npm run build && npm run typecheck` (FRESH output)
+6. **Deploy staging** — Verify fix works on dev.aica.guru
+7. **Deploy production** — With explicit user confirmation. Staging may be skipped ONLY with user's explicit "deploy direto para prod" confirmation.
+8. **PR retroativo** — After production is stable, create PR documenting the fix
+
+Rollback if fix fails:
+```bash
+# List recent revisions
+gcloud run revisions list --service=aica --region=southamerica-east1 --project=gen-lang-client-0948335762
+# Route traffic to previous revision
+gcloud run services update-traffic aica --to-revisions=PREVIOUS_REVISION=100 --region=southamerica-east1 --project=gen-lang-client-0948335762
+```
+
 ## Session End Protocol — ALWAYS Execute
 
 At the end of every session (when all tasks are complete):
 
 1. **Verify** — Invoke `superpowers:verification-before-completion`. Run `npm run build`, `npm run typecheck`, and `npm run test` with FRESH output. Paste the actual terminal output as evidence. NEVER claim "tests pass" without showing the output.
-2. **Code review** — Invoke `superpowers:requesting-code-review`. Dispatch a code review subagent to review all changes before creating the PR. Address any findings.
+2. **Code review** — Invoke `superpowers:requesting-code-review`. Dispatch a code review subagent to review all changes. Address any findings.
 3. **Commit** all changes with descriptive message + co-authorship
 4. **Push** feature branch to origin
-5. **Finish branch** — Invoke `superpowers:finishing-a-development-branch`. Present the user with 4 structured options:
-   - **Merge**: squash-merge into main (if PR approved)
-   - **PR**: create Pull Request for async review (default)
+5. **Finish branch** — Invoke `superpowers:finishing-a-development-branch`. Present the user with 4 options:
+   - **Merge**: squash-merge into main (if already reviewed/approved)
+   - **PR**: create Pull Request for async review (default for Standard/Complex)
    - **Keep**: leave branch open for continued work
    - **Discard**: abandon branch and clean up
-6. **Create Pull Request** (if user chose PR or Merge) — see PR Workflow below — MANDATORY for code changes
-7. **Wait** for PR feedback (automated checks + user review)
-8. **Read PR comments** using `gh pr view` and `gh api repos/.../pulls/.../comments`
-9. **Address comments** — fix issues, push new commits to the branch
-10. **Report status** to user: which comments were resolved, which need discussion
-11. **Push migrations** if any new `.sql` files were created
-12. **Deploy Edge Functions** if any were created/modified
-13. **Merge PR** only after all comments are addressed and user approves
+6. **If PR chosen**: wait for feedback, read comments (`gh pr view`, `gh api`), address them, report status
+7. **Push migrations** if any new `.sql` files were created
+8. **Deploy Edge Functions** if any were created/modified
+9. **Merge PR** only after all comments are addressed and user approves
 
 Production deploy only happens when user validates staging and explicitly says "deploy producao".
 
-## PR Workflow — MANDATORY (Never Skip)
+## PR Workflow — Standard/Complex Tasks
 
-**CRITICAL: Every session with code changes MUST go through a Pull Request.**
-Pushing directly to `main` is prohibited. Always use feature branches + PRs.
+**Standard/Complex sessions with code changes MUST go through a Pull Request.**
+Pushing directly to `main` is prohibited for Standard/Complex tasks. Micro tasks (1-5 lines, 1 file) may commit directly.
 
 ### Step 1: Create PR
 ```bash
@@ -175,9 +196,36 @@ git branch -a --sort=-committerdate | head -10
 git log --all --oneline --since="1 day ago" | head -20
 ```
 
+## Session Resume Protocol — Continuing Previous Work
+
+When the user wants to continue work from a previous session:
+
+1. **Find existing work**:
+```bash
+git worktree list                           # Active worktrees
+ls docs/plans/                              # Existing plans
+git log --all --oneline --since="3 days ago" | head -20  # Recent activity
+```
+2. **Enter worktree** — `cd .worktrees/<branch-name>` (do NOT create a new one)
+3. **Read plan** — If `docs/plans/<feature>.md` exists, read it to understand state
+4. **Check progress** — `git log --oneline main..HEAD` to see completed commits
+5. **Resume** — Continue from the last completed task. Skip Name, Clarify, Team.
+
+## Investigation Mode — Research Without Code Changes
+
+When the user asks to investigate, research, or profile (no expected code changes):
+
+1. **Name** — Suggest session name (e.g., `investigate-edge-function-perf`)
+2. **Clarify** — What to investigate, which systems, what metrics
+3. **Investigate** — Use `superpowers:systematic-debugging` for diagnosis, check logs, profile
+4. **Report** — Summarize findings with evidence
+
+Skip: Worktree, TDD, PR, Finish. No code changes = no PR needed.
+If investigation reveals a fix: transition to Standard workflow.
+
 ## Branch Naming
 
-Uses session name from Step 0:
+Uses session name from Step 1:
 ```
 feature/{session-name}
 fix/{session-name}
@@ -188,6 +236,7 @@ Examples: `feature/feat-studio-teleprompter`, `fix/auth-redirect-loop`
 
 ## PR Checklist
 
+- [ ] Task Tier: Standard/Complex (micro tasks don't need PR)
 - [ ] Feature branch created (not committing to main directly)
 - [ ] Design/brainstorm completed for non-trivial features (`superpowers:brainstorming`)
 - [ ] Implementation plan saved to `docs/plans/` (`superpowers:writing-plans`)

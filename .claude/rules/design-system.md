@@ -1,5 +1,5 @@
 ---
-globs: src/components/**
+globs: src/components/**,src/modules/*/components/**
 ---
 # Ceramic Design System
 
@@ -41,6 +41,10 @@ globs: src/components/**
 
 // Shadows lightened 30% from original
 ```
+
+## Before Ceramic Refactoring
+
+**ALWAYS** read `docs/CERAMIC_DESIGN_SYSTEM_GUIDANCE.md` before starting any design system refactoring. The token map above is a quick reference — the full guidance doc has spacing, typography, animation, and complete patterns.
 
 ## Reference Docs
 
