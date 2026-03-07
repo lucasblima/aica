@@ -24,7 +24,9 @@ import { TransactionListView } from '../components/TransactionListView';
 import { MonthComparisonView } from '../components/MonthComparisonView';
 import { GoalTracker } from '../components/GoalTracker';
 import { AccountManagement } from '../components/AccountManagement';
-import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, recategorizeTransactions } from '../services/financeService';
+import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, getCategorySuggestions, applyCategorySuggestions } from '../services/financeService';
+import type { CategorySuggestion } from '../services/financeService';
+import { RecategorizationReview } from '../components/RecategorizationReview';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement, BudgetAlert, FinanceTransaction } from '../types';
@@ -388,21 +390,44 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   }, [selectedMonthTransactions]);
 
   const [isRecategorizing, setIsRecategorizing] = useState(false);
+  const [isApplyingSuggestions, setIsApplyingSuggestions] = useState(false);
+  const [categorySuggestions, setCategorySuggestions] = useState<CategorySuggestion[] | null>(null);
 
   const handleRecategorize = async () => {
     try {
       setIsRecategorizing(true);
-      const result = await recategorizeTransactions(userId, selectedMonth, selectedYear);
-      if (result.error) {
-        log.error('Recategorization error:', result.error);
-      } else if (result.updated > 0) {
-        log.info(`Recategorized ${result.updated} of ${result.total} transactions`);
-        await loadData();
+      const { suggestions, error } = await getCategorySuggestions(userId, selectedMonth, selectedYear);
+      if (error) {
+        log.error('Recategorization error:', error);
+        return;
       }
+      if (suggestions.length === 0) {
+        log.info('No suggestions from AI');
+        return;
+      }
+      setCategorySuggestions(suggestions);
     } catch (err) {
       log.error('Recategorization failed:', err);
     } finally {
       setIsRecategorizing(false);
+    }
+  };
+
+  const handleApplySuggestions = async (reviewed: CategorySuggestion[]) => {
+    try {
+      setIsApplyingSuggestions(true);
+      const { updated, error } = await applyCategorySuggestions(reviewed);
+      if (error) {
+        log.error('Apply suggestions error:', error);
+      } else {
+        log.info(`Applied ${updated} category changes`);
+        await loadData();
+      }
+      setCategorySuggestions(null);
+    } catch (err) {
+      log.error('Apply suggestions failed:', err);
+    } finally {
+      setIsApplyingSuggestions(false);
     }
   };
 
@@ -980,6 +1005,16 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         )}
 
       </main>
+
+      {/* Interactive Recategorization Review Modal */}
+      {categorySuggestions && (
+        <RecategorizationReview
+          suggestions={categorySuggestions}
+          onApply={handleApplySuggestions}
+          onClose={() => setCategorySuggestions(null)}
+          isApplying={isApplyingSuggestions}
+        />
+      )}
 
     </div>
   );
