@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit } from 'lucide-react';
+import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit, Home } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { HeaderGlobal } from '@/components/layout';
 import type { PodcastShow } from '../types/podcast';
@@ -151,6 +151,17 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
+        {/* Home Navigation */}
+        <div className="flex gap-3 px-6 pt-4">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-border transition-colors"
+          >
+            <Home className="w-4 h-4" />
+            Início
+          </button>
+        </div>
+
         {/* Fetch Error Banner */}
         <AnimatePresence>
           {fetchError && !isLoading && (
