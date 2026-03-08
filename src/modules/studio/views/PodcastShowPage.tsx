@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit, Home } from 'lucide-react';
+import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit, Home, Trash2, Save, Check } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { updateShow, deleteShow } from '../services/workspaceDatabaseService';
 import { HeaderGlobal } from '@/components/layout';
 import type { PodcastShow } from '../types/podcast';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -320,7 +321,14 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
                   )}
                   {activeTab === 'drafts' && <DraftsSection episodes={episodes.filter(e => e.status === 'draft')} onSelectEpisode={onSelectEpisode} />}
                   {activeTab === 'files' && <FilesSection showId={showId} />}
-                  {activeTab === 'settings' && <SettingsSection show={show} onRefresh={fetchShowData} />}
+                  {activeTab === 'settings' && (
+                    <SettingsSection
+                      show={show}
+                      showId={showId}
+                      onRefresh={fetchShowData}
+                      onDeleted={onBack}
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -591,34 +599,141 @@ const FilesSection: React.FC<{ showId: string }> = ({ showId }) => (
   </div>
 );
 
-const SettingsSection: React.FC<{ show: PodcastShow | null; onRefresh: () => void }> = ({ show, onRefresh }) => (
-  <div className="max-w-2xl">
-    <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Configuracoes do Podcast</h2>
-    <div className="ceramic-card p-6 rounded-2xl space-y-4">
+interface SettingsSectionProps {
+  show: PodcastShow | null;
+  showId: string;
+  onRefresh: () => void;
+  onDeleted: () => void;
+}
+
+const SettingsSection: React.FC<SettingsSectionProps> = ({ show, showId, onRefresh, onDeleted }) => {
+  const [name, setName] = useState(show?.title || '');
+  const [description, setDescription] = useState(show?.description || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const isDirty = name !== (show?.title || '') || description !== (show?.description || '');
+
+  const handleSave = async () => {
+    if (!isDirty) return;
+    setIsSaving(true);
+    setFeedback(null);
+    try {
+      await updateShow(showId, { name, description });
+      setFeedback({ type: 'success', message: 'Configuracoes salvas com sucesso!' });
+      onRefresh();
+    } catch (err) {
+      setFeedback({ type: 'error', message: 'Erro ao salvar configuracoes. Tente novamente.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setFeedback(null);
+    try {
+      await deleteShow(showId);
+      onDeleted();
+    } catch (err) {
+      setFeedback({ type: 'error', message: 'Erro ao excluir podcast. Tente novamente.' });
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6">
       <div>
-        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Nome do Podcast</label>
-        <input
-          type="text"
-          defaultValue={show?.title || ''}
-          disabled
-          className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base"
-        />
+        <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Configuracoes do Podcast</h2>
+        <div className="ceramic-card p-6 rounded-2xl space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Nome do Podcast</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Descricao</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Feedback message */}
+          {feedback && (
+            <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg ${
+              feedback.type === 'success'
+                ? 'bg-ceramic-success/10 text-ceramic-success'
+                : 'bg-ceramic-error/10 text-ceramic-error'
+            }`}>
+              {feedback.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {feedback.message}
+            </div>
+          )}
+
+          <button
+            onClick={handleSave}
+            disabled={!isDirty || isSaving}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isDirty && !isSaving
+                ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                : 'bg-ceramic-cool text-ceramic-text-secondary cursor-not-allowed'
+            }`}
+          >
+            <Save className="w-4 h-4" />
+            {isSaving ? 'Salvando...' : 'Salvar Alteracoes'}
+          </button>
+        </div>
       </div>
+
+      {/* Danger Zone */}
       <div>
-        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Descricao</label>
-        <textarea
-          defaultValue={show?.description || ''}
-          disabled
-          rows={4}
-          className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base"
-        />
+        <h2 className="text-lg font-bold text-ceramic-error mb-4">Zona de Perigo</h2>
+        <div className="border border-ceramic-error/30 rounded-2xl p-6 space-y-3">
+          <p className="text-sm text-ceramic-text-secondary">
+            Excluir este podcast permanentemente. Todos os episodios serao removidos. Esta acao nao pode ser desfeita.
+          </p>
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Excluir Podcast
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-ceramic-error text-white hover:bg-red-700 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isDeleting ? 'Excluindo...' : 'Confirmar Exclusao'}
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      <p className="text-xs text-ceramic-text-secondary italic">
-        Em breve: edição de configurações do podcast
-      </p>
     </div>
-  </div>
-);
+  );
+};
 
 /* ============================================================================
  * Utilities

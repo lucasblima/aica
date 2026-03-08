@@ -367,6 +367,40 @@ export async function deleteCategory(id: string): Promise<void> {
 }
 
 // =====================================================
+// SHOW CRUD
+// =====================================================
+
+/**
+ * Updates an existing podcast show
+ */
+export async function updateShow(
+  id: string,
+  updates: { name?: string; description?: string }
+): Promise<{ id: string; name: string; description: string }> {
+  const { data, error } = await supabase
+    .from('podcast_shows')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw new Error(`Failed to update show: ${error.message}`)
+  return data
+}
+
+/**
+ * Deletes a podcast show and all its episodes (cascading)
+ */
+export async function deleteShow(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('podcast_shows')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(`Failed to delete show: ${error.message}`)
+}
+
+// =====================================================
 // REALTIME SUBSCRIPTIONS
 // =====================================================
 
