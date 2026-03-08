@@ -101,7 +101,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
         {/* Selected transactions preview */}
         <div className="ceramic-inset rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
           <p className="text-xs text-ceramic-text-secondary mb-2">
-            {transactions.length} transacao{transactions.length !== 1 ? 'es' : ''}{' '}
+            {transactions.length} transação{transactions.length !== 1 ? 'es' : ''}{' '}
             selecionada{transactions.length !== 1 ? 's' : ''}
           </p>
           {transactions.slice(0, 5).map((tx) => (
@@ -175,7 +175,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
                 Aplicar a similares
               </p>
               <p className="text-[10px] text-ceramic-text-secondary">
-                Recategoriza todas as transacoes com a mesma descricao
+                Recategoriza todas as transações com a mesma descrição
               </p>
             </div>
           </label>
@@ -201,7 +201,7 @@ export const RecategorizeModal: React.FC<RecategorizeModalProps> = ({
         {/* Actions */}
         <div className="flex items-center justify-between">
           <p className="text-[10px] text-ceramic-text-secondary">
-            {affectedCount} transacao{affectedCount !== 1 ? 'es' : ''} sera
+            {affectedCount} transação{affectedCount !== 1 ? 'es' : ''} será
             {affectedCount !== 1 ? 'o' : ''} atualizada{affectedCount !== 1 ? 's' : ''}
           </p>
           <div className="flex items-center gap-2">

@@ -121,17 +121,17 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       {match.factors && (
         <div className="space-y-1.5">
           <MiniBar
-            label="Alinhamento tematico"
+            label="Alinhamento temático"
             value={match.factors.topicAlignment}
             icon={<BookOpen size={10} />}
           />
           <MiniBar
-            label="Orcamento"
+            label="Orçamento"
             value={match.factors.budgetFit}
             icon={<DollarSign size={10} />}
           />
           <MiniBar
-            label="Historico"
+            label="Histórico"
             value={match.factors.trackRecord}
             icon={<TrendingUp size={10} />}
           />

@@ -18,16 +18,16 @@ interface GoalFormProps {
 
 const CATEGORY_LABELS: Record<string, string> = {
   housing: 'Moradia',
-  food: 'Alimentacao',
+  food: 'Alimentação',
   transport: 'Transporte',
-  health: 'Saude',
-  education: 'Educacao',
+  health: 'Saúde',
+  education: 'Educação',
   entertainment: 'Lazer',
   shopping: 'Compras',
-  salary: 'Salario',
+  salary: 'Salário',
   freelance: 'Freelance',
   investment: 'Investimentos',
-  transfer: 'Transferencias',
+  transfer: 'Transferências',
   other: 'Outros',
 };
 
@@ -40,13 +40,13 @@ interface GoalTemplate {
 
 const TEMPLATES: GoalTemplate[] = [
   {
-    title: 'Reserva de Emergencia (3 meses)',
+    title: 'Reserva de Emergência (3 meses)',
     goal_type: 'emergency_fund',
     suggested_amount: 15000,
     description: '3 meses de despesas',
   },
   {
-    title: 'Quitar Cartao',
+    title: 'Quitar Cartão',
     goal_type: 'debt_payoff',
     suggested_amount: 5000,
     description: 'Zerar fatura pendente',
@@ -123,7 +123,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onClose }) => 
             <div className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-ceramic-accent" />
               <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                Modelos Rapidos
+                Modelos Rápidos
               </p>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -151,7 +151,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onClose }) => 
           {/* Title */}
           <div>
             <label className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider">
-              Titulo da Meta
+              Título da Meta
             </label>
             <input
               type="text"
@@ -261,7 +261,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onClose }) => 
               disabled={saving || !title.trim() || !targetAmount}
               className="flex-1 px-4 py-2.5 rounded-lg bg-ceramic-accent text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Salvando...' : goal ? 'Salvar Alteracoes' : 'Criar Meta'}
+              {saving ? 'Salvando...' : goal ? 'Salvar Alterações' : 'Criar Meta'}
             </button>
             <button
               type="button"

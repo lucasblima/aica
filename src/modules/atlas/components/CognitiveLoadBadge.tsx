@@ -24,7 +24,7 @@ function getLoadConfig(load: number) {
   }
   if (load <= 0.7) {
     return {
-      label: 'Media',
+      label: 'Média',
       bgClass: 'bg-amber-100',
       textClass: 'text-amber-700',
       dotClass: 'bg-amber-500',

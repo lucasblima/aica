@@ -28,7 +28,7 @@ interface MonthComparisonViewProps {
 const MONTH_NAMES = [
   'Janeiro',
   'Fevereiro',
-  'Marco',
+  'Março',
   'Abril',
   'Maio',
   'Junho',
@@ -166,7 +166,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
       setSummaryB(summarizeTransactions(txB));
     } catch (err) {
       log.error('Failed to fetch comparison data', err);
-      setError('Erro ao carregar dados de comparacao.');
+      setError('Erro ao carregar dados de comparação.');
     } finally {
       setLoading(false);
     }
@@ -335,7 +335,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
       return (
         <span className="flex items-center gap-1 text-xs text-ceramic-text-secondary">
           <Minus className="w-3 h-3" />
-          Estavel
+          Estável
         </span>
       );
     }
@@ -386,7 +386,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <label className="text-xs text-ceramic-text-secondary block mb-1">
-              Mes A
+              Mês A
             </label>
             <select
               value={monthValue(monthA)}
@@ -405,7 +405,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
           </div>
           <div className="flex-1">
             <label className="text-xs text-ceramic-text-secondary block mb-1">
-              Mes B
+              Mês B
             </label>
             <select
               value={monthValue(monthB)}
@@ -552,7 +552,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
           {allCategories.length > 0 && (
             <div className="ceramic-card p-4">
               <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-4">
-                Comparacao por Categoria (Despesas)
+                Comparação por Categoria (Despesas)
               </h4>
               <div className="space-y-3">
                 {allCategories.map(({ category, a, b, max }) => {
@@ -657,7 +657,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
                 R$ {yearSummaryA.totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
               </p>
               <p className="text-xs text-ceramic-text-secondary mt-1">
-                Taxa poupanca: {yearSummaryA.avgSavingsRate.toFixed(0)}%
+                Taxa poupança: {yearSummaryA.avgSavingsRate.toFixed(0)}%
               </p>
             </div>
           </div>
@@ -743,7 +743,7 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
 
           {/* Savings rate comparison */}
           <div className="ceramic-card p-4 rounded-xl">
-            <h3 className="text-sm font-bold text-ceramic-text-primary mb-4">Taxa de Poupanca Mensal</h3>
+            <h3 className="text-sm font-bold text-ceramic-text-primary mb-4">Taxa de Poupança Mensal</h3>
             <div className="flex items-end gap-1 h-32">
               {yearSummaryA.months.map((m, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">

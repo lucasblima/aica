@@ -49,7 +49,7 @@ const PROCESSING_MESSAGES: Record<string, string[]> = {
     'Analisando com IA...',
     'Extraindo temas das conversas...',
     'Classificando sentimentos...',
-    'Identificando topicos...',
+    'Identificando tópicos...',
     'Processando intencoes...',
   ],
   indexing_rag: [
@@ -344,7 +344,7 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
               >
                 <Upload className="w-10 h-10 text-ceramic-text-secondary mx-auto mb-3" />
                 <p className="text-sm font-medium text-ceramic-text-primary mb-1">
-                  Arraste seu arquivo de exportacao
+                  Arraste seu arquivo de exportação
                 </p>
                 <p className="text-xs text-ceramic-text-secondary">
                   ou clique para selecionar (.txt ou .zip)
@@ -413,7 +413,7 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
               >
                 <CheckCircle className="w-10 h-10 text-ceramic-success mx-auto mb-3" />
                 <p className="text-sm font-bold text-ceramic-success mb-3">
-                  Importacao concluida!
+                  Importação concluída!
                 </p>
                 <div className="flex items-center justify-center gap-4 text-xs text-ceramic-text-secondary">
                   <span className="flex items-center gap-1">
@@ -499,7 +499,7 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
           <div className="flex items-center gap-3 mb-4">
             <Clock className="w-5 h-5 text-ceramic-accent" />
             <h3 className="text-lg font-bold text-ceramic-text-primary">
-              Historico de Importacoes
+              Histórico de Importações
             </h3>
             <span className="text-xs text-ceramic-text-secondary">({imports.length})</span>
           </div>

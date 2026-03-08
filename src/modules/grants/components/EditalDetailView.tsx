@@ -297,7 +297,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                   label="PDF do Edital"
                   value={opportunity.edital_pdf_path ? 'Enviado' : 'Pendente'}
                   subtext={opportunity.edital_text_content
-                    ? `${Math.round(opportunity.edital_text_content.length / 1000)}k chars extraidos`
+                    ? `${Math.round(opportunity.edital_text_content.length / 1000)}k caracteres extraídos`
                     : undefined}
                   variant={opportunity.edital_pdf_path ? 'success' : 'warning'}
                   onClick={() => setIsPdfModalOpen(true)}

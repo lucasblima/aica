@@ -49,8 +49,8 @@ function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onSt
             <SparklesIcon className={`h-4 w-4 ${isDone ? 'text-ceramic-success' : 'text-ceramic-accent'}`} />
             <span className="text-sm font-medium text-[#5C554B]">
               {isDone
-                ? `Analise concluida: ${progress.processed - progress.failed} momentos atualizados`
-                : `Analisando historico com IA... ${progress.processed} de ${progress.total}`
+                ? `Análise concluída: ${progress.processed - progress.failed} momentos atualizados`
+                : `Analisando histórico com IA... ${progress.processed} de ${progress.total}`
               }
             </span>
           </div>
@@ -79,7 +79,7 @@ function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onSt
 
         {progress.failed > 0 && (
           <p className="text-xs text-[#948D82] mt-1">
-            {progress.failed} momento(s) nao puderam ser analisados
+            {progress.failed} momento(s) não puderam ser analisados
           </p>
         )}
       </motion.div>
@@ -148,7 +148,7 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-base font-semibold text-[#5C554B]">Padroes da Jornada</h3>
+      <h3 className="text-base font-semibold text-[#5C554B]">Padrões da Jornada</h3>
 
       {/* Backfill progress banner */}
       {showBackfillBanner && (

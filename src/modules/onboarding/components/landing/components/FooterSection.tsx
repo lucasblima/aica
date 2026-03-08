@@ -39,7 +39,7 @@ export function FooterSection() {
 
           {/* Right: Tagline */}
           <p className="text-sm text-ceramic-text-secondary italic">
-            Feito com ceramica digital
+            Feito com cerâmica digital
           </p>
         </div>
 

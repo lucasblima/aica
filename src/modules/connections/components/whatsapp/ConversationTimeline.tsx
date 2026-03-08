@@ -84,7 +84,7 @@ export const ConversationTimeline: React.FC<ConversationTimelineProps> = ({
         <div className="text-center py-8">
           <MessageSquare className="w-10 h-10 text-ceramic-text-secondary/30 mx-auto mb-3" />
           <p className="text-sm text-ceramic-text-secondary mb-3">
-            Nenhuma thread de conversa encontrada. Clique para agrupar mensagens em sessoes.
+            Nenhuma thread de conversa encontrada. Clique para agrupar mensagens em sessões.
           </p>
           <button
             onClick={onBuildThreads}
@@ -117,7 +117,7 @@ export const ConversationTimeline: React.FC<ConversationTimelineProps> = ({
               Threads de Conversa
             </h3>
             <p className="text-xs text-ceramic-text-secondary">
-              {threads.length} sessoes agrupadas
+              {threads.length} sessões agrupadas
             </p>
           </div>
         </div>

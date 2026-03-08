@@ -99,7 +99,7 @@ export default function AthleteFormModal({
               <p className="text-sm text-ceramic-text-secondary mt-1">
                 {mode === 'create'
                   ? 'Cadastre um novo atleta no sistema'
-                  : 'Atualize as informacoes do atleta'}
+                  : 'Atualize as informações do atleta'}
               </p>
             </div>
             <button
@@ -152,7 +152,7 @@ export default function AthleteFormModal({
                       <User className="w-4 h-4 text-ceramic-text-primary" />
                     </div>
                     <span className="text-sm font-bold text-ceramic-text-primary">
-                      1. Informacoes Basicas
+                      1. Informações Básicas
                     </span>
                   </div>
                   <ChevronDown
@@ -212,7 +212,7 @@ export default function AthleteFormModal({
                         !initialData?.invitation_status?.includes('connected') &&
                         formData.email.includes('@') && (
                           <p className="text-xs text-ceramic-text-secondary mt-1.5">
-                            Quando {formData.name || 'o atleta'} criar conta AICA, sera
+                            Quando {formData.name || 'o atleta'} criar conta AICA, será
                             conectado automaticamente
                           </p>
                         )}
@@ -263,7 +263,7 @@ export default function AthleteFormModal({
                 {openSections.modalities && (
                   <div className="p-4 pt-0 space-y-4">
                     <p className="text-xs text-ceramic-text-secondary italic">
-                      Selecione uma ou mais modalidades e defina o nivel para cada uma
+                      Selecione uma ou mais modalidades e defina o nível para cada uma
                     </p>
 
                     {MODALITY_OPTIONS.map((modality) => {
@@ -307,7 +307,7 @@ export default function AthleteFormModal({
                                 className="pl-12 pr-4 space-y-1"
                               >
                                 <label className="block text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">
-                                  Nivel
+                                  Nível
                                 </label>
                                 <div className="flex gap-2">
                                   {LEVEL_OPTIONS.map((level) => (
@@ -355,7 +355,7 @@ export default function AthleteFormModal({
                       <Heart className="w-4 h-4 text-ceramic-text-primary" />
                     </div>
                     <span className="text-sm font-bold text-ceramic-text-primary">
-                      3. Dados de Saude
+                      3. Dados de Saúde
                     </span>
                   </div>
                   <ChevronDown
@@ -371,27 +371,27 @@ export default function AthleteFormModal({
                       <Info className="w-5 h-5 text-ceramic-info mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-bold text-ceramic-info mb-2">
-                          Configuracao de Onboarding de Saude
+                          Configuração de Onboarding de Saúde
                         </p>
                         <p className="text-sm text-ceramic-text-primary leading-relaxed">
-                          Defina as regras de documentacao e onboarding para este atleta.
-                          Dados detalhados de anamnese serao coletados via IA no modulo Flux.
+                          Defina as regras de documentação e onboarding para este atleta.
+                          Dados detalhados de anamnese serão coletados via IA no módulo Flux.
                         </p>
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
-                        Documentacao Exigida
+                        Documentação Exigida
                       </label>
 
                       <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg mb-2">
                         <div>
                           <p className="text-sm font-medium text-ceramic-text-primary">
-                            Exame Cardiologico
+                            Exame Cardiológico
                           </p>
                           <p className="text-xs text-ceramic-text-secondary">
-                            Laudo medico cardiologico
+                            Laudo médico cardiológico
                           </p>
                         </div>
                         <button
@@ -421,10 +421,10 @@ export default function AthleteFormModal({
                       <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg">
                         <div>
                           <p className="text-sm font-medium text-ceramic-text-primary">
-                            Atestado de Liberacao
+                            Atestado de Liberação
                           </p>
                           <p className="text-xs text-ceramic-text-secondary">
-                            Liberacao medica para atividade fisica
+                            Liberação médica para atividade física
                           </p>
                         </div>
                         <button
@@ -454,20 +454,20 @@ export default function AthleteFormModal({
 
                     <div>
                       <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
-                        Permissoes de Onboarding
+                        Permissões de Onboarding
                       </label>
 
                       <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg">
                         <div className="flex-1 mr-4">
                           <p className="text-sm font-medium text-ceramic-text-primary">
-                            Liberar Questionario PAR-Q
+                            Liberar Questionário PAR-Q
                           </p>
                           <p className="text-xs text-ceramic-text-secondary">
-                            Atleta podera responder PAR-Q + Termo de Responsabilidade no Flux
+                            Atleta poderá responder PAR-Q + Termo de Responsabilidade no Flux
                           </p>
                           {formData.allow_parq_onboarding && (
                             <p className="text-xs text-ceramic-warning mt-1 font-medium">
-                              Prescricao tecnica sera liberada apenas apos assinatura
+                              Prescrição técnica será liberada apenas após assinatura
                             </p>
                           )}
                         </div>
@@ -514,7 +514,7 @@ export default function AthleteFormModal({
               )}
               {isDirty && !errorCount && (
                 <span className="text-xs text-ceramic-text-secondary">
-                  Alteracoes nao salvas
+                  Alterações não salvas
                 </span>
               )}
             </div>
@@ -540,7 +540,7 @@ export default function AthleteFormModal({
                   </>
                 ) : (
                   <span>
-                    {mode === 'create' ? 'Criar Atleta' : 'Salvar Alteracoes'}
+                    {mode === 'create' ? 'Criar Atleta' : 'Salvar Alterações'}
                   </span>
                 )}
               </button>

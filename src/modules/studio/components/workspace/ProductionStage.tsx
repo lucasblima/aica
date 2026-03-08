@@ -115,7 +115,7 @@ export default function ProductionStage() {
       setRecordingError(null);
       actions.startRecording();
     } catch (error) {
-      setRecordingError('Nao foi possivel iniciar a gravacao. Verifique as permissoes do microfone e tente novamente.');
+      setRecordingError('Não foi possível iniciar a gravação. Verifique as permissões do microfone e tente novamente.');
     }
   };
 
@@ -129,7 +129,7 @@ export default function ProductionStage() {
         actions.pauseRecording();
       }
     } catch (error) {
-      setRecordingError('Erro ao alterar o estado da gravacao. Tente novamente.');
+      setRecordingError('Erro ao alterar o estado da gravação. Tente novamente.');
     }
   };
 

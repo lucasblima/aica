@@ -110,7 +110,7 @@ export const TrainingLoadChart: React.FC<TrainingLoadChartProps> = ({ history, c
       <div className={`bg-ceramic-50 rounded-xl p-4 shadow-ceramic-emboss ${className}`}>
         <h3 className="text-sm font-medium text-ceramic-text-primary mb-2">Carga de Treino</h3>
         <p className="text-xs text-ceramic-text-secondary">
-          Dados insuficientes. Registre pelo menos 2 sessoes para visualizar o grafico.
+          Dados insuficientes. Registre pelo menos 2 sessões para visualizar o gráfico.
         </p>
       </div>
     );

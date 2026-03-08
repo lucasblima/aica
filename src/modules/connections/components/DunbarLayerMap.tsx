@@ -192,7 +192,7 @@ export function DunbarLayerMap({
             fontSize={12}
             fontWeight={700}
           >
-            Voce
+            Você
           </text>
         </svg>
       </div>

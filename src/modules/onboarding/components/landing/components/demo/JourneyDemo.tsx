@@ -30,7 +30,7 @@ export function JourneyDemo() {
       {/* Heatmap */}
       <div className="space-y-1.5">
         <p className="text-xs text-ceramic-text-secondary font-medium mb-2">
-          Ultimos 28 dias
+          Últimos 28 dias
         </p>
         <div className="space-y-1">
           {weeks.map((week, wi) => (
@@ -66,7 +66,7 @@ export function JourneyDemo() {
       {/* Emotion Summary */}
       <div>
         <p className="text-xs text-ceramic-text-secondary font-medium mb-2">
-          Emocoes do mes
+          Emoções do mês
         </p>
         <div className="flex flex-wrap gap-3 justify-center">
           {emotions.map((e) => (

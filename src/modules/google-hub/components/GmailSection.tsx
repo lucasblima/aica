@@ -55,12 +55,12 @@ function senderDisplay(email: GmailMessage): string {
 
 const CATEGORY_TABS: Array<{ key: EmailCategory | null; label: string }> = [
     { key: null, label: 'Todos' },
-    { key: 'actionable', label: 'Acao' },
+    { key: 'actionable', label: 'Ação' },
     { key: 'informational', label: 'Info' },
     { key: 'newsletter', label: 'Newsletter' },
     { key: 'receipt', label: 'Recibo' },
     { key: 'personal', label: 'Pessoal' },
-    { key: 'notification', label: 'Notificacao' },
+    { key: 'notification', label: 'Notificação' },
 ];
 
 // --- Animation variants ---
@@ -163,7 +163,7 @@ function EmailRow({ email, category, confidence, onClick, onAction, actionLoadin
                             <button
                                 onClick={(e) => { e.stopPropagation(); onAction(email.id, isUnread ? 'read' : 'unread'); }}
                                 className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-ceramic-cool/80 transition-colors"
-                                title={isUnread ? 'Marcar como lido' : 'Marcar como nao lido'}
+                                title={isUnread ? 'Marcar como lido' : 'Marcar como não lido'}
                             >
                                 {isUnread ? (
                                     <MailOpen className="w-3.5 h-3.5 text-ceramic-text-secondary" />
@@ -504,7 +504,7 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-4 h-4 text-amber-600" />
                         <span className="text-xs font-semibold text-amber-800">
-                            Tarefas extraidas ({pendingTasks.length})
+                            Tarefas extraídas ({pendingTasks.length})
                         </span>
                     </div>
                     <div className="space-y-2">

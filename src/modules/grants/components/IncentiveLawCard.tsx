@@ -42,7 +42,7 @@ import {
 // =============================================================================
 
 interface IncentiveLawCardProps {
-  /** Lei de incentivo ou dados ja formatados */
+  /** Lei de incentivo ou dados já formatados */
   law: IncentiveLaw | IncentiveLawCardData;
   /** Callback ao clicar no card */
   onClick?: (lawId: string) => void;

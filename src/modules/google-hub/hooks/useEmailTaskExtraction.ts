@@ -44,7 +44,7 @@ export function useEmailTaskExtraction(): UseEmailTaskExtractionReturn {
       setTasks(results);
     } catch (err) {
       log.error('[fetchTasks]', { error: err });
-      setError('Erro ao carregar tarefas extraidas');
+      setError('Erro ao carregar tarefas extraídas');
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export function useEmailTaskExtraction(): UseEmailTaskExtractionReturn {
     try {
       const userId = (await supabase.auth.getUser()).data.user?.id;
       if (!userId) {
-        setError('Usuario nao autenticado');
+        setError('Usuário não autenticado');
         return false;
       }
 
@@ -90,7 +90,7 @@ export function useEmailTaskExtraction(): UseEmailTaskExtractionReturn {
           user_id: userId,
           title: task.task_description,
           description: task.source_subject
-            ? `Extraido do email: ${task.source_subject} (de ${task.source_sender ?? 'desconhecido'})`
+            ? `Extraído do email: ${task.source_subject} (de ${task.source_sender ?? 'desconhecido'})`
             : null,
           due_date: task.due_date,
           priority: task.priority === 'urgent' ? 'high' : task.priority,

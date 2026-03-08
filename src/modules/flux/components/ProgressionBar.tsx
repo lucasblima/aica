@@ -49,7 +49,7 @@ export function ProgressionBar({
         {/* Consistência Rate */}
         <div className="text-right">
           <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider">
-            Adesao
+            Adesão
           </p>
           <p className={`text-2xl font-bold ${consistencyColorClass}`}>
             {adherenceRate}%

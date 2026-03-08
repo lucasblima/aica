@@ -37,7 +37,7 @@ interface NetworkHealthDashboardProps {
 function getConstraintLevel(constraint: number): { label: string; color: string } {
   if (constraint <= 0.3) return { label: 'Baixa (bom)', color: '#6B7B5C' };
   if (constraint <= 0.6) return { label: 'Moderada', color: '#D97706' };
-  return { label: 'Alta (atencao)', color: '#9B4D3A' };
+  return { label: 'Alta (atenção)', color: '#9B4D3A' };
 }
 
 function getDiversityLevel(index: number): { label: string; color: string } {
@@ -47,9 +47,9 @@ function getDiversityLevel(index: number): { label: string; color: string } {
 }
 
 const LAYER_LABELS: Record<DunbarLayer, string> = {
-  5: 'Intimo',
+  5: 'Íntimo',
   15: 'Simpatia',
-  50: 'Proximo',
+  50: 'Próximo',
   150: 'Ativo',
   500: 'Conhecido',
 };
@@ -107,7 +107,7 @@ function LayerDistributionBar({
   return (
     <div className="space-y-2">
       <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-        Distribuicao por Camada
+        Distribuição por Camada
       </p>
       <div className="flex h-4 rounded-full overflow-hidden bg-ceramic-base">
         {layers.map((layer) => {

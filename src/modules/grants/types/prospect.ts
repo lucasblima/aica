@@ -45,15 +45,15 @@ export type RecurrenceType =
 export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   email_sent: 'E-mail Enviado',
   email_received: 'E-mail Recebido',
-  call_outbound: 'Ligacao Realizada',
-  call_inbound: 'Ligacao Recebida',
-  meeting: 'Reuniao',
+  call_outbound: 'Ligação Realizada',
+  call_inbound: 'Ligação Recebida',
+  meeting: 'Reunião',
   proposal_sent: 'Proposta Enviada',
   follow_up: 'Follow-up',
-  negotiation: 'Negociacao',
+  negotiation: 'Negociação',
   contract_sent: 'Contrato Enviado',
   contract_signed: 'Contrato Assinado',
-  note: 'Anotacao',
+  note: 'Anotação',
   other: 'Outro',
 };
 
@@ -107,7 +107,7 @@ export const ACTIVITY_OUTCOME_COLORS: Record<ActivityOutcome, string> = {
 
 /** Labels para recorrencia */
 export const RECURRENCE_TYPE_LABELS: Record<RecurrenceType, string> = {
-  daily: 'Diario',
+  daily: 'Diário',
   weekly: 'Semanal',
   monthly: 'Mensal',
 };

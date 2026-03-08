@@ -60,7 +60,7 @@ function formatDateRange(first: string, last: string): string {
 const INSUFFICIENT_DATA_KEYWORDS = [
     'sem dados suficientes',
     'poucos emails',
-    'analise pendente',
+    'análise pendente',
     'nenhum email encontrado',
     'dados insuficientes',
 ];
@@ -216,7 +216,7 @@ export function ConversationSummarySection() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <p className="text-xs text-ceramic-text-secondary/60">
-                                        Analise o historico de emails com qualquer contato
+                                        Analise o histórico de emails com qualquer contato
                                     </p>
                                     <button
                                         type="submit"
@@ -296,7 +296,7 @@ export function ConversationSummarySection() {
                             {summary.topics.length > 0 && (
                                 <motion.div variants={fadeUp}>
                                     <h3 className="text-xs font-semibold text-ceramic-text-secondary uppercase tracking-wider mb-2.5">
-                                        Topicos
+                                        Tópicos
                                     </h3>
                                     <motion.div
                                         variants={staggerVariants}
@@ -333,10 +333,10 @@ export function ConversationSummarySection() {
                                             <Info className="w-4 h-4 text-ceramic-info flex-shrink-0 mt-0.5" />
                                             <div>
                                                 <p className="text-sm font-medium text-ceramic-text-primary">
-                                                    Dados insuficientes para analise
+                                                    Dados insuficientes para análise
                                                 </p>
                                                 <p className="text-sm text-ceramic-text-secondary leading-relaxed mt-0.5">
-                                                    Poucos emails encontrados para este contato. Adicione mais conversas para uma analise mais rica.
+                                                    Poucos emails encontrados para este contato. Adicione mais conversas para uma análise mais rica.
                                                 </p>
                                             </div>
                                         </div>

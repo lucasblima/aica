@@ -101,7 +101,7 @@ const ContextSection: React.FC<ContextSectionProps> = ({ context }) => {
 
           {context.communication_style && (
             <div>
-              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Estilo de comunicacao</p>
+              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Estilo de comunicação</p>
               <p className="text-sm text-ceramic-text-primary">{context.communication_style}</p>
             </div>
           )}
@@ -121,7 +121,7 @@ const ContextSection: React.FC<ContextSectionProps> = ({ context }) => {
 
           {context.notable_patterns.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Padroes notaveis</p>
+              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Padrões notáveis</p>
               <ul className="space-y-1">
                 {context.notable_patterns.map((pattern, i) => (
                   <li key={i} className="text-xs text-ceramic-text-secondary flex items-start gap-1.5">
@@ -177,7 +177,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
               <Brain className="w-5 h-5 text-ceramic-info" />
             </div>
             <h3 className="text-base font-semibold text-ceramic-text-primary">
-              Dossie do Contato
+              Dossiê do Contato
             </h3>
           </div>
         </div>
@@ -185,7 +185,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
         <div className="text-center py-6">
           <Brain className="w-10 h-10 text-ceramic-text-secondary/30 mx-auto mb-3" />
           <p className="text-sm text-ceramic-text-secondary mb-3">
-            Nenhum dossie gerado ainda. Sao necessarias pelo menos 3 mensagens com intencao extraida.
+            Nenhum dossiê gerado ainda. São necessárias pelo menos 3 mensagens com intenção extraída.
           </p>
           <button
             onClick={onRefresh}
@@ -197,7 +197,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
-            {isRefreshing ? 'Gerando...' : 'Gerar dossie'}
+            {isRefreshing ? 'Gerando...' : 'Gerar dossiê'}
           </button>
           {error && (
             <p className="mt-3 text-xs text-ceramic-error flex items-center justify-center gap-1">
@@ -221,7 +221,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
           </div>
           <div>
             <h3 className="text-base font-semibold text-ceramic-text-primary">
-              Dossie do Contato
+              Dossiê do Contato
             </h3>
             {dossier?.dossier_updated_at && (
               <p className="text-xs text-ceramic-text-secondary flex items-center gap-1">
@@ -236,7 +236,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
           onClick={onRefresh}
           disabled={isRefreshing}
           className="p-2 rounded-lg hover:bg-ceramic-cool transition-colors disabled:opacity-50"
-          title="Atualizar dossie"
+          title="Atualizar dossiê"
         >
           {isRefreshing ? (
             <Loader2 className="w-4 h-4 animate-spin text-ceramic-info" />

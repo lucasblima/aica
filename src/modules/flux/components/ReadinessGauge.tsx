@@ -31,7 +31,7 @@ const RISK_LABELS: Record<FatigueRisk, string> = {
 
 const INTENSITY_LABELS: Record<string, string> = {
   rest: 'Descanso',
-  recovery: 'Recuperacao',
+  recovery: 'Recuperação',
   easy: 'Leve',
   moderate: 'Moderado',
   hard: 'Intenso',
@@ -51,7 +51,7 @@ export const ReadinessGauge: React.FC<ReadinessGaugeProps> = ({ readiness, class
 
   return (
     <div className={`bg-ceramic-50 rounded-xl p-4 shadow-ceramic-emboss ${className}`}>
-      <h3 className="text-sm font-medium text-ceramic-text-primary mb-3">Prontidao do Atleta</h3>
+      <h3 className="text-sm font-medium text-ceramic-text-primary mb-3">Prontidão do Atleta</h3>
 
       <div className="flex items-start gap-4">
         {/* Circular gauge */}

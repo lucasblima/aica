@@ -266,7 +266,7 @@ export function SlotCard({ slot, onToggleComplete, className = '' }: SlotCardPro
       {/* Completed Timestamp */}
       {slot.completed && slot.completed_at && (
         <p className="text-[10px] text-ceramic-text-secondary mt-2">
-          Completed {new Date(slot.completed_at).toLocaleDateString('pt-BR', {
+          Concluído {new Date(slot.completed_at).toLocaleDateString('pt-BR', {
             day: 'numeric',
             month: 'short',
             hour: '2-digit',

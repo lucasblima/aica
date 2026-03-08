@@ -109,7 +109,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
               Resumo Mensal IA
             </h3>
             <p className="text-xs text-ceramic-text-secondary">
-              Analise inteligente dos seus gastos
+              Análise inteligente dos seus gastos
             </p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
         {noData && (
           <div className="ceramic-inset p-3">
             <p className="text-xs text-ceramic-text-secondary">
-              Nenhuma transacao encontrada{monthName ? ` para ${monthName}` : ''}. Faca upload de um extrato primeiro.
+              Nenhuma transação encontrada{monthName ? ` para ${monthName}` : ''}. Faça upload de um extrato primeiro.
             </p>
           </div>
         )}
@@ -140,7 +140,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
         >
           <Sparkles className="w-4 h-4 text-ceramic-accent" />
           <span className="text-sm font-bold text-ceramic-accent">
-            Gerar Resumo do Mes
+            Gerar Resumo do Mês
           </span>
         </button>
       </div>
@@ -151,7 +151,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
   if (loading) {
     return (
       <div className="ceramic-card p-6">
-        <AIThinkingState message="Analisando suas financas" />
+        <AIThinkingState message="Analisando suas finanças" />
       </div>
     )
   }
@@ -175,7 +175,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
             </h3>
             {stats && (
               <p className="text-xs text-ceramic-text-secondary">
-                {stats.transactionCount} transacoes analisadas
+                {stats.transactionCount} transações analisadas
               </p>
             )}
           </div>
@@ -309,7 +309,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
           </div>
           <div>
             <p className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider mb-1">
-              Dica para o proximo mes
+              Dica para o próximo mês
             </p>
             <p className="text-xs text-ceramic-text-primary leading-relaxed">
               {digest.next_month_tip}

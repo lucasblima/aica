@@ -52,11 +52,11 @@ export function ProspectCard({
 
     if (diffDays === 0) return 'Hoje';
     if (diffDays === 1) return 'Ontem';
-    if (diffDays < 7) return `${diffDays} dia${diffDays !== 1 ? 's' : ''} atras`;
+    if (diffDays < 7) return `${diffDays} dia${diffDays !== 1 ? 's' : ''} atrás`;
     const weeks = Math.floor(diffDays / 7);
-    if (diffDays < 30) return `${weeks} semana${weeks !== 1 ? 's' : ''} atras`;
+    if (diffDays < 30) return `${weeks} semana${weeks !== 1 ? 's' : ''} atrás`;
     const months = Math.floor(diffDays / 30);
-    return `${months} ${months === 1 ? 'mes' : 'meses'} atras`;
+    return `${months} ${months === 1 ? 'mês' : 'meses'} atrás`;
   };
 
   const getActivityIcon = (type: ActivityType | null) => {
@@ -67,7 +67,7 @@ export function ProspectCard({
   };
 
   const isOverdue = sponsor.next_action_date && new Date(sponsor.next_action_date) < new Date();
-  const isStale = sponsor.days_in_stage > 14; // Mais de 2 semanas no mesmo estagio
+  const isStale = sponsor.days_in_stage > 14; // Mais de 2 semanas no mesmo estágio
 
   return (
     <div
@@ -116,7 +116,7 @@ export function ProspectCard({
         </span>
       </div>
 
-      {/* Ultima atividade */}
+      {/* Última atividade */}
       {sponsor.last_activity_date && (
         <div className="text-xs text-ceramic-text-secondary mb-2 flex items-center gap-1">
           <Clock className="w-3 h-3" />
@@ -127,7 +127,7 @@ export function ProspectCard({
         </div>
       )}
 
-      {/* Proxima acao */}
+      {/* Próxima ação */}
       {sponsor.next_action && (
         <div
           className={`
@@ -138,7 +138,7 @@ export function ProspectCard({
           <div className="flex items-start gap-1">
             {isOverdue && <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />}
             <div>
-              <span className="font-medium">Proxima acao:</span> {sponsor.next_action}
+              <span className="font-medium">Próxima ação:</span> {sponsor.next_action}
               {sponsor.next_action_date && (
                 <span className="block mt-0.5">
                   <Calendar className="w-3 h-3 inline mr-1" />
@@ -154,7 +154,7 @@ export function ProspectCard({
       <div className="flex items-center justify-between pt-2 border-t border-ceramic-border">
         <div className="flex items-center gap-1 text-ceramic-text-secondary">
           <span className="text-xs">
-            {sponsor.days_in_stage}d neste estagio
+            {sponsor.days_in_stage}d neste estágio
           </span>
         </div>
 
@@ -166,7 +166,7 @@ export function ProspectCard({
               e.stopPropagation();
               onQuickAction?.('call');
             }}
-            title="Registrar ligacao"
+            title="Registrar ligação"
           >
             <Phone className="w-4 h-4 text-ceramic-text-secondary" />
           </button>
@@ -185,7 +185,7 @@ export function ProspectCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            title="Mais opcoes"
+            title="Mais opções"
           >
             <MoreVertical className="w-4 h-4 text-ceramic-text-secondary" />
           </button>

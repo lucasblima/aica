@@ -81,7 +81,7 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
       return `Ontem, ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
     }
     if (diffDays < 7) {
-      return `${diffDays} dias atras`;
+      return `${diffDays} dias atrás`;
     }
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -171,7 +171,7 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
           <div className="mt-2 p-2 bg-ceramic-info-bg rounded-lg text-sm">
             <div className="flex items-center gap-2 text-ceramic-info">
               <RefreshCw className="w-4 h-4" />
-              <span className="font-medium">Proxima acao:</span>
+              <span className="font-medium">Próxima ação:</span>
             </div>
             <p className="mt-1 text-ceramic-info">{activity.next_action}</p>
             {activity.next_action_date && (
@@ -186,7 +186,7 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
         {/* Duration (for calls and meetings) */}
         {activity.duration_minutes && (
           <p className="mt-2 text-xs text-ceramic-text-secondary">
-            Duracao: {activity.duration_minutes} min
+            Duração: {activity.duration_minutes} min
           </p>
         )}
       </div>
@@ -305,7 +305,7 @@ export function ActivitySummary({ activities, className }: ActivitySummaryProps)
         <span>{stats.total} atividades</span>
         {stats.lastActivity && (
           <span className="text-ceramic-text-secondary">
-            Ultima: {ACTIVITY_TYPE_LABELS[stats.lastActivity.activity_type]}
+            Última: {ACTIVITY_TYPE_LABELS[stats.lastActivity.activity_type]}
           </span>
         )}
       </div>

@@ -55,8 +55,8 @@ export const PlanningFallacyCorrection: React.FC<PlanningFallacyCorrectionProps>
           {/* Explanation */}
           <p className="mt-1 text-xs text-ceramic-text-secondary">
             <Clock className="w-3 h-3 inline mr-1" />
-            Voce estimou {formatDuration(estimatedMinutes)} → Correcao:{' '}
-            {formatDuration(correctedMinutes)} (historico: {multiplierDisplay}x)
+            Você estimou {formatDuration(estimatedMinutes)} → Correção:{' '}
+            {formatDuration(correctedMinutes)} (histórico: {multiplierDisplay}x)
           </p>
 
           {/* Citation */}
@@ -73,7 +73,7 @@ export const PlanningFallacyCorrection: React.FC<PlanningFallacyCorrectionProps>
           onClick={() => onAcceptCorrection(correctedMinutes)}
           className="mt-3 w-full text-center text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg py-2 transition-colors"
         >
-          Aceitar correcao ({formatDuration(correctedMinutes)})
+          Aceitar correção ({formatDuration(correctedMinutes)})
         </button>
       )}
     </div>

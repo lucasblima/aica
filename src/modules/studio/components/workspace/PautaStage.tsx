@@ -367,7 +367,7 @@ export default function PautaStage() {
     try {
       const success = await setActiveVersion(pautaId);
       if (!success) {
-        alert('Erro ao carregar versao anterior');
+        alert('Erro ao carregar versão anterior');
       }
     } finally {
       setIsSwappingVersion(false);
@@ -401,7 +401,7 @@ export default function PautaStage() {
   // Handler for opening teleprompter
   const handleOpenTeleprompter = useCallback(() => {
     if (teleprompterTopics.length === 0) {
-      alert('Adicione topicos a pauta antes de usar o teleprompter');
+      alert('Adicione tópicos à pauta antes de usar o teleprompter');
       return;
     }
     setTeleprompterIndex(0);

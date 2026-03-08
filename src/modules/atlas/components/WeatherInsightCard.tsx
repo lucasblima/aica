@@ -115,7 +115,7 @@ export const WeatherInsightCard: React.FC<WeatherInsightCardProps> = ({ compact 
         <div className="flex items-center gap-2">
           <CloudOff className="w-4 h-4 text-ceramic-text-secondary shrink-0" />
           <p className="text-xs text-ceramic-text-secondary flex-1">
-            Clima indisponivel no momento
+            Clima indisponível no momento
           </p>
         </div>
       </div>

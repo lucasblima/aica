@@ -109,10 +109,10 @@ class StageErrorBoundary extends Component<StageErrorBoundaryProps, StageErrorBo
             <div className="p-4 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 mb-6">
               <AlertCircle className="w-10 h-10 text-ceramic-error mx-auto mb-3" />
               <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
-                Erro ao renderizar estagio
+                Erro ao renderizar estágio
               </h3>
               <p className="text-sm text-ceramic-secondary">
-                Ocorreu um erro inesperado neste estagio. Seus dados foram preservados.
+                Ocorreu um erro inesperado neste estágio. Seus dados foram preservados.
               </p>
             </div>
             <button
@@ -199,7 +199,7 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
     },
     onSaveError: (error) => {
       setIsSaving(false);
-      setSaveError('Erro ao salvar automaticamente. Suas alteracoes serao salvas na proxima tentativa.');
+      setSaveError('Erro ao salvar automaticamente. Suas alterações serão salvas na próxima tentativa.');
       log.error('Auto-save error:', error);
     },
   });

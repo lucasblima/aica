@@ -48,10 +48,10 @@ const MODALITY_COLORS: Record<TrainingModality, string> = {
 };
 
 const MODALITY_LABELS: Record<TrainingModality, string> = {
-  swimming: 'Natacao',
+  swimming: 'Natação',
   running: 'Corrida',
   cycling: 'Ciclismo',
-  strength: 'Musculacao',
+  strength: 'Musculação',
   walking: 'Caminhada',
   triathlon: 'Triatleta',
 };

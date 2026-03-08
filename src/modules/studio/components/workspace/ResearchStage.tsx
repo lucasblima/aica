@@ -69,7 +69,7 @@ const ensureString = (value: unknown): string => {
  * Shows animated phases with descriptive labels so users know the app is working.
  */
 const DOSSIER_PHASES = [
-  { icon: Search, text: 'Buscando informacoes na web...' },
+  { icon: Search, text: 'Buscando informações na web...' },
   { icon: FileText, text: 'Analisando perfil do convidado...' },
   { icon: Sparkles, text: 'Gerando biografia e dossier...' },
 ] as const;
@@ -185,7 +185,7 @@ export default function ResearchStage() {
     const dossierSummary = research.dossier
       ? `${biographyText.substring(0, 500)}${
           research.dossier.controversies?.length
-            ? ` Controversias: ${research.dossier.controversies.slice(0, 2).join(', ')}`
+            ? ` Controvérsias: ${research.dossier.controversies.slice(0, 2).join(', ')}`
             : ''
         }`
       : '';

@@ -180,7 +180,7 @@ function FieldInput({
           <div className="border-2 border-dashed border-ceramic-border rounded-xl p-6 text-center hover:border-amber-300 transition-colors cursor-pointer">
             <Building2 className="w-8 h-8 text-ceramic-text-secondary mx-auto mb-2" />
             <p className="text-sm text-ceramic-text-secondary">{field.placeholder || 'Clique para fazer upload'}</p>
-            <p className="text-xs text-ceramic-text-secondary mt-1">PNG, JPG ate 5MB</p>
+            <p className="text-xs text-ceramic-text-secondary mt-1">PNG, JPG até 5MB</p>
           </div>
         );
 
@@ -304,10 +304,10 @@ function StepContent({ fields, formData, fieldXpMap, onFieldChange }: StepConten
           {String.fromCodePoint(0x1F389)}
         </motion.div>
         <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">
-          Revisao Final
+          Revisão Final
         </h3>
         <p className="text-ceramic-text-secondary">
-          Revise os dados e clique em Finalizar para salvar sua organizacao.
+          Revise os dados e clique em Finalizar para salvar sua organização.
         </p>
       </div>
     );
@@ -446,7 +446,7 @@ export function OrganizationWizard({
             </div>
             <div>
               <h1 className="text-xl font-bold text-ceramic-text-primary">
-                Cadastro de Organizacao
+                Cadastro de Organização
               </h1>
               <p className="text-sm text-ceramic-text-secondary">
                 Complete seu perfil para ganhar XP e desbloquear recursos
@@ -590,13 +590,13 @@ export function OrganizationWizard({
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-ceramic-text-secondary">Obrigatorios</span>
+                <span className="text-ceramic-text-secondary">Obrigatórios</span>
                 <span className="font-medium">
                   {progress.filledRequiredCount}/{progress.requiredFieldsCount}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-ceramic-text-secondary">Etapas concluidas</span>
+                <span className="text-ceramic-text-secondary">Etapas concluídas</span>
                 <span className="font-medium">
                   {progress.completedStepsCount}/{progress.totalStepsCount}
                 </span>

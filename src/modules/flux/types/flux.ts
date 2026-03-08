@@ -548,10 +548,10 @@ export const SEVERITY_COLORS: Record<AlertSeverity, string> = {
  * Training modality configuration
  */
 export const MODALITY_CONFIG: Record<TrainingModality, { label: string; icon: string; color: string }> = {
-  swimming: { label: 'Natacao', icon: '🏊', color: 'cyan' },
+  swimming: { label: 'Natação', icon: '🏊', color: 'cyan' },
   running: { label: 'Corrida', icon: '🏃', color: 'green' },
   cycling: { label: 'Ciclismo', icon: '🚴', color: 'amber' },
-  strength: { label: 'Forca', icon: '🏋️', color: 'purple' },
+  strength: { label: 'Força', icon: '🏋️', color: 'purple' },
   walking: { label: 'Caminhada', icon: '🚶', color: 'blue' },
   triathlon: { label: 'Triatleta', icon: '🏅', color: 'rose' },
 };

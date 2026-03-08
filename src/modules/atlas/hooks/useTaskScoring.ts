@@ -75,7 +75,7 @@ export function useTaskScoring(profile: CognitiveProfile | null): UseTaskScoring
         .single()
 
       if (fetchError || !task) {
-        throw new Error(fetchError?.message ?? 'Tarefa nao encontrada')
+        throw new Error(fetchError?.message ?? 'Tarefa não encontrada')
       }
 
       const workItem: WorkItemForScoring = {

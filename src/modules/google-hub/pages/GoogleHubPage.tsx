@@ -212,7 +212,7 @@ export function GoogleHubPage() {
                         icon={HardDrive}
                         color="#0F9D58"
                         title="Google Drive"
-                        description="Acesse e organize seus arquivos diretamente na AICA. Navegue, busque e gerencie documentos em um so lugar."
+                        description="Acesse e organize seus arquivos diretamente na AICA. Navegue, busque e gerencie documentos em um só lugar."
                     />
                 </motion.div>
             </motion.div>

@@ -28,7 +28,7 @@ const ENERGY_CONFIG: Record<EnergyLevel, {
     textClass: 'text-amber-800',
   },
   sustain: {
-    label: 'Zona Otima',
+    label: 'Zona Ótima',
     icon: <Battery className="w-4 h-4" />,
     bgClass: 'bg-ceramic-cool',
     textClass: 'text-ceramic-text-primary',

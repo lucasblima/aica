@@ -315,7 +315,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   const tabs = [
     { id: 'import', label: 'Importar' },
     { id: 'contacts', label: 'Contatos', icon: lockIcon },
-    { id: 'intelligence', label: 'Inteligencia', icon: lockIcon },
+    { id: 'intelligence', label: 'Inteligência', icon: lockIcon },
     { id: 'analytics', label: 'Analytics', icon: lockIcon },
   ];
 

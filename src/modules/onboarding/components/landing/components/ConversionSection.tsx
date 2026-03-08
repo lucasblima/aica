@@ -101,7 +101,7 @@ export function ConversionSection({
                         {/* Badge */}
                         <div className="flex items-center justify-center gap-2 mt-4 text-sm text-ceramic-text-secondary">
                             <Sparkles size={14} className="text-amber-500" />
-                            <span>Teste rapido — disponivel 24/7</span>
+                            <span>Teste rápido — disponível 24/7</span>
                         </div>
 
                         {/* Telegram CTA */}
@@ -173,9 +173,9 @@ export function ConversionSection({
 
                         {/* Waitlist card */}
                         <div className="bg-[#DEDCD5] rounded-3xl p-8 md:p-10 shadow-inner relative overflow-hidden">
-                            <h3 className="text-2xl font-black text-ceramic-text-primary mb-2">Proxima Fornada</h3>
+                            <h3 className="text-2xl font-black text-ceramic-text-primary mb-2">Próxima Fornada</h3>
                             <p className="text-ceramic-text-secondary font-medium mb-6 text-sm">
-                                Nao empilhamos usuarios, esculpimos rotinas.
+                                Não empilhamos usuários, esculpimos rotinas.
                             </p>
 
                             {submitted ? (
@@ -187,7 +187,7 @@ export function ConversionSection({
                                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
                                         <Check className="text-green-600" size={20} />
                                     </div>
-                                    <p className="font-bold text-ceramic-text-primary text-sm">Enviado a forja. Te avisaremos.</p>
+                                    <p className="font-bold text-ceramic-text-primary text-sm">Enviado à forja. Te avisaremos.</p>
                                 </motion.div>
                             ) : (
                                 <form onSubmit={handleWaitlistSubmit} className="space-y-3">

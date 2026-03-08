@@ -58,8 +58,8 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 function TrendBadge({ trend }: { trend: 'improving' | 'stable' | 'declining' }) {
   const config = {
     improving: { icon: <TrendingUp className="w-3 h-3" />, label: 'Melhorando', color: 'text-green-600' },
-    stable: { icon: <Minus className="w-3 h-3" />, label: 'Estavel', color: 'text-ceramic-text-secondary' },
-    declining: { icon: <TrendingDown className="w-3 h-3" />, label: 'Em declinio', color: 'text-red-500' },
+    stable: { icon: <Minus className="w-3 h-3" />, label: 'Estável', color: 'text-ceramic-text-secondary' },
+    declining: { icon: <TrendingDown className="w-3 h-3" />, label: 'Em declínio', color: 'text-red-500' },
   };
   const { icon, label, color } = config[trend];
 
@@ -84,7 +84,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({ result
             <Heart className="w-4 h-4 text-amber-600" />
           </div>
           <h3 className="text-sm font-bold text-ceramic-text-primary">
-            Saude Financeira
+            Saúde Financeira
           </h3>
         </div>
         {trend && <TrendBadge trend={trend} />}
@@ -155,7 +155,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({ result
             <StatusDot status={result.brazilianRatios.emergencyStatus} />
           </div>
           <div>
-            <p className="text-[10px] text-ceramic-text-secondary uppercase tracking-wide">Poupanca</p>
+            <p className="text-[10px] text-ceramic-text-secondary uppercase tracking-wide">Poupança</p>
             <p className="text-sm font-bold text-ceramic-text-primary">
               {(result.savingsRate * 100).toFixed(0)}%
             </p>

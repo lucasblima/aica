@@ -77,7 +77,7 @@ function getRelationshipLabel(type: ContactNetwork['relationship_type']): string
     colleague: 'Colega',
     client: 'Cliente',
     friend: 'Amigo',
-    family: 'Familia',
+    family: 'Família',
     mentor: 'Mentor',
     mentee: 'Mentorado',
     vendor: 'Fornecedor',
@@ -288,7 +288,7 @@ export function WhatsAppContactCard({
               ) : contact.last_message_preview ? (
                 <div className="flex items-start gap-1 text-ceramic-text-secondary mt-1">
                   {contact.last_message_direction === 'outgoing' && (
-                    <span className="text-xs font-medium text-ceramic-text-tertiary flex-shrink-0">Voce:</span>
+                    <span className="text-xs font-medium text-ceramic-text-tertiary flex-shrink-0">Você:</span>
                   )}
                   <p className="text-xs truncate max-w-[220px]">
                     {contact.last_message_preview}

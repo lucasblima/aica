@@ -151,7 +151,7 @@ export const FinanceEmptyState: React.FC<FinanceEmptyStateProps> = ({
               Converse com o agente
             </h3>
             <p className="text-xs text-ceramic-text-secondary mb-4">
-              Pergunte sobre seus gastos, peca insights e receba sugestoes personalizadas
+              Pergunte sobre seus gastos, peça insights e receba sugestões personalizadas
               da IA financeira.
             </p>
             <div className="w-full ceramic-inset rounded-lg px-3 py-2 mt-auto">

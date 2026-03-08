@@ -55,7 +55,7 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
 
   const formatMonths = (months: number): string => {
     if (!isFinite(months)) return '--';
-    if (months <= 1) return '1 mes';
+    if (months <= 1) return '1 mês';
     if (months < 12) return `${months} meses`;
     const years = Math.floor(months / 12);
     const remaining = months % 12;
@@ -72,7 +72,7 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
       (deadlineDate.getMonth() - now.getMonth())
     );
     if (projection.correctedMonthsToGoal > monthsLeft && monthsLeft > 0) {
-      return `Prazo em ${monthsLeft} meses, mas projecao corrigida indica ${projection.correctedMonthsToGoal} meses`;
+      return `Prazo em ${monthsLeft} meses, mas projeção corrigida indica ${projection.correctedMonthsToGoal} meses`;
     }
     return null;
   }, [deadline, projection.correctedMonthsToGoal]);
@@ -89,7 +89,7 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
             {goalTitle}
           </h3>
           <p className="text-[10px] text-ceramic-text-secondary">
-            Projecao com correcao comportamental
+            Projeção com correção comportamental
           </p>
         </div>
       </div>
@@ -111,7 +111,7 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
           />
         </div>
         <p className="text-[10px] text-ceramic-text-secondary mt-1 text-right">
-          {progressPct.toFixed(0)}% concluido
+          {progressPct.toFixed(0)}% concluído
         </p>
       </div>
 
@@ -126,20 +126,20 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
             {formatMonths(projection.monthsToGoal)}
           </p>
           <p className="text-[10px] text-ceramic-text-secondary">
-            {formatCurrency(monthlyContribution)}/mes
+            {formatCurrency(monthlyContribution)}/mês
           </p>
         </div>
 
         {/* Corrected (realistic) */}
         <div className="bg-amber-50 rounded-lg p-3 text-center border border-amber-200">
           <p className="text-[10px] text-amber-700 uppercase tracking-wide mb-1">
-            Projecao realista
+            Projeção realista
           </p>
           <p className="text-lg font-bold text-amber-700">
             {formatMonths(projection.correctedMonthsToGoal)}
           </p>
           <p className="text-[10px] text-amber-600">
-            Correcao: {((1 - projection.correctionFactor * projection.presentBiasDiscount) * 100).toFixed(0)}%
+            Correção: {((1 - projection.correctionFactor * projection.presentBiasDiscount) * 100).toFixed(0)}%
           </p>
         </div>
       </div>
@@ -169,7 +169,7 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
 
       {/* Methodology footnote */}
       <p className="text-[9px] text-ceramic-text-secondary/60 text-center mt-2">
-        Correcoes baseadas em Present Bias (Laibson, 1997) e Planning Fallacy (Kahneman & Tversky, 1979)
+        Correções baseadas em Present Bias (Laibson, 1997) e Planning Fallacy (Kahneman & Tversky, 1979)
       </p>
     </div>
   );

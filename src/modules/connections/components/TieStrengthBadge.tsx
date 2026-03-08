@@ -52,7 +52,7 @@ function getTieLevel(strength: number): {
     };
   }
   return {
-    label: 'Tenue',
+    label: 'Tênue',
     color: '#948D82',     // ceramic-text-secondary
     bgColor: '#948D8215',
   };
@@ -60,8 +60,8 @@ function getTieLevel(strength: number): {
 
 function getDunbarLabel(layer: number): string {
   switch (layer) {
-    case 5: return 'Intimo';
-    case 15: return 'Proximo';
+    case 5: return 'Íntimo';
+    case 15: return 'Próximo';
     case 50: return 'Regular';
     case 150: return 'Ativo';
     case 500: return 'Conhecido';

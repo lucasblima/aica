@@ -53,8 +53,8 @@ export const QUADRANT_MAP: Record<PrioritySuggestion['quadrant'], {
   is_important: boolean
 }> = {
   do: { quadrant: 'urgent-important', label: 'Urgente & Importante', is_urgent: true, is_important: true },
-  schedule: { quadrant: 'important', label: 'Importante, Nao Urgente', is_urgent: false, is_important: true },
-  delegate: { quadrant: 'urgent', label: 'Urgente, Nao Importante', is_urgent: true, is_important: false },
+  schedule: { quadrant: 'important', label: 'Importante, Não Urgente', is_urgent: false, is_important: true },
+  delegate: { quadrant: 'urgent', label: 'Urgente, Não Importante', is_urgent: true, is_important: false },
   eliminate: { quadrant: 'low', label: 'Nem Urgente, Nem Importante', is_urgent: false, is_important: false },
 }
 

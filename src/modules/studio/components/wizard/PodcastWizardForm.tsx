@@ -123,7 +123,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
             type="text"
             value={formData.guestName}
             onChange={(e) => onChange('guestName', e.target.value)}
-            placeholder="Ex: Joao Silva"
+            placeholder="Ex: João Silva"
             autoFocus
             className={inputClasses}
           />
@@ -323,7 +323,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
               className="overflow-hidden"
             >
               <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-3">
-                Selecione um Titulo
+                Selecione um Título
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {selectedThemeTitles.map((title) => (
@@ -335,7 +335,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
                   />
                 ))}
                 <AISuggestionCard
-                  text="Outro titulo"
+                  text="Outro título"
                   isSelected={isCustomTitleSelected}
                   onSelect={() => onChange('title', customTitle)}
                   isCustom
@@ -463,7 +463,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
                 type="text"
                 value={formData.theme}
                 onChange={(e) => onChange('theme', e.target.value)}
-                placeholder="Ex: Politicas Publicas, Inovacao"
+                placeholder="Ex: Políticas Públicas, Inovação"
                 className={inputClasses}
               />
             </div>
@@ -512,13 +512,13 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
                   {/* Description */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                      Descricao
+                      Descrição
                     </label>
                     <textarea
                       data-testid="episode-description"
                       value={formData.description}
                       onChange={(e) => onChange('description', e.target.value)}
-                      placeholder="Adicione detalhes sobre o episodio..."
+                      placeholder="Adicione detalhes sobre o episódio..."
                       rows={3}
                       className={`${inputClasses} resize-none`}
                     />

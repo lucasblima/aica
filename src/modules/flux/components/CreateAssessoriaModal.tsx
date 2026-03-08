@@ -42,7 +42,7 @@ export function CreateAssessoriaModal({
     e.preventDefault();
 
     if (!name.trim()) {
-      setError('Nome da assessoria e obrigatorio');
+      setError('Nome da assessoria é obrigatório');
       return;
     }
 
@@ -160,13 +160,13 @@ export function CreateAssessoriaModal({
                     htmlFor="assessoria-desc"
                     className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2"
                   >
-                    Descricao (opcional)
+                    Descrição (opcional)
                   </label>
                   <textarea
                     id="assessoria-desc"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Treinamento personalizado para atletas de todos os niveis..."
+                    placeholder="Treinamento personalizado para atletas de todos os níveis..."
                     className="w-full ceramic-inset px-4 py-3 text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/40 focus:outline-none focus:ring-2 focus:ring-amber-500/30 rounded-lg resize-none"
                     rows={3}
                     maxLength={300}

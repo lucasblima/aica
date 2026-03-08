@@ -33,10 +33,10 @@ import type { ConversationThread } from '../../hooks/useConversationThreads'
 const THREAD_TYPE_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; color: string }> = {
   general: { icon: MessageSquare, label: 'Geral', color: 'text-ceramic-text-secondary' },
   planning: { icon: Target, label: 'Planejamento', color: 'text-ceramic-info' },
-  decision: { icon: Zap, label: 'Decisao', color: 'text-amber-600' },
+  decision: { icon: Zap, label: 'Decisão', color: 'text-amber-600' },
   social: { icon: Coffee, label: 'Social', color: 'text-ceramic-success' },
   support: { icon: HelpCircle, label: 'Suporte', color: 'text-purple-500' },
-  negotiation: { icon: Handshake, label: 'Negociacao', color: 'text-ceramic-warning' },
+  negotiation: { icon: Handshake, label: 'Negociação', color: 'text-ceramic-warning' },
 }
 
 const SENTIMENT_ARC_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; color: string }> = {
@@ -129,7 +129,7 @@ export const ConversationThreadCard: React.FC<ConversationThreadCardProps> = ({
         <div className="mb-2">
           <p className="text-xs font-medium text-ceramic-success flex items-center gap-1 mb-1">
             <CheckCircle2 className="w-3 h-3" />
-            Decisoes ({thread.decisions.length})
+            Decisões ({thread.decisions.length})
           </p>
           <ul className="space-y-0.5">
             {thread.decisions.slice(0, 3).map((d, i) => (
@@ -151,7 +151,7 @@ export const ConversationThreadCard: React.FC<ConversationThreadCardProps> = ({
         <div className="mb-2">
           <p className="text-xs font-medium text-ceramic-warning flex items-center gap-1 mb-1">
             <ListTodo className="w-3 h-3" />
-            Acoes pendentes ({thread.action_items.length})
+            Ações pendentes ({thread.action_items.length})
           </p>
           <ul className="space-y-0.5">
             {thread.action_items.slice(0, 3).map((a, i) => (

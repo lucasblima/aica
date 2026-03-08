@@ -101,7 +101,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
             </p>
           ) : (
             <p className="text-xs text-ceramic-text-secondary">
-              {projectCount === 0 ? 'Explore editais FAPERJ, FINEP, CNPq' : 'Sem prazos proximos'}
+              {projectCount === 0 ? 'Explore editais FAPERJ, FINEP, CNPq' : 'Sem prazos próximos'}
             </p>
           )}
         </div>

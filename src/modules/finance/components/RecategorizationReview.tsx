@@ -11,18 +11,18 @@ import { X, Check, ArrowRight, Loader2, ChevronDown } from 'lucide-react';
 import type { CategorySuggestion } from '../services/financeService';
 
 const CATEGORY_LABELS: Record<string, string> = {
-  food: 'Alimentacao',
+  food: 'Alimentação',
   transport: 'Transporte',
   housing: 'Moradia',
-  health: 'Saude',
-  education: 'Educacao',
+  health: 'Saúde',
+  education: 'Educação',
   entertainment: 'Entretenimento',
   shopping: 'Compras',
   bills: 'Contas',
-  salary: 'Salario',
+  salary: 'Salário',
   freelance: 'Freelance',
   investment: 'Investimento',
-  transfer: 'Transferencia',
+  transfer: 'Transferência',
   pets: 'Pets',
   personal_care: 'Cuidados Pessoais',
   subscription: 'Assinatura',
@@ -78,7 +78,7 @@ export const RecategorizationReview: React.FC<RecategorizationReviewProps> = ({
               Revisar Categorias
             </h2>
             <p className="text-xs text-ceramic-text-secondary mt-0.5">
-              {items.length} {items.length === 1 ? 'sugestao' : 'sugestoes'} da IA
+              {items.length} {items.length === 1 ? 'sugestão' : 'sugestões'} da IA
             </p>
           </div>
           <button
@@ -179,7 +179,7 @@ export const RecategorizationReview: React.FC<RecategorizationReviewProps> = ({
                   Salvando...
                 </>
               ) : (
-                <>Aplicar {acceptedCount} {acceptedCount === 1 ? 'alteracao' : 'alteracoes'}</>
+                <>Aplicar {acceptedCount} {acceptedCount === 1 ? 'alteração' : 'alterações'}</>
               )}
             </button>
           </div>

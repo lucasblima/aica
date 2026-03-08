@@ -26,10 +26,10 @@ const TREND_COLORS: Record<string, string> = {
 
 const TREND_LABELS: Record<string, string> = {
   ascending: 'Ascendente',
-  stable: 'Estavel',
+  stable: 'Estável',
   neutral: 'Neutro',
   descending: 'Descendente',
-  volatile: 'Volatil',
+  volatile: 'Volátil',
 }
 
 /** Gradient base colors per trend */
@@ -119,7 +119,7 @@ export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
   if (data.length < 2) {
     return (
       <div className="ceramic-tile p-4">
-        <h4 className="text-sm font-semibold text-[#5C554B] mb-3">Tendencia Emocional</h4>
+        <h4 className="text-sm font-semibold text-[#5C554B] mb-3">Tendência Emocional</h4>
         <div className="flex flex-col items-center py-4 gap-2">
           {/* Placeholder dashed sparkline */}
           <svg
@@ -140,8 +140,8 @@ export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
           </svg>
           <p className="text-xs text-[#948D82] text-center max-w-[260px]">
             {data.length === 0
-              ? 'Seus resumos semanais alimentam este grafico. O primeiro sera gerado ao final da semana.'
-              : 'Uma semana a mais de dados e este grafico ganha vida.'}
+              ? 'Seus resumos semanais alimentam este gráfico. O primeiro será gerado ao final da semana.'
+              : 'Uma semana a mais de dados e este gráfico ganha vida.'}
           </p>
         </div>
       </div>
@@ -194,13 +194,13 @@ export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
 
   return (
     <div className="ceramic-tile p-4">
-      <h4 className="text-sm font-semibold text-[#5C554B] mb-3">Tendencia Emocional</h4>
+      <h4 className="text-sm font-semibold text-[#5C554B] mb-3">Tendência Emocional</h4>
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="w-full h-auto"
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label="Grafico de tendencia emocional semanal"
+        aria-label="Gráfico de tendência emocional semanal"
       >
         <style>{ANIM_STYLE}</style>
 

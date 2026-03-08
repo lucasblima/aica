@@ -30,7 +30,7 @@ const features = [
   },
   {
     icon: TrendingUp,
-    text: 'Acompanhar sua evolucao semana a semana',
+    text: 'Acompanhar sua evolução semana a semana',
   },
 ];
 
@@ -70,7 +70,7 @@ export function AthleteWelcome({ profile, onStartTraining, onExplore }: AthleteW
 
           <p className="mt-3 text-sm text-ceramic-text-secondary leading-relaxed">
             Seu coach <span className="font-bold text-ceramic-text-primary">{profile.coach_name}</span> preparou
-            um plano de treino para voce
+            um plano de treino para você
           </p>
         </motion.div>
 

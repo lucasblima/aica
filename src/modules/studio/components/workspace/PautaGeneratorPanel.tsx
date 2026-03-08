@@ -137,7 +137,7 @@ const CATEGORY_CONFIG: Record<string, {
     borderColor: 'border-ceramic-error/30',
     icon: AlertCircle,
     emoji: '\\u26a0\\ufe0f',
-    label: 'Polemicas'
+    label: 'Polêmicas'
   }
 };
 
@@ -150,7 +150,7 @@ const GENERATION_STEPS = [
   { id: 2, label: 'Estrutura' },
   { id: 3, label: 'Perguntas' },
   { id: 4, label: 'Quebra-gelo' },
-  { id: 5, label: 'Compilacao' },
+  { id: 5, label: 'Compilação' },
 ] as const;
 
 /** Parse "Etapa X/5: ..." format and return the step number (1-5), or null */
@@ -207,13 +207,13 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
 
   const handleGenerate = useCallback(async () => {
     if (!hasRequiredData) {
-      setError('Nome do convidado e obrigatorio para gerar a pauta');
+      setError('Nome do convidado é obrigatório para gerar a pauta');
       return;
     }
 
     setIsGenerating(true);
     setError(null);
-    setProgress({ step: 'Iniciando geracao...', percentage: 0 });
+    setProgress({ step: 'Iniciando geração...', percentage: 0 });
 
     try {
       const request: PautaGenerationRequest = {
@@ -399,13 +399,13 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
               <div className="p-4 rounded-xl bg-ceramic-base border border-ceramic-border">
                 <h3 className="text-sm font-semibold text-ceramic-text-primary mb-3 flex items-center gap-2">
                   <FileText className="w-4 h-4" aria-hidden="true" />
-                  Informacoes do Convidado
+                  Informações do Convidado
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-ceramic-tertiary">Nome:</span>
                     <span className="ml-2 font-medium text-ceramic-text-primary">
-                      {setup.guestName || 'Nao informado'}
+                      {setup.guestName || 'Não informado'}
                     </span>
                   </div>
                   <div>
@@ -427,7 +427,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
               <div>
                 <label htmlFor="duration" className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center gap-2">
                   <Clock className="w-4 h-4" aria-hidden="true" />
-                  Duracao Estimada
+                  Duração Estimada
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -477,7 +477,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                 </label>
                 <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Selecionar profundidade">
                   {([
-                    { value: 'shallow', label: 'Superficial', desc: 'Rapido, essencial' },
+                    { value: 'shallow', label: 'Superficial', desc: 'Rápido, essencial' },
                     { value: 'medium', label: 'Moderada', desc: 'Equilibrado' },
                     { value: 'deep', label: 'Profunda', desc: 'Detalhado' }
                   ] as const).map(d => (
@@ -513,7 +513,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                   ) : (
                     <ChevronDown className="w-4 h-4" aria-hidden="true" />
                   )}
-                  Opcoes Avancadas
+                  Opções Avançadas
                 </button>
 
                 <AnimatePresence>
@@ -533,7 +533,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                             id="additional-context"
                             value={additionalContext}
                             onChange={(e) => setAdditionalContext(e.target.value)}
-                            placeholder="Adicione informacoes especificas que deseja explorar na entrevista..."
+                            placeholder="Adicione informações específicas que deseja explorar na entrevista..."
                             rows={3}
                             className="w-full px-4 py-3 rounded-xl bg-ceramic-base border border-ceramic-border text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                           />
@@ -676,7 +676,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                 </div>
                 <div className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border text-center">
                   <div className="text-2xl font-bold text-ceramic-text-primary">{generatedPauta.confidenceScore}%</div>
-                  <div className="text-xs text-ceramic-tertiary">confianca</div>
+                  <div className="text-xs text-ceramic-tertiary">confiança</div>
                 </div>
               </div>
 

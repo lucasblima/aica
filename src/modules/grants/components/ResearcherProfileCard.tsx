@@ -32,7 +32,7 @@ const TIER_CONFIG: Record<ResearcherStrengthResult['tier'], { label: string; col
     bgColor: 'rgba(107, 123, 92, 0.12)',
   },
   leading: {
-    label: 'Lider',
+    label: 'Líder',
     color: 'var(--color-ceramic-accent, #B8860B)',
     bgColor: 'rgba(184, 134, 11, 0.12)',
   },
@@ -76,15 +76,15 @@ const ComponentBar: React.FC<ComponentBarProps> = ({ label, value, weight }) => 
 
 const RSS_EXPLANATION: ScoreExplanation = {
   title: 'Researcher Strength Score (RSS)',
-  summary: 'Score composto que avalia a forca academica do pesquisador baseado em metricas bibliometricas reconhecidas internacionalmente.',
+  summary: 'Score composto que avalia a força acadêmica do pesquisador baseado em métricas bibliométricas reconhecidas internacionalmente.',
   methodology: 'Hirsch, J.E. (2005). An index to quantify an individual\'s scientific research output. PNAS, 102(46), 16569-16572.',
-  brazilianValidation: 'Benchmarks calibrados para o contexto academico brasileiro (mediana h-index ~10, top ~50).',
-  formulaDescription: 'RSS = 30% h-index + 20% citacoes + 15% m-quotient + 20% fator de impacto + 15% centralidade colaborativa. Cada componente normalizado para 0-100.',
-  scaleDescription: '0-100, onde 80+ = Lider, 60-79 = Senior, 40-59 = Estabelecido, <40 = Emergente.',
+  brazilianValidation: 'Benchmarks calibrados para o contexto acadêmico brasileiro (mediana h-index ~10, top ~50).',
+  formulaDescription: 'RSS = 30% h-index + 20% citações + 15% m-quotient + 20% fator de impacto + 15% centralidade colaborativa. Cada componente normalizado para 0-100.',
+  scaleDescription: '0-100, onde 80+ = Líder, 60-79 = Senior, 40-59 = Estabelecido, <40 = Emergente.',
   isContested: false,
   improvementTips: [
-    'Publique em periodicos com maior fator de impacto',
-    'Colabore com pesquisadores de outras instituicoes',
+    'Publique em periódicos com maior fator de impacto',
+    'Colabore com pesquisadores de outras instituições',
     'Atualize seu perfil Lattes e ORCID regularmente',
     'Participe de projetos interdisciplinares para aumentar centralidade',
   ],
@@ -118,13 +118,13 @@ export const ResearcherProfileCard: React.FC<ResearcherProfileCardProps> = ({
         <div className="flex items-center gap-2">
           <GraduationCap size={20} className="text-ceramic-text-primary" />
           <h3 className="text-base font-semibold text-ceramic-text-primary">
-            Perfil Cientometrico
+            Perfil Cienciométrico
           </h3>
         </div>
         <button
           onClick={() => setShowExplainer(true)}
           className="p-1.5 rounded-lg hover:bg-ceramic-cool transition-colors"
-          title="Como isso e calculado?"
+          title="Como isso é calculado?"
           aria-label="Como o RSS e calculado"
         >
           <Info size={16} className="text-ceramic-text-secondary" />
@@ -158,7 +158,7 @@ export const ResearcherProfileCard: React.FC<ResearcherProfileCardProps> = ({
           weight="30%"
         />
         <ComponentBar
-          label="Citacoes"
+          label="Citações"
           value={strength.components.citationScore}
           weight="20%"
         />
