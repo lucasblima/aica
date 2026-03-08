@@ -22,13 +22,14 @@
 Antes de qualquer deploy, use `superpowers:verification-before-completion`:
 - `npm run build` — mostrar output completo (exit 0)
 - `npm run typecheck` — mostrar output completo (0 errors)
+- `npm run test` — mostrar output (0 failures)
 - **NUNCA** dizer "build passa" sem ter rodado o comando nesta sessao
 
 ## Commands
 
 ### Commit & Push
 ```bash
-git add -A && git commit -m "sua mensagem" && git push origin main
+git add -A && git commit -m "sua mensagem" && git push origin <feature-branch>
 ```
 
 ### Staging (us-central1)
@@ -49,6 +50,27 @@ Deploy leva ~4 minutos. Defaults do `cloudbuild.yaml`: `_SERVICE_NAME=aica`, `_D
 gcloud builds list --limit=5 --region=southamerica-east1 --project=gen-lang-client-0948335762
 ```
 
+## Hotfix Deploy — Emergency Only
+
+**SOMENTE** quando producao esta down e usuario confirma explicitamente:
+
+1. Fix no codigo (minimal change)
+2. `npm run build && npm run typecheck` (MUST pass)
+3. Deploy staging: verificar fix funciona
+4. Deploy producao: com confirmacao explicita do usuario
+5. PR retroativo: documentar o fix depois
+
+Staging pode ser pulado SOMENTE com confirmacao explicita: "deploy direto para prod".
+
+### Rollback
+```bash
+# Listar revisoes recentes
+gcloud run revisions list --service=aica --region=southamerica-east1 --project=gen-lang-client-0948335762
+
+# Voltar para revisao anterior
+gcloud run services update-traffic aica --to-revisions=PREVIOUS_REVISION=100 --region=southamerica-east1 --project=gen-lang-client-0948335762
+```
+
 ## Cloud Run Services
 
 | Servico | Dominio | Regiao | Uso |
@@ -60,7 +82,7 @@ gcloud builds list --limit=5 --region=southamerica-east1 --project=gen-lang-clie
 
 ## Edge Function Deploys
 
-Code changes to Edge Functions require **separate deploy to Supabase** (not just Cloud Run):
-```bash
-SUPABASE_ACCESS_TOKEN=sbp_... npx supabase functions deploy <name> --no-verify-jwt
-```
+1. Test locally: `npx supabase functions serve <name>`
+2. Deploy: `npx supabase functions deploy <name> --no-verify-jwt`
+3. Verify: test the endpoint on staging
+4. `--no-verify-jwt` is OK for functions called from authenticated frontend (JWT validated in function code). Use WITH JWT verification for public-facing functions.

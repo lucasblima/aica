@@ -14,6 +14,19 @@
 ## Agents Backend
 - **Cloud Run:** `aica-agents` in `southamerica-east1`
 
+## Local Development Setup
+
+Required in `.env.local` (never commit real values):
+```
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+Supabase secrets (set via `supabase secrets set`):
+- `GEMINI_API_KEY` — Google Gemini API key
+- `GOOGLE_CLIENT_ID` — OAuth client ID
+- `GOOGLE_CLIENT_SECRET` — OAuth client secret
+
 ## DNS
 
 - `dev` CNAME → `ghs.googlehosted.com.`

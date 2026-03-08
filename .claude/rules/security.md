@@ -40,9 +40,18 @@ const result = await client.call({ action: 'generate', payload: {...} });
 
 ## Verification
 
-- **ALWAYS** verify RLS policies work with test queries after creation
+- **ALWAYS** verify RLS policies work after creation
 - Use `superpowers:verification-before-completion` — no security claims without evidence
-- Run `SELECT * FROM table WHERE user_id != auth.uid()` to confirm RLS blocks unauthorized access
+- Test via Supabase Dashboard SQL Editor with different user tokens, or via Edge Function:
+  - As owner: `SELECT * FROM table` should return only own rows
+  - As different user: same query should return empty or different rows
+  - Without auth: query should fail with permission denied
+
+## CORS Security
+
+- Edge Functions MUST restrict origins to `dev.aica.guru` and `aica.guru`
+- Never use `Access-Control-Allow-Origin: '*'` in production
+- See architecture.md Edge Function Checklist for CORS pattern
 
 ## Absolute Prohibitions
 

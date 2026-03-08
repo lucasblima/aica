@@ -10,7 +10,7 @@ When the task appears to benefit from a team (2+ files, decisions, new features,
 - Option to work solo instead
 
 **Recommend a team** when the task involves ANY of these:
-- 2+ files to modify
+- 3+ files with distinct logic changes across layers
 - Decisions between approaches (architecture, library, pattern)
 - New features (even small ones — design + implement + review)
 - Bug investigation (multiple hypotheses in parallel)
@@ -21,22 +21,22 @@ When the task appears to benefit from a team (2+ files, decisions, new features,
 **Recommend solo** when:
 - Single-line or few-line fix (typo, obvious bug, config tweak)
 - Pure research question (no code changes)
+- Renaming, import fixes, config changes, single-module edits < 3 files
 
 But in ALL cases, **the user decides**. Never assume.
 
-## Workflow: Name → Clarify → Ask Team → Brainstorm → Plan → Execute (TDD) → Verify → Review → PR → Finish
+## Workflow: Name → Clarify → Ask Team → Brainstorm → Plan → Execute (TDD) → Verify → Review → Finish
 
 ```
 0. NAME      — Suggest session name, wait for approval
 1. CLARIFY   — Ask about information gaps (see clarification-first.md)
-2. ASK TEAM  — Ask user if they want Agent Team activated (MANDATORY)
+2. ASK TEAM  — Ask user if they want Agent Team activated (Standard/Complex tasks)
 3. BRAINSTORM — Generate approaches (`superpowers:brainstorming`)
 4. PLAN      — Write actionable plan (`superpowers:writing-plans`)
 5. EXECUTE   — TDD cycle per task (`superpowers:test-driven-development`)
 6. VERIFY    — Fresh evidence that everything works (`superpowers:verification-before-completion`)
 7. REVIEW    — Two-stage review per task (`superpowers:requesting-code-review`)
-8. PR        — Create Pull Request on feature branch (see session-protocol.md)
-9. FINISH    — Read PR comments, address them, merge after approval
+8. FINISH    — `superpowers:finishing-a-development-branch` → merge/PR/keep/discard
 ```
 
 **NEVER skip steps 0, 1, or 2.** The user must explicitly approve the team.
