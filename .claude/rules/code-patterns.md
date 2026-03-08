@@ -78,6 +78,14 @@ describe('fetchWorkItems', () => {
 
 For Edge Functions, test the request/response contract. For React hooks, test state transitions. For services, test data transformations and error paths.
 
+**Exceptions** (verify with build + visual inspection instead of test-first):
+- Visual/CSS-only changes (class names, layout, spacing)
+- String literals and i18n text changes
+- Config file changes (tsconfig, vite.config, tailwind.config)
+- Pure refactoring that doesn't change behavior (extract function, rename variable)
+
+These changes still require `npm run build && npm run typecheck` to pass.
+
 ## Code Review Pattern (`superpowers:requesting-code-review`, `superpowers:receiving-code-review`)
 
 **Before PR**: Request a code review — either from a teammate (in team mode) or a self-review subagent (in solo mode). The review checks:
@@ -99,5 +107,9 @@ Before claiming any task is done, you MUST:
 1. Run `npm run build && npm run typecheck` — show actual terminal output
 2. Run `npm run test` (if tests exist for modified code) — show actual output
 3. Verify the feature works as specified (manual check or test output)
+
+For visual changes (CSS, layout, design system refactoring): visual inspection replaces unit tests. Verify the component renders correctly in the browser.
+
+**Pre-existing build errors:** If the project has known build errors, verify your changes don't add NEW errors. Document known pre-existing errors.
 
 **Never say** "build passes" or "tests pass" from memory. Always run the commands fresh and include the output as evidence. Stale results from earlier in the session do not count.

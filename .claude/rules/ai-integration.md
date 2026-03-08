@@ -28,8 +28,11 @@ All Edge Functions must use `extractJSON()` for robust Gemini response parsing:
 - Strip code fences FIRST: `.replace(/```(?:json)?\s*\n?/g, '')`
 - Handle preamble text, trailing content
 - `gemini-chat` has the reference robust implementation
+- Reference implementation: `supabase/functions/gemini-chat/index.ts`
 
 ## Model Router (OpenClaw)
+
+**Status:** Active — used by Edge Functions that need complexity-based model selection.
 
 `_shared/model-router.ts` — `callAI()` with complexity cascade:
 - Low → Flash, Medium → Flash (escalate to Pro if confidence < 0.6), High → Pro

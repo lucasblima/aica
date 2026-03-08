@@ -1,3 +1,6 @@
+---
+globs: src/services/scoring/**
+---
 # Domain-Driven Design — AICA Life OS
 
 ## Bounded Contexts = 8 Modules
@@ -18,7 +21,9 @@ Each module in `src/modules/` is a **Bounded Context** with its own types, servi
 ## Aggregate Roots
 
 ### `LifeScore` (Cross-Module Aggregate)
-- Composite of 7 domain scores, owns spiral alerts + goodhart alerts
+- Composite of domain scores from: Atlas (productivity), Journey (consciousness), Finance (financial health), Connections (relationships), Flux (physical), Studio (creativity), Grants (professional growth)
+- Agenda provides scheduling data but does not have its own domain score
+- Owns spiral alerts + goodhart alerts
 - Persistence: `life_score_history`, `life_score_weights`, `life_score_domain_correlations`
 - Service: `src/services/scoring/lifeScoreService.ts`
 
@@ -82,6 +87,7 @@ When modules need data from other modules, they go through:
 - Aggregate boundaries that protect consistency (workout blocks, grant projects)
 - New domain services that span multiple entities
 - New cross-module features — start with `superpowers:brainstorming` to explore bounded context boundaries
+- Complex DDD features — create plan with `superpowers:writing-plans` documenting aggregate boundaries
 
 ### NO — Keep It Simple
 - Simple CRUD operations within a single module

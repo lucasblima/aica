@@ -19,6 +19,8 @@ Before creating any migration:
 - `moment_entries` = consolidated table (may NOT be applied on remote)
 - **ALWAYS use `moments`** until consolidation is confirmed
 
+This is the canonical source for table name decisions. architecture.md references this section.
+
 ## RLS — Non-Negotiable
 
 Every new table MUST have RLS policies in the same migration:
@@ -30,6 +32,29 @@ CREATE POLICY "Users can read own data" ON new_table
 
 CREATE POLICY "Users can insert own data" ON new_table
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own data" ON new_table
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own data" ON new_table
+  FOR DELETE USING (auth.uid() = user_id);
+```
+
+## RPC Template
+
+```sql
+CREATE OR REPLACE FUNCTION public.my_function(p_user_id UUID, p_param TEXT)
+RETURNS TABLE (id UUID, name TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT t.id, t.name FROM my_table t
+  WHERE t.user_id = p_user_id;
+END;
+$$;
 ```
 
 ## Key Tables by Module

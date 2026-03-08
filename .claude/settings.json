@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'supabase.*migration\\|npx supabase migration' && echo '⚠️  MIGRATION DETECTED!\n\nSafety Checklist:\n- RLS policies defined for new tables?\n- SECURITY DEFINER functions reviewed?\n- Migration tested locally first?\n- Rollback plan documented?\n- No PII in migration (passwords, tokens, etc.)?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'supabase.*\\(migration\\|db push\\|db reset\\)\\|npx supabase migration' && echo '⚠️  MIGRATION DETECTED!\n\nSafety Checklist:\n- RLS policies defined for new tables?\n- SECURITY DEFINER functions reviewed?\n- Migration tested locally first?\n- Rollback plan documented?\n- No PII in migration (passwords, tokens, etc.)?\n' || true"
           }
         ]
       },
@@ -15,7 +15,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gcloud builds submit' && echo '⚠️  DEPLOY DETECTED!\n\nConfirm with user before proceeding.\nDeploy is a manual, user-initiated action only.\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gcloud builds submit' && echo '⚠️  DEPLOY DETECTED!\n\nConfirm with user before proceeding.\nDeploy is a manual, user-initiated action only.\n' && exit 1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | grep -qE 'git (push.*--force|push.*-f[^i]|reset.*--hard)' && echo 'BLOCKED: Destructive git operation detected!\n\ngit push --force and git reset --hard can destroy work.\nUse safer alternatives:\n- git push --force-with-lease (safer force push)\n- git reset --soft (keeps changes staged)\n\nIf you must proceed, ask the user for explicit confirmation.\n' && exit 1 || true"
           }
         ]
       },
@@ -55,9 +64,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "permissions": {
-    "allow": [
-      "Read(.claude/CLAUDE.md)"
-    ]
+    "allow": []
   },
   "teammateMode": "in-process"
 }

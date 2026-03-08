@@ -38,10 +38,23 @@ npx supabase functions serve  # Local Edge Functions
 | **Finance** | `src/modules/finance/` | `finance_transactions` |
 | **Flux** | `src/modules/flux/` | `athletes`, `workout_blocks`, `alerts` |
 
+## Task Sizing
+
+Before entering the workflow, assess task size:
+
+| Tier | Criteria | Workflow |
+|------|----------|---------|
+| **Micro** | 1-5 lines, 1 file, no logic/design decisions | Fix → Verify (build) → Commit → Push |
+| **Standard** | Single module, clear scope | Full workflow (Brainstorm/Plan optional if approach obvious) |
+| **Complex** | Cross-module, architecture decisions, 5+ files | Full workflow, all steps mandatory |
+
+Micro tasks skip: Name, Clarify, Team, Brainstorm, Plan, Worktree, TDD, Review, Finish.
+Standard tasks may skip Brainstorm/Plan if the approach is obvious and well-established.
+
 ## Default Working Mode
 
 ```
-Name -> Clarify -> Ask Team -> Brainstorm -> Plan -> Worktree -> TDD/Execute -> Verify -> Review -> Finish -> PR
+Name → Clarify → Ask Team → Brainstorm → Plan → Worktree → TDD/Execute → Verify → Review → Finish
 ```
 
 Every session follows this mandatory flow:
@@ -55,26 +68,26 @@ Every session follows this mandatory flow:
 7. **TDD/Execute** — `superpowers:test-driven-development` (RED-GREEN-REFACTOR). For bugs: `superpowers:systematic-debugging` first
 8. **Verify** — `superpowers:verification-before-completion` -> FRESH build/test output as evidence
 9. **Review** — `superpowers:requesting-code-review` -> address findings
-10. **Finish** — `superpowers:finishing-a-development-branch` -> 4 options (merge/PR/keep/discard)
-11. **PR** — Create Pull Request on feature branch (never push directly to main)
+10. **Finish** — `superpowers:finishing-a-development-branch` -> choose (merge/PR/keep/discard) -> execute choice
 
-Steps 4-5 are lightweight for trivial tasks (skip or a few sentences). Steps 7-9 repeat per task. Solo work is chosen by the user, not assumed.
+Steps 4-5 are lightweight for Standard tasks (skip if approach obvious). Steps 7-9 repeat per task. Solo work is chosen by the user, not assumed. Micro tasks skip all steps — just fix, verify, commit, push.
 
 ## Superpowers Integration
 
 | Phase | Skill | When |
 |-------|-------|------|
-| Design | `superpowers:brainstorming` | Before any non-trivial feature |
-| Planning | `superpowers:writing-plans` | After design approval |
-| Workspace | `superpowers:using-git-worktrees` | Every session |
-| Implementation | `superpowers:test-driven-development` | Every code change |
-| Debugging | `superpowers:systematic-debugging` | Every bug/failure |
-| Agent Teams | `superpowers:subagent-driven-development` | Team execution with spec+quality review |
-| Parallel Work | `superpowers:dispatching-parallel-agents` | 3+ independent tasks/bugs |
-| Verification | `superpowers:verification-before-completion` | Before any completion claim |
-| Code Review | `superpowers:requesting-code-review` | Before PR creation |
-| Review Response | `superpowers:receiving-code-review` | When addressing review feedback |
-| Completion | `superpowers:finishing-a-development-branch` | After all tasks verified |
+| 1-3. Ceremony | — | Name, Clarify, Ask Team (no skill needed) |
+| 4. Design | `superpowers:brainstorming` | Before any non-trivial feature |
+| 5. Planning | `superpowers:writing-plans` | After design approval |
+| 6. Workspace | `superpowers:using-git-worktrees` | Every Standard/Complex session |
+| 7. Implementation | `superpowers:test-driven-development` | Every code change |
+| 7. Debugging | `superpowers:systematic-debugging` | Every bug/failure (before TDD) |
+| 7. Agent Teams | `superpowers:subagent-driven-development` | Team execution with spec+quality review |
+| 7. Parallel Work | `superpowers:dispatching-parallel-agents` | 3+ independent tasks/bugs |
+| 8. Verification | `superpowers:verification-before-completion` | Before any completion claim |
+| 9. Code Review | `superpowers:requesting-code-review` | Before finishing branch |
+| 9. Review Response | `superpowers:receiving-code-review` | When addressing review feedback |
+| 10. Finish | `superpowers:finishing-a-development-branch` | After all tasks verified — merge/PR/keep/discard |
 
 ## Modular Rules Index
 
@@ -113,7 +126,8 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 - **ALWAYS** brainstorm before implementing non-trivial features (`superpowers:brainstorming`)
 - **ALWAYS** write implementation plans for multi-step tasks (`superpowers:writing-plans`)
 - **ALWAYS** use git worktrees (`.worktrees/`) for feature work — never `git checkout -b` on main tree
-- **ALWAYS** create Pull Requests — never push directly to main
+- **ALWAYS** create Pull Requests for Standard/Complex tasks — never push directly to main
+- Micro tasks (1-5 lines, 1 file) may commit directly to main
 - **ALWAYS** read and address PR comments before merging
 
 ### Code Quality

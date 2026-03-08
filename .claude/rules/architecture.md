@@ -12,32 +12,32 @@
 
 - `AicaChatFAB` calls `supabase.functions.invoke('gemini-chat')` directly — self-contained
 - `gemini-chat` Edge Function is the active chat path
-- `agent-proxy` exists but is not used by chat FAB currently
+- `agent-proxy` — deprecated, not in active use
 
 ## Table Names — Critical
 
-- `moments` = original table (active, has data, used by most services)
-- `moment_entries` = consolidated table (migration may NOT be applied on remote)
-- **ALWAYS use `moments`** in new RPCs and queries until consolidation is confirmed
+See database.md "Table Name Warning" for the canonical reference.
+Key rule: **ALWAYS use `moments`** (not `moment_entries`) until consolidation is confirmed.
 
 ## Token Refresh — Critical
 
-- NEVER call `supabase.auth.refreshSession()` unconditionally
-- Only refresh when token expires in <60s
-- Unconditional refresh in loops causes TOKEN_REFRESHED cascade → rate limit → logout
-- Verbose cookie logging + concurrent queries amplify the cascade
+See security.md "Authentication" for full rules.
+Key rule: NEVER call `supabase.auth.refreshSession()` unconditionally — only when token expires in <60s.
 
 ## Edge Functions Pattern
 
 ```typescript
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = ['https://aica.guru', 'https://dev.aica.guru'];
 
 serve(async (req) => {
+  const origin = req.headers.get('origin') || '';
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

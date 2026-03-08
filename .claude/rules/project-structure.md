@@ -39,6 +39,7 @@ supabase/
 | Finance | `src/modules/finance/` | Bank statement processing |
 | Connections | `src/modules/connections/` | WhatsApp integration |
 | Flux | `src/modules/flux/` | Training management for coaches |
+| Agenda | `src/modules/agenda/` | Google Calendar sync, scheduling |
 
 ## Plans
 
@@ -72,8 +73,30 @@ import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 ```typescript
 // Recommended
-import type { GuestDossier } from '@/modules/podcast/types'
+import type { GuestDossier } from '@/modules/studio/types'
 
 // Avoid
-import type { GuestDossier } from '@/modules/podcast'
+import type { GuestDossier } from '@/modules/studio'
+```
+
+## Test Files
+
+```
+tests/
+├── unit/              # or src/modules/*/services/__tests__/
+├── integration/       # Cross-module tests
+└── e2e/               # Playwright E2E tests
+```
+
+Unit tests live next to source: `src/modules/atlas/services/__tests__/workItemService.test.ts`
+
+## Edge Functions
+
+```
+supabase/functions/
+├── _shared/           # Shared helpers (cors, model-router, health-tracker)
+├── gemini-chat/       # Per-function directory
+│   └── index.ts
+└── build-contact-dossier/
+    └── index.ts
 ```
