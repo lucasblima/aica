@@ -231,20 +231,20 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
         ) : !fetchError && (
           <>
             {/* Show Header */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 mx-6 mt-6 rounded-2xl p-6 mb-6 shadow-sm">
-              <div className="flex items-start gap-6">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 mx-4 sm:mx-6 mt-4 sm:mt-6 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
                 {/* Show Artwork */}
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto sm:mx-0 flex-shrink-0 rounded-2xl bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center shadow-lg">
                   {show?.cover_url ? (
                     <img src={show.cover_url} alt={show.title} className="w-full h-full object-cover rounded-2xl" />
                   ) : (
-                    <Mic2 className="w-12 h-12 text-amber-600" />
+                    <Mic2 className="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" />
                   )}
                 </div>
 
                 {/* Show Info */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                <div className="flex-1 min-w-0 text-center sm:text-left">
+                  <div className="flex items-center gap-3 mb-2 justify-center sm:justify-start">
                     <button
                       onClick={onBack}
                       className="text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
@@ -252,14 +252,14 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
                     >
                       <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <h1 className="text-2xl font-bold text-ceramic-text-primary">{showTitle}</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-ceramic-text-primary truncate">{showTitle}</h1>
                   </div>
-                  <p className="text-ceramic-text-secondary mt-1 text-sm">
+                  <p className="text-ceramic-text-secondary mt-1 text-sm line-clamp-2">
                     {show?.description || 'Sem descrição'}
                   </p>
 
                   {/* Stats */}
-                  <div className="flex gap-6 mt-4">
+                  <div className="grid grid-cols-2 sm:flex sm:gap-6 gap-3 mt-4">
                     <Stat label="Total" value={stats.total} />
                     <Stat label="Publicados" value={stats.published} color="green" />
                     <Stat label="Em progresso" value={stats.inProgress} color="amber" />
@@ -271,7 +271,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
                 <button
                   data-testid="new-episode-button"
                   onClick={onCreateEpisode}
-                  className="ceramic-card px-4 py-3 font-bold rounded-xl hover:scale-105 transition-transform inline-flex items-center gap-2 shadow-sm"
+                  className="ceramic-card px-4 py-3 font-bold rounded-xl hover:scale-105 transition-transform inline-flex items-center gap-2 shadow-sm w-full sm:w-auto justify-center flex-shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                   Novo Episódio
@@ -280,8 +280,8 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
             </div>
 
             {/* Tabs */}
-            <nav className="bg-ceramic-base border-b border-ceramic-border px-6 sticky top-0 z-10">
-              <div className="flex gap-6">
+            <nav className="bg-ceramic-base border-b border-ceramic-border px-4 sm:px-6 sticky top-0 z-10 overflow-x-auto">
+              <div className="flex gap-4 sm:gap-6 min-w-max">
                 <TabButton active={activeTab === 'episodes'} onClick={() => setActiveTab('episodes')}>
                   Episódios
                 </TabButton>
@@ -298,7 +298,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
             </nav>
 
             {/* Tab Content */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTab}
@@ -400,8 +400,8 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           <FilterChip active={filter === 'all'} onClick={() => onFilterChange('all')}>
             Todos
           </FilterChip>
@@ -419,7 +419,7 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
         <select
           value={sortBy}
           onChange={e => onSortChange(e.target.value as SortType)}
-          className="px-3 py-2 rounded-lg border border-ceramic-border text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="w-full sm:w-auto px-3 py-2 rounded-lg border border-ceramic-border text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500"
         >
           <option value="newest">Mais recentes</option>
           <option value="oldest">Mais antigos</option>
