@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit, Home, Trash2, Save, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit, Home, Trash2, Save, Check, MoreVertical } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { updateShow, deleteShow } from '../services/workspaceDatabaseService';
 import { HeaderGlobal } from '@/components/layout';
@@ -109,6 +109,21 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
       setFetchError('Nao foi possivel carregar os dados do podcast. Verifique sua conexao e tente novamente.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteEpisode = async (episodeId: string) => {
+    try {
+      const { error } = await supabase
+        .from('podcast_episodes')
+        .delete()
+        .eq('id', episodeId);
+
+      if (error) throw error;
+      fetchShowData();
+    } catch (error) {
+      log.error('Error deleting episode:', error);
+      setFetchError('Erro ao excluir episódio.');
     }
   };
 
@@ -317,9 +332,10 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
                       onSortChange={setSortBy}
                       onSelectEpisode={onSelectEpisode}
                       onCreateNew={onCreateEpisode}
+                      onDeleteEpisode={handleDeleteEpisode}
                     />
                   )}
-                  {activeTab === 'drafts' && <DraftsSection episodes={episodes.filter(e => e.status === 'draft')} onSelectEpisode={onSelectEpisode} />}
+                  {activeTab === 'drafts' && <DraftsSection episodes={episodes.filter(e => e.status === 'draft')} onSelectEpisode={onSelectEpisode} onDeleteEpisode={handleDeleteEpisode} />}
                   {activeTab === 'files' && <FilesSection showId={showId} />}
                   {activeTab === 'settings' && (
                     <SettingsSection
@@ -394,6 +410,7 @@ interface EpisodesSectionProps {
   onSortChange: (sort: SortType) => void;
   onSelectEpisode: (episodeId: string) => void;
   onCreateNew: () => void;
+  onDeleteEpisode: (id: string) => void;
 }
 
 const EpisodesSection: React.FC<EpisodesSectionProps> = ({
@@ -404,6 +421,7 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
   onSortChange,
   onSelectEpisode,
   onCreateNew,
+  onDeleteEpisode,
 }) => {
   return (
     <div>
@@ -446,6 +464,7 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
             key={episode.id}
             episode={episode}
             onClick={() => onSelectEpisode(episode.id)}
+            onDelete={onDeleteEpisode}
           />
         ))}
       </div>
@@ -497,9 +516,12 @@ const CreateNewCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 interface EpisodeCardProps {
   episode: Episode;
   onClick: () => void;
+  onDelete: (id: string) => void;
 }
 
-const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
+const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick, onDelete }) => {
+  const [showMenu, setShowMenu] = useState(false);
+
   const statusConfig: Record<Episode['status'], { bg: string; text: string; label: string }> = {
     draft: { bg: 'bg-ceramic-base', text: 'text-ceramic-text-secondary', label: 'Rascunho' },
     planning: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Planejando' },
@@ -516,51 +538,66 @@ const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
   const relativeDate = formatRelativeDate(episode.updated_at);
 
   return (
-    <button
-      onClick={onClick}
-      className="
-        bg-ceramic-base rounded-2xl p-4 text-left
-        border border-ceramic-border
-        hover:border-amber-300 hover:shadow-lg
-        transition-all duration-200
-        group
-      "
-    >
-      {/* Thumbnail */}
-      <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl mb-3 flex items-center justify-center">
-        <Mic2 className="w-8 h-8 text-amber-400" />
-      </div>
+    <div className="relative bg-ceramic-base rounded-2xl p-4 text-left border border-ceramic-border hover:border-amber-300 hover:shadow-lg transition-all duration-200 group">
+      {/* Three-dot menu trigger */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+        className="absolute top-3 right-3 p-1 rounded-lg text-ceramic-text-secondary hover:bg-ceramic-cool opacity-0 group-hover:opacity-100 transition-opacity z-10"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
 
-      {/* Content */}
-      <h3 className="font-medium text-ceramic-text-primary line-clamp-2 group-hover:text-amber-600 transition-colors">
-        {episode.title || 'Sem titulo'}
-      </h3>
-
-      <p className="text-sm text-ceramic-text-secondary mt-1 line-clamp-1">
-        {episode.guest_name || 'Sem convidado'}
-      </p>
-
-      {episode.episode_theme && (
-        <p className="text-xs text-ceramic-text-secondary mt-1 line-clamp-1">
-          Tema: {episode.episode_theme}
-        </p>
+      {/* Dropdown menu */}
+      {showMenu && (
+        <div className="absolute top-10 right-3 bg-ceramic-base border border-ceramic-border rounded-xl shadow-lg z-20 py-1 min-w-[140px]">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowMenu(false); onDelete(episode.id); }}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-ceramic-error hover:bg-ceramic-error/10 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Excluir
+          </button>
+        </div>
       )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-ceramic-border">
-        <span className={`text-xs px-2 py-1 rounded-full ${status.bg} ${status.text}`}>
-          {status.label}
-        </span>
+      {/* Clickable card area */}
+      <button onClick={onClick} className="w-full text-left">
+        {/* Thumbnail */}
+        <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl mb-3 flex items-center justify-center">
+          <Mic2 className="w-8 h-8 text-amber-400" />
+        </div>
 
-        <span className="text-xs text-ceramic-text-secondary">{relativeDate}</span>
-      </div>
-    </button>
+        {/* Content */}
+        <h3 className="font-medium text-ceramic-text-primary line-clamp-2 group-hover:text-amber-600 transition-colors">
+          {episode.title || 'Sem titulo'}
+        </h3>
+
+        <p className="text-sm text-ceramic-text-secondary mt-1 line-clamp-1">
+          {episode.guest_name || 'Sem convidado'}
+        </p>
+
+        {episode.episode_theme && (
+          <p className="text-xs text-ceramic-text-secondary mt-1 line-clamp-1">
+            Tema: {episode.episode_theme}
+          </p>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-ceramic-border">
+          <span className={`text-xs px-2 py-1 rounded-full ${status.bg} ${status.text}`}>
+            {status.label}
+          </span>
+          <span className="text-xs text-ceramic-text-secondary">{relativeDate}</span>
+        </div>
+      </button>
+    </div>
   );
 };
 
-const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: string) => void }> = ({
+const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: string) => void; onDeleteEpisode: (id: string) => void }> = ({
   episodes,
   onSelectEpisode,
+  onDeleteEpisode,
 }) => (
   <div>
     <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Rascunhos</h2>
@@ -577,7 +614,7 @@ const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: strin
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {episodes.map(episode => (
-          <EpisodeCard key={episode.id} episode={episode} onClick={() => onSelectEpisode(episode.id)} />
+          <EpisodeCard key={episode.id} episode={episode} onClick={() => onSelectEpisode(episode.id)} onDelete={onDeleteEpisode} />
         ))}
       </div>
     )}
