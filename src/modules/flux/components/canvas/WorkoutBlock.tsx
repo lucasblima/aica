@@ -10,8 +10,7 @@
 
 import React from 'react';
 import { GripVertical, Activity } from 'lucide-react';
-import type { TrainingModality } from '../../types';
-import type { WorkoutIntensity } from '../../mockData/workoutTemplates';
+import type { TrainingModality, WorkoutIntensity } from '../../types';
 
 export interface WorkoutBlockData {
   templateId?: string;

@@ -5,8 +5,8 @@
  * Opens WhatsApp with pre-filled message for coach convenience.
  */
 
-import React, { useState, useMemo } from 'react';
-import { X, MessageCircle, Send, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { X, MessageCircle, Send, RefreshCw, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 import type { AthleteWithMetrics, Alert } from '../types';
 import { LEVEL_LABELS } from '../types';
 
@@ -130,6 +130,7 @@ export function WhatsAppMessageModal({
   const [messageVariant, setMessageVariant] = useState(0);
   const [customMessage, setCustomMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sent'>('idle');
 
   // Generate initial message
   const generatedMessage = useMemo(() => {
@@ -155,15 +156,33 @@ export function WhatsAppMessageModal({
   };
 
   // Handle send via WhatsApp
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = useCallback(() => {
     // Format phone for WhatsApp (remove + and spaces)
     const phone = athlete.phone.replace(/[+\s-]/g, '');
     const encodedMessage = encodeURIComponent(currentMessage);
     const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
-    onClose();
-  };
+    setSendStatus('sent');
+  }, [athlete.phone, currentMessage]);
+
+  // Auto-close after successful send
+  useEffect(() => {
+    if (sendStatus === 'sent') {
+      const timer = setTimeout(() => {
+        setSendStatus('idle');
+        onClose();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [sendStatus, onClose]);
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSendStatus('idle');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -190,7 +209,8 @@ export function WhatsAppMessageModal({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg ceramic-inset flex items-center justify-center hover:bg-white/50 transition-colors"
+            disabled={sendStatus === 'sent'}
+            className="w-8 h-8 rounded-lg ceramic-inset flex items-center justify-center hover:bg-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-4 h-4 text-ceramic-text-secondary" />
           </button>
@@ -257,31 +277,42 @@ export function WhatsAppMessageModal({
         </div>
 
         {/* Actions */}
-        <div className="p-4 border-t border-ceramic-text-secondary/10 flex items-center gap-3">
-          <button
-            onClick={handleRegenerate}
-            className="flex items-center gap-2 px-4 py-2 ceramic-inset hover:bg-white/50 transition-colors rounded-lg"
-          >
-            <RefreshCw className="w-4 h-4 text-ceramic-text-secondary" />
-            <span className="text-sm font-medium text-ceramic-text-secondary">Regenerar</span>
-          </button>
+        <div className="p-4 border-t border-ceramic-text-secondary/10">
+          {sendStatus === 'sent' ? (
+            <div className="flex items-center justify-center gap-2 py-2">
+              <CheckCircle className="w-5 h-5 text-ceramic-success" />
+              <span className="text-sm font-bold text-ceramic-success">
+                Mensagem enviada! Fechando...
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRegenerate}
+                className="flex items-center gap-2 px-4 py-2 ceramic-inset hover:bg-white/50 transition-colors rounded-lg"
+              >
+                <RefreshCw className="w-4 h-4 text-ceramic-text-secondary" />
+                <span className="text-sm font-medium text-ceramic-text-secondary">Regenerar</span>
+              </button>
 
-          <div className="flex-1" />
+              <div className="flex-1" />
 
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-          >
-            Cancelar
-          </button>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+              >
+                Cancelar
+              </button>
 
-          <button
-            onClick={handleSendWhatsApp}
-            className="flex items-center gap-2 px-6 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg transition-colors"
-          >
-            <Send className="w-4 h-4" />
-            <span className="font-bold">Enviar</span>
-          </button>
+              <button
+                onClick={handleSendWhatsApp}
+                className="flex items-center gap-2 px-6 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                <span className="font-bold">Enviar</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

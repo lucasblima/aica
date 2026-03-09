@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Activity, Target, MessageSquare, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutBlockData } from './WorkoutBlock';
-import type { WorkoutIntensity } from '../../mockData/workoutTemplates';
+import type { WorkoutIntensity } from '../../types';
 
 interface WorkoutBlockEditorProps {
   workout: WorkoutBlockData | null;
