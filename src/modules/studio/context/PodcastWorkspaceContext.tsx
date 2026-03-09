@@ -692,7 +692,9 @@ export function PodcastWorkspaceProvider({
           guestName,
           episodeTheme: state.setup.theme || result.suggestedThemes[0] || 'Carreira & Atualidades',
           biography: result.dossier.biography,
-          controversies: result.dossier.controversies,
+          controversies: result.dossier.controversies.map(c =>
+            typeof c === 'string' ? c : c.title
+          ),
           suggestedTopics: result.suggestedThemes,
           iceBreakers: result.dossier.iceBreakers,
           technicalSheet: result.dossier.technicalSheet,

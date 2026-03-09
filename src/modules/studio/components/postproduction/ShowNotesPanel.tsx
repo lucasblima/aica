@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Loader2, Copy, CheckCircle, Sparkles, Tag } from 'lucide-react';
+import { BookOpen, Loader2, Copy, CheckCircle, Sparkles, Tag, RefreshCw } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState } from '@/components/ui';
 import type { StudioShowNotes, StudioTranscription } from '../../types/studio';
 
 interface ShowNotesPanelProps {
@@ -84,25 +85,37 @@ export default function ShowNotesPanel({
             : 'Gere a transcricao primeiro para desbloquear as show notes.'}
         </p>
         {error && (
-          <p className="text-sm text-ceramic-error mb-4">{error}</p>
+          <div className="text-center mb-4">
+            <p className="text-sm text-ceramic-error mb-3">{error}</p>
+            <button
+              onClick={() => { setError(null); handleGenerate(); }}
+              className="flex items-center gap-2 px-4 py-2 mx-auto text-sm text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors"
+              aria-label="Tentar gerar show notes novamente"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tentar novamente
+            </button>
+          </div>
         )}
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating || !transcription}
-          className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Gerando show notes...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Gerar Show Notes
-            </>
-          )}
-        </button>
+        {!error && (
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating || !transcription}
+            className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Gerando show notes...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Gerar Show Notes
+              </>
+            )}
+          </button>
+        )}
       </motion.div>
     );
   }

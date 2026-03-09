@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Mic2, AlertCircle, Calendar, BarChart3 } from 'lucide-react';
+import { Plus, Mic2, AlertCircle, Calendar, BarChart3, Palette } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { PodcastShow } from '../types/podcast';
 import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
 import { HeaderGlobal } from '@/components/layout';
-import type { StudioLibraryProps } from '../types/studio';
+import type { StudioLibraryProps, ProjectType } from '../types/studio';
 import { createNamespacedLogger } from '@/lib/logger';
 import { getAllProjectTypes } from '../config/projectTypeConfigs';
 import { ProjectTypePreview } from '../components/ProjectTypePreview';
@@ -139,7 +139,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       {/* Header with HeaderGlobal */}
       <HeaderGlobal
         title="Estúdio Aica"
-        subtitle="PODCAST COPILOT"
+        subtitle="CONTENT STUDIO"
         userEmail={userEmail}
         onLogout={onLogout}
         onLogoClick={() => navigate('/')}
@@ -156,6 +156,10 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
           <a href="/studio/analytics" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-border transition-colors">
             <BarChart3 className="w-4 h-4" />
             Analytics
+          </a>
+          <a href="/studio/brandkit" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-border transition-colors">
+            <Palette className="w-4 h-4" />
+            Brand Kit
           </a>
         </div>
         {/* Error Banners */}
@@ -309,7 +313,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
         {!loading && (
           <div className="mt-10 mb-6">
             <h2 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary mb-4">
-              Tipos de Conteudo
+              Criar Novo Projeto
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {getAllProjectTypes().map(config => (
@@ -317,6 +321,13 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
                   key={config.type}
                   config={config}
                   disabled={config.comingSoon}
+                  onClick={
+                    config.comingSoon
+                      ? undefined
+                      : config.type === 'podcast'
+                        ? () => setShowModal(true)
+                        : () => onCreateNew(config.type as ProjectType)
+                  }
                 />
               ))}
             </div>

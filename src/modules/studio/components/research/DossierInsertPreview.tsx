@@ -23,7 +23,7 @@ export function DossierInsertPreview({ text, targetSection, onInsert, onDismiss 
         <span className="text-xs font-semibold text-ceramic-info">
           Preview — sera inserido em: {sectionLabel}
         </span>
-        <button onClick={onDismiss} className="p-1 hover:bg-ceramic-cool rounded">
+        <button onClick={onDismiss} className="p-1 hover:bg-ceramic-cool rounded" aria-label="Fechar preview do dossier">
           <X className="w-3.5 h-3.5 text-ceramic-text-secondary" />
         </button>
       </div>

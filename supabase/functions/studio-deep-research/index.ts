@@ -16,6 +16,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { withHealthTracking } from '../_shared/health-tracker.ts'
+import { createNamespacedLogger } from '../_shared/logger.ts'
+
+const logger = createNamespacedLogger('studio-deep-research')
 
 // =============================================================================
 // HELPERS
@@ -122,7 +126,7 @@ serve(async (req) => {
     // STEP 1 — Google Search Grounding (real-time web data)
     // =========================================================================
     const step1Start = Date.now()
-    console.log(`[studio-deep-research] Step 1: Grounding search for "${guestName}"`)
+    logger.info(`Step 1: Grounding search for "${guestName}"`)
 
     const groundingPrompt = `Pesquise informacoes atualizadas sobre ${guestName}, ${guestContext}. Inclua: biografia completa, trabalho recente, publicacoes, aparicoes em midia, redes sociais, controversias recentes, e fatos relevantes. Seja detalhado e factual.`
 
@@ -130,23 +134,27 @@ serve(async (req) => {
     let sources: GroundingSource[] = []
 
     try {
-      const groundingResult = await callGeminiWithGrounding(apiKey, groundingPrompt, 4096)
+      const groundingResult = await withHealthTracking(
+        { functionName: 'studio-deep-research', actionName: 'grounding_search' },
+        supabaseClient,
+        () => callGeminiWithGrounding(apiKey, groundingPrompt, 4096)
+      )
       groundingText = groundingResult.text
       sources = groundingResult.sources
     } catch (groundingError) {
       // Fallback: if grounding fails, use regular prompt without search
-      console.warn('[studio-deep-research] Grounding failed, falling back to regular prompt:', groundingError)
+      logger.warn('Grounding failed, falling back to regular prompt:', groundingError)
       groundingText = await callGemini(apiKey, groundingPrompt, 4096)
     }
 
     timings.step1_grounding_ms = Date.now() - step1Start
-    console.log(`[studio-deep-research] Step 1 complete: ${timings.step1_grounding_ms}ms, ${sources.length} sources`)
+    logger.info(`Step 1 complete: ${timings.step1_grounding_ms}ms, ${sources.length} sources`)
 
     // =========================================================================
     // STEP 2 — Structured Dossier Synthesis
     // =========================================================================
     const step2Start = Date.now()
-    console.log(`[studio-deep-research] Step 2: Dossier synthesis`)
+    logger.info('Step 2: Dossier synthesis')
 
     const synthesisPrompt = `Voce e um pesquisador especializado em preparacao de entrevistas para podcasts.
 
@@ -186,13 +194,17 @@ IMPORTANTE:
 - iceBreakers deve ter 5-8 opcoes variadas (fatos curiosos, conexoes pessoais, atualidades)
 - Tudo em portugues brasileiro natural`
 
-    const synthesisRaw = await callGemini(apiKey, synthesisPrompt, 8192, 'gemini-2.5-pro')
+    const synthesisRaw = await withHealthTracking(
+      { functionName: 'studio-deep-research', actionName: 'dossier_synthesis' },
+      supabaseClient,
+      () => callGemini(apiKey, synthesisPrompt, 8192, 'gemini-2.5-pro')
+    )
     let dossier: any
 
     try {
       dossier = extractJSON(synthesisRaw)
     } catch (parseError) {
-      console.error('[studio-deep-research] Failed to parse dossier JSON:', parseError)
+      logger.error('Failed to parse dossier JSON:', parseError)
       // Return a minimal dossier with the raw text as biography
       dossier = {
         biography: groundingText,
@@ -214,7 +226,7 @@ IMPORTANTE:
     }
 
     timings.step2_synthesis_ms = Date.now() - step2Start
-    console.log(`[studio-deep-research] Step 2 complete: ${timings.step2_synthesis_ms}ms`)
+    logger.info(`Step 2 complete: ${timings.step2_synthesis_ms}ms`)
 
     // Extract themes and titles from dossier to top-level response
     const suggestedThemes = dossier.suggestedThemes || []
@@ -227,12 +239,16 @@ IMPORTANTE:
 
     if (researchDepth === 'deep') {
       const step3Start = Date.now()
-      console.log(`[studio-deep-research] Step 3: Extended deep research`)
+      logger.info('Step 3: Extended deep research')
 
       const extendedPrompt = `Pesquise entrevistas recentes, podcasts, palestras, livros e artigos publicados por ${guestName} (${guestContext}) nos ultimos 2 anos. Liste com datas e fontes.`
 
       try {
-        const extendedResult = await callGeminiWithGrounding(apiKey, extendedPrompt, 4096)
+        const extendedResult = await withHealthTracking(
+          { functionName: 'studio-deep-research', actionName: 'extended_research' },
+          supabaseClient,
+          () => callGeminiWithGrounding(apiKey, extendedPrompt, 4096)
+        )
         recentAppearances = extendedResult.text
 
         // Merge extended sources (deduplicate by URL)
@@ -244,20 +260,20 @@ IMPORTANTE:
           }
         }
       } catch (extendedError) {
-        console.warn('[studio-deep-research] Extended research failed:', extendedError)
+        logger.warn('Extended research failed:', extendedError)
         // Non-fatal: deep research is a bonus
         recentAppearances = undefined
       }
 
       timings.step3_extended_ms = Date.now() - step3Start
-      console.log(`[studio-deep-research] Step 3 complete: ${timings.step3_extended_ms}ms`)
+      logger.info(`Step 3 complete: ${timings.step3_extended_ms}ms`)
     }
 
     // =========================================================================
     // RESPONSE
     // =========================================================================
     const totalMs = Object.values(timings).reduce((a, b) => a + b, 0)
-    console.log(`[studio-deep-research] Total: ${totalMs}ms, depth: ${researchDepth}, sources: ${sources.length}`)
+    logger.info(`Total: ${totalMs}ms, depth: ${researchDepth}, sources: ${sources.length}`)
 
     const responseData: any = {
       dossier: {
@@ -282,7 +298,7 @@ IMPORTANTE:
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('[studio-deep-research] error:', error)
+    logger.error('error:', error)
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

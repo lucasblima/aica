@@ -129,81 +129,108 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
   }, [formData.guestName, formData.guestContext]);
 
   const handleCreate = async () => {
-    if (!formData.guestName.trim()) {
-      setError('Nome do convidado e obrigatorio');
-      return;
-    }
-    if (!showId || showId.trim() === '') {
-      setError('Erro: Podcast nao selecionado. Por favor, selecione um podcast primeiro.');
-      return;
+    // Validate based on project type
+    if (projectType === 'podcast') {
+      if (!formData.guestName.trim()) {
+        setError('Nome do convidado e obrigatorio');
+        return;
+      }
+      if (!showId || showId.trim() === '') {
+        setError('Erro: Podcast nao selecionado. Por favor, selecione um podcast primeiro.');
+        return;
+      }
+    } else {
+      if (!formData.title.trim()) {
+        setError('Titulo e obrigatorio');
+        return;
+      }
     }
 
     setIsCreatingProject(true);
     setError(null);
 
     try {
-      // Build insert payload, including research data so it persists to the workspace
-      const insertPayload: Record<string, any> = {
-        show_id: showId,
-        user_id: userId,
-        title: formData.title.trim() || `Episodio com ${formData.guestName.trim()}`,
-        description: formData.description || null,
-        guest_name: formData.guestName || null,
-        guest_reference: formData.guestContext || null,
-        guest_contact_id: formData.guestContactId || null,
-        episode_theme: formData.theme || null,
-        status: 'draft',
-        scheduled_date: formData.scheduledDate || null,
-        scheduled_time: formData.scheduledTime || null,
-        location: formData.location || null,
-        season: formData.season || '1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      if (projectType === 'podcast') {
+        // Podcast: persist to podcast_episodes table
+        const insertPayload: Record<string, any> = {
+          show_id: showId,
+          user_id: userId,
+          title: formData.title.trim() || `Episodio com ${formData.guestName.trim()}`,
+          description: formData.description || null,
+          guest_name: formData.guestName || null,
+          guest_reference: formData.guestContext || null,
+          guest_contact_id: formData.guestContactId || null,
+          episode_theme: formData.theme || null,
+          status: 'draft',
+          scheduled_date: formData.scheduledDate || null,
+          scheduled_time: formData.scheduledTime || null,
+          location: formData.location || null,
+          season: formData.season || '1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
-      // Persist research results so the workspace can load them (#662)
-      // Only columns that exist on podcast_episodes: biography, controversies, ice_breakers
-      // (technical_sheet, suggested_topics, deep_research live on podcast_guest_research table)
-      if (researchResults?.dossier) {
-        insertPayload.biography = researchResults.dossier.biography || null;
-        insertPayload.controversies = researchResults.dossier.controversies || [];
-        insertPayload.ice_breakers = researchResults.dossier.iceBreakers || [];
-      }
-
-      const { data: episode, error: dbError } = await supabase
-        .from('podcast_episodes')
-        .insert(insertPayload)
-        .select()
-        .single();
-
-      if (dbError) {
-        throw new Error(`Erro ao criar episodio: ${dbError.message}`);
-      }
-
-      const project: StudioProject = {
-        id: episode.id,
-        type: 'podcast',
-        title: episode.title,
-        description: episode.description,
-        showId: showId,
-        status: 'draft',
-        createdAt: new Date(episode.created_at),
-        updatedAt: new Date(episode.updated_at),
-        metadata: {
-          type: 'podcast',
-          guestName: formData.guestName,
-          guestContext: formData.guestContext,
-          episodeTheme: formData.theme,
-          scheduledDate: formData.scheduledDate,
-          scheduledTime: formData.scheduledTime,
-          location: formData.location,
-          season: formData.season,
-          recordingDuration: 0,
-          ...(researchResults ? { deepResearch: researchResults } : {}),
+        if (researchResults?.dossier) {
+          insertPayload.biography = researchResults.dossier.biography || null;
+          insertPayload.controversies = researchResults.dossier.controversies || [];
+          insertPayload.ice_breakers = researchResults.dossier.iceBreakers || [];
         }
-      };
 
-      onComplete(project);
+        const { data: episode, error: dbError } = await supabase
+          .from('podcast_episodes')
+          .insert(insertPayload)
+          .select()
+          .single();
+
+        if (dbError) {
+          throw new Error(`Erro ao criar episodio: ${dbError.message}`);
+        }
+
+        const project: StudioProject = {
+          id: episode.id,
+          type: 'podcast',
+          title: episode.title,
+          description: episode.description,
+          showId: showId,
+          status: 'draft',
+          createdAt: new Date(episode.created_at),
+          updatedAt: new Date(episode.updated_at),
+          metadata: {
+            type: 'podcast',
+            guestName: formData.guestName,
+            guestContext: formData.guestContext,
+            episodeTheme: formData.theme,
+            scheduledDate: formData.scheduledDate,
+            scheduledTime: formData.scheduledTime,
+            location: formData.location,
+            season: formData.season,
+            recordingDuration: 0,
+            ...(researchResults ? { deepResearch: researchResults } : {}),
+          }
+        };
+
+        onComplete(project);
+      } else {
+        // Article / Video: create in-memory project (DB tables not yet created)
+        // Generate a temporary UUID for the project
+        const tempId = crypto.randomUUID();
+        const now = new Date();
+
+        const project: StudioProject = {
+          id: tempId,
+          type: projectType,
+          title: formData.title.trim(),
+          description: formData.description || undefined,
+          status: 'draft',
+          createdAt: now,
+          updatedAt: now,
+          metadata: {
+            type: projectType,
+          } as any,
+        };
+
+        onComplete(project);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(message);
@@ -258,8 +285,9 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
   // ============================================================================
 
   const canCreate =
-    projectType === 'podcast' &&
-    formData.guestName.trim().length > 0;
+    projectType === 'podcast'
+      ? formData.guestName.trim().length > 0
+      : formData.title.trim().length > 0;
 
   const isComingSoon = config.comingSoon;
 
@@ -289,6 +317,49 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
             inputClasses={inputClasses}
           />
         );
+      case 'article':
+      case 'video':
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-ceramic-text-primary mb-1.5">
+                Titulo *
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={e => handleFieldChange('title', e.target.value)}
+                placeholder={projectType === 'article' ? 'Ex: Como a IA esta transformando a educacao' : 'Ex: Tutorial de React Hooks'}
+                className={inputClasses}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ceramic-text-primary mb-1.5">
+                Tema
+              </label>
+              <input
+                type="text"
+                value={formData.theme}
+                onChange={e => handleFieldChange('theme', e.target.value)}
+                placeholder="Tema principal do conteudo"
+                className={inputClasses}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ceramic-text-primary mb-1.5">
+                Descricao
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={e => handleFieldChange('description', e.target.value)}
+                placeholder="Breve descricao do projeto (opcional)"
+                rows={3}
+                className={`${inputClasses} resize-none`}
+              />
+            </div>
+          </div>
+        );
       default:
         return <ComingSoonForm typeConfig={config} />;
     }
@@ -311,9 +382,9 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
 
   const headerSubtitle = projectType === 'podcast'
     ? stepLabels[currentStep] || ''
-    : config.description;
+    : 'Preencha os dados do projeto';
 
-  // Hide bottom actions during loading step or when on step 1/3 (they have their own buttons)
+  // Show bottom actions for non-podcast types always, or for podcast on step 4
   const showBottomActions = projectType !== 'podcast' || currentStep === 4;
 
   // ============================================================================
@@ -404,7 +475,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      Criar Episodio
+                      {projectType === 'podcast' ? 'Criar Episodio' : `Criar ${config.label}`}
                     </>
                   )}
                 </button>

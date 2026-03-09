@@ -72,6 +72,7 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
       return {
         ...state,
         mode: 'WIZARD',
+        wizardProjectType: action.payload?.projectType || state.wizardProjectType || 'podcast',
         error: null,
       };
 
@@ -177,8 +178,8 @@ export function StudioProvider({ children, initialState }: StudioProviderProps) 
       dispatch({ type: 'GO_TO_SHOW_PAGE', payload: { showId, showTitle } });
     },
 
-    goToWizard: () => {
-      dispatch({ type: 'GO_TO_WIZARD' });
+    goToWizard: (projectType) => {
+      dispatch({ type: 'GO_TO_WIZARD', payload: projectType ? { projectType } : undefined });
     },
 
     goToWorkspace: (project: StudioProject) => {

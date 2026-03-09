@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, BookOpen, Quote, Scissors } from 'lucide-react';
+import { FileText, BookOpen, Quote, Scissors, RefreshCw, Users, MessageSquare } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState } from '@/components/ui';
 import type { StudioTranscription, StudioShowNotes, StudioClip } from '../../types/studio';
 import TranscriptionPanel from './TranscriptionPanel';
 import ShowNotesPanel from './ShowNotesPanel';
 import QuoteExtractorPanel from './QuoteExtractorPanel';
 import ClipSuggestionPanel from './ClipSuggestionPanel';
+import { TeamPanel } from '../collaboration';
+import { CommentThread } from '../collaboration';
 
 interface PostProductionStageProps {
   projectId: string;
   episodeId: string;
 }
 
-type TabId = 'transcricao' | 'shownotes' | 'quotes' | 'clips';
+type TabId = 'transcricao' | 'shownotes' | 'quotes' | 'clips' | 'equipe' | 'comentarios';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'transcricao', label: 'Transcricao', icon: FileText },
   { id: 'shownotes', label: 'Show Notes', icon: BookOpen },
   { id: 'quotes', label: 'Quotes', icon: Quote },
   { id: 'clips', label: 'Clips', icon: Scissors },
+  { id: 'equipe', label: 'Equipe', icon: Users },
+  { id: 'comentarios', label: 'Comentarios', icon: MessageSquare },
 ];
 
 export default function PostProductionStage({
@@ -31,12 +36,13 @@ export default function PostProductionStage({
   const [showNotes, setShowNotes] = useState<StudioShowNotes | null>(null);
   const [clips, setClips] = useState<StudioClip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Fetch existing data on mount
-  useEffect(() => {
-    async function loadExistingData() {
-      setIsLoading(true);
-      try {
+  const loadExistingData = async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
         const [transcRes, notesRes, clipsRes] = await Promise.all([
           supabase
             .from('studio_transcriptions')
@@ -62,6 +68,7 @@ export default function PostProductionStage({
         if (transcRes.data) {
           setTranscription({
             id: transcRes.data.id,
+            userId: transcRes.data.user_id,
             projectId: transcRes.data.project_id,
             content: transcRes.data.content,
             language: transcRes.data.language,
@@ -76,6 +83,7 @@ export default function PostProductionStage({
         if (notesRes.data) {
           setShowNotes({
             id: notesRes.data.id,
+            userId: notesRes.data.user_id,
             projectId: notesRes.data.project_id,
             summary: notesRes.data.summary,
             highlights: notesRes.data.highlights || [],
@@ -90,6 +98,7 @@ export default function PostProductionStage({
           setClips(
             clipsRes.data.map((c: any) => ({
               id: c.id,
+              userId: c.user_id,
               projectId: c.project_id,
               title: c.title,
               startTimeSeconds: c.start_time_seconds,
@@ -104,20 +113,37 @@ export default function PostProductionStage({
             }))
           );
         }
-      } catch {
-        // Silently handle — panels will show empty states
+      } catch (err: any) {
+        setLoadError(err.message || 'Erro ao carregar dados de pos-producao');
       } finally {
         setIsLoading(false);
       }
-    }
+  };
 
+  useEffect(() => {
     loadExistingData();
   }, [projectId]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+      <div className="p-6">
+        <CeramicLoadingState module="studio" variant="card" lines={4} message="Carregando pos-producao..." />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <p className="text-sm text-ceramic-error mb-4">{loadError}</p>
+        <button
+          onClick={loadExistingData}
+          className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+          aria-label="Tentar carregar dados novamente"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Tentar novamente
+        </button>
       </div>
     );
   }
@@ -184,6 +210,12 @@ export default function PostProductionStage({
             clips={clips}
             onClipsGenerated={setClips}
           />
+        )}
+        {activeTab === 'equipe' && (
+          <TeamPanel projectId={projectId} />
+        )}
+        {activeTab === 'comentarios' && (
+          <CommentThread projectId={projectId} />
         )}
       </div>
     </div>

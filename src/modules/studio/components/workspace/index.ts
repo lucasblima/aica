@@ -29,12 +29,17 @@ export { default as GuestTypeSelector } from './GuestTypeSelector';
 export type { GuestCategory } from './GuestTypeSelector';
 export { default as GuestInfoForm } from './GuestInfoForm';
 export type { GuestManualData } from './GuestInfoForm';
+export { default as ThemeSelector } from './ThemeSelector';
+export { default as SchedulingSection } from './SchedulingSection';
 
-// Research Stage (Wave 5 Stream 2)
-export { default as ResearchStage } from './ResearchStage';
+// Research Stage: ResearchCanvas replaces ResearchStage (NotebookLM UX — #664, #667)
+// ResearchCanvas is in ../research/ResearchCanvas and loaded by StageRenderer
 
 // Pauta Stage (Wave 5 Stream 2)
 export { default as PautaStage } from './PautaStage';
 
 // Production Stage (Wave 5 Stream 3)
 export { default as ProductionStage } from './ProductionStage';
+
+// Brand Kit (Sprint 4)
+export { BrandKitEditor, BrandKitPreview } from '../brandkit';

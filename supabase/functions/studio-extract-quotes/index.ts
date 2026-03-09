@@ -15,6 +15,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { withHealthTracking } from '../_shared/health-tracker.ts'
+import { createNamespacedLogger } from '../_shared/logger.ts'
+
+const logger = createNamespacedLogger('studio-extract-quotes')
 
 // =============================================================================
 // HELPERS
@@ -86,14 +90,18 @@ Retorne APENAS um JSON array valido (sem markdown, sem explicacoes):
   }
 ]`
 
-    const rawResponse = await callGemini(apiKey, prompt)
+    const rawResponse = await withHealthTracking(
+      { functionName: 'studio-extract-quotes', actionName: 'extract_quotes' },
+      supabaseClient,
+      () => callGemini(apiKey, prompt)
+    )
     const result = extractJSON(rawResponse)
 
     return new Response(JSON.stringify({ success: true, data: result }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('studio-extract-quotes error:', error)
+    logger.error('studio-extract-quotes error:', error)
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

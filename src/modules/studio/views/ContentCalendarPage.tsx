@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, X, Plus, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Plus, Clock, Mail } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { HeaderGlobal } from '@/components/layout';
 import type { ContentCalendarEntry } from '../types/studio';
@@ -10,7 +10,7 @@ const PLATFORM_COLORS: Record<string, { bg: string; text: string; border: string
   spotify: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
   youtube: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
   instagram: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
-  tiktok: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
+  tiktok: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' },
   linkedin: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
   twitter: { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-300' },
   newsletter: { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-300' },
@@ -21,7 +21,7 @@ const PLATFORM_DOTS: Record<string, string> = {
   spotify: 'bg-green-500',
   youtube: 'bg-red-500',
   instagram: 'bg-purple-500',
-  tiktok: 'bg-gray-500',
+  tiktok: 'bg-slate-500',
   linkedin: 'bg-blue-500',
   twitter: 'bg-sky-500',
   newsletter: 'bg-violet-500',
@@ -70,16 +70,30 @@ export default function ContentCalendarPage() {
       const startDate = new Date(currentYear, currentMonth, 1).toISOString();
       const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
 
-      const { data, error } = await supabase
-        .from('studio_content_calendar')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('scheduled_at', startDate)
-        .lte('scheduled_at', endDate)
-        .order('scheduled_at', { ascending: true });
+      // Fetch content calendar entries and scheduled newsletters in parallel
+      const [calendarResult, newsletterResult] = await Promise.all([
+        supabase
+          .from('studio_content_calendar')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('scheduled_at', startDate)
+          .lte('scheduled_at', endDate)
+          .order('scheduled_at', { ascending: true }),
+        supabase
+          .from('studio_newsletters')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'scheduled')
+          .not('scheduled_at', 'is', null)
+          .gte('scheduled_at', startDate)
+          .lte('scheduled_at', endDate)
+          .order('scheduled_at', { ascending: true }),
+      ]);
 
-      if (error) throw error;
-      setEntries((data || []).map((e: any) => ({
+      if (calendarResult.error) throw calendarResult.error;
+
+      // Map content calendar entries
+      const calendarEntries: ContentCalendarEntry[] = (calendarResult.data || []).map((e: any) => ({
         ...e,
         scheduledAt: new Date(e.scheduled_at),
         publishedAt: e.published_at ? new Date(e.published_at) : undefined,
@@ -87,7 +101,28 @@ export default function ContentCalendarPage() {
         userId: e.user_id,
         projectId: e.project_id,
         clipId: e.clip_id,
-      })));
+      }));
+
+      // Map newsletters as virtual calendar entries with platform='newsletter'
+      const newsletterEntries: ContentCalendarEntry[] = (newsletterResult.data || []).map((n: any) => ({
+        id: `newsletter-${n.id}`,
+        userId: n.user_id,
+        projectId: n.project_id || undefined,
+        platform: 'newsletter' as const,
+        scheduledAt: new Date(n.scheduled_at),
+        status: 'scheduled' as const,
+        caption: n.subject || 'Newsletter',
+        hashtags: [],
+        metadata: { _isNewsletter: true, newsletterId: n.id },
+        createdAt: new Date(n.created_at),
+      }));
+
+      // Merge and sort by scheduledAt
+      const merged = [...calendarEntries, ...newsletterEntries].sort(
+        (a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime()
+      );
+
+      setEntries(merged);
     } catch (err) {
       console.error('Failed to load calendar entries:', err);
     } finally {
@@ -186,7 +221,7 @@ export default function ContentCalendarPage() {
                       {dayEntries.slice(0, 4).map((entry, i) => (
                         <div
                           key={i}
-                          className={`w-1.5 h-1.5 rounded-full ${PLATFORM_DOTS[entry.platform] || 'bg-gray-400'}`}
+                          className={`w-1.5 h-1.5 rounded-full ${PLATFORM_DOTS[entry.platform] || 'bg-ceramic-text-secondary'}`}
                         />
                       ))}
                       {dayEntries.length > 4 && (
@@ -231,13 +266,21 @@ export default function ContentCalendarPage() {
               ) : (
                 <div className="space-y-3">
                   {selectedEntries.map(entry => {
+                    const isNewsletter = entry.platform === 'newsletter' && (entry.metadata as any)?._isNewsletter;
                     const colors = PLATFORM_COLORS[entry.platform] || PLATFORM_COLORS.blog;
                     const status = STATUS_LABELS[entry.status] || STATUS_LABELS.draft;
                     return (
                       <div key={entry.id} className="flex items-start gap-3 p-3 rounded-xl bg-ceramic-cool">
-                        <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${colors.bg} ${colors.text}`}>
-                          {entry.platform}
-                        </div>
+                        {isNewsletter ? (
+                          <div className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase bg-violet-100 text-violet-700 flex items-center gap-1">
+                            <Mail className="w-3 h-3" />
+                            Newsletter
+                          </div>
+                        ) : (
+                          <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${colors.bg} ${colors.text}`}>
+                            {entry.platform}
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ceramic-text-primary truncate">
                             {entry.caption || 'Sem titulo'}

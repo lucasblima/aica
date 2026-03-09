@@ -131,6 +131,9 @@ export interface StudioState {
 
   /** User ID (from auth) */
   userId: string | null;
+
+  /** Project type for wizard (defaults to 'podcast') */
+  wizardProjectType: ProjectType;
 }
 
 // ============================================
@@ -147,7 +150,7 @@ export type StudioAction =
   | { type: 'FINISH_LOADING'; payload: { project: StudioProject | null } }
   | { type: 'GO_TO_LIBRARY' }
   | { type: 'GO_TO_SHOW_PAGE'; payload: { showId: string; showTitle: string } }
-  | { type: 'GO_TO_WIZARD' }
+  | { type: 'GO_TO_WIZARD'; payload?: { projectType?: ProjectType } }
   | { type: 'GO_TO_WORKSPACE'; payload: StudioProject }
 
   // Show selection (for podcasts)
@@ -177,7 +180,7 @@ export interface StudioActions {
   goToShowPage: (showId: string, showTitle: string) => void;
 
   /** Navigate to wizard for creating new project */
-  goToWizard: () => void;
+  goToWizard: (projectType?: ProjectType) => void;
 
   /** Navigate to workspace with a specific project */
   goToWorkspace: (project: StudioProject) => void;
@@ -239,7 +242,7 @@ export interface ProjectTypeConfig {
 export interface StudioLibraryProps {
   onSelectShow: (showId: string, showTitle: string) => void;
   onSelectProject: (project: StudioProject) => void;
-  onCreateNew: () => void;
+  onCreateNew: (projectType?: ProjectType) => void;
   userEmail?: string;
   onLogout?: () => void;
 }
@@ -303,12 +306,36 @@ export const INITIAL_STUDIO_STATE: StudioState = {
   isLoading: false,  // Fixed: was true, causing infinite loading screen
   error: null,
   userId: null,
+  wizardProjectType: 'podcast',
 };
 
 // ============================================================================
 // DEEP RESEARCH RESULT (AI Guest Research)
 // ============================================================================
 
+/**
+ * Controversy object matching DB JSONB schema.
+ *
+ * DB column: `podcast_episodes.controversies` — JSONB array of objects.
+ * @see supabase/migrations/20260217130000_studio_schema_alignment.sql
+ *   COMMENT: 'Array of controversy objects [{title, summary, source, sentiment, date}]'
+ */
+export interface DeepResearchControversy {
+  title: string;
+  summary: string;
+  source: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  date: string;
+}
+
+/**
+ * Result of deep AI research on a podcast guest.
+ *
+ * The `dossier.controversies` field maps to `podcast_episodes.controversies` JSONB column,
+ * which stores an array of `{title, summary, source, sentiment, date}` objects.
+ *
+ * @see supabase/migrations/20260217130000_studio_schema_alignment.sql
+ */
 export interface DeepResearchResult {
   dossier: {
     biography: string;
@@ -321,7 +348,12 @@ export interface DeepResearchResult {
       socialMedia?: { platform: string; handle: string }[];
       keyFacts?: string[];
     };
-    controversies: string[];
+    /**
+     * Controversy objects matching DB JSONB schema.
+     * DB stores as JSONB: [{title, summary, source, sentiment, date}].
+     * Also accepts string[] for backward compatibility with older data.
+     */
+    controversies: (DeepResearchControversy | string)[];
     iceBreakers: string[];
     suggestedQuestions: { theme: string; questions: string[] }[];
   };
@@ -334,72 +366,205 @@ export interface DeepResearchResult {
 }
 
 // ============================================================================
+// NORMALIZED TABLES — Episode Production & Publication (Sprint 3)
+// ============================================================================
+
+/**
+ * Maps to `podcast_episode_production` table.
+ * 1:1 relationship with podcast_episodes via episode_id (UNIQUE).
+ * Contains recording status, file info, and transcript data.
+ *
+ * @see supabase/migrations/20260309000005_normalize_episodes_production.sql
+ */
+export interface EpisodeProduction {
+  id: string;
+  episodeId: string;
+  recordingStatus: 'idle' | 'recording' | 'paused' | 'finished';
+  recordingStartedAt: string | null;
+  recordingFinishedAt: string | null;
+  recordingDuration: number | null;
+  recordingFilePath: string | null;
+  recordingFileSize: number | null;
+  transcript: string | null;
+  transcriptGeneratedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Maps to `podcast_episode_publication` table.
+ * 1:1 relationship with podcast_episodes via episode_id (UNIQUE).
+ * Contains post-production data: cuts, blog, social, narrative scoring.
+ *
+ * @see supabase/migrations/20260309000006_normalize_episodes_publication.sql
+ */
+export interface EpisodePublication {
+  id: string;
+  episodeId: string;
+  cutsGenerated: boolean;
+  cutsMetadata: unknown;
+  blogPostGenerated: boolean;
+  blogPostUrl: string | null;
+  publishedToSocial: unknown;
+  narrativeTensionScore: number | null;
+  peakEndMoments: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================================================
 // PHASE 1 — POST-PRODUCTION TYPES
 // ============================================================================
 
+/**
+ * AI-generated transcription for a project.
+ * Maps to DB table: `studio_transcriptions`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 1.1)
+ */
 export interface StudioTranscription {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
+  userId: string;
+  /** DB column: `project_id` (UUID, NOT NULL) */
   projectId: string;
+  /** DB column: `content` (TEXT) */
   content: string;
+  /** DB column: `language` (TEXT, default 'pt-BR') */
   language: string;
+  /** DB column: `duration_seconds` (INTEGER) */
   durationSeconds: number;
+  /** DB column: `speakers` (JSONB, default '[]') */
   speakers: { name: string; segments: { start: number; end: number; text: string }[] }[];
+  /** DB column: `chapters` (JSONB, default '[]') */
   chapters: { title: string; startSeconds: number; endSeconds: number }[];
+  /** DB column: `word_count` (INTEGER) */
   wordCount: number;
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
 }
 
+/**
+ * AI-generated show notes for a project.
+ * Maps to DB table: `studio_show_notes`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 1.2)
+ */
 export interface StudioShowNotes {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
+  userId: string;
+  /** DB column: `project_id` (UUID, NOT NULL) */
   projectId: string;
+  /** DB column: `summary` (TEXT) */
   summary: string;
+  /** DB column: `highlights` (TEXT[], default '{}') */
   highlights: string[];
+  /** DB column: `key_quotes` (TEXT[], default '{}') */
   keyQuotes: string[];
+  /** DB column: `seo_description` (TEXT) */
   seoDescription: string;
+  /** DB column: `tags` (TEXT[], default '{}') */
   tags: string[];
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
 }
 
+/**
+ * Short-form content clip extracted from a project.
+ * Maps to DB table: `studio_clips`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 1.3)
+ */
 export interface StudioClip {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
+  userId: string;
+  /** DB column: `project_id` (UUID, NOT NULL) */
   projectId: string;
+  /** DB column: `title` (TEXT) */
   title: string;
+  /** DB column: `start_time_seconds` (NUMERIC) */
   startTimeSeconds: number;
+  /** DB column: `end_time_seconds` (NUMERIC) */
   endTimeSeconds: number;
+  /** DB column: `transcript_segment` (TEXT) */
   transcriptSegment: string;
+  /** DB column: `platform` (TEXT) */
   platform: string;
+  /** DB column: `status` (TEXT, CHECK: 'suggested'|'draft'|'approved'|'published') */
   status: 'suggested' | 'draft' | 'approved' | 'published';
+  /** DB column: `caption` (TEXT) */
   caption: string;
+  /** DB column: `hashtags` (TEXT[], default '{}') */
   hashtags: string[];
+  /** DB column: `thumbnail_url` (TEXT) */
   thumbnailUrl?: string;
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
 }
 
+/**
+ * Media asset for Studio projects.
+ * Maps to DB table: `studio_assets`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 1.4)
+ */
 export interface StudioAsset {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
   userId: string;
+  /** DB column: `project_id` (UUID, nullable) */
   projectId?: string;
+  /** DB column: `asset_type` (TEXT, CHECK: 'audio'|'video'|'image'|'document'|'transcript') */
   assetType: 'audio' | 'video' | 'image' | 'document' | 'transcript';
+  /** DB column: `file_url` (TEXT, NOT NULL) */
   fileUrl: string;
+  /**
+   * DB column: `file_size` (BIGINT).
+   * Note: BIGINT in PostgreSQL can exceed Number.MAX_SAFE_INTEGER for very large files.
+   * For files under ~9PB this is safe as a JS number.
+   */
   fileSize: number;
+  /** DB column: `duration_seconds` (INTEGER) */
   durationSeconds?: number;
+  /** DB column: `metadata` (JSONB, default '{}') */
   metadata: Record<string, unknown>;
+  /** DB column: `tags` (TEXT[], default '{}') */
   tags: string[];
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
 }
 
+/**
+ * Brand identity preset for content creation.
+ * Maps to DB table: `studio_brand_kits`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 1.5)
+ */
 export interface StudioBrandKit {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
   userId: string;
+  /** DB column: `brand_name` (TEXT, NOT NULL) */
   brandName: string;
+  /** DB column: `logo_url` (TEXT) */
   logoUrl?: string;
+  /** DB column: `color_primary` (TEXT, default '#f59e0b') */
   colorPrimary: string;
+  /** DB column: `color_secondary` (TEXT, default '#d97706') */
   colorSecondary: string;
+  /** DB column: `font_heading` (TEXT, default 'Inter') */
   fontHeading: string;
+  /** DB column: `font_body` (TEXT, default 'Inter') */
   fontBody: string;
+  /** DB column: `tone_of_voice` (TEXT) */
   toneOfVoice?: string;
+  /** DB column: `intro_audio_url` (TEXT) */
   introAudioUrl?: string;
+  /** DB column: `outro_audio_url` (TEXT) */
   outroAudioUrl?: string;
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
 }
 
@@ -407,32 +572,85 @@ export interface StudioBrandKit {
 // PHASE 2 — ARTICLE / NEWSLETTER TYPES
 // ============================================================================
 
+/**
+ * Outline item for an article draft.
+ * Stored as JSONB array in `studio_article_drafts.outline`.
+ */
+export interface ArticleOutlineItem {
+  heading: string;
+  subpoints: string[];
+  targetWords: number;
+}
+
+/**
+ * Long-form article draft with SEO scoring.
+ * Maps to DB table: `studio_article_drafts`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 2.1)
+ */
 export interface StudioArticleDraft {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
+  userId: string;
+  /** DB column: `project_id` (UUID, NOT NULL) */
   projectId: string;
+  /** DB column: `content` (TEXT, default '') */
   content: string;
-  outline: { heading: string; subpoints: string[]; targetWords: number }[];
+  /**
+   * DB column: `outline` (JSONB, default '[]').
+   * Array of outline section objects with heading, subpoints, and target word count.
+   */
+  outline: ArticleOutlineItem[];
+  /** DB column: `word_count` (INTEGER, default 0) */
   wordCount: number;
+  /** DB column: `seo_score` (INTEGER, nullable) */
   seoScore?: number;
+  /**
+   * DB column: `seo_suggestions` (JSONB, default '[]').
+   * Stored as JSONB array of suggestion strings.
+   */
   seoSuggestions: string[];
+  /** DB column: `status` (TEXT, CHECK: 'draft'|'review'|'approved'|'published') */
   status: 'draft' | 'review' | 'approved' | 'published';
+  /** DB column: `published_url` (TEXT) */
   publishedUrl?: string;
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
+  /** DB column: `updated_at` (TIMESTAMPTZ, auto-updated via trigger) */
   updatedAt: Date;
 }
 
+/**
+ * Newsletter with scheduling and delivery tracking.
+ * Maps to DB table: `studio_newsletters`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 2.2)
+ */
 export interface StudioNewsletter {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
+  userId: string;
+  /** DB column: `project_id` (UUID, nullable) */
   projectId?: string;
+  /** DB column: `subject` (TEXT, NOT NULL) */
   subject: string;
+  /** DB column: `content` (TEXT, default '') */
   content: string;
+  /** DB column: `template` (TEXT, default 'default') */
   template: string;
+  /** DB column: `scheduled_at` (TIMESTAMPTZ) */
   scheduledAt?: Date;
+  /** DB column: `sent_at` (TIMESTAMPTZ) */
   sentAt?: Date;
+  /** DB column: `recipients_count` (INTEGER, default 0) */
   recipientsCount: number;
+  /** DB column: `open_rate` (NUMERIC, default 0) */
   openRate: number;
+  /** DB column: `click_rate` (NUMERIC, default 0) */
   clickRate: number;
+  /** DB column: `status` (TEXT, CHECK: 'draft'|'scheduled'|'sending'|'sent'|'failed') */
   status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
 }
 
@@ -440,18 +658,35 @@ export interface StudioNewsletter {
 // PHASE 4 — DISTRIBUTION TYPES
 // ============================================================================
 
+/**
+ * Cross-platform content scheduling entry.
+ * Maps to DB table: `studio_content_calendar`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 4.1)
+ */
 export interface ContentCalendarEntry {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
   userId: string;
+  /** DB column: `project_id` (UUID, nullable) */
   projectId?: string;
+  /** DB column: `clip_id` (UUID, nullable) */
   clipId?: string;
+  /** DB column: `platform` (TEXT, NOT NULL, CHECK constraint) */
   platform: 'spotify' | 'youtube' | 'instagram' | 'tiktok' | 'linkedin' | 'twitter' | 'newsletter' | 'blog';
+  /** DB column: `scheduled_at` (TIMESTAMPTZ, NOT NULL) */
   scheduledAt: Date;
+  /** DB column: `published_at` (TIMESTAMPTZ) */
   publishedAt?: Date;
+  /** DB column: `status` (TEXT, CHECK: 'draft'|'scheduled'|'publishing'|'published'|'failed') */
   status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed';
+  /** DB column: `caption` (TEXT) */
   caption: string;
+  /** DB column: `hashtags` (TEXT[], default '{}') */
   hashtags: string[];
+  /** DB column: `metadata` (JSONB, default '{}') */
   metadata: Record<string, unknown>;
+  /** DB column: `created_at` (TIMESTAMPTZ) */
   createdAt: Date;
 }
 
@@ -459,31 +694,74 @@ export interface ContentCalendarEntry {
 // PHASE 5 — ANALYTICS + COLLABORATION TYPES
 // ============================================================================
 
+/**
+ * Platform-specific analytics metric entry.
+ * Maps to DB table: `studio_analytics`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 5.1)
+ */
 export interface StudioAnalyticsEntry {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
+  userId: string;
+  /** DB column: `project_id` (UUID, nullable) */
   projectId?: string;
+  /** DB column: `platform` (TEXT, NOT NULL) */
   platform: string;
+  /** DB column: `metric_type` (TEXT, NOT NULL) */
   metricType: string;
+  /** DB column: `metric_value` (NUMERIC, NOT NULL, default 0) */
   metricValue: number;
+  /** DB column: `recorded_at` (TIMESTAMPTZ, default now()) */
   recordedAt: Date;
+  /** DB column: `created_at` (TIMESTAMPTZ, default now()) */
+  createdAt: Date;
 }
 
+/**
+ * Collaboration team member with role-based access.
+ * Maps to DB table: `studio_team_members`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 5.2)
+ */
 export interface StudioTeamMember {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) — the team owner */
+  userId: string;
+  /** DB column: `member_email` (TEXT, NOT NULL) */
   memberEmail: string;
+  /** DB column: `role` (TEXT, CHECK: 'admin'|'editor'|'designer'|'viewer') */
   role: 'admin' | 'editor' | 'designer' | 'viewer';
+  /** DB column: `invited_at` (TIMESTAMPTZ, default now()) */
   invitedAt: Date;
+  /** DB column: `accepted_at` (TIMESTAMPTZ, nullable) */
   acceptedAt?: Date;
+  /** DB column: `status` (TEXT, CHECK: 'pending'|'active'|'revoked') */
   status: 'pending' | 'active' | 'revoked';
 }
 
+/**
+ * Timestamped threaded comment on a project or asset.
+ * Maps to DB table: `studio_comments`
+ *
+ * @see supabase/migrations/20260217150000_studio_creative_hub.sql (section 5.3)
+ */
 export interface StudioComment {
   id: string;
+  /** DB column: `user_id` (UUID, NOT NULL) */
+  userId: string;
+  /** DB column: `project_id` (UUID, NOT NULL) */
   projectId: string;
+  /** DB column: `asset_id` (UUID, nullable) */
   assetId?: string;
+  /** DB column: `content` (TEXT, NOT NULL) */
   content: string;
+  /** DB column: `timestamp_seconds` (NUMERIC, nullable) — position in media */
   timestampSeconds?: number;
+  /** DB column: `parent_comment_id` (UUID, nullable, self-referencing FK) */
   parentCommentId?: string;
+  /** DB column: `resolved` (BOOLEAN, default false) */
   resolved: boolean;
+  /** DB column: `created_at` (TIMESTAMPTZ, default now()) */
   createdAt: Date;
 }

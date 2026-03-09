@@ -46,6 +46,17 @@ export type {
 
   // Deep Research
   DeepResearchResult,
+  DeepResearchControversy,
+
+  // Article types
+  ArticleOutlineItem,
+
+  // Normalized tables (Sprint 3)
+  EpisodeProduction,
+  EpisodePublication,
+
+  // Brand Kit (Sprint 4)
+  StudioBrandKit,
 } from './studio';
 
 export { INITIAL_STUDIO_STATE } from './studio';

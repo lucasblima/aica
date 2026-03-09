@@ -66,7 +66,9 @@ export async function generateDossier(
       biography: typeof existingResearch.dossier.biography === 'string'
         ? existingResearch.dossier.biography
         : JSON.stringify(existingResearch.dossier.biography || ''),
-      controversies: existingResearch.dossier.controversies,
+      controversies: existingResearch.dossier.controversies.map(c =>
+        typeof c === 'string' ? c : c.title
+      ),
       suggestedTopics: existingResearch.suggestedThemes,
       iceBreakers: existingResearch.dossier.iceBreakers,
       technicalSheet: existingResearch.dossier.technicalSheet,
