@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Settings, LogOut, FileSearch, Crown, LayoutGrid, Ticket, Shield, FileText, Activity, BarChart3 } from 'lucide-react';
+import { Settings, LogOut, FileSearch, Crown, LayoutGrid, Ticket, Shield, FileText, Activity, BarChart3, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,7 +28,21 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [avatarError, setAvatarError] = useState(false);
+    const [isEvangelist, setIsEvangelist] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (user?.id) {
+            supabase
+                .from('profiles')
+                .select('is_evangelist')
+                .eq('id', user.id)
+                .single()
+                .then(({ data }) => {
+                    if (data?.is_evangelist) setIsEvangelist(true);
+                });
+        }
+    }, [user?.id]);
 
     // Compute initials for avatar fallback
     const initials = useMemo(() => {
@@ -226,6 +240,24 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                 Modulos
                             </span>
                         </button>
+
+                        {/* Programa de Parceiros - Only for evangelists */}
+                        {isEvangelist && (
+                            <button
+                                onClick={() => {
+                                    navigate('/evangelist');
+                                    setIsOpen(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                            >
+                                <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <Star className="w-4 h-4 text-ceramic-text-secondary group-hover:text-amber-500" />
+                                </div>
+                                <span className="font-bold text-sm transition-colors">
+                                    Programa de Parceiros
+                                </span>
+                            </button>
+                        )}
 
                         {/* Invites Button */}
                         <button
