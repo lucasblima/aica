@@ -168,7 +168,7 @@ export function SlotCard({ slot, onToggleComplete, className = '' }: SlotCardPro
               : 'text-ceramic-text-secondary hover:text-ceramic-accent hover:bg-ceramic-accent/5'
           }`}
           title={slot.athlete_feedback ? 'Edit feedback' : 'Add feedback'}
-          aria-label="Enviar mensagem WhatsApp"
+          aria-label={slot.athlete_feedback ? 'Editar feedback' : 'Adicionar feedback'}
         >
           <MessageCircle className="w-4 h-4" />
         </button>

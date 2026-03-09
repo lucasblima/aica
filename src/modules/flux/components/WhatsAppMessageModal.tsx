@@ -155,18 +155,21 @@ export function WhatsAppMessageModal({
     setIsEditing(false);
   };
 
+  // Sanitized phone number (remove +, spaces, dashes)
+  const sanitizedPhone = useMemo(
+    () => athlete.phone?.replace(/[+\s-]/g, '') ?? '',
+    [athlete.phone]
+  );
+
   // Handle send via WhatsApp
   const handleSendWhatsApp = useCallback(() => {
-    if (sendStatus === 'sent') return;
-    // Format phone for WhatsApp (remove + and spaces)
-    const phone = athlete.phone?.replace(/[+\s-]/g, '') ?? '';
-    if (!phone) return;
+    if (sendStatus === 'sent' || !sanitizedPhone) return;
     const encodedMessage = encodeURIComponent(currentMessage);
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/${sanitizedPhone}?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
     setSendStatus('sent');
-  }, [athlete.phone, currentMessage, sendStatus]);
+  }, [sanitizedPhone, currentMessage, sendStatus]);
 
   // Auto-close after successful send
   useEffect(() => {
@@ -312,7 +315,7 @@ export function WhatsAppMessageModal({
 
               <button
                 onClick={handleSendWhatsApp}
-                disabled={!athlete.phone?.replace(/[+\s-]/g, '')}
+                disabled={!sanitizedPhone}
                 className="flex items-center gap-2 px-6 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" />
