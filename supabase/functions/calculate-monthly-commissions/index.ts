@@ -47,6 +47,17 @@ serve(async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
+    // Validate service_role key — this is a cron/admin-only function
+    const authHeader = req.headers.get('Authorization')
+    const expectedKey = supabaseServiceKey
+    if (!authHeader || authHeader.replace('Bearer ', '') !== expectedKey) {
+      console.log('[calculate-monthly-commissions] Unauthorized: invalid or missing service_role key')
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized — requires service_role key' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
     // 1. Determine period_month
     const body = await req.json().catch(() => ({}))
     const periodMonth: string = body.month || getPreviousMonth()
@@ -125,12 +136,19 @@ serve(async (req: Request) => {
         continue
       }
 
-      // 4a. Get confirmed referral conversions for this evangelist
+      // Calculate period boundaries
+      const periodStart = periodMonth // already 'YYYY-MM-01'
+      const [y, m] = periodMonth.split('-').map(Number)
+      const nextMonth = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`
+
+      // 4a. Get referral conversions confirmed in this period
       const { data: conversions, error: convError } = await supabase
         .from('referral_conversions')
         .select('id, plan_value')
         .eq('evangelist_id', evangelist.id)
         .eq('status', 'confirmed')
+        .gte('confirmed_at', periodStart)
+        .lt('confirmed_at', nextMonth)
 
       if (convError) {
         console.error(`[calculate-monthly-commissions] Error fetching conversions for evangelist ${evangelist.id}: ${convError.message}`)
