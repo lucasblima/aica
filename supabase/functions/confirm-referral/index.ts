@@ -59,6 +59,17 @@ serve(async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
+    // Validate service_role key — this is a cron/admin-only function
+    const authHeader = req.headers.get('Authorization')
+    const expectedKey = supabaseServiceKey
+    if (!authHeader || authHeader.replace('Bearer ', '') !== expectedKey) {
+      console.log('[confirm-referral] Unauthorized: invalid or missing service_role key')
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized — requires service_role key' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
     // 1. Query pending conversions older than 30 days
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 

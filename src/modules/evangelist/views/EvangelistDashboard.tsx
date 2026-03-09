@@ -155,7 +155,7 @@ export function EvangelistDashboard() {
   const hasMoreConversions = conversions.length > visibleConversions.length;
 
   const totalAccumulatedCommission = ledger.reduce(
-    (sum, entry) => sum + entry.commission_amount,
+    (sum, entry) => sum + Number(entry.commission_amount),
     0,
   );
 
@@ -321,13 +321,13 @@ export function EvangelistDashboard() {
                         {formatPeriod(entry.period_month)}
                       </td>
                       <td className="px-6 py-3 text-ceramic-text-primary text-right">
-                        R$ {entry.gross_amount.toFixed(2)}
+                        R$ {Number(entry.gross_amount).toFixed(2)}
                       </td>
                       <td className="px-6 py-3 text-ceramic-text-secondary text-right">
-                        {(entry.commission_rate * 100).toFixed(0)}%
+                        {(Number(entry.commission_rate) * 100).toFixed(0)}%
                       </td>
                       <td className="px-6 py-3 text-ceramic-text-primary text-right font-medium">
-                        R$ {entry.commission_amount.toFixed(2)}
+                        R$ {Number(entry.commission_amount).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">
                         <span

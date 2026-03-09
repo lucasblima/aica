@@ -235,14 +235,18 @@ export function AppRouter() {
       const savedRef = localStorage.getItem('aica_ref_code');
       if (savedRef && user?.id) {
          supabase.functions.invoke('track-referral', {
-            body: { referral_code: savedRef, new_user_id: user.id, plan: 'pro' }
+            body: { referral_code: savedRef, plan: 'pro' }
          }).then(({ data, error }) => {
+            // Clear ref code regardless of result — tracking is fire-once
+            localStorage.removeItem('aica_ref_code');
             if (!error && data?.success) {
-               localStorage.removeItem('aica_ref_code');
                console.log('[AppRouter] Referral tracked successfully for', savedRef);
+            } else {
+               console.log('[AppRouter] Referral tracking completed (already tracked or failed):', error?.message || data?.error);
             }
          }).catch(() => {
-            // Non-fatal: referral tracking failure shouldn't block the app
+            // Network failure — keep ref code for retry on next load
+            console.warn('[AppRouter] Referral tracking network error, will retry');
          });
       }
    }, [user?.id]);
