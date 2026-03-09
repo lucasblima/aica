@@ -42,6 +42,7 @@ const JourneyFullScreen = lazy(() => import('../modules/journey/views/JourneyFul
 const StudioMainView = lazy(() => import('../modules/studio/views/StudioMainView'));
 const ContentCalendarPage = lazy(() => import('../modules/studio/views/ContentCalendarPage'));
 const StudioAnalyticsPage = lazy(() => import('../modules/studio/views/StudioAnalyticsPage'));
+const StudioBrandKitPage = lazy(() => import('../modules/studio/views/StudioBrandKitPage'));
 // Finance Module - Heavy with charts and data processing
 const FinanceDashboard = lazy(() => import('../modules/finance/views/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
 // Grants Module - Document processing intensive
@@ -800,6 +801,16 @@ export function AppRouter() {
                      <ProtectedRoute>
                         <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>
                            <StudioAnalyticsPage />
+                        </ErrorBoundary>
+                     </ProtectedRoute>
+                  }
+               />
+               <Route
+                  path="/studio/brandkit"
+                  element={
+                     <ProtectedRoute>
+                        <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>
+                           <StudioBrandKitPage />
                         </ErrorBoundary>
                      </ProtectedRoute>
                   }

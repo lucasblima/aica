@@ -5,7 +5,7 @@
  * Uses emerald accent to differentiate from podcast (amber) and video (blue).
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -15,6 +15,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import type { StudioProject } from '../../types/studio';
+import type { SEOReadability, SEOHeaderStructure } from '../article/ArticleSEOPanel';
 import { ArticleOutlinePanel } from '../article';
 import { ArticleEditor } from '../article';
 import { ArticleSEOPanel } from '../article';
@@ -40,6 +41,9 @@ const STAGES: { key: ArticleStage; label: string; icon: React.FC<{ className?: s
   { key: 'revisao', label: 'Revisao', icon: CheckCircle },
 ];
 
+/** Debounce delay for auto-analyze (5 seconds) */
+const AUTO_ANALYZE_DEBOUNCE_MS = 5000;
+
 export default function ArticleWorkspace({ project, onBack }: ArticleWorkspaceProps) {
   const [currentStage, setCurrentStage] = useState<ArticleStage>('pesquisa');
   const [researchNotes, setResearchNotes] = useState('');
@@ -52,7 +56,97 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
   const [seoDescription, setSeoDescription] = useState('');
   const [tags, setTags] = useState<string[]>([]);
 
+  // SEO analysis state
+  const [isAnalyzingSeo, setIsAnalyzingSeo] = useState(false);
+  const [seoAnalyzeError, setSeoAnalyzeError] = useState<string | null>(null);
+  const [autoAnalyze, setAutoAnalyze] = useState(false);
+  const [readability, setReadability] = useState<SEOReadability | null>(null);
+  const [keywordDensity, setKeywordDensity] = useState<Record<string, number> | null>(null);
+  const [headerStructure, setHeaderStructure] = useState<SEOHeaderStructure | null>(null);
+  const [internalLinkSuggestions, setInternalLinkSuggestions] = useState<string[]>([]);
+  const autoAnalyzeTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   const currentStageIndex = STAGES.findIndex(s => s.key === currentStage);
+
+  // SEO Analysis handler
+  const handleAnalyzeSeo = useCallback(async () => {
+    if (!content.trim()) return;
+
+    setIsAnalyzingSeo(true);
+    setSeoAnalyzeError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('studio-seo-analyze', {
+        body: {
+          content,
+          title: project.title,
+          targetKeywords: tags.length > 0 ? tags : undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data.data) {
+        const result = data.data;
+        setSeoScore(typeof result.score === 'number' ? result.score : 0);
+        setSeoSuggestions(Array.isArray(result.suggestions) ? result.suggestions : []);
+
+        if (result.metaDescription && !seoDescription) {
+          setSeoDescription(result.metaDescription.substring(0, 160));
+        }
+
+        if (result.readability) {
+          setReadability(result.readability);
+        }
+        if (result.keywordDensity) {
+          setKeywordDensity(result.keywordDensity);
+        }
+        if (result.headerStructure) {
+          setHeaderStructure(result.headerStructure);
+        }
+        if (Array.isArray(result.internalLinkSuggestions)) {
+          setInternalLinkSuggestions(result.internalLinkSuggestions);
+        }
+      } else if (data?.error) {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      console.error('Error analyzing SEO:', err);
+      setSeoAnalyzeError(
+        err instanceof Error ? err.message : 'Erro ao analisar SEO. Tente novamente.'
+      );
+    } finally {
+      setIsAnalyzingSeo(false);
+    }
+  }, [content, project.title, tags, seoDescription]);
+
+  // Auto-analyze on content change (debounced, 5s)
+  useEffect(() => {
+    if (!autoAnalyze || !content.trim() || currentStage !== 'revisao') return;
+
+    if (autoAnalyzeTimerRef.current) {
+      clearTimeout(autoAnalyzeTimerRef.current);
+    }
+
+    autoAnalyzeTimerRef.current = setTimeout(() => {
+      handleAnalyzeSeo();
+    }, AUTO_ANALYZE_DEBOUNCE_MS);
+
+    return () => {
+      if (autoAnalyzeTimerRef.current) {
+        clearTimeout(autoAnalyzeTimerRef.current);
+      }
+    };
+  }, [content, autoAnalyze, currentStage, handleAnalyzeSeo]);
+
+  // Cleanup auto-analyze timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAnalyzeTimerRef.current) {
+        clearTimeout(autoAnalyzeTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleGenerateOutline = useCallback(async (theme: string) => {
     setIsGeneratingOutline(true);
@@ -232,6 +326,15 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
                     tags={tags}
                     onDescriptionChange={setSeoDescription}
                     onTagsChange={setTags}
+                    onAnalyze={handleAnalyzeSeo}
+                    isAnalyzing={isAnalyzingSeo}
+                    analyzeError={seoAnalyzeError}
+                    autoAnalyze={autoAnalyze}
+                    onAutoAnalyzeChange={setAutoAnalyze}
+                    readability={readability}
+                    keywordDensity={keywordDensity}
+                    headerStructure={headerStructure}
+                    internalLinkSuggestions={internalLinkSuggestions}
                   />
                 </div>
               </div>

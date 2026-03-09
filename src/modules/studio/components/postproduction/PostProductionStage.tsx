@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, BookOpen, Quote, Scissors, RefreshCw } from 'lucide-react';
+import { FileText, BookOpen, Quote, Scissors, RefreshCw, Users, MessageSquare } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { CeramicLoadingState } from '@/components/ui';
 import type { StudioTranscription, StudioShowNotes, StudioClip } from '../../types/studio';
@@ -8,19 +8,23 @@ import TranscriptionPanel from './TranscriptionPanel';
 import ShowNotesPanel from './ShowNotesPanel';
 import QuoteExtractorPanel from './QuoteExtractorPanel';
 import ClipSuggestionPanel from './ClipSuggestionPanel';
+import { TeamPanel } from '../collaboration';
+import { CommentThread } from '../collaboration';
 
 interface PostProductionStageProps {
   projectId: string;
   episodeId: string;
 }
 
-type TabId = 'transcricao' | 'shownotes' | 'quotes' | 'clips';
+type TabId = 'transcricao' | 'shownotes' | 'quotes' | 'clips' | 'equipe' | 'comentarios';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'transcricao', label: 'Transcricao', icon: FileText },
   { id: 'shownotes', label: 'Show Notes', icon: BookOpen },
   { id: 'quotes', label: 'Quotes', icon: Quote },
   { id: 'clips', label: 'Clips', icon: Scissors },
+  { id: 'equipe', label: 'Equipe', icon: Users },
+  { id: 'comentarios', label: 'Comentarios', icon: MessageSquare },
 ];
 
 export default function PostProductionStage({
@@ -206,6 +210,12 @@ export default function PostProductionStage({
             clips={clips}
             onClipsGenerated={setClips}
           />
+        )}
+        {activeTab === 'equipe' && (
+          <TeamPanel projectId={projectId} />
+        )}
+        {activeTab === 'comentarios' && (
+          <CommentThread projectId={projectId} />
         )}
       </div>
     </div>

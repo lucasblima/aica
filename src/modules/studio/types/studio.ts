@@ -131,6 +131,9 @@ export interface StudioState {
 
   /** User ID (from auth) */
   userId: string | null;
+
+  /** Project type for wizard (defaults to 'podcast') */
+  wizardProjectType: ProjectType;
 }
 
 // ============================================
@@ -147,7 +150,7 @@ export type StudioAction =
   | { type: 'FINISH_LOADING'; payload: { project: StudioProject | null } }
   | { type: 'GO_TO_LIBRARY' }
   | { type: 'GO_TO_SHOW_PAGE'; payload: { showId: string; showTitle: string } }
-  | { type: 'GO_TO_WIZARD' }
+  | { type: 'GO_TO_WIZARD'; payload?: { projectType?: ProjectType } }
   | { type: 'GO_TO_WORKSPACE'; payload: StudioProject }
 
   // Show selection (for podcasts)
@@ -177,7 +180,7 @@ export interface StudioActions {
   goToShowPage: (showId: string, showTitle: string) => void;
 
   /** Navigate to wizard for creating new project */
-  goToWizard: () => void;
+  goToWizard: (projectType?: ProjectType) => void;
 
   /** Navigate to workspace with a specific project */
   goToWorkspace: (project: StudioProject) => void;
@@ -239,7 +242,7 @@ export interface ProjectTypeConfig {
 export interface StudioLibraryProps {
   onSelectShow: (showId: string, showTitle: string) => void;
   onSelectProject: (project: StudioProject) => void;
-  onCreateNew: () => void;
+  onCreateNew: (projectType?: ProjectType) => void;
   userEmail?: string;
   onLogout?: () => void;
 }
@@ -303,6 +306,7 @@ export const INITIAL_STUDIO_STATE: StudioState = {
   isLoading: false,  // Fixed: was true, causing infinite loading screen
   error: null,
   userId: null,
+  wizardProjectType: 'podcast',
 };
 
 // ============================================================================

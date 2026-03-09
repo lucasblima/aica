@@ -37,8 +37,8 @@ const VIDEO_CONFIG: ProjectTypeConfig = {
   optionalFields: ['description', 'scheduledDate'],
   databaseTable: 'video_projects',
   hasParentHierarchy: false,
-  stages: ['script', 'filming', 'editing', 'review'],
-  comingSoon: true,
+  stages: ['upload', 'transcricao', 'clips', 'review'],
+  comingSoon: false,
 };
 
 const ARTICLE_CONFIG: ProjectTypeConfig = {
@@ -51,8 +51,8 @@ const ARTICLE_CONFIG: ProjectTypeConfig = {
   optionalFields: ['description', 'targetPublication'],
   databaseTable: 'article_projects',
   hasParentHierarchy: false,
-  stages: ['research', 'outline', 'draft', 'review'],
-  comingSoon: true,
+  stages: ['pesquisa', 'outline', 'rascunho', 'revisao'],
+  comingSoon: false,
 };
 
 const NEWSLETTER_CONFIG: ProjectTypeConfig = {

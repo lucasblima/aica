@@ -41,15 +41,32 @@ export {
 // Views
 export { StudioLibrary } from './views/StudioLibrary';
 export { default as StudioWizard } from './views/StudioWizard';
-// export { default as StudioMainView } from './views/StudioMainView';
-// export { default as StudioWorkspace } from './views/StudioWorkspace';
+export { default as StudioMainView } from './views/StudioMainView';
+export { default as StudioWorkspace } from './views/StudioWorkspace';
 
 // Newsletter Components
 export { NewsletterEditor, NewsletterPreview } from './components/newsletter';
 
-// Context (to be implemented)
-// export { StudioProvider, useStudio } from './context/StudioContext';
+// Context
+export { StudioProvider, useStudio } from './context/StudioContext';
 
-// Hooks (to be implemented)
-// export { useStudioMode } from './hooks/useStudioMode';
-// export { useProjectLoader } from './hooks/useProjectLoader';
+// Workspace Components
+export { ArticleWorkspace, VideoWorkspace } from './components/workspace';
+
+// Hooks
+export { useGeminiLiveAudio } from './hooks/useGeminiLiveAudio';
+export type { UseGeminiLiveAudioOptions, UseGeminiLiveAudioReturn } from './hooks/useGeminiLiveAudio';
+export { useStudioComments } from './hooks/useStudioComments';
+export type { StudioCommentRow, UseStudioCommentsReturn } from './hooks/useStudioComments';
+
+// Cross-Module Services
+export {
+  fetchContactAsGuest,
+  syncRecordingToCalendar,
+  awardEpisodeCompletionCP,
+} from './services/crossModuleService';
+export type {
+  ContactAsGuest,
+  CalendarEventResult,
+  CPAwardResult,
+} from './services/crossModuleService';

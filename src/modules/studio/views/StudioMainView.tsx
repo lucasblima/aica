@@ -11,12 +11,12 @@
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStudio } from '../context/StudioContext';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabaseClient';
-import type { StudioProject } from '../types/studio';
+import type { StudioProject, ProjectType } from '../types/studio';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('StudioMainView');
@@ -102,15 +102,78 @@ export default function StudioMainView() {
   useTourAutoStart('studio-first-visit');  const { state, actions } = useStudio();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Track previous mode for slide direction
   const prevModeRef = useRef(state.mode);
   const direction = (MODE_ORDER[state.mode] ?? 0) >= (MODE_ORDER[prevModeRef.current] ?? 0) ? 1 : -1;
 
+  // Track whether we've already handled the initial URL params
+  const urlHandledRef = useRef(false);
+
   // Update previous mode after computing direction
   useEffect(() => {
     prevModeRef.current = state.mode;
   }, [state.mode]);
+
+  /**
+   * Load a project by ID from URL parameters for deep-linking.
+   * Supports: /studio?project=<id>&type=podcast|article|video
+   * Fetches project data from the appropriate table, then navigates to workspace.
+   */
+  const loadProjectFromUrl = useCallback(async (projectId: string, projectType: string) => {
+    const validTypes: ProjectType[] = ['podcast', 'video', 'article', 'newsletter', 'clip'];
+    const type = validTypes.includes(projectType as ProjectType) ? projectType : 'podcast';
+
+    try {
+      if (type === 'podcast') {
+        const { data: episode, error } = await supabase
+          .from('podcast_episodes')
+          .select('*, podcast_shows(title)')
+          .eq('id', projectId)
+          .single();
+
+        if (error || !episode) {
+          log.warn('[StudioMainView] Project not found from URL:', projectId, error?.message);
+          setSearchParams({});
+          actions.goToLibrary();
+          return;
+        }
+
+        const showTitle = (episode.podcast_shows as { title?: string } | null)?.title || 'Unknown Show';
+
+        const project: StudioProject = {
+          id: episode.id,
+          type: 'podcast',
+          title: episode.title || 'Untitled Episode',
+          description: episode.description,
+          showId: episode.show_id,
+          showTitle,
+          status: episode.status || 'draft',
+          createdAt: new Date(episode.created_at),
+          updatedAt: new Date(episode.updated_at),
+          metadata: {
+            type: 'podcast',
+            guestName: episode.guest_name,
+            episodeTheme: episode.episode_theme,
+            scheduledTime: episode.scheduled_time,
+            recordingDuration: episode.recording_duration,
+          },
+        };
+
+        actions.goToWorkspace(project);
+      } else {
+        // Non-podcast deep-links: article/video project tables not yet implemented
+        log.info('[StudioMainView] Non-podcast deep-link not yet supported, type:', type);
+        setSearchParams({});
+        actions.goToLibrary();
+      }
+    } catch (err) {
+      log.error('[StudioMainView] Error loading project from URL:', err);
+      setSearchParams({});
+      actions.goToLibrary();
+    }
+  }, [actions, setSearchParams]);
 
   // CRITICAL: ONLY ONE useEffect for initialization
   // This runs ONCE when component mounts
@@ -123,11 +186,18 @@ export default function StudioMainView() {
     // If we're in LOADING mode and not actively loading, decide initial mode
     // This happens on first render only
     if (state.mode === 'LOADING' && !state.isLoading) {
-      // TODO: In the future, check for active project in URL or localStorage
-      // For now, always start in LIBRARY mode
-      actions.goToLibrary();
+      // Check for project deep-link in URL: ?project=<id>&type=podcast|article|video
+      const projectId = searchParams.get('project');
+      const projectType = searchParams.get('type');
+
+      if (projectId && !urlHandledRef.current) {
+        urlHandledRef.current = true;
+        loadProjectFromUrl(projectId, projectType || 'podcast');
+      } else {
+        actions.goToLibrary();
+      }
     }
-  }, [user?.id, state.mode, state.isLoading, actions]);
+  }, [user?.id, state.mode, state.isLoading, actions, searchParams, loadProjectFromUrl]);
 
   // ============================================
   // TRANSITION HANDLERS (Explicit, NO useEffect!)
@@ -144,12 +214,20 @@ export default function StudioMainView() {
   /**
    * Handler for creating a new project
    * Transitions: LIBRARY -> WIZARD
+   * For podcasts, requires a currentShowId. For article/video, goes directly to wizard.
    */
-  const handleCreateNew = useCallback(() => {
-    if (state.currentShowId) {
-      actions.goToWizard();
+  const handleCreateNew = useCallback((projectType?: ProjectType) => {
+    const type = projectType || 'podcast';
+    if (type === 'podcast') {
+      // Podcasts require a show context
+      if (state.currentShowId) {
+        actions.goToWizard('podcast');
+      } else {
+        actions.goToLibrary();
+      }
     } else {
-      actions.goToLibrary();
+      // Article/Video go directly to wizard (no parent hierarchy)
+      actions.goToWizard(type);
     }
   }, [actions, state.currentShowId]);
 
@@ -314,9 +392,8 @@ export default function StudioMainView() {
 
     case 'WIZARD':
       // CRITICAL: Wizard requires showId for podcasts
-      if (!state.currentShowId) {
-        log.warn('[StudioMainView] In WIZARD mode but no currentShowId');
-        // For now, allow wizard to handle this case
+      if (state.wizardProjectType === 'podcast' && !state.currentShowId) {
+        log.warn('[StudioMainView] In WIZARD mode for podcast but no currentShowId');
       }
 
       content = (
@@ -324,6 +401,7 @@ export default function StudioMainView() {
           <StudioWizard
             showId={state.currentShowId || ''}
             userId={state.userId || ''}
+            projectType={state.wizardProjectType}
             onComplete={handleWizardComplete}
             onCancel={handleBackToLibrary}
           />
