@@ -5,7 +5,7 @@
  * progress bar, and notes field. Same UX pattern as WeeklyFeedbackCard.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -188,13 +188,17 @@ export function ExerciseQuestionnaireSheet({
     [answers]
   );
 
-  const progressPct = Math.round(((currentStep) / TOTAL_STEPS) * 100);
+  const progressPct = Math.round(((currentStep + 1) / TOTAL_STEPS) * 100);
 
+  const isAdvancingRef = useRef(false);
   const handleAnswer = useCallback((key: QuestionKey, value: number) => {
+    if (isAdvancingRef.current) return;
+    isAdvancingRef.current = true;
     setAnswers((prev) => ({ ...prev, [key]: value }));
     // Auto-advance after short delay
     setTimeout(() => {
       setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS - 1));
+      isAdvancingRef.current = false;
     }, 300);
   }, []);
 
@@ -233,6 +237,7 @@ export function ExerciseQuestionnaireSheet({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Fechar"
             className="p-1.5 rounded-lg hover:bg-ceramic-cool transition-colors"
           >
             <X className="w-4 h-4 text-ceramic-text-secondary" />

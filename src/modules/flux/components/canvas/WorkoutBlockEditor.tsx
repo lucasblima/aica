@@ -78,9 +78,6 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
       {/* Drawer */}
       <div
         className="fixed right-0 top-0 h-full w-96 bg-ceramic-base border-l border-ceramic-text-secondary/10 shadow-2xl z-50 flex flex-col animate-slide-in-right"
-        style={{
-          animation: 'slideInRight 0.3s ease-out',
-        }}
       >
         {/* Header */}
         <div className="p-6 border-b border-ceramic-text-secondary/10">
@@ -95,6 +92,7 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
             </div>
             <button
               onClick={onClose}
+              aria-label="Fechar"
               className="p-2 rounded-[10px] hover:bg-ceramic-text-secondary/10 transition-colors"
               style={{
                 boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
@@ -330,16 +328,6 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
         </div>
       </div>
 
-      <style>{`
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-          }
-          to {
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </>
   );
 };

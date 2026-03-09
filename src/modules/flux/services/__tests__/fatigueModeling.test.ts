@@ -122,6 +122,16 @@ describe('computeEMA', () => {
     const result = computeEMA(input, 0.3);
     expect(result.length).toBe(input.length);
   });
+
+  it('with decay=0 returns first value for all elements', () => {
+    const result = computeEMA([10, 20, 30], 0);
+    expect(result).toEqual([10, 10, 10]);
+  });
+
+  it('with decay=1 returns each input value', () => {
+    const result = computeEMA([10, 20, 30], 1);
+    expect(result).toEqual([10, 20, 30]);
+  });
 });
 
 // ============================================================================
@@ -223,6 +233,15 @@ describe('computeTSB', () => {
     const atl = [60, 60, 60];
     const tsb = computeTSB(ctl, atl);
     tsb.forEach(v => expect(v).toBeLessThan(0));
+  });
+
+  it('handles mismatched array lengths gracefully', () => {
+    const result = computeTSB([50, 60, 70], [30, 40]);
+    expect(result).toHaveLength(3);
+    expect(result[0]).toBe(20);
+    expect(result[1]).toBe(20);
+    // Third element: 70 - undefined = NaN (documents current behavior)
+    expect(Number.isNaN(result[2])).toBe(true);
   });
 });
 
@@ -551,10 +570,8 @@ describe('assessReadiness', () => {
     // Force extreme negative TSB: zero baseline then huge load
     const extreme = Array(42).fill(5).concat(Array(14).fill(400));
     const result = assessReadiness(extreme, [10, 10, 10]);
-
-    if (result.fatigueRisk === 'overtraining') {
-      expect(result.recommendation).toContain('overtraining');
-    }
+    expect(result.fatigueRisk).toBe('overtraining');
+    expect(result.recommendation).toContain('overtraining');
   });
 
   it('suggestedIntensity is one of the valid enum values', () => {

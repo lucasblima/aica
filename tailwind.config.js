@@ -49,6 +49,7 @@ export default {
                 'float': 'float 8s ease-in-out infinite',
                 'pulse-slow': 'pulseSlow 3s infinite',
                 'shimmer': 'shimmer 2s ease-in-out infinite',
+                'slide-in-right': 'slideInRight 0.3s ease-out',
             },
             keyframes: {
                 fadeInUp: {
@@ -70,6 +71,10 @@ export default {
                 shimmer: {
                     '0%': { backgroundPosition: '200% 0' },
                     '100%': { backgroundPosition: '-200% 0' },
+                },
+                slideInRight: {
+                    '0%': { transform: 'translateX(100%)' },
+                    '100%': { transform: 'translateX(0)' },
                 }
             },
             boxShadow: {
