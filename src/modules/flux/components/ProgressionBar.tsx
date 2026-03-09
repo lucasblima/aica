@@ -16,8 +16,13 @@ export function ProgressionBar({
   completedWorkouts,
   totalWorkouts,
 }: ProgressionBarProps) {
-  // TODO: Backend calculation for progress line is incorrect — see issue #605
-  const progressPercentage = (currentWeek / totalWeeks) * 100;
+  // Guard against NaN/Infinity: clamp to 0-100 range
+  const safePercentage = (numerator: number, denominator: number): number => {
+    if (!denominator || !isFinite(numerator / denominator)) return 0;
+    return Math.min(100, Math.max(0, Math.round((numerator / denominator) * 100)));
+  };
+
+  const progressPercentage = safePercentage(currentWeek, totalWeeks);
 
   // Consistência color logic
   const getConsistênciaColor = (rate: number): string => {
@@ -107,7 +112,7 @@ export function ProgressionBar({
             <div className="flex items-center gap-1">
               <TrendingUp className="w-3.5 h-3.5 text-ceramic-text-secondary" />
               <span className="text-sm font-bold text-ceramic-text-primary">
-                {Math.round((completedWorkouts / totalWorkouts) * 100)}%
+                {safePercentage(completedWorkouts, totalWorkouts)}%
               </span>
             </div>
           </div>

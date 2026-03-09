@@ -22,6 +22,14 @@ export function MicrocycleProgressBar({
   weekStats = [],
   className = '',
 }: MicrocycleProgressBarProps) {
+  // Guard against NaN/Infinity: clamp to 0-100 range
+  const safeClamp = (value: number): number => {
+    if (!isFinite(value)) return 0;
+    return Math.min(100, Math.max(0, Math.round(value)));
+  };
+
+  const safeCompletionPercentage = safeClamp(completionPercentage);
+
   const getProgressColor = (percentage: number): string => {
     if (percentage >= 80) return 'bg-ceramic-success';
     if (percentage >= 50) return 'bg-ceramic-warning';
@@ -30,7 +38,7 @@ export function MicrocycleProgressBar({
 
   const getWeekPercentage = (week: { total: number; completed: number }): number => {
     if (week.total === 0) return 0;
-    return Math.round((week.completed / week.total) * 100);
+    return safeClamp((week.completed / week.total) * 100);
   };
 
   return (
@@ -41,7 +49,7 @@ export function MicrocycleProgressBar({
           <div className="flex items-center gap-2">
             <CheckCircle
               className={`w-5 h-5 transition-colors ${
-                completionPercentage === 100
+                safeCompletionPercentage === 100
                   ? 'text-ceramic-success'
                   : 'text-ceramic-text-secondary'
               }`}
@@ -52,18 +60,17 @@ export function MicrocycleProgressBar({
           </div>
 
           <span className="text-2xl font-black text-ceramic-text-primary tabular-nums">
-            {completionPercentage}%
+            {safeCompletionPercentage}%
           </span>
         </div>
 
         {/* Progress Bar */}
-        {/* TODO: Backend calculation for progress line is incorrect — see issue #605 */}
         <div className="relative h-3 bg-ceramic-cool/30 rounded-full overflow-hidden">
           <div
             className={`absolute inset-y-0 left-0 ${getProgressColor(
-              completionPercentage
+              safeCompletionPercentage
             )} transition-all duration-500 ease-out`}
-            style={{ width: `${completionPercentage}%` }}
+            style={{ width: `${safeCompletionPercentage}%` }}
           />
         </div>
       </div>
@@ -116,7 +123,7 @@ export function MicrocycleProgressBar({
       )}
 
       {/* Completion Message */}
-      {completionPercentage === 100 && (
+      {safeCompletionPercentage === 100 && (
         <div className="mt-4 p-3 bg-ceramic-success/10 border border-ceramic-success/20 rounded-lg">
           <p className="text-sm text-ceramic-success font-medium text-center">
             🎉 Microciclo completo! Excelente trabalho!
