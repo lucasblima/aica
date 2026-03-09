@@ -52,6 +52,9 @@ export type {
 export { createTrainingMoment, recordWorkoutCompletion } from './fluxJourneyBridge';
 export { createMicrocycleTask, completeMicrocycleTask } from './fluxAtlasBridge';
 
+// Life Score domain provider
+export { registerFluxDomainProvider } from './fluxScoring';
+
 // Fatigue modeling (Sprint 6 — Training Science)
 export {
   computeEMA,

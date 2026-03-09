@@ -6,13 +6,10 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { GripVertical, Activity, Filter } from 'lucide-react';
-import {
-  getTemplatesByModality,
-  getTemplatesByCategory,
-  type WorkoutTemplate,
-} from '../../mockData/workoutTemplates';
+import { GripVertical, Activity, Filter, Loader2 } from 'lucide-react';
+import type { WorkoutTemplate, TemplateFilters, WorkoutCategory } from '../../types';
 import { MODALITY_CONFIG, type TrainingModality, type ExerciseCategory } from '../../types';
+import { useWorkoutTemplates } from '../../hooks/useWorkoutTemplates';
 
 interface WorkoutTemplateLibraryProps {
   modality: TrainingModality;
@@ -27,10 +24,26 @@ const CATEGORY_LABELS: Record<ExerciseCategory, { label: string; icon: string; c
   dryland: { label: 'Dryland', icon: '🏋️', color: 'bg-stone-50 border-stone-200 text-stone-700' },
 };
 
-const INTENSITY_COLORS = {
+const INTENSITY_COLORS: Record<string, string> = {
   low: 'bg-emerald-100 text-emerald-700',
   medium: 'bg-amber-100 text-amber-700',
   high: 'bg-rose-100 text-rose-700',
+  z1: 'bg-emerald-100 text-emerald-700',
+  z2: 'bg-emerald-100 text-emerald-700',
+  z3: 'bg-amber-100 text-amber-700',
+  z4: 'bg-rose-100 text-rose-700',
+  z5: 'bg-rose-100 text-rose-700',
+};
+
+const INTENSITY_LABELS: Record<string, string> = {
+  low: 'Leve',
+  medium: 'Média',
+  high: 'Alta',
+  z1: 'Z1',
+  z2: 'Z2',
+  z3: 'Z3',
+  z4: 'Z4',
+  z5: 'Z5',
 };
 
 export const WorkoutTemplateLibrary: React.FC<WorkoutTemplateLibraryProps> = ({
@@ -39,13 +52,18 @@ export const WorkoutTemplateLibrary: React.FC<WorkoutTemplateLibraryProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory | 'all'>('all');
 
-  // Filter templates by modality and category
-  const templates = useMemo(() => {
-    if (selectedCategory === 'all') {
-      return getTemplatesByModality(modality);
+  // Build filters for Supabase query
+  const filters: TemplateFilters = useMemo(() => {
+    const f: TemplateFilters = { modality };
+    if (selectedCategory !== 'all') {
+      // ExerciseCategory overlaps with WorkoutCategory for filter purposes
+      f.category = selectedCategory as WorkoutCategory;
     }
-    return getTemplatesByCategory(modality, selectedCategory);
+    return f;
   }, [modality, selectedCategory]);
+
+  // Fetch templates from Supabase via hook
+  const { templates, isLoading, error } = useWorkoutTemplates(filters);
 
   const modalityConfig = MODALITY_CONFIG[modality];
 
@@ -99,7 +117,24 @@ export const WorkoutTemplateLibrary: React.FC<WorkoutTemplateLibraryProps> = ({
 
       {/* Templates List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {templates.length === 0 ? (
+        {isLoading ? (
+          <div className="ceramic-inset p-6 rounded-xl text-center">
+            <Loader2 className="w-8 h-8 mx-auto mb-2 text-ceramic-text-secondary animate-spin" />
+            <p className="text-sm text-ceramic-text-secondary">
+              Carregando templates...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="ceramic-inset p-6 rounded-xl text-center">
+            <Activity className="w-8 h-8 mx-auto mb-2 text-ceramic-error" />
+            <p className="text-sm text-ceramic-error">
+              Erro ao carregar templates
+            </p>
+            <p className="text-xs text-ceramic-text-secondary mt-1">
+              {error.message}
+            </p>
+          </div>
+        ) : templates.length === 0 ? (
           <div className="ceramic-inset p-6 rounded-xl text-center">
             <Activity className="w-8 h-8 mx-auto mb-2 text-ceramic-text-secondary" />
             <p className="text-sm text-ceramic-text-secondary">
@@ -172,17 +207,16 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, modalityColor, on
           <span className="text-xs text-ceramic-text-secondary">
             {template.duration} min
           </span>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${INTENSITY_COLORS[template.intensity]}`}>
-            {template.intensity === 'low' ? 'Leve' : template.intensity === 'medium' ? 'Média' : 'Alta'}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${INTENSITY_COLORS[template.intensity] || 'bg-gray-100 text-gray-700'}`}>
+            {INTENSITY_LABELS[template.intensity] || template.intensity}
           </span>
         </div>
       </div>
 
-      {/* Technical Details (if available) */}
-      {template.sets && (
-        <div className="text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-border/50">
-          {template.sets}x {template.reps}
-          {template.rest && template.rest !== '0' && ` • ${template.rest} rest`}
+      {/* Description (if available) */}
+      {template.description && (
+        <div className="text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-border/50 line-clamp-2">
+          {template.description}
         </div>
       )}
 

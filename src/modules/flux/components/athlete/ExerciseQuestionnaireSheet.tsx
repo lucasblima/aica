@@ -295,7 +295,7 @@ export function ExerciseQuestionnaireSheet({
                           className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                             isSelected
                               ? 'bg-amber-500 text-white'
-                              : 'bg-white text-ceramic-text-secondary border border-ceramic-border/60'
+                              : 'bg-ceramic-base text-ceramic-text-secondary border border-ceramic-border/60'
                           }`}
                         >
                           {idx}
@@ -392,7 +392,7 @@ export function ExerciseQuestionnaireSheet({
 
                 {/* Error */}
                 {error && (
-                  <p className="text-xs text-red-500">{error}</p>
+                  <p className="text-xs text-ceramic-error">{error}</p>
                 )}
 
                 {/* Navigation + Submit */}

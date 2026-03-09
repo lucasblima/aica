@@ -16,10 +16,10 @@ export interface ReadinessGaugeProps {
 }
 
 const RISK_COLORS: Record<FatigueRisk, { stroke: string; text: string; bg: string }> = {
-  low: { stroke: '#22c55e', text: 'text-green-600', bg: 'bg-green-50' },
-  moderate: { stroke: '#f59e0b', text: 'text-amber-600', bg: 'bg-amber-50' },
-  high: { stroke: '#ef4444', text: 'text-red-600', bg: 'bg-red-50' },
-  overtraining: { stroke: '#991b1b', text: 'text-red-900', bg: 'bg-red-100' },
+  low: { stroke: '#6B7B5C', text: 'text-ceramic-success', bg: 'bg-ceramic-success-bg' },
+  moderate: { stroke: '#C4883A', text: 'text-ceramic-warning', bg: 'bg-ceramic-warning-bg' },
+  high: { stroke: '#9B4D3A', text: 'text-ceramic-error', bg: 'bg-ceramic-error-bg' },
+  overtraining: { stroke: '#9B4D3A', text: 'text-ceramic-error', bg: 'bg-ceramic-error-bg' },
 };
 
 const RISK_LABELS: Record<FatigueRisk, string> = {
@@ -67,7 +67,7 @@ export const ReadinessGauge: React.FC<ReadinessGaugeProps> = ({ readiness, class
               cy={GAUGE_SIZE / 2}
               r={RADIUS}
               fill="none"
-              stroke="#e5e7eb"
+              stroke="#DDD8CF"
               strokeWidth={STROKE_WIDTH}
             />
             {/* Progress circle */}
@@ -112,9 +112,9 @@ export const ReadinessGauge: React.FC<ReadinessGaugeProps> = ({ readiness, class
             <div>
               <span className="text-[10px] text-ceramic-text-secondary block">ACWR</span>
               <span className={`text-xs font-medium ${
-                acuteChronicRatio > 1.5 ? 'text-red-600' :
-                acuteChronicRatio >= 0.8 && acuteChronicRatio <= 1.3 ? 'text-green-600' :
-                'text-amber-600'
+                acuteChronicRatio > 1.5 ? 'text-ceramic-error' :
+                acuteChronicRatio >= 0.8 && acuteChronicRatio <= 1.3 ? 'text-ceramic-success' :
+                'text-ceramic-warning'
               }`}>
                 {acuteChronicRatio.toFixed(2)}
               </span>
