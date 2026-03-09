@@ -362,6 +362,53 @@ export interface DeepResearchResult {
 }
 
 // ============================================================================
+// NORMALIZED TABLES — Episode Production & Publication (Sprint 3)
+// ============================================================================
+
+/**
+ * Maps to `podcast_episode_production` table.
+ * 1:1 relationship with podcast_episodes via episode_id (UNIQUE).
+ * Contains recording status, file info, and transcript data.
+ *
+ * @see supabase/migrations/20260309000005_normalize_episodes_production.sql
+ */
+export interface EpisodeProduction {
+  id: string;
+  episodeId: string;
+  recordingStatus: 'idle' | 'recording' | 'paused' | 'finished';
+  recordingStartedAt: string | null;
+  recordingFinishedAt: string | null;
+  recordingDuration: number | null;
+  recordingFilePath: string | null;
+  recordingFileSize: number | null;
+  transcript: string | null;
+  transcriptGeneratedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Maps to `podcast_episode_publication` table.
+ * 1:1 relationship with podcast_episodes via episode_id (UNIQUE).
+ * Contains post-production data: cuts, blog, social, narrative scoring.
+ *
+ * @see supabase/migrations/20260309000006_normalize_episodes_publication.sql
+ */
+export interface EpisodePublication {
+  id: string;
+  episodeId: string;
+  cutsGenerated: boolean;
+  cutsMetadata: unknown;
+  blogPostGenerated: boolean;
+  blogPostUrl: string | null;
+  publishedToSocial: unknown;
+  narrativeTensionScore: number | null;
+  peakEndMoments: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================================================
 // PHASE 1 — POST-PRODUCTION TYPES
 // ============================================================================
 

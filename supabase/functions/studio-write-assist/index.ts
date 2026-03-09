@@ -16,6 +16,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { withHealthTracking } from '../_shared/health-tracker.ts'
+import { createNamespacedLogger } from '../_shared/logger.ts'
+
+const logger = createNamespacedLogger('studio-write-assist')
 
 // =============================================================================
 // HELPERS
@@ -78,13 +82,17 @@ Escreva o texto solicitado em portugues brasileiro, seguindo o tom especificado.
 Seja claro, envolvente e natural. Evite cliches e frases genericas.
 Retorne APENAS o texto gerado, sem marcacoes, sem explicacoes adicionais.`
 
-    const rawResponse = await callGemini(apiKey, prompt)
+    const rawResponse = await withHealthTracking(
+      { functionName: 'studio-write-assist', actionName: 'write_assist' },
+      supabaseClient,
+      () => callGemini(apiKey, prompt)
+    )
 
     return new Response(JSON.stringify({ success: true, data: { text: rawResponse.trim() } }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('studio-write-assist error:', error)
+    logger.error('studio-write-assist error:', error)
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

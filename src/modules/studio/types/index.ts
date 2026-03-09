@@ -50,6 +50,10 @@ export type {
 
   // Article types
   ArticleOutlineItem,
+
+  // Normalized tables (Sprint 3)
+  EpisodeProduction,
+  EpisodePublication,
 } from './studio';
 
 export { INITIAL_STUDIO_STATE } from './studio';

@@ -16,6 +16,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { withHealthTracking } from '../_shared/health-tracker.ts'
+import { createNamespacedLogger } from '../_shared/logger.ts'
+
+const logger = createNamespacedLogger('studio-gap-analysis')
 
 // =============================================================================
 // HELPERS
@@ -91,7 +95,7 @@ serve(async (req) => {
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY')!
-    console.log(`[studio-gap-analysis] Analyzing gaps for "${guestName}", theme: "${theme || 'geral'}"`)
+    logger.info(`Analyzing gaps for "${guestName}", theme: "${theme || 'geral'}"`)
 
     // Build context from dossier
     const dossierSummary = [
@@ -131,14 +135,18 @@ Responda APENAS com JSON valido no formato:
   ]
 }`
 
-    const { text, sources } = await callGeminiWithGrounding(apiKey, prompt, 4096)
+    const { text, sources } = await withHealthTracking(
+      { functionName: 'studio-gap-analysis', actionName: 'analyze_gaps' },
+      supabaseClient,
+      () => callGeminiWithGrounding(apiKey, prompt, 4096)
+    )
 
     // Extract JSON from response
     let parsed: any
     try {
       parsed = extractJSON(text)
     } catch (parseErr) {
-      console.error('[studio-gap-analysis] JSON parse error:', parseErr, 'Raw:', text.substring(0, 500))
+      logger.error('JSON parse error:', parseErr, 'Raw:', text.substring(0, 500))
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to parse AI response' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -158,7 +166,7 @@ Responda APENAS com JSON valido no formato:
       status: 'pending',
     }))
 
-    console.log(`[studio-gap-analysis] Generated ${suggestions.length} suggestions, ${sources.length} sources`)
+    logger.info(`Generated ${suggestions.length} suggestions, ${sources.length} sources`)
 
     return new Response(
       JSON.stringify({
@@ -171,7 +179,7 @@ Responda APENAS com JSON valido no formato:
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('[studio-gap-analysis] error:', error)
+    logger.error('error:', error)
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
