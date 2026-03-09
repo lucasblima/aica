@@ -48,12 +48,12 @@ serve(async (req: Request) => {
     })
 
     // Parse and validate request body
-    const { referral_code, new_user_id, plan } = await req.json()
+    const { referral_code, plan } = await req.json()
 
-    if (!referral_code || !new_user_id || !plan) {
-      console.log('[track-referral] Missing required fields:', { referral_code, new_user_id, plan })
+    if (!referral_code || !plan) {
+      console.log('[track-referral] Missing required fields:', { referral_code, plan })
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing required fields: referral_code, new_user_id, plan' }),
+        JSON.stringify({ success: false, error: 'Missing required fields: referral_code, plan' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -86,11 +86,11 @@ serve(async (req: Request) => {
     const { data: existingConversion } = await supabase
       .from('referral_conversions')
       .select('id')
-      .eq('referred_user_id', new_user_id)
+      .eq('referred_user_id', user.id)
       .single()
 
     if (existingConversion) {
-      console.log('[track-referral] User already referred:', new_user_id)
+      console.log('[track-referral] User already referred:', user.id)
       return new Response(
         JSON.stringify({ success: false, error: 'User has already been referred' }),
         { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -105,7 +105,7 @@ serve(async (req: Request) => {
       .from('referral_conversions')
       .insert({
         evangelist_id: evangelist.id,
-        referred_user_id: new_user_id,
+        referred_user_id: user.id,
         referral_code,
         plan,
         plan_value,
@@ -125,7 +125,7 @@ serve(async (req: Request) => {
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ referred_by_code: referral_code })
-      .eq('id', new_user_id)
+      .eq('id', user.id)
 
     if (profileError) {
       console.error('[track-referral] Failed to update profile:', profileError.message)
@@ -143,7 +143,7 @@ serve(async (req: Request) => {
 
     console.log('[track-referral] Referral tracked successfully:', {
       referral_code,
-      new_user_id,
+      user_id: user.id,
       plan,
       evangelist_name,
     })
