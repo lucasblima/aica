@@ -122,7 +122,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({ projectId, assetId
                 {comment.createdAt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
               </span>
               {comment.timestampSeconds != null && (
-                <button className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold hover:bg-amber-200 transition-colors">
+                <button className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold hover:bg-amber-200 transition-colors" aria-label={`Ir para ${formatTime(comment.timestampSeconds)}`}>
                   <Clock className="w-2.5 h-2.5" />
                   {formatTime(comment.timestampSeconds)}
                 </button>
@@ -194,6 +194,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({ projectId, assetId
           onClick={handleSend}
           disabled={sending || !newComment.trim()}
           className="ceramic-card p-2.5 rounded-xl hover:scale-105 transition-transform disabled:opacity-50"
+          aria-label="Enviar comentario"
         >
           {sending ? (
             <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />

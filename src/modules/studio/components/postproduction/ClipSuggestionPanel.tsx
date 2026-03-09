@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Scissors, Loader2, CheckCircle, X, Clock, Play } from 'lucide-react';
+import { Scissors, Loader2, CheckCircle, X, Clock, Play, RefreshCw } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState } from '@/components/ui';
 import type { StudioClip, StudioTranscription } from '../../types/studio';
 
 interface ClipSuggestionPanelProps {
@@ -94,25 +95,36 @@ export default function ClipSuggestionPanel({
             : 'Gere a transcricao primeiro para detectar clips.'}
         </p>
         {error && (
-          <p className="text-sm text-ceramic-error mb-4">{error}</p>
+          <div className="text-center mb-4">
+            <p className="text-sm text-ceramic-error mb-3">{error}</p>
+            <button
+              onClick={() => { setError(null); handleDetect(); }}
+              className="flex items-center gap-2 px-4 py-2 mx-auto text-sm text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors"
+              aria-label="Tentar detectar clips novamente"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tentar novamente
+            </button>
+          </div>
         )}
-        <button
-          onClick={handleDetect}
-          disabled={isDetecting || !transcription}
-          className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Scissors className="w-4 h-4" />
-          Detectar Melhores Momentos
-        </button>
+        {!error && (
+          <button
+            onClick={handleDetect}
+            disabled={isDetecting || !transcription}
+            className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Scissors className="w-4 h-4" />
+            Detectar Melhores Momentos
+          </button>
+        )}
       </motion.div>
     );
   }
 
   if (isDetecting) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-4" />
-        <p className="text-sm text-ceramic-text-secondary">Analisando melhores momentos...</p>
+      <div className="py-8">
+        <CeramicLoadingState module="studio" variant="list" lines={3} message="Analisando melhores momentos..." />
       </div>
     );
   }
@@ -208,6 +220,7 @@ export default function ClipSuggestionPanel({
                   </button>
                   <button
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ceramic-text-secondary bg-ceramic-base rounded-lg hover:bg-ceramic-cool transition-colors ml-auto"
+                    aria-label="Pre-visualizar clip"
                   >
                     <Play className="w-3.5 h-3.5" />
                     Preview

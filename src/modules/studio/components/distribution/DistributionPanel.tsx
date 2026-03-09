@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, CalendarPlus, Loader2 } from 'lucide-react';
+import { Sparkles, CalendarPlus, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState } from '@/components/ui';
 import { PlatformCard } from './PlatformCard';
 
 const ALL_PLATFORMS = ['spotify', 'youtube', 'instagram', 'tiktok', 'linkedin', 'twitter', 'newsletter', 'blog'];
@@ -129,8 +130,23 @@ export const DistributionPanel: React.FC<DistributionPanelProps> = ({ projectId,
       )}
 
       {error && (
-        <div className="p-3 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 text-sm text-ceramic-error">
-          {error}
+        <div className="p-3 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 flex items-center justify-between">
+          <span className="text-sm text-ceramic-error">{error}</span>
+          <button
+            onClick={() => { setError(null); handleGenerateAll(); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors flex-shrink-0 ml-3"
+            aria-label="Tentar gerar captions novamente"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {/* Loading State for Caption Generation */}
+      {generating && captions.length === 0 && (
+        <div className="py-4">
+          <CeramicLoadingState module="studio" variant="list" lines={4} message="Gerando captions para todas as plataformas..." />
         </div>
       )}
 

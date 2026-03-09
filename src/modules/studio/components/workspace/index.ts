@@ -29,6 +29,8 @@ export { default as GuestTypeSelector } from './GuestTypeSelector';
 export type { GuestCategory } from './GuestTypeSelector';
 export { default as GuestInfoForm } from './GuestInfoForm';
 export type { GuestManualData } from './GuestInfoForm';
+export { default as ThemeSelector } from './ThemeSelector';
+export { default as SchedulingSection } from './SchedulingSection';
 
 // Research Stage: ResearchCanvas replaces ResearchStage (NotebookLM UX — #664, #667)
 // ResearchCanvas is in ../research/ResearchCanvas and loaded by StageRenderer

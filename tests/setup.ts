@@ -9,8 +9,14 @@ import { createClient } from '@supabase/supabase-js'
 import '@testing-library/jest-dom/vitest'
 
 // Environment variables para testes
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'http://localhost:54321'
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'test-key'
+// Detect placeholder values from .env template and fall back to local Supabase
+function resolveEnv(key: string, fallback: string): string {
+  const val = process.env[key]
+  if (!val || val.includes('your_') || val.includes('_here')) return fallback
+  return val
+}
+const SUPABASE_URL = resolveEnv('VITE_SUPABASE_URL', 'http://localhost:54321')
+const SUPABASE_ANON_KEY = resolveEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key-placeholder')
 const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com'
 const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'testpassword123'
 
