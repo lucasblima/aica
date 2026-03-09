@@ -157,14 +157,16 @@ export function WhatsAppMessageModal({
 
   // Handle send via WhatsApp
   const handleSendWhatsApp = useCallback(() => {
+    if (sendStatus === 'sent') return;
     // Format phone for WhatsApp (remove + and spaces)
-    const phone = athlete.phone.replace(/[+\s-]/g, '');
+    const phone = athlete.phone?.replace(/[+\s-]/g, '') ?? '';
+    if (!phone) return;
     const encodedMessage = encodeURIComponent(currentMessage);
     const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
     setSendStatus('sent');
-  }, [athlete.phone, currentMessage]);
+  }, [athlete.phone, currentMessage, sendStatus]);
 
   // Auto-close after successful send
   useEffect(() => {
@@ -177,9 +179,12 @@ export function WhatsAppMessageModal({
     }
   }, [sendStatus, onClose]);
 
-  // Reset state when modal opens/closes
+  // Reset all state when modal opens
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setMessageVariant(0);
+      setIsEditing(false);
+      setCustomMessage('');
       setSendStatus('idle');
     }
   }, [isOpen]);
@@ -210,6 +215,7 @@ export function WhatsAppMessageModal({
           <button
             onClick={onClose}
             disabled={sendStatus === 'sent'}
+            aria-label="Fechar"
             className="w-8 h-8 rounded-lg ceramic-inset flex items-center justify-center hover:bg-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-4 h-4 text-ceramic-text-secondary" />
@@ -306,7 +312,8 @@ export function WhatsAppMessageModal({
 
               <button
                 onClick={handleSendWhatsApp}
-                className="flex items-center gap-2 px-6 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg transition-colors"
+                disabled={!athlete.phone?.replace(/[+\s-]/g, '')}
+                className="flex items-center gap-2 px-6 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" />
                 <span className="font-bold">Enviar</span>

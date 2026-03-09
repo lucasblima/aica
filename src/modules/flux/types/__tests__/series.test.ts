@@ -215,6 +215,12 @@ describe('isCardioSeries', () => {
     // Strength has no zone property, so 'zone' in series is false
     expect(isCardioSeries(makeStrengthSeries())).toBe(false);
   });
+
+  it('returns false for cycling series missing optional zone property', () => {
+    const s = makeCyclingSeries();
+    delete (s as any).zone;
+    expect(isCardioSeries(s)).toBe(false);
+  });
 });
 
 describe('isStrengthSeries', () => {
@@ -380,6 +386,18 @@ describe('generateWorkoutName', () => {
       ];
       // 4 series, each 1 rep => totalSeries = 4
       expect(generateWorkoutName('strength', series)).toBe('Circuito 4 séries');
+    });
+
+    it('counts total repetitions not series objects for Circuito naming', () => {
+      const series: StrengthSeries[] = [
+        makeStrengthSeries({ reps: 10, repetitions: 3 }),
+        makeStrengthSeries({ reps: 10, repetitions: 3 }),
+        makeStrengthSeries({ reps: 10, repetitions: 3 }),
+        makeStrengthSeries({ reps: 10, repetitions: 3 }),
+      ];
+      // 4 series × 3 repetitions = 12 total
+      const name = generateWorkoutName('strength', series);
+      expect(name).toContain('12');
     });
 
     it('names as "Forca Maxima" for low reps (<=5)', () => {

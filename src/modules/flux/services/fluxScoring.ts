@@ -11,7 +11,7 @@
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { registerDomainProvider } from '@/services/scoring/scoringEngine';
-import { computeFluxDomainScore, assessReadiness, getStressHistory, computeACWR } from './fatigueModeling';
+import { computeFluxDomainScore, getStressHistory, computeACWR } from './fatigueModeling';
 import type { DomainScore, ScoreTrend } from '@/services/scoring/types';
 
 const log = createNamespacedLogger('fluxScoring');
@@ -47,11 +47,16 @@ async function computeFluxDomainScoreProvider(): Promise<DomainScore | null> {
       : 50; // default neutral if no readiness data yet
 
     // 2. Training consistency: ratio of athletes with stress history in last 7 days
+    // Fetch all histories in parallel to avoid N+1 sequential queries
+    const histories = await Promise.all(
+      athletes.map(a => getStressHistory(a.id, 7))
+    );
+
     let athletesWithRecentTraining = 0;
     const acwrValues: number[] = [];
+    const historicalReadinessValues: number[] = [];
 
-    for (const athlete of athletes) {
-      const history = await getStressHistory(athlete.id, 7);
+    for (const history of histories) {
       if (history.length > 0) {
         athletesWithRecentTraining++;
         // Use last entry's CTL/ATL for ACWR
@@ -59,6 +64,9 @@ async function computeFluxDomainScoreProvider(): Promise<DomainScore | null> {
         if (last.ctl > 0 || last.atl > 0) {
           acwrValues.push(computeACWR(last.atl, last.ctl));
         }
+        // Collect TSB values for historical readiness trend comparison
+        const avgTsb = history.reduce((sum, h) => sum + h.tsb, 0) / history.length;
+        historicalReadinessValues.push(avgTsb);
       }
     }
 
@@ -70,15 +78,22 @@ async function computeFluxDomainScoreProvider(): Promise<DomainScore | null> {
     const athletesInSweetSpot = acwrValues.filter(r => r >= 0.8 && r <= 1.3).length;
     const loadManagement = acwrValues.length > 0
       ? athletesInSweetSpot / acwrValues.length
-      : 0.5; // neutral default
+      : 0; // no data = no load management score
 
     // Compute normalized score (0-1)
     const normalized = computeFluxDomainScore(avgReadiness, trainingConsistency, loadManagement);
 
-    // Determine trend from readiness scores
-    const trend: ScoreTrend = avgReadiness >= 65 ? 'improving'
-      : avgReadiness >= 40 ? 'stable'
-      : 'declining';
+    // Determine trend by comparing current average readiness against historical TSB averages
+    let trend: ScoreTrend = 'stable';
+    if (historicalReadinessValues.length > 0) {
+      const historicalAvg = historicalReadinessValues.reduce((sum, v) => sum + v, 0) / historicalReadinessValues.length;
+      const delta = avgReadiness - (50 + historicalAvg); // TSB centered around 0, readiness around 50
+      if (delta > 5) {
+        trend = 'improving';
+      } else if (delta < -5) {
+        trend = 'declining';
+      }
+    }
 
     // Confidence based on data availability
     const confidence = Math.min(1, 0.3 + 0.4 * (readinessScores.length / athletes.length)

@@ -6,7 +6,7 @@ import App from './App';
 import './index.css';
 import { cleanExpiredOAuthParams, suppressExpiredSessionWarnings } from './src/utils/authUrlCleaner';
 import { validateEnv, logEnvStatus } from './src/lib/envCheck';
-import { registerFluxDomainProvider } from './src/modules/flux/services/fluxScoring';
+import { registerFluxDomainProvider } from './src/modules/flux/services';
 
 // =============================================================================
 // ENVIRONMENT VALIDATION

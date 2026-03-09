@@ -326,6 +326,11 @@ describe('IntensityCalculatorService', () => {
       expect(result.recommended_intensity).toBe('195W');
       expect(result.workout_examples).toHaveLength(3);
       expect(result.workout_examples[0]).toContain('195W');
+      expect(result.workout_examples[1]).toContain('195W');
+      expect(result.workout_examples[2]).toContain('195W');
+      result.workout_examples.forEach((ex, i) => {
+        expect(ex, `workout_examples[${i}] should be a non-empty string`).toBeTruthy();
+      });
     });
 
     it('should calculate running intensity with workout examples', () => {
@@ -337,6 +342,10 @@ describe('IntensityCalculatorService', () => {
       expect(result.target_zone).toBe(22);
       expect(result.recommended_intensity).toBe('5:30/km');
       expect(result.workout_examples).toHaveLength(3);
+      result.workout_examples.forEach((ex, i) => {
+        expect(ex, `workout_examples[${i}] should be a non-empty string`).toBeTruthy();
+        expect(ex, `workout_examples[${i}] should reference the target pace`).toContain('5:30/km');
+      });
     });
 
     it('should calculate swimming intensity with workout examples', () => {
@@ -348,6 +357,10 @@ describe('IntensityCalculatorService', () => {
       expect(result.target_zone).toBe(24);
       expect(result.recommended_intensity).toBe('1:57/100m');
       expect(result.workout_examples).toHaveLength(3);
+      result.workout_examples.forEach((ex, i) => {
+        expect(ex, `workout_examples[${i}] should be a non-empty string`).toBeTruthy();
+        expect(ex, `workout_examples[${i}] should reference the target CSS`).toContain('1:57/100m');
+      });
     });
 
     it('should calculate strength intensity using RPE', () => {
@@ -359,6 +372,10 @@ describe('IntensityCalculatorService', () => {
       expect(result.target_zone).toBe(23);
       expect(result.recommended_intensity).toBe('RPE 8');
       expect(result.workout_examples).toHaveLength(3);
+      result.workout_examples.forEach((ex, i) => {
+        expect(ex, `workout_examples[${i}] should be a non-empty string`).toBeTruthy();
+        expect(ex, `workout_examples[${i}] should reference the target RPE`).toContain('RPE 8');
+      });
     });
 
     it('should map all strength zScores to correct RPE', () => {
