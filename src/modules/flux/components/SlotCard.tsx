@@ -15,6 +15,7 @@ import { supabase } from '@/services/supabaseClient';
 import type { WorkoutSlot } from '../types/flow';
 import { createNamespacedLogger } from '@/lib/logger';
 import { useFluxGamification } from '../hooks/useFluxGamification';
+import { notificationService } from '@/services/notificationService';
 
 const log = createNamespacedLogger('SlotCard');
 
@@ -59,7 +60,10 @@ export function SlotCard({ slot, onToggleComplete, className = '' }: SlotCardPro
       log.info('Completion toggled', { slotId: slot.id, isCompleted: checked });
     } catch (error) {
       log.error('Error toggling completion:', error);
-      // TODO: Show error notification
+      notificationService.showError(
+        'Erro ao atualizar treino',
+        'Não foi possível salvar a conclusão. Tente novamente.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +96,10 @@ export function SlotCard({ slot, onToggleComplete, className = '' }: SlotCardPro
       log.info('Feedback saved', { slotId: slot.id, rpe, actualDuration });
     } catch (error) {
       log.error('Error saving feedback:', error);
+      notificationService.showError(
+        'Erro ao salvar feedback',
+        'Não foi possível salvar o feedback. Tente novamente.'
+      );
     } finally {
       setIsLoading(false);
     }
