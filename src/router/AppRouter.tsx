@@ -118,6 +118,10 @@ const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => 
 // Life Score Analytics - Issue #575
 const LifeScoreAnalyticsPage = lazy(() => import('../pages/LifeScoreAnalyticsPage'));
 
+// Evangelist Module
+const EvangelistDashboard = lazy(() => import('../modules/evangelist/views/EvangelistDashboard').then(m => ({ default: m.EvangelistDashboard })));
+const EvangelistsAdmin = lazy(() => import('../modules/evangelist/views/EvangelistsAdmin').then(m => ({ default: m.EvangelistsAdmin })));
+
 // Legal Pages - Rarely accessed
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
@@ -212,6 +216,36 @@ export function AppRouter() {
 
    // Phase A: Auth Migration - Using useAuth hook instead of manual state
    const { user, session, isLoading: isCheckingAuth, isAuthenticated } = useAuth();
+
+   // Capture referral code from URL params (persists through OAuth redirect via localStorage)
+   useEffect(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref');
+      if (refCode) {
+         localStorage.setItem('aica_ref_code', refCode);
+         // Clean the URL to avoid re-capturing
+         const url = new URL(window.location.href);
+         url.searchParams.delete('ref');
+         window.history.replaceState({}, '', url.toString());
+      }
+   }, []);
+
+   // Track referral after signup
+   useEffect(() => {
+      const savedRef = localStorage.getItem('aica_ref_code');
+      if (savedRef && user?.id) {
+         supabase.functions.invoke('track-referral', {
+            body: { referral_code: savedRef, new_user_id: user.id, plan: 'pro' }
+         }).then(({ data, error }) => {
+            if (!error && data?.success) {
+               localStorage.removeItem('aica_ref_code');
+               console.log('[AppRouter] Referral tracked successfully for', savedRef);
+            }
+         }).catch(() => {
+            // Non-fatal: referral tracking failure shouldn't block the app
+         });
+      }
+   }, [user?.id]);
 
    // Delay showing auth loading spinner by 300ms to avoid flash for fast checks
    const [showAuthLoading, setShowAuthLoading] = useState(false);
@@ -871,6 +905,10 @@ export function AppRouter() {
                <Route path="/admin" element={<ProtectedRoute><AdminGuard><AdminPortalPage /></AdminGuard></ProtectedRoute>} />
                <Route path="/admin/coupons" element={<ProtectedRoute><AdminGuard><AdminCouponsPage /></AdminGuard></ProtectedRoute>} />
                <Route path="/admin/simulator" element={<ProtectedRoute><AdminGuard><PricingSimulatorPage /></AdminGuard></ProtectedRoute>} />
+               <Route path="/admin/evangelists" element={<ProtectedRoute><AdminGuard><EvangelistsAdmin /></AdminGuard></ProtectedRoute>} />
+
+               {/* Evangelist Module - Partner program dashboard */}
+               <Route path="/evangelist" element={<ProtectedRoute><EvangelistDashboard /></ProtectedRoute>} />
 
                {/* Module Hub - Coming Soon system (CS-004) */}
                <Route
