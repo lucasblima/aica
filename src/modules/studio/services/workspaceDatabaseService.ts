@@ -23,6 +23,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { syncEntityToGoogle } from '@/services/calendarSyncService';
 import { studioEpisodeToGoogleEvent } from '@/services/calendarSyncTransforms';
 import { isGoogleCalendarConnected } from '@/services/googleAuthService';
+import { awardEpisodeCompletionCP } from './crossModuleService';
 
 const log = createNamespacedLogger('workspaceDatabaseService');
 
@@ -179,6 +180,20 @@ export async function updateEpisode(id: string, updates: Partial<Episode>): Prom
       syncEntityToGoogle('studio', data.id, eventData).catch((err) =>
         log.warn('Calendar sync failed for updated episode:', err)
       )
+    })
+  }
+
+  // Award CP when episode is published (Journey integration, non-blocking)
+  if (updates.status === 'published' && data.user_id) {
+    awardEpisodeCompletionCP(
+      { id: data.id, title: data.title, status: data.status },
+      data.user_id
+    ).then((cpResult) => {
+      if (cpResult) {
+        log.debug('CP awarded for episode publication:', cpResult)
+      }
+    }).catch((err) => {
+      log.warn('CP award failed for episode:', err)
     })
   }
 

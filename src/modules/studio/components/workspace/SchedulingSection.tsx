@@ -3,12 +3,15 @@
  *
  * Extracted from SetupStage for better modularity.
  * Handles date, time, location, and season/episode number fields.
+ * Includes Agenda integration: sync recording to calendar.
  *
  * @module studio/components/workspace
  */
 
-import React from 'react';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Calendar, Clock, MapPin, Check, Loader2 } from 'lucide-react';
+import { supabase } from '@/services/supabaseClient';
+import { syncRecordingToCalendar } from '@/modules/studio/services/crossModuleService';
 
 interface SchedulingData {
   scheduledDate: string;
@@ -20,9 +23,57 @@ interface SchedulingData {
 interface SchedulingSectionProps {
   data: SchedulingData;
   onUpdate: (updates: Partial<SchedulingData>) => void;
+  /** Episode title for calendar event naming */
+  episodeTitle?: string;
+  /** Guest name for calendar event naming */
+  guestName?: string;
 }
 
-export default function SchedulingSection({ data, onUpdate }: SchedulingSectionProps) {
+export default function SchedulingSection({ data, onUpdate, episodeTitle, guestName }: SchedulingSectionProps) {
+  const [syncToCalendar, setSyncToCalendar] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const canSync = !!(data.scheduledDate && data.scheduledTime);
+
+  const handleSyncToCalendar = useCallback(async () => {
+    if (!canSync) return;
+
+    setIsSyncing(true);
+    setSyncError(null);
+    setSyncSuccess(false);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSyncError('Usuario nao autenticado');
+        return;
+      }
+
+      const result = await syncRecordingToCalendar(
+        {
+          title: episodeTitle || 'Episodio',
+          scheduledDate: data.scheduledDate,
+          scheduledTime: data.scheduledTime,
+          guestName: guestName,
+          location: data.location,
+        },
+        user.id
+      );
+
+      if (result) {
+        setSyncSuccess(true);
+      } else {
+        setSyncError('Agenda nao disponivel. O evento sera sincronizado com Google Calendar automaticamente.');
+      }
+    } catch {
+      setSyncError('Erro ao sincronizar com a agenda');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [canSync, data.scheduledDate, data.scheduledTime, data.location, episodeTitle, guestName]);
+
   return (
     <section
       className="bg-ceramic-surface rounded-lg shadow-sm p-4 sm:p-6 space-y-6"
@@ -38,7 +89,7 @@ export default function SchedulingSection({ data, onUpdate }: SchedulingSectionP
             <span>Agendamento</span>
           </h2>
           <p className="text-sm text-ceramic-secondary mt-1">
-            Agende quando será gravado o episódio (opcional)
+            Agende quando sera gravado o episodio (opcional)
           </p>
         </div>
       </div>
@@ -52,7 +103,7 @@ export default function SchedulingSection({ data, onUpdate }: SchedulingSectionP
               className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4 text-orange-600" aria-hidden="true" />
-              <span>Data da Gravação</span>
+              <span>Data da Gravacao</span>
             </label>
             <input
               id="scheduled-date-input"
@@ -71,7 +122,7 @@ export default function SchedulingSection({ data, onUpdate }: SchedulingSectionP
               className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center space-x-2"
             >
               <Clock className="w-4 h-4 text-orange-600" aria-hidden="true" />
-              <span>Horário</span>
+              <span>Horario</span>
             </label>
             <input
               id="scheduled-time-input"
@@ -81,11 +132,59 @@ export default function SchedulingSection({ data, onUpdate }: SchedulingSectionP
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-text-primary"
             />
             {!data.scheduledTime && (
-              <p className="text-xs text-ceramic-tertiary mt-1">Defina o horário</p>
+              <p className="text-xs text-ceramic-tertiary mt-1">Defina o horario</p>
             )}
           </div>
         </div>
       </div>
+
+      {/* Sync to Calendar checkbox */}
+      {canSync && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={syncToCalendar}
+              onChange={(e) => {
+                setSyncToCalendar(e.target.checked);
+                setSyncSuccess(false);
+                setSyncError(null);
+              }}
+              className="w-4 h-4 rounded border-ceramic-border text-amber-500 focus:ring-amber-500"
+            />
+            <span className="text-sm font-medium text-ceramic-text-primary">
+              Sincronizar com Agenda
+            </span>
+          </label>
+
+          {syncToCalendar && !syncSuccess && (
+            <button
+              type="button"
+              onClick={handleSyncToCalendar}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+            >
+              {isSyncing ? (
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Calendar className="w-4 h-4" aria-hidden="true" />
+              )}
+              {isSyncing ? 'Sincronizando...' : 'Criar Evento na Agenda'}
+            </button>
+          )}
+
+          {syncSuccess && (
+            <div className="flex items-center gap-2 text-sm text-ceramic-success" role="status">
+              <Check className="w-4 h-4" aria-hidden="true" />
+              <span>Evento criado na Agenda</span>
+            </div>
+          )}
+
+          {syncError && (
+            <p className="text-xs text-ceramic-warning">{syncError}</p>
+          )}
+        </div>
+      )}
 
       {/* Location and Season - Secondary Info */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -95,14 +194,14 @@ export default function SchedulingSection({ data, onUpdate }: SchedulingSectionP
             className="block text-sm font-medium text-ceramic-text-primary mb-2 flex items-center space-x-2"
           >
             <MapPin className="w-4 h-4 text-ceramic-tertiary" aria-hidden="true" />
-            <span>Local da Gravação</span>
+            <span>Local da Gravacao</span>
           </label>
           <input
             id="location-input"
             type="text"
             value={data.location}
             onChange={(e) => onUpdate({ location: e.target.value })}
-            placeholder="Ex: Estúdio A, Remoto (Zoom), Casa do convidado"
+            placeholder="Ex: Estudio A, Remoto (Zoom), Casa do convidado"
             className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent transition-all hover:border-ceramic-accent/50 bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
           />
         </div>
@@ -111,7 +210,7 @@ export default function SchedulingSection({ data, onUpdate }: SchedulingSectionP
             htmlFor="season-input"
             className="block text-sm font-medium text-ceramic-text-primary mb-2"
           >
-            Temporada / Número do Episódio
+            Temporada / Numero do Episodio
           </label>
           <input
             id="season-input"

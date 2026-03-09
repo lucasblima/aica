@@ -567,6 +567,8 @@ export default function SetupStage() {
               season: setup.season,
             }}
             onUpdate={(updates) => actions.updateSetup(updates)}
+            episodeTitle={setup.theme || setup.guestName}
+            guestName={setup.guestName}
           />
         )}
 

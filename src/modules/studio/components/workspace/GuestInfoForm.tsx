@@ -26,8 +26,10 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, AlertCircle, Check, Send, Loader2, ExternalLink } from 'lucide-react';
+import { User, Phone, Mail, AlertCircle, Check, Send, Loader2, ExternalLink, Search, Link2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { fetchContactAsGuest } from '@/modules/studio/services/crossModuleService';
+import type { ContactAsGuest } from '@/modules/studio/services/crossModuleService';
 
 // Validate email format (extracted for use before component renders)
 const validateEmail = (email: string): boolean => {
@@ -91,6 +93,12 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
   const [errors, setErrors] = useState<Partial<Record<keyof GuestManualData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof GuestManualData, boolean>>>({});
 
+  // Contact search state (Connections integration)
+  const [isSearchingContacts, setIsSearchingContacts] = useState(false);
+  const [contactResults, setContactResults] = useState<ContactAsGuest[]>([]);
+  const [contactSearchDone, setContactSearchDone] = useState(false);
+  const [importedFromConnections, setImportedFromConnections] = useState(false);
+
   // Approval link state
   const [isSendingApproval, setIsSendingApproval] = useState(false);
   const [approvalSent, setApprovalSent] = useState(false);
@@ -99,6 +107,42 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
 
   // Whether the approval button should be visible
   const canSendApproval = !!(episodeId && formData.email.trim() && validateEmail(formData.email));
+
+  // Search contacts from Connections module
+  const handleSearchContacts = useCallback(async () => {
+    if (!formData.name.trim()) return;
+
+    setIsSearchingContacts(true);
+    setContactSearchDone(false);
+    setContactResults([]);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const results = await fetchContactAsGuest(formData.name, user.id);
+      setContactResults(results);
+      setContactSearchDone(true);
+    } catch {
+      setContactSearchDone(true);
+    } finally {
+      setIsSearchingContacts(false);
+    }
+  }, [formData.name]);
+
+  // Auto-fill form from a matched contact
+  const handleFillFromContact = useCallback((contact: ContactAsGuest) => {
+    setFormData((prev) => ({
+      name: contact.name || prev.name,
+      phone: contact.phone ? formatPhone(contact.phone) : prev.phone,
+      email: contact.email || prev.email,
+    }));
+    setContactResults([]);
+    setContactSearchDone(false);
+    setImportedFromConnections(true);
+    // Mark fields as touched to trigger validation feedback
+    setTouched({ name: true, phone: !!contact.phone, email: !!contact.email });
+  }, []);
 
   // Send guest approval link via Edge Function
   const handleSendApprovalLink = useCallback(async () => {
@@ -324,6 +368,70 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             </div>
           )}
         </div>
+
+        {/* Search in Contacts (Connections integration) */}
+        {formData.name.trim().length >= 3 && !importedFromConnections && (
+          <div>
+            <button
+              type="button"
+              onClick={handleSearchContacts}
+              disabled={isSearchingContacts}
+              aria-label="Buscar nos contatos do modulo Conexoes"
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-ceramic-border bg-ceramic-cool hover:bg-ceramic-surface-hover text-ceramic-text-primary text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {isSearchingContacts ? (
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Search className="w-4 h-4 text-amber-500" aria-hidden="true" />
+              )}
+              {isSearchingContacts ? 'Buscando...' : 'Buscar nos Contatos'}
+            </button>
+
+            {/* Contact results */}
+            {contactSearchDone && contactResults.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {contactResults.map((contact) => (
+                  <button
+                    key={contact.id}
+                    type="button"
+                    onClick={() => handleFillFromContact(contact)}
+                    className="flex items-start gap-3 w-full p-3 rounded-lg border border-ceramic-border bg-ceramic-base hover:bg-ceramic-cool text-left transition-colors"
+                  >
+                    <User className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ceramic-text-primary truncate">
+                        {contact.name}
+                      </p>
+                      {contact.phone && (
+                        <p className="text-xs text-ceramic-text-secondary truncate">{contact.phone}</p>
+                      )}
+                      {contact.bio && (
+                        <p className="text-xs text-ceramic-text-secondary mt-0.5 line-clamp-2">{contact.bio}</p>
+                      )}
+                      <span className="inline-block mt-1 text-xs text-ceramic-tertiary">
+                        {contact.source === 'contact_network' ? 'WhatsApp' : 'Espaco'}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {contactSearchDone && contactResults.length === 0 && (
+              <p className="mt-1 text-xs text-ceramic-tertiary">
+                Nenhum contato encontrado com esse nome.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Imported from Connections badge */}
+        {importedFromConnections && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+            <Link2 className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+            <span className="text-xs font-medium text-amber-700">Importado de Conexoes</span>
+          </div>
+        )}
 
         {/* Email Field */}
         <div>
