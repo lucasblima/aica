@@ -10,7 +10,8 @@
  */
 
 // Views
-export { TaskListView, TaskKanbanView, PriorityMatrix } from './views';
+export { TaskListView, TaskKanbanView, PriorityMatrix, AgendaPageShell, TimelineView, CalendarView } from './views';
+export type { AgendaPageShellProps, TimelineViewProps, CalendarViewProps } from './views';
 
 // Cards
 export { SwipeableTaskCard } from './cards';
