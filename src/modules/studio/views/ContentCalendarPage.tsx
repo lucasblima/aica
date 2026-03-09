@@ -10,7 +10,7 @@ const PLATFORM_COLORS: Record<string, { bg: string; text: string; border: string
   spotify: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
   youtube: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
   instagram: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
-  tiktok: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
+  tiktok: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' },
   linkedin: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
   twitter: { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-300' },
   newsletter: { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-300' },
@@ -21,7 +21,7 @@ const PLATFORM_DOTS: Record<string, string> = {
   spotify: 'bg-green-500',
   youtube: 'bg-red-500',
   instagram: 'bg-purple-500',
-  tiktok: 'bg-gray-500',
+  tiktok: 'bg-slate-500',
   linkedin: 'bg-blue-500',
   twitter: 'bg-sky-500',
   newsletter: 'bg-violet-500',
@@ -186,7 +186,7 @@ export default function ContentCalendarPage() {
                       {dayEntries.slice(0, 4).map((entry, i) => (
                         <div
                           key={i}
-                          className={`w-1.5 h-1.5 rounded-full ${PLATFORM_DOTS[entry.platform] || 'bg-gray-400'}`}
+                          className={`w-1.5 h-1.5 rounded-full ${PLATFORM_DOTS[entry.platform] || 'bg-ceramic-text-secondary'}`}
                         />
                       ))}
                       {dayEntries.length > 4 && (

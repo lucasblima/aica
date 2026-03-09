@@ -30,8 +30,8 @@ export type { GuestCategory } from './GuestTypeSelector';
 export { default as GuestInfoForm } from './GuestInfoForm';
 export type { GuestManualData } from './GuestInfoForm';
 
-// Research Stage (Wave 5 Stream 2)
-export { default as ResearchStage } from './ResearchStage';
+// Research Stage: ResearchCanvas replaces ResearchStage (NotebookLM UX — #664, #667)
+// ResearchCanvas is in ../research/ResearchCanvas and loaded by StageRenderer
 
 // Pauta Stage (Wave 5 Stream 2)
 export { default as PautaStage } from './PautaStage';

@@ -24,9 +24,22 @@
  * @module studio/components/workspace
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, AlertCircle, Check } from 'lucide-react';
+import { User, Phone, Mail, AlertCircle, Check, Send, Loader2, ExternalLink } from 'lucide-react';
+import { supabase } from '@/services/supabaseClient';
+
+// Validate email format (extracted for use before component renders)
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Validate phone format (Brazilian format)
+const validatePhone = (phone: string): boolean => {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 13;
+};
 
 export interface GuestManualData {
   name: string;
@@ -43,6 +56,10 @@ interface GuestInfoFormProps {
   onBack?: () => void;
   /** Additional CSS classes */
   className?: string;
+  /** Episode ID for sending approval links */
+  episodeId?: string;
+  /** Base URL for guest approval portal */
+  approvalBaseUrl?: string;
 }
 
 /**
@@ -62,6 +79,8 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
   onSubmit,
   onBack,
   className = '',
+  episodeId,
+  approvalBaseUrl = 'https://aica.guru/studio/approval',
 }) => {
   const [formData, setFormData] = useState<GuestManualData>({
     name: initialData?.name || '',
@@ -71,6 +90,53 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
 
   const [errors, setErrors] = useState<Partial<Record<keyof GuestManualData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof GuestManualData, boolean>>>({});
+
+  // Approval link state
+  const [isSendingApproval, setIsSendingApproval] = useState(false);
+  const [approvalSent, setApprovalSent] = useState(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [showApprovalConfirm, setShowApprovalConfirm] = useState(false);
+
+  // Whether the approval button should be visible
+  const canSendApproval = !!(episodeId && formData.email.trim() && validateEmail(formData.email));
+
+  // Send guest approval link via Edge Function
+  const handleSendApprovalLink = useCallback(async () => {
+    if (!episodeId || !formData.email.trim() || !formData.name.trim()) return;
+
+    setIsSendingApproval(true);
+    setApprovalError(null);
+
+    try {
+      const approvalUrl = `${approvalBaseUrl}/${episodeId}?guest=${encodeURIComponent(formData.name)}`;
+
+      const { data, error } = await supabase.functions.invoke('send-guest-approval-link', {
+        body: {
+          episodeId,
+          guestName: formData.name,
+          guestEmail: formData.email,
+          approvalUrl,
+          method: 'email',
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Erro ao enviar link de aprovacao');
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Falha no envio do email');
+      }
+
+      setApprovalSent(true);
+      setShowApprovalConfirm(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido ao enviar link';
+      setApprovalError(message);
+    } finally {
+      setIsSendingApproval(false);
+    }
+  }, [episodeId, formData.email, formData.name, approvalBaseUrl]);
 
   // Check if field is valid (for positive feedback)
   const isFieldValid = (field: keyof GuestManualData): boolean => {
@@ -89,12 +155,6 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
     }
   };
 
-  // Validate email format
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   // Format phone number with Brazilian mask
   const formatPhone = (value: string): string => {
     // Remove all non-digits
@@ -110,14 +170,6 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
     } else {
       return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
     }
-  };
-
-  // Validate phone format (Brazilian format)
-  const validatePhone = (phone: string): boolean => {
-    // Remove non-digits
-    const digits = phone.replace(/\D/g, '');
-    // Accept 10 or 11 digits (with or without country code)
-    return digits.length >= 10 && digits.length <= 13;
   };
 
   // Handle field change
@@ -399,6 +451,70 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             </p>
           </div>
         </div>
+
+        {/* Send Approval Link Section */}
+        {canSendApproval && (
+          <div className="mt-4 p-3 rounded-lg bg-ceramic-cool border border-ceramic-border">
+            {approvalSent ? (
+              <div className="flex items-center gap-2" role="status">
+                <Check className="w-4 h-4 text-ceramic-success flex-shrink-0" aria-hidden="true" />
+                <p className="text-sm text-ceramic-success font-medium">
+                  Link de aprovacao enviado para {formData.email}
+                </p>
+              </div>
+            ) : showApprovalConfirm ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <ExternalLink className="w-4 h-4 text-ceramic-text-secondary mt-0.5 flex-shrink-0" aria-hidden="true" />
+                  <p className="text-sm text-ceramic-text-primary">
+                    Enviar convite para <span className="font-semibold">{formData.email}</span>?
+                  </p>
+                </div>
+                {approvalError && (
+                  <div className="flex items-center gap-1.5 text-xs text-ceramic-error" role="alert">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                    <span>{approvalError}</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSendApprovalLink}
+                    disabled={isSendingApproval}
+                    aria-label="Confirmar envio do link de aprovacao"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                  >
+                    {isSendingApproval ? (
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Send className="w-4 h-4" aria-hidden="true" />
+                    )}
+                    {isSendingApproval ? 'Enviando...' : 'Confirmar Envio'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowApprovalConfirm(false); setApprovalError(null); }}
+                    disabled={isSendingApproval}
+                    aria-label="Cancelar envio do link de aprovacao"
+                    className="px-3 py-1.5 rounded-lg border border-ceramic-border text-ceramic-text-secondary text-sm hover:bg-ceramic-cool transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowApprovalConfirm(true)}
+                aria-label="Enviar link de aprovacao para o convidado"
+                className="flex items-center gap-1.5 w-full px-3 py-2 rounded-lg bg-ceramic-base hover:bg-ceramic-cool border border-ceramic-border text-ceramic-text-primary text-sm font-medium transition-colors"
+              >
+                <Send className="w-4 h-4 text-amber-500" aria-hidden="true" />
+                Enviar Link de Aprovacao
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Form Actions */}
         <div className="flex gap-3 mt-6">

@@ -11,6 +11,7 @@
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStudio } from '../context/StudioContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -100,6 +101,7 @@ export default function StudioMainView() {
 
   useTourAutoStart('studio-first-visit');  const { state, actions } = useStudio();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Track previous mode for slide direction
   const prevModeRef = useRef(state.mode);
@@ -170,6 +172,23 @@ export default function StudioMainView() {
   const handleWizardComplete = useCallback((project: StudioProject) => {
     actions.goToWorkspace(project);
   }, [actions]);
+
+  /**
+   * Handler for logout
+   * Signs out via Supabase and navigates to login
+   */
+  const handleLogout = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        log.error('[StudioMainView] Logout error:', error);
+      }
+    } catch (err) {
+      log.error('[StudioMainView] Unexpected logout error:', err);
+    } finally {
+      navigate('/');
+    }
+  }, [navigate]);
 
   /**
    * Handler for error retry
@@ -287,10 +306,7 @@ export default function StudioMainView() {
             onSelectEpisode={handleSelectEpisode}
             onCreateEpisode={handleCreateNew}
             userEmail={user?.email || ''}
-            onLogout={() => {
-              // TODO: Implement logout
-              log.debug('[StudioMainView] Logout clicked');
-            }}
+            onLogout={handleLogout}
           />
         </React.Suspense>
       );
@@ -325,10 +341,7 @@ export default function StudioMainView() {
             onSelectProject={handleSelectProject}
             onCreateNew={handleCreateNew}
             userEmail={user?.email}
-            onLogout={() => {
-              // TODO: Implement logout
-              log.debug('[StudioMainView] Logout clicked');
-            }}
+            onLogout={handleLogout}
           />
         </React.Suspense>
       );

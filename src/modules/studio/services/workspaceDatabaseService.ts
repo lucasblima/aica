@@ -31,8 +31,15 @@ const log = createNamespacedLogger('workspaceDatabaseService');
 // =====================================================
 
 /**
- * Represents a podcast episode (formerly called "Project")
- * Database table: podcast_episodes
+ * Represents a podcast episode as stored in the database.
+ * Database table: `podcast_episodes`
+ *
+ * Note: `controversies` is JSONB in DB — stores structured objects
+ * `{title, summary, source, sentiment, date}` or legacy string arrays.
+ * The workspace Dossier type may flatten these to `string[]` for display.
+ *
+ * @see supabase/migrations/20260217130000_studio_schema_alignment.sql
+ * @see supabase/migrations/20251201000000_staging_bootstrap.sql
  */
 export interface Episode {
   id: string
@@ -40,7 +47,12 @@ export interface Episode {
   guest_name: string
   episode_theme: string
   biography: string
-  controversies: string[]
+  /**
+   * DB column: `controversies` (JSONB, default '[]').
+   * Schema: [{title, summary, source, sentiment, date}] or legacy string[].
+   * Uses `any[]` because DB may contain either structured objects or plain strings.
+   */
+  controversies: any[]
   ice_breakers: string[]
   status: 'draft' | 'in_production' | 'published' | 'archived'
   season?: string

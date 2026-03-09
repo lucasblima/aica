@@ -46,6 +46,10 @@ export type {
 
   // Deep Research
   DeepResearchResult,
+  DeepResearchControversy,
+
+  // Article types
+  ArticleOutlineItem,
 } from './studio';
 
 export { INITIAL_STUDIO_STATE } from './studio';

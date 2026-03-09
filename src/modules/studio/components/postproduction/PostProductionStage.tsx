@@ -62,6 +62,7 @@ export default function PostProductionStage({
         if (transcRes.data) {
           setTranscription({
             id: transcRes.data.id,
+            userId: transcRes.data.user_id,
             projectId: transcRes.data.project_id,
             content: transcRes.data.content,
             language: transcRes.data.language,
@@ -76,6 +77,7 @@ export default function PostProductionStage({
         if (notesRes.data) {
           setShowNotes({
             id: notesRes.data.id,
+            userId: notesRes.data.user_id,
             projectId: notesRes.data.project_id,
             summary: notesRes.data.summary,
             highlights: notesRes.data.highlights || [],
@@ -90,6 +92,7 @@ export default function PostProductionStage({
           setClips(
             clipsRes.data.map((c: any) => ({
               id: c.id,
+              userId: c.user_id,
               projectId: c.project_id,
               title: c.title,
               startTimeSeconds: c.start_time_seconds,

@@ -4,7 +4,7 @@ const PLATFORM_COLORS: Record<string, { bg: string; text: string; border: string
   spotify: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
   youtube: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
   instagram: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
-  tiktok: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
+  tiktok: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' },
   linkedin: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
   twitter: { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-300' },
   newsletter: { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-300' },

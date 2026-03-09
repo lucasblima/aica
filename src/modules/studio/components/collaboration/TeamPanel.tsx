@@ -8,7 +8,7 @@ const ROLE_LABELS: Record<string, { label: string; className: string }> = {
   admin: { label: 'Admin', className: 'bg-purple-100 text-purple-700' },
   editor: { label: 'Editor', className: 'bg-blue-100 text-blue-700' },
   designer: { label: 'Designer', className: 'bg-pink-100 text-pink-700' },
-  viewer: { label: 'Visualizador', className: 'bg-gray-100 text-gray-700' },
+  viewer: { label: 'Visualizador', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
 };
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {

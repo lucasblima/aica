@@ -139,7 +139,7 @@ export default function ClipSuggestionPanel({
       <div className="space-y-3">
         {clips.map((clip, idx) => {
           const statusCfg = STATUS_CONFIG[clip.status];
-          const platformColor = PLATFORM_COLORS[clip.platform] || 'bg-gray-100 text-gray-800';
+          const platformColor = PLATFORM_COLORS[clip.platform] || 'bg-ceramic-cool text-ceramic-text-primary';
 
           return (
             <motion.div
