@@ -59,6 +59,11 @@ const INTENSITY_LABELS: Record<WorkoutIntensity, string> = {
   low: 'Leve',
   medium: 'Média',
   high: 'Alta',
+  z1: 'Z1 - Recuperação',
+  z2: 'Z2 - Resistência',
+  z3: 'Z3 - Tempo',
+  z4: 'Z4 - Limiar',
+  z5: 'Z5 - VO2max',
 };
 
 export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
@@ -73,7 +78,6 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('workoutId', workout.id);
     onDragStart?.(workout);
-    console.log('Dragging workout:', workout.name);
   };
 
   if (variant === 'compact') {

@@ -186,7 +186,6 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, modalityColor, on
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData('templateId', template.id);
-        console.log('Drag started:', template.name);
       }}
     >
       {/* Header */}
