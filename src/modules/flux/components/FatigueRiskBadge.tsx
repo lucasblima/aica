@@ -17,23 +17,23 @@ export interface FatigueRiskBadgeProps {
 
 const BADGE_CONFIG: Record<FatigueRisk, { bg: string; text: string; label: string }> = {
   low: {
-    bg: 'bg-green-100',
-    text: 'text-green-700',
+    bg: 'bg-ceramic-success-bg',
+    text: 'text-ceramic-success',
     label: 'Baixo',
   },
   moderate: {
-    bg: 'bg-amber-100',
-    text: 'text-amber-700',
+    bg: 'bg-ceramic-warning-bg',
+    text: 'text-ceramic-warning',
     label: 'Moderado',
   },
   high: {
-    bg: 'bg-red-100',
-    text: 'text-red-700',
+    bg: 'bg-ceramic-error-bg',
+    text: 'text-ceramic-error',
     label: 'Alto',
   },
   overtraining: {
-    bg: 'bg-red-200',
-    text: 'text-red-900',
+    bg: 'bg-ceramic-error-bg',
+    text: 'text-ceramic-error',
     label: 'Overtraining',
   },
 };
@@ -55,10 +55,10 @@ export const FatigueRiskBadge: React.FC<FatigueRiskBadgeProps> = ({
     >
       <span
         className={`w-1.5 h-1.5 rounded-full ${
-          fatigueRisk === 'low' ? 'bg-green-500' :
-          fatigueRisk === 'moderate' ? 'bg-amber-500' :
-          fatigueRisk === 'high' ? 'bg-red-500' :
-          'bg-red-800'
+          fatigueRisk === 'low' ? 'bg-ceramic-success' :
+          fatigueRisk === 'moderate' ? 'bg-ceramic-warning' :
+          fatigueRisk === 'high' ? 'bg-ceramic-error' :
+          'bg-ceramic-error'
         }`}
       />
       {config.label}

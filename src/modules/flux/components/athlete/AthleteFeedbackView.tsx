@@ -56,8 +56,8 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
 
       {/* Error */}
       {error && (
-        <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-100">
-          <p className="text-xs text-red-600">{error}</p>
+        <div className="px-4 py-3 rounded-xl bg-ceramic-error/10 border border-ceramic-error/20">
+          <p className="text-xs text-ceramic-error">{error}</p>
         </div>
       )}
 
@@ -67,7 +67,7 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
         <div className="space-y-4">
           {/* Aggregated Radar Chart + Stress/Fatigue Gauges (#607) */}
           {aggregatedQuestionnaire ? (
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-border/30 space-y-4">
+            <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-border/30 space-y-4">
               <FeedbackRadarChart
                 questionnaire={aggregatedQuestionnaire}
                 size={260}
@@ -98,15 +98,15 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
               <span className="text-xs text-ceramic-text-secondary">Avaliando fadiga...</span>
             </div>
           ) : fatigueAssessment ? (
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-border/30 space-y-3">
+            <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-border/30 space-y-3">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-500" />
                 <span className="text-xs font-bold text-ceramic-text-primary">Avaliacao de Fadiga (AI)</span>
                 <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                  fatigueAssessment.fatigueRisk === 'low' ? 'bg-emerald-100 text-emerald-700' :
-                  fatigueAssessment.fatigueRisk === 'moderate' ? 'bg-amber-100 text-amber-700' :
-                  fatigueAssessment.fatigueRisk === 'high' ? 'bg-orange-100 text-orange-700' :
-                  'bg-red-100 text-red-700'
+                  fatigueAssessment.fatigueRisk === 'low' ? 'bg-ceramic-success/15 text-ceramic-success' :
+                  fatigueAssessment.fatigueRisk === 'moderate' ? 'bg-ceramic-warning/15 text-ceramic-warning' :
+                  fatigueAssessment.fatigueRisk === 'high' ? 'bg-ceramic-warning/25 text-ceramic-warning' :
+                  'bg-ceramic-error/15 text-ceramic-error'
                 }`}>
                   {fatigueAssessment.fatigueRisk === 'low' ? 'Risco Baixo' :
                    fatigueAssessment.fatigueRisk === 'moderate' ? 'Risco Moderado' :
@@ -145,8 +145,8 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
               </div>
             </div>
           ) : fatigueError ? (
-            <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100">
-              <p className="text-xs text-amber-600">Avaliacao de fadiga indisponivel</p>
+            <div className="px-4 py-3 rounded-xl bg-ceramic-warning/10 border border-ceramic-warning/20">
+              <p className="text-xs text-ceramic-warning">Avaliacao de fadiga indisponivel</p>
             </div>
           ) : null}
         </div>
