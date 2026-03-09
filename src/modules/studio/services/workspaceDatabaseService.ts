@@ -18,11 +18,12 @@
 
 import { supabase } from '@/services/supabaseClient'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-import type { Topic, TopicCategory } from '../types'
+import type { Topic, TopicCategory, EpisodeProduction, EpisodePublication } from '../types'
 import { createNamespacedLogger } from '@/lib/logger';
 import { syncEntityToGoogle } from '@/services/calendarSyncService';
 import { studioEpisodeToGoogleEvent } from '@/services/calendarSyncTransforms';
 import { isGoogleCalendarConnected } from '@/services/googleAuthService';
+import { awardEpisodeCompletionCP } from './crossModuleService';
 
 const log = createNamespacedLogger('workspaceDatabaseService');
 
@@ -31,8 +32,15 @@ const log = createNamespacedLogger('workspaceDatabaseService');
 // =====================================================
 
 /**
- * Represents a podcast episode (formerly called "Project")
- * Database table: podcast_episodes
+ * Represents a podcast episode as stored in the database.
+ * Database table: `podcast_episodes`
+ *
+ * Note: `controversies` is JSONB in DB — stores structured objects
+ * `{title, summary, source, sentiment, date}` or legacy string arrays.
+ * The workspace Dossier type may flatten these to `string[]` for display.
+ *
+ * @see supabase/migrations/20260217130000_studio_schema_alignment.sql
+ * @see supabase/migrations/20251201000000_staging_bootstrap.sql
  */
 export interface Episode {
   id: string
@@ -40,7 +48,12 @@ export interface Episode {
   guest_name: string
   episode_theme: string
   biography: string
-  controversies: string[]
+  /**
+   * DB column: `controversies` (JSONB, default '[]').
+   * Schema: [{title, summary, source, sentiment, date}] or legacy string[].
+   * Uses `any[]` because DB may contain either structured objects or plain strings.
+   */
+  controversies: any[]
   ice_breakers: string[]
   status: 'draft' | 'in_production' | 'published' | 'archived'
   season?: string
@@ -167,6 +180,20 @@ export async function updateEpisode(id: string, updates: Partial<Episode>): Prom
       syncEntityToGoogle('studio', data.id, eventData).catch((err) =>
         log.warn('Calendar sync failed for updated episode:', err)
       )
+    })
+  }
+
+  // Award CP when episode is published (Journey integration, non-blocking)
+  if (updates.status === 'published' && data.user_id) {
+    awardEpisodeCompletionCP(
+      { id: data.id, title: data.title, status: data.status },
+      data.user_id
+    ).then((cpResult) => {
+      if (cpResult) {
+        log.debug('CP awarded for episode publication:', cpResult)
+      }
+    }).catch((err) => {
+      log.warn('CP award failed for episode:', err)
     })
   }
 
@@ -421,6 +448,213 @@ export function subscribeToEpisodes(
     .subscribe()
 
   return channel
+}
+
+// =====================================================
+// NORMALIZED TABLE HELPERS (Sprint 3)
+// =====================================================
+// These functions read/write the new podcast_episode_production and
+// podcast_episode_publication tables. The old columns still exist on
+// podcast_episodes — these are additive, not replacements.
+
+/**
+ * Fetches production data from the normalized podcast_episode_production table.
+ * Returns null if no production row exists for this episode.
+ */
+export async function fetchEpisodeProduction(episodeId: string): Promise<EpisodeProduction | null> {
+  const { data, error } = await supabase
+    .from('podcast_episode_production')
+    .select('*')
+    .eq('episode_id', episodeId)
+    .maybeSingle()
+
+  if (error) {
+    log.error('Failed to fetch episode production:', error)
+    return null
+  }
+
+  if (!data) return null
+
+  return {
+    id: data.id,
+    episodeId: data.episode_id,
+    recordingStatus: data.recording_status ?? 'idle',
+    recordingStartedAt: data.recording_started_at,
+    recordingFinishedAt: data.recording_finished_at,
+    recordingDuration: data.recording_duration,
+    recordingFilePath: data.recording_file_path,
+    recordingFileSize: data.recording_file_size,
+    transcript: data.transcript,
+    transcriptGeneratedAt: data.transcript_generated_at,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  }
+}
+
+/**
+ * Upserts production data to the normalized podcast_episode_production table.
+ * Also writes back to podcast_episodes for backward compatibility.
+ */
+export async function saveEpisodeProduction(
+  episodeId: string,
+  data: Partial<Omit<EpisodeProduction, 'id' | 'episodeId' | 'createdAt' | 'updatedAt'>>
+): Promise<EpisodeProduction | null> {
+  // Build the DB payload (camelCase → snake_case)
+  const dbPayload: Record<string, unknown> = { episode_id: episodeId }
+  if (data.recordingStatus !== undefined) dbPayload.recording_status = data.recordingStatus
+  if (data.recordingStartedAt !== undefined) dbPayload.recording_started_at = data.recordingStartedAt
+  if (data.recordingFinishedAt !== undefined) dbPayload.recording_finished_at = data.recordingFinishedAt
+  if (data.recordingDuration !== undefined) dbPayload.recording_duration = data.recordingDuration
+  if (data.recordingFilePath !== undefined) dbPayload.recording_file_path = data.recordingFilePath
+  if (data.recordingFileSize !== undefined) dbPayload.recording_file_size = data.recordingFileSize
+  if (data.transcript !== undefined) dbPayload.transcript = data.transcript
+  if (data.transcriptGeneratedAt !== undefined) dbPayload.transcript_generated_at = data.transcriptGeneratedAt
+
+  const { data: result, error } = await supabase
+    .from('podcast_episode_production')
+    .upsert(dbPayload, { onConflict: 'episode_id' })
+    .select()
+    .single()
+
+  if (error) {
+    log.error('Failed to save episode production:', error)
+    return null
+  }
+
+  // Backward compat: also update the old columns on podcast_episodes
+  const episodeUpdate: Record<string, unknown> = {}
+  if (data.recordingStatus !== undefined) episodeUpdate.recording_status = data.recordingStatus
+  if (data.recordingStartedAt !== undefined) episodeUpdate.recording_started_at = data.recordingStartedAt
+  if (data.recordingFinishedAt !== undefined) episodeUpdate.recording_finished_at = data.recordingFinishedAt
+  if (data.recordingDuration !== undefined) episodeUpdate.recording_duration = data.recordingDuration
+  if (data.recordingFilePath !== undefined) episodeUpdate.recording_file_path = data.recordingFilePath
+  if (data.recordingFileSize !== undefined) episodeUpdate.recording_file_size = data.recordingFileSize
+  if (data.transcript !== undefined) episodeUpdate.transcript = data.transcript
+  if (data.transcriptGeneratedAt !== undefined) episodeUpdate.transcript_generated_at = data.transcriptGeneratedAt
+
+  if (Object.keys(episodeUpdate).length > 0) {
+    const { error: epError } = await supabase
+      .from('podcast_episodes')
+      .update(episodeUpdate)
+      .eq('id', episodeId)
+
+    if (epError) {
+      log.warn('Failed to sync production data back to podcast_episodes (non-fatal):', epError)
+    }
+  }
+
+  return {
+    id: result.id,
+    episodeId: result.episode_id,
+    recordingStatus: result.recording_status ?? 'idle',
+    recordingStartedAt: result.recording_started_at,
+    recordingFinishedAt: result.recording_finished_at,
+    recordingDuration: result.recording_duration,
+    recordingFilePath: result.recording_file_path,
+    recordingFileSize: result.recording_file_size,
+    transcript: result.transcript,
+    transcriptGeneratedAt: result.transcript_generated_at,
+    createdAt: result.created_at,
+    updatedAt: result.updated_at,
+  }
+}
+
+/**
+ * Fetches publication data from the normalized podcast_episode_publication table.
+ * Returns null if no publication row exists for this episode.
+ */
+export async function fetchEpisodePublication(episodeId: string): Promise<EpisodePublication | null> {
+  const { data, error } = await supabase
+    .from('podcast_episode_publication')
+    .select('*')
+    .eq('episode_id', episodeId)
+    .maybeSingle()
+
+  if (error) {
+    log.error('Failed to fetch episode publication:', error)
+    return null
+  }
+
+  if (!data) return null
+
+  return {
+    id: data.id,
+    episodeId: data.episode_id,
+    cutsGenerated: data.cuts_generated ?? false,
+    cutsMetadata: data.cuts_metadata,
+    blogPostGenerated: data.blog_post_generated ?? false,
+    blogPostUrl: data.blog_post_url,
+    publishedToSocial: data.published_to_social,
+    narrativeTensionScore: data.narrative_tension_score,
+    peakEndMoments: data.peak_end_moments,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  }
+}
+
+/**
+ * Upserts publication data to the normalized podcast_episode_publication table.
+ * Also writes back to podcast_episodes for backward compatibility.
+ */
+export async function saveEpisodePublication(
+  episodeId: string,
+  data: Partial<Omit<EpisodePublication, 'id' | 'episodeId' | 'createdAt' | 'updatedAt'>>
+): Promise<EpisodePublication | null> {
+  // Build the DB payload (camelCase → snake_case)
+  const dbPayload: Record<string, unknown> = { episode_id: episodeId }
+  if (data.cutsGenerated !== undefined) dbPayload.cuts_generated = data.cutsGenerated
+  if (data.cutsMetadata !== undefined) dbPayload.cuts_metadata = data.cutsMetadata
+  if (data.blogPostGenerated !== undefined) dbPayload.blog_post_generated = data.blogPostGenerated
+  if (data.blogPostUrl !== undefined) dbPayload.blog_post_url = data.blogPostUrl
+  if (data.publishedToSocial !== undefined) dbPayload.published_to_social = data.publishedToSocial
+  if (data.narrativeTensionScore !== undefined) dbPayload.narrative_tension_score = data.narrativeTensionScore
+  if (data.peakEndMoments !== undefined) dbPayload.peak_end_moments = data.peakEndMoments
+
+  const { data: result, error } = await supabase
+    .from('podcast_episode_publication')
+    .upsert(dbPayload, { onConflict: 'episode_id' })
+    .select()
+    .single()
+
+  if (error) {
+    log.error('Failed to save episode publication:', error)
+    return null
+  }
+
+  // Backward compat: also update the old columns on podcast_episodes
+  const episodeUpdate: Record<string, unknown> = {}
+  if (data.cutsGenerated !== undefined) episodeUpdate.cuts_generated = data.cutsGenerated
+  if (data.cutsMetadata !== undefined) episodeUpdate.cuts_metadata = data.cutsMetadata
+  if (data.blogPostGenerated !== undefined) episodeUpdate.blog_post_generated = data.blogPostGenerated
+  if (data.blogPostUrl !== undefined) episodeUpdate.blog_post_url = data.blogPostUrl
+  if (data.publishedToSocial !== undefined) episodeUpdate.published_to_social = data.publishedToSocial
+  if (data.narrativeTensionScore !== undefined) episodeUpdate.narrative_tension_score = data.narrativeTensionScore
+  if (data.peakEndMoments !== undefined) episodeUpdate.peak_end_moments = data.peakEndMoments
+
+  if (Object.keys(episodeUpdate).length > 0) {
+    const { error: epError } = await supabase
+      .from('podcast_episodes')
+      .update(episodeUpdate)
+      .eq('id', episodeId)
+
+    if (epError) {
+      log.warn('Failed to sync publication data back to podcast_episodes (non-fatal):', epError)
+    }
+  }
+
+  return {
+    id: result.id,
+    episodeId: result.episode_id,
+    cutsGenerated: result.cuts_generated ?? false,
+    cutsMetadata: result.cuts_metadata,
+    blogPostGenerated: result.blog_post_generated ?? false,
+    blogPostUrl: result.blog_post_url,
+    publishedToSocial: result.published_to_social,
+    narrativeTensionScore: result.narrative_tension_score,
+    peakEndMoments: result.peak_end_moments,
+    createdAt: result.created_at,
+    updatedAt: result.updated_at,
+  }
 }
 
 // =====================================================

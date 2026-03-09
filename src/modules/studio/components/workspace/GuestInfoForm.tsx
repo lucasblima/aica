@@ -24,9 +24,24 @@
  * @module studio/components/workspace
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, AlertCircle, Check } from 'lucide-react';
+import { User, Phone, Mail, AlertCircle, Check, Send, Loader2, ExternalLink, Search, Link2 } from 'lucide-react';
+import { supabase } from '@/services/supabaseClient';
+import { fetchContactAsGuest } from '@/modules/studio/services/crossModuleService';
+import type { ContactAsGuest } from '@/modules/studio/services/crossModuleService';
+
+// Validate email format (extracted for use before component renders)
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Validate phone format (Brazilian format)
+const validatePhone = (phone: string): boolean => {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 13;
+};
 
 export interface GuestManualData {
   name: string;
@@ -43,6 +58,10 @@ interface GuestInfoFormProps {
   onBack?: () => void;
   /** Additional CSS classes */
   className?: string;
+  /** Episode ID for sending approval links */
+  episodeId?: string;
+  /** Base URL for guest approval portal */
+  approvalBaseUrl?: string;
 }
 
 /**
@@ -62,6 +81,8 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
   onSubmit,
   onBack,
   className = '',
+  episodeId,
+  approvalBaseUrl = 'https://aica.guru/studio/approval',
 }) => {
   const [formData, setFormData] = useState<GuestManualData>({
     name: initialData?.name || '',
@@ -71,6 +92,95 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
 
   const [errors, setErrors] = useState<Partial<Record<keyof GuestManualData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof GuestManualData, boolean>>>({});
+
+  // Contact search state (Connections integration)
+  const [isSearchingContacts, setIsSearchingContacts] = useState(false);
+  const [contactResults, setContactResults] = useState<ContactAsGuest[]>([]);
+  const [contactSearchDone, setContactSearchDone] = useState(false);
+  const [importedFromConnections, setImportedFromConnections] = useState(false);
+
+  // Approval link state
+  const [isSendingApproval, setIsSendingApproval] = useState(false);
+  const [approvalSent, setApprovalSent] = useState(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [showApprovalConfirm, setShowApprovalConfirm] = useState(false);
+
+  // Whether the approval button should be visible
+  const canSendApproval = !!(episodeId && formData.email.trim() && validateEmail(formData.email));
+
+  // Search contacts from Connections module
+  const handleSearchContacts = useCallback(async () => {
+    if (!formData.name.trim()) return;
+
+    setIsSearchingContacts(true);
+    setContactSearchDone(false);
+    setContactResults([]);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const results = await fetchContactAsGuest(formData.name, user.id);
+      setContactResults(results);
+      setContactSearchDone(true);
+    } catch {
+      setContactSearchDone(true);
+    } finally {
+      setIsSearchingContacts(false);
+    }
+  }, [formData.name]);
+
+  // Auto-fill form from a matched contact
+  const handleFillFromContact = useCallback((contact: ContactAsGuest) => {
+    setFormData((prev) => ({
+      name: contact.name || prev.name,
+      phone: contact.phone ? formatPhone(contact.phone) : prev.phone,
+      email: contact.email || prev.email,
+    }));
+    setContactResults([]);
+    setContactSearchDone(false);
+    setImportedFromConnections(true);
+    // Mark fields as touched to trigger validation feedback
+    setTouched({ name: true, phone: !!contact.phone, email: !!contact.email });
+  }, []);
+
+  // Send guest approval link via Edge Function
+  const handleSendApprovalLink = useCallback(async () => {
+    if (!episodeId || !formData.email.trim() || !formData.name.trim()) return;
+
+    setIsSendingApproval(true);
+    setApprovalError(null);
+
+    try {
+      const approvalUrl = `${approvalBaseUrl}/${episodeId}?guest=${encodeURIComponent(formData.name)}`;
+
+      const { data, error } = await supabase.functions.invoke('send-guest-approval-link', {
+        body: {
+          episodeId,
+          guestName: formData.name,
+          guestEmail: formData.email,
+          approvalUrl,
+          method: 'email',
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Erro ao enviar link de aprovacao');
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Falha no envio do email');
+      }
+
+      setApprovalSent(true);
+      setShowApprovalConfirm(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido ao enviar link';
+      setApprovalError(message);
+    } finally {
+      setIsSendingApproval(false);
+    }
+  }, [episodeId, formData.email, formData.name, approvalBaseUrl]);
 
   // Check if field is valid (for positive feedback)
   const isFieldValid = (field: keyof GuestManualData): boolean => {
@@ -89,12 +199,6 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
     }
   };
 
-  // Validate email format
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   // Format phone number with Brazilian mask
   const formatPhone = (value: string): string => {
     // Remove all non-digits
@@ -110,14 +214,6 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
     } else {
       return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
     }
-  };
-
-  // Validate phone format (Brazilian format)
-  const validatePhone = (phone: string): boolean => {
-    // Remove non-digits
-    const digits = phone.replace(/\D/g, '');
-    // Accept 10 or 11 digits (with or without country code)
-    return digits.length >= 10 && digits.length <= 13;
   };
 
   // Handle field change
@@ -273,6 +369,70 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
           )}
         </div>
 
+        {/* Search in Contacts (Connections integration) */}
+        {formData.name.trim().length >= 3 && !importedFromConnections && (
+          <div>
+            <button
+              type="button"
+              onClick={handleSearchContacts}
+              disabled={isSearchingContacts}
+              aria-label="Buscar nos contatos do modulo Conexoes"
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-ceramic-border bg-ceramic-cool hover:bg-ceramic-surface-hover text-ceramic-text-primary text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {isSearchingContacts ? (
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Search className="w-4 h-4 text-amber-500" aria-hidden="true" />
+              )}
+              {isSearchingContacts ? 'Buscando...' : 'Buscar nos Contatos'}
+            </button>
+
+            {/* Contact results */}
+            {contactSearchDone && contactResults.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {contactResults.map((contact) => (
+                  <button
+                    key={contact.id}
+                    type="button"
+                    onClick={() => handleFillFromContact(contact)}
+                    className="flex items-start gap-3 w-full p-3 rounded-lg border border-ceramic-border bg-ceramic-base hover:bg-ceramic-cool text-left transition-colors"
+                  >
+                    <User className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ceramic-text-primary truncate">
+                        {contact.name}
+                      </p>
+                      {contact.phone && (
+                        <p className="text-xs text-ceramic-text-secondary truncate">{contact.phone}</p>
+                      )}
+                      {contact.bio && (
+                        <p className="text-xs text-ceramic-text-secondary mt-0.5 line-clamp-2">{contact.bio}</p>
+                      )}
+                      <span className="inline-block mt-1 text-xs text-ceramic-tertiary">
+                        {contact.source === 'contact_network' ? 'WhatsApp' : 'Espaco'}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {contactSearchDone && contactResults.length === 0 && (
+              <p className="mt-1 text-xs text-ceramic-tertiary">
+                Nenhum contato encontrado com esse nome.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Imported from Connections badge */}
+        {importedFromConnections && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+            <Link2 className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+            <span className="text-xs font-medium text-amber-700">Importado de Conexoes</span>
+          </div>
+        )}
+
         {/* Email Field */}
         <div>
           <label
@@ -399,6 +559,70 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             </p>
           </div>
         </div>
+
+        {/* Send Approval Link Section */}
+        {canSendApproval && (
+          <div className="mt-4 p-3 rounded-lg bg-ceramic-cool border border-ceramic-border">
+            {approvalSent ? (
+              <div className="flex items-center gap-2" role="status">
+                <Check className="w-4 h-4 text-ceramic-success flex-shrink-0" aria-hidden="true" />
+                <p className="text-sm text-ceramic-success font-medium">
+                  Link de aprovacao enviado para {formData.email}
+                </p>
+              </div>
+            ) : showApprovalConfirm ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <ExternalLink className="w-4 h-4 text-ceramic-text-secondary mt-0.5 flex-shrink-0" aria-hidden="true" />
+                  <p className="text-sm text-ceramic-text-primary">
+                    Enviar convite para <span className="font-semibold">{formData.email}</span>?
+                  </p>
+                </div>
+                {approvalError && (
+                  <div className="flex items-center gap-1.5 text-xs text-ceramic-error" role="alert">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                    <span>{approvalError}</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSendApprovalLink}
+                    disabled={isSendingApproval}
+                    aria-label="Confirmar envio do link de aprovacao"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                  >
+                    {isSendingApproval ? (
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Send className="w-4 h-4" aria-hidden="true" />
+                    )}
+                    {isSendingApproval ? 'Enviando...' : 'Confirmar Envio'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowApprovalConfirm(false); setApprovalError(null); }}
+                    disabled={isSendingApproval}
+                    aria-label="Cancelar envio do link de aprovacao"
+                    className="px-3 py-1.5 rounded-lg border border-ceramic-border text-ceramic-text-secondary text-sm hover:bg-ceramic-cool transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowApprovalConfirm(true)}
+                aria-label="Enviar link de aprovacao para o convidado"
+                className="flex items-center gap-1.5 w-full px-3 py-2 rounded-lg bg-ceramic-base hover:bg-ceramic-cool border border-ceramic-border text-ceramic-text-primary text-sm font-medium transition-colors"
+              >
+                <Send className="w-4 h-4 text-amber-500" aria-hidden="true" />
+                Enviar Link de Aprovacao
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Form Actions */}
         <div className="flex gap-3 mt-6">

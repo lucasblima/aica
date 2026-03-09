@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Loader2, Copy, CheckCircle, Clock, User } from 'lucide-react';
+import { FileText, Loader2, Copy, CheckCircle, Clock, User, RefreshCw } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState } from '@/components/ui';
 import type { StudioTranscription } from '../../types/studio';
 
 interface TranscriptionPanelProps {
@@ -78,25 +79,37 @@ export default function TranscriptionPanel({
           Gere a transcricao automatica do episodio para desbloquear show notes, quotes e clips.
         </p>
         {error && (
-          <p className="text-sm text-ceramic-error mb-4">{error}</p>
+          <div className="text-center mb-4">
+            <p className="text-sm text-ceramic-error mb-3">{error}</p>
+            <button
+              onClick={() => { setError(null); handleGenerate(); }}
+              className="flex items-center gap-2 px-4 py-2 mx-auto text-sm text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors"
+              aria-label="Tentar gerar transcricao novamente"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tentar novamente
+            </button>
+          </div>
         )}
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Gerando transcricao...
-            </>
-          ) : (
-            <>
-              <FileText className="w-4 h-4" />
-              Gerar Transcricao
-            </>
-          )}
-        </button>
+        {!error && (
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Gerando transcricao...
+              </>
+            ) : (
+              <>
+                <FileText className="w-4 h-4" />
+                Gerar Transcricao
+              </>
+            )}
+          </button>
+        )}
       </motion.div>
     );
   }
@@ -215,6 +228,7 @@ export default function TranscriptionPanel({
                   onClick={() => handleCopy(item.text, segId)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-ceramic-text-secondary hover:text-amber-600"
                   title="Copiar segmento"
+                  aria-label="Copiar segmento da transcricao"
                 >
                   {copiedSection === segId ? (
                     <CheckCircle className="w-3.5 h-3.5 text-ceramic-success" />

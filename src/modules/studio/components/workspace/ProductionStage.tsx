@@ -27,12 +27,14 @@
  * @see ProductionState for recording state types
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
+import { useGeminiLiveAudio } from '@/modules/studio/hooks/useGeminiLiveAudio';
 import { TeleprompterWindow } from '../TeleprompterWindow';
 import {
   Mic,
+  MicOff,
   Play,
   Pause,
   Square,
@@ -44,6 +46,9 @@ import {
   Clock,
   Snowflake,
   Gift,
+  Bot,
+  X,
+  MessageSquare,
 } from 'lucide-react';
 
 // Category configuration for visual styling
@@ -62,8 +67,51 @@ export default function ProductionStage() {
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
   const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [showPracticePanel, setShowPracticePanel] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const topicsListRef = useRef<HTMLDivElement>(null);
+  const practiceMessagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Build system instruction for AI practice from guest context
+  const practiceSystemInstruction = useMemo(() => {
+    const guestName = setup.guestName || 'convidado';
+    const dossier = state.research?.dossier;
+    const topicTexts = pauta.topics.map(t => t.text).join(', ');
+
+    let instruction = `Voce e ${guestName}, um convidado sendo entrevistado em um podcast.`;
+
+    if (dossier?.biography) {
+      instruction += `\n\nSua biografia: ${dossier.biography.substring(0, 500)}`;
+    }
+    if (dossier?.technicalSheet) {
+      instruction += `\n\nFicha tecnica: ${JSON.stringify(dossier.technicalSheet).substring(0, 300)}`;
+    }
+    if (topicTexts) {
+      instruction += `\n\nTopicos da entrevista: ${topicTexts}`;
+    }
+
+    instruction += `\n\nResponda as perguntas de forma natural, como se estivesse em uma entrevista real. `;
+    instruction += `Fale em portugues brasileiro. Seja articulado mas conversacional. `;
+    instruction += `Se o entrevistador fizer perguntas fora do seu dominio, redirecione educadamente para seus temas de expertise.`;
+
+    return instruction;
+  }, [setup.guestName, state.research?.dossier, pauta.topics]);
+
+  // Gemini Live Audio hook for practice
+  const {
+    connect: connectPractice,
+    disconnect: disconnectPractice,
+    status: practiceStatus,
+    isStreaming: isPracticeStreaming,
+    audioLevel: practiceAudioLevel,
+    error: practiceError,
+    messages: practiceMessages,
+    clearMessages: clearPracticeMessages,
+  } = useGeminiLiveAudio({
+    systemInstruction: practiceSystemInstruction,
+    voiceName: 'Kore',
+    enableTranscription: true,
+  });
 
   // Timer effect - updates duration every second when recording and not paused
   useEffect(() => {
@@ -186,6 +234,27 @@ export default function ProductionStage() {
     setCurrentTopicIndex(index);
     actions.setCurrentTopic(pauta.topics[index].id);
   };
+
+  // Handle practice session start
+  const handleStartPractice = useCallback(async () => {
+    try {
+      await connectPractice();
+    } catch {
+      // Error handled by hook
+    }
+  }, [connectPractice]);
+
+  // Handle practice session stop
+  const handleStopPractice = useCallback(() => {
+    disconnectPractice();
+  }, [disconnectPractice]);
+
+  // Auto-scroll practice messages
+  useEffect(() => {
+    if (practiceMessagesEndRef.current) {
+      practiceMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [practiceMessages]);
 
   // Get current topic
   const currentTopic = pauta.topics[currentTopicIndex];
@@ -334,18 +403,235 @@ export default function ProductionStage() {
                 )}
               </div>
 
-              {/* Teleprompter Toggle */}
-              <button
-                onClick={() => setShowTeleprompter(true)}
-                disabled={pauta.topics.length === 0}
-                className="mt-6 flex items-center justify-center space-x-2 px-6 py-3 bg-ceramic-base text-ceramic-secondary rounded-lg hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-border focus:ring-offset-2"
-                aria-label="Abrir teleprompter"
-                aria-disabled={pauta.topics.length === 0}
-              >
-                <Monitor className="w-5 h-5" aria-hidden="true" />
-                <span>Abrir Teleprompter</span>
-              </button>
+              {/* Teleprompter & Practice Toggles */}
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setShowTeleprompter(true)}
+                  disabled={pauta.topics.length === 0}
+                  className="flex items-center space-x-2 px-6 py-3 bg-ceramic-base text-ceramic-secondary rounded-lg hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-border focus:ring-offset-2"
+                  aria-label="Abrir teleprompter"
+                  aria-disabled={pauta.topics.length === 0}
+                >
+                  <Monitor className="w-5 h-5" aria-hidden="true" />
+                  <span>Abrir Teleprompter</span>
+                </button>
+                <button
+                  onClick={() => setShowPracticePanel(!showPracticePanel)}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    showPracticePanel
+                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 focus:ring-purple-500'
+                      : 'bg-ceramic-base text-ceramic-secondary hover:bg-ceramic-cool focus:ring-ceramic-border'
+                  }`}
+                  aria-label="Praticar entrevista com IA"
+                  aria-pressed={showPracticePanel}
+                >
+                  <Bot className="w-5 h-5" aria-hidden="true" />
+                  <span>Praticar com IA</span>
+                </button>
+              </div>
             </div>
+
+            {/* AI Interview Practice Panel */}
+            <AnimatePresence>
+              {showPracticePanel && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-6 bg-ceramic-base rounded-lg shadow-sm border border-purple-200">
+                    {/* Practice Panel Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-ceramic-border bg-purple-50 rounded-t-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <Bot className="w-5 h-5 text-purple-600" aria-hidden="true" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-ceramic-text-primary">
+                            Praticar Entrevista
+                          </h3>
+                          <p className="text-xs text-ceramic-secondary">
+                            A IA simula o convidado {setup.guestName ? `(${setup.guestName})` : ''} para voce praticar
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        {/* Microphone Status Indicator */}
+                        <div
+                          className="flex items-center space-x-2"
+                          role="status"
+                          aria-live="polite"
+                          aria-label={`Status do microfone: ${
+                            practiceStatus === 'streaming' ? 'gravando' :
+                            practiceStatus === 'connecting' ? 'conectando' :
+                            practiceStatus === 'connected' ? 'conectado' :
+                            practiceStatus === 'error' ? 'erro' : 'inativo'
+                          }`}
+                        >
+                          {isPracticeStreaming ? (
+                            <Mic className="w-4 h-4 text-purple-600" aria-hidden="true" />
+                          ) : (
+                            <MicOff className="w-4 h-4 text-ceramic-secondary" aria-hidden="true" />
+                          )}
+                          <span className={`text-xs font-medium ${
+                            isPracticeStreaming ? 'text-purple-600' :
+                            practiceStatus === 'connecting' ? 'text-amber-600' :
+                            practiceStatus === 'error' ? 'text-ceramic-error' :
+                            'text-ceramic-secondary'
+                          }`}>
+                            {practiceStatus === 'streaming' ? 'Gravando' :
+                             practiceStatus === 'connecting' ? 'Conectando...' :
+                             practiceStatus === 'connected' ? 'Conectado' :
+                             practiceStatus === 'error' ? 'Erro' :
+                             practiceStatus === 'disconnected' ? 'Desconectado' :
+                             'Inativo'}
+                          </span>
+                        </div>
+
+                        {/* Audio Level Indicator */}
+                        {isPracticeStreaming && (
+                          <div
+                            className="flex items-end space-x-0.5 h-5"
+                            role="img"
+                            aria-label={`Nivel de audio: ${practiceAudioLevel}%`}
+                          >
+                            {[0, 1, 2, 3, 4].map((i) => (
+                              <div
+                                key={i}
+                                className={`w-1 rounded-full transition-all duration-100 ${
+                                  practiceAudioLevel > i * 20 ? 'bg-purple-500' : 'bg-ceramic-border'
+                                }`}
+                                style={{
+                                  height: `${4 + i * 3}px`,
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        <button
+                          onClick={() => setShowPracticePanel(false)}
+                          className="p-1.5 rounded-lg text-ceramic-secondary hover:bg-ceramic-cool transition-colors"
+                          aria-label="Fechar painel de pratica"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Practice Controls */}
+                    <div className="px-6 py-4">
+                      {/* Error Display */}
+                      {practiceError && (
+                        <div className="mb-4 p-3 rounded-lg bg-ceramic-error/10 border border-ceramic-error/30 flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-ceramic-error flex-shrink-0 mt-0.5" aria-hidden="true" />
+                          <p className="text-sm text-ceramic-error">{practiceError}</p>
+                        </div>
+                      )}
+
+                      {/* Start/Stop Controls */}
+                      <div className="flex items-center justify-center gap-4 mb-4">
+                        {practiceStatus === 'idle' || practiceStatus === 'disconnected' || practiceStatus === 'error' ? (
+                          <button
+                            onClick={handleStartPractice}
+                            className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                            aria-label="Iniciar pratica de entrevista"
+                          >
+                            <Play className="w-5 h-5" aria-hidden="true" />
+                            <span>Iniciar Pratica</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleStopPractice}
+                            disabled={practiceStatus === 'connecting'}
+                            className="flex items-center space-x-2 px-6 py-3 bg-ceramic-error text-white rounded-full hover:bg-ceramic-error/90 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95 font-semibold disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-ceramic-error focus:ring-offset-2"
+                            aria-label="Parar pratica de entrevista"
+                          >
+                            <Square className="w-5 h-5" aria-hidden="true" />
+                            <span>Parar</span>
+                          </button>
+                        )}
+                        {practiceMessages.length > 0 && (
+                          <button
+                            onClick={clearPracticeMessages}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-ceramic-secondary hover:text-ceramic-text-primary border border-ceramic-border rounded-lg hover:bg-ceramic-cool transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-border focus:ring-offset-2"
+                            aria-label="Limpar historico da conversa"
+                          >
+                            <X className="w-4 h-4" aria-hidden="true" />
+                            <span>Limpar</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* AI Response / Transcript Display */}
+                      {practiceMessages.length > 0 && (
+                        <div
+                          className="max-h-60 overflow-y-auto rounded-lg border border-ceramic-border bg-ceramic-surface p-4 space-y-3"
+                          role="log"
+                          aria-label="Historico da conversa de pratica"
+                          aria-live="polite"
+                        >
+                          {practiceMessages.map((msg, index) => (
+                            <div
+                              key={index}
+                              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div
+                                className={`max-w-[80%] rounded-xl px-4 py-2.5 ${
+                                  msg.role === 'user'
+                                    ? 'bg-orange-100 text-ceramic-text-primary'
+                                    : 'bg-purple-100 text-ceramic-text-primary'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  {msg.role === 'user' ? (
+                                    <Mic className="w-3 h-3 text-orange-600" aria-hidden="true" />
+                                  ) : (
+                                    <MessageSquare className="w-3 h-3 text-purple-600" aria-hidden="true" />
+                                  )}
+                                  <span className={`text-xs font-semibold ${
+                                    msg.role === 'user' ? 'text-orange-600' : 'text-purple-600'
+                                  }`}>
+                                    {msg.role === 'user' ? 'Voce' : setup.guestName || 'IA'}
+                                  </span>
+                                </div>
+                                <p className="text-sm leading-relaxed">{msg.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                          <div ref={practiceMessagesEndRef} />
+                        </div>
+                      )}
+
+                      {/* Empty State */}
+                      {practiceMessages.length === 0 && (practiceStatus === 'idle' || practiceStatus === 'disconnected') && (
+                        <div className="text-center py-4">
+                          <MessageSquare className="w-8 h-8 text-ceramic-border mx-auto mb-2" aria-hidden="true" />
+                          <p className="text-sm text-ceramic-secondary">
+                            Clique em "Iniciar Pratica" para simular uma entrevista com a IA.
+                          </p>
+                          <p className="text-xs text-ceramic-secondary mt-1">
+                            A IA assumira o papel do convidado e respondera suas perguntas em tempo real.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Connecting State */}
+                      {practiceStatus === 'connecting' && (
+                        <div className="text-center py-4">
+                          <div className="inline-flex items-center space-x-2 text-amber-600">
+                            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            <span className="text-sm font-medium">Conectando ao Gemini Live...</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Progress Bar */}
             {pauta.topics.length > 0 && (

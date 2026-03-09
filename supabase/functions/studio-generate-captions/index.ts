@@ -16,6 +16,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { withHealthTracking } from '../_shared/health-tracker.ts'
+import { createNamespacedLogger } from '../_shared/logger.ts'
+
+const logger = createNamespacedLogger('studio-generate-captions')
 
 // =============================================================================
 // HELPERS
@@ -63,17 +67,28 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser()
     if (!user) throw new Error('Unauthorized')
 
-    const { content, platforms } = await req.json()
+    const { content, platforms, brandKit } = await req.json()
     if (!content || !platforms?.length) {
       throw new Error('Campos "content" e "platforms" sao obrigatorios')
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY')!
 
+    // Build brand kit context for the prompt
+    const brandKitContext = brandKit
+      ? `\nCONTEXTO DA MARCA:
+- Nome da marca: ${brandKit.brandName}
+- Tom de voz: ${brandKit.toneOfVoice || 'nao especificado'}
+- Cor primaria: ${brandKit.colorPrimary || 'nao especificada'}
+- Cor secundaria: ${brandKit.colorSecondary || 'nao especificada'}
+
+IMPORTANTE: Adapte todas as captions ao tom de voz "${brandKit.toneOfVoice || 'profissional'}" da marca "${brandKit.brandName}". Mencione ou referencie a marca quando natural.\n`
+      : ''
+
     const prompt = `Voce e um social media manager experiente especializado em conteudo para o publico brasileiro.
 
 Gere captions otimizadas para cada plataforma listada abaixo.
-
+${brandKitContext}
 PLATAFORMAS: ${platforms.join(', ')}
 
 CONTEUDO BASE:
@@ -94,14 +109,18 @@ Retorne APENAS um JSON valido (sem markdown, sem explicacoes):
   }
 }`
 
-    const rawResponse = await callGemini(apiKey, prompt)
+    const rawResponse = await withHealthTracking(
+      { functionName: 'studio-generate-captions', actionName: 'generate_captions' },
+      supabaseClient,
+      () => callGemini(apiKey, prompt)
+    )
     const result = extractJSON(rawResponse)
 
     return new Response(JSON.stringify({ success: true, data: result }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('studio-generate-captions error:', error)
+    logger.error('studio-generate-captions error:', error)
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

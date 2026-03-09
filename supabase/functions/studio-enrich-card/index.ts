@@ -16,6 +16,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { withHealthTracking } from '../_shared/health-tracker.ts'
+import { createNamespacedLogger } from '../_shared/logger.ts'
+
+const logger = createNamespacedLogger('studio-enrich-card')
 
 // =============================================================================
 // HELPERS
@@ -97,7 +101,7 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('GEMINI_API_KEY')!
     const typeLabel = CARD_TYPE_LABELS[cardType] || cardType
-    console.log(`[studio-enrich-card] Enriching "${cardTitle}" (${typeLabel}) for "${guestName}"`)
+    logger.info(`Enriching "${cardTitle}" (${typeLabel}) for "${guestName}"`)
 
     const prompt = `Voce e um pesquisador especializado em preparacao de entrevistas para podcasts.
 
@@ -119,7 +123,11 @@ Escreva um paragrafo DETALHADO (5-8 frases) que preencha essa lacuna no dossie. 
 
 Responda APENAS com o texto do paragrafo, sem formatacao JSON, sem marcadores, sem titulos. Apenas o paragrafo pronto para insercao.`
 
-    const { text, sources } = await callGeminiWithGrounding(apiKey, prompt, 4096)
+    const { text, sources } = await withHealthTracking(
+      { functionName: 'studio-enrich-card', actionName: 'enrich_card' },
+      supabaseClient,
+      () => callGeminiWithGrounding(apiKey, prompt, 4096)
+    )
 
     // Clean up the enriched text (remove any accidental markdown or code fences)
     const enrichedText = text
@@ -132,7 +140,7 @@ Responda APENAS com o texto do paragrafo, sem formatacao JSON, sem marcadores, s
       throw new Error('AI generated empty response')
     }
 
-    console.log(`[studio-enrich-card] Generated ${enrichedText.length} chars, ${sources.length} sources`)
+    logger.info(`Generated ${enrichedText.length} chars, ${sources.length} sources`)
 
     return new Response(
       JSON.stringify({
@@ -145,7 +153,7 @@ Responda APENAS com o texto do paragrafo, sem formatacao JSON, sem marcadores, s
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('[studio-enrich-card] error:', error)
+    logger.error('error:', error)
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

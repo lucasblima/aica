@@ -41,3 +41,19 @@ export type {
   NarrativeMoment,
   NarrativeAnalysis,
 } from './guestScoring';
+
+// ============================================
+// CROSS-MODULE INTEGRATION (SPRINT 6)
+// ============================================
+
+export {
+  fetchContactAsGuest,
+  syncRecordingToCalendar,
+  awardEpisodeCompletionCP,
+} from './crossModuleService';
+
+export type {
+  ContactAsGuest,
+  CalendarEventResult,
+  CPAwardResult,
+} from './crossModuleService';

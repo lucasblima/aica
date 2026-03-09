@@ -53,10 +53,10 @@ export function ResearchChatSheet({
           <h3 className="text-sm font-semibold text-ceramic-text-primary">Converse com Aica</h3>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onClearChat} className="p-1.5 rounded-lg hover:bg-ceramic-cool" title="Limpar conversa">
+          <button onClick={onClearChat} className="p-1.5 rounded-lg hover:bg-ceramic-cool" title="Limpar conversa" aria-label="Limpar conversa">
             <Trash2 className="w-3.5 h-3.5 text-ceramic-text-secondary" />
           </button>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-ceramic-cool">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-ceramic-cool" aria-label="Fechar chat">
             <X className="w-4 h-4 text-ceramic-text-secondary" />
           </button>
         </div>
@@ -124,6 +124,7 @@ export function ResearchChatSheet({
             type="submit"
             disabled={!input.trim() || isLoading}
             className="p-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white transition-colors"
+            aria-label="Enviar mensagem"
           >
             <Send className="w-4 h-4" />
           </button>

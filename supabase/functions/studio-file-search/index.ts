@@ -16,6 +16,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { withHealthTracking } from '../_shared/health-tracker.ts'
+import { createNamespacedLogger } from '../_shared/logger.ts'
+
+const logger = createNamespacedLogger('studio-file-search')
 
 // =============================================================================
 // HELPERS
@@ -37,7 +41,7 @@ async function fetchUrlContent(url: string): Promise<string> {
       .trim()
       .substring(0, 50000) // Limit to ~50k chars per source
   } catch (err) {
-    console.warn(`[studio-file-search] Failed to fetch URL ${url}:`, err)
+    logger.warn(`Failed to fetch URL ${url}:`, err)
     return ''
   }
 }
@@ -68,7 +72,7 @@ serve(async (req) => {
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY')!
-    console.log(`[studio-file-search] Indexing ${sources.length} sources`)
+    logger.info(`Indexing ${sources.length} sources`)
 
     // Step 1: Resolve URL sources to text content
     const resolvedSources: Array<{ content: string; label: string }> = []
@@ -88,21 +92,28 @@ serve(async (req) => {
     }
 
     // Step 2: Create File Search store via Gemini API
-    const createStoreResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/corpora?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          display_name: `aica-studio-research-${user.id.substring(0, 8)}-${Date.now()}`,
-        }),
+    const storeData = await withHealthTracking(
+      { functionName: 'studio-file-search', actionName: 'create_corpus' },
+      supabaseClient,
+      async () => {
+        const createStoreResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/corpora?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              display_name: `aica-studio-research-${user.id.substring(0, 8)}-${Date.now()}`,
+            }),
+          }
+        )
+        const data = await createStoreResponse.json()
+        if (data.error) throw new Error(`Failed to create store: ${data.error.message}`)
+        return data
       }
     )
-    const storeData = await createStoreResponse.json()
-    if (storeData.error) throw new Error(`Failed to create store: ${storeData.error.message}`)
 
     const corpusName = storeData.name
-    console.log(`[studio-file-search] Created corpus: ${corpusName}`)
+    logger.info(`Created corpus: ${corpusName}`)
 
     // Step 3: Create documents and chunk content
     let indexedCount = 0
@@ -120,7 +131,7 @@ serve(async (req) => {
       )
       const docData = await createDocResponse.json()
       if (docData.error) {
-        console.warn(`[studio-file-search] Failed to create doc for "${source.label}":`, docData.error)
+        logger.warn(`Failed to create doc for "${source.label}":`, docData.error)
         continue
       }
 
@@ -147,15 +158,15 @@ serve(async (req) => {
         )
         const chunkData = await createChunkResponse.json()
         if (chunkData.error) {
-          console.warn(`[studio-file-search] Failed to create chunk:`, chunkData.error)
+          logger.warn('Failed to create chunk:', chunkData.error)
         }
       }
 
       indexedCount++
-      console.log(`[studio-file-search] Indexed "${source.label}" (${chunks.length} chunks)`)
+      logger.info(`Indexed "${source.label}" (${chunks.length} chunks)`)
     }
 
-    console.log(`[studio-file-search] Complete: ${indexedCount}/${resolvedSources.length} sources indexed`)
+    logger.info(`Complete: ${indexedCount}/${resolvedSources.length} sources indexed`)
 
     return new Response(
       JSON.stringify({
@@ -168,7 +179,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('[studio-file-search] error:', error)
+    logger.error('error:', error)
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

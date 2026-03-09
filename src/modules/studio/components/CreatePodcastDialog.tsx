@@ -41,6 +41,7 @@ export const CreatePodcastDialog: React.FC<CreatePodcastDialogProps> = ({ isOpen
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 p-2 text-ceramic-text-tertiary hover:text-ceramic-text-primary transition-colors"
+                    aria-label="Fechar dialogo"
                 >
                     <X className="w-5 h-5" />
                 </button>

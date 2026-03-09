@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Quote, Loader2, Copy, CheckCircle, ImagePlus, Clock, User } from 'lucide-react';
+import { Quote, Loader2, Copy, CheckCircle, ImagePlus, Clock, User, RefreshCw } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState } from '@/components/ui';
 import type { StudioTranscription } from '../../types/studio';
 
 interface ExtractedQuote {
@@ -73,25 +74,36 @@ export default function QuoteExtractorPanel({
             : 'Gere a transcricao primeiro para extrair citacoes.'}
         </p>
         {error && (
-          <p className="text-sm text-ceramic-error mb-4">{error}</p>
+          <div className="text-center mb-4">
+            <p className="text-sm text-ceramic-error mb-3">{error}</p>
+            <button
+              onClick={() => { setError(null); handleExtract(); }}
+              className="flex items-center gap-2 px-4 py-2 mx-auto text-sm text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors"
+              aria-label="Tentar extrair citacoes novamente"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tentar novamente
+            </button>
+          </div>
         )}
-        <button
-          onClick={handleExtract}
-          disabled={isExtracting || !transcription}
-          className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Quote className="w-4 h-4" />
-          Extrair Quotes
-        </button>
+        {!error && (
+          <button
+            onClick={handleExtract}
+            disabled={isExtracting || !transcription}
+            className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Quote className="w-4 h-4" />
+            Extrair Quotes
+          </button>
+        )}
       </motion.div>
     );
   }
 
   if (isExtracting) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-4" />
-        <p className="text-sm text-ceramic-text-secondary">Extraindo melhores citacoes...</p>
+      <div className="py-8">
+        <CeramicLoadingState module="studio" variant="list" lines={3} message="Extraindo melhores citacoes..." />
       </div>
     );
   }
@@ -156,6 +168,7 @@ export default function QuoteExtractorPanel({
                   <button
                     className="flex items-center gap-1 text-xs text-ceramic-text-secondary hover:text-amber-600 transition-colors"
                     title="Criar card visual"
+                    aria-label="Criar card visual para citacao"
                   >
                     <ImagePlus className="w-3.5 h-3.5" />
                     <span>Criar Card</span>

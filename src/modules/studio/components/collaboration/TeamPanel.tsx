@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, X, Loader2 } from 'lucide-react';
+import { UserPlus, X, Loader2, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import type { StudioTeamMember } from '../../types/studio';
 
-const ROLE_LABELS: Record<string, { label: string; className: string }> = {
-  admin: { label: 'Admin', className: 'bg-purple-100 text-purple-700' },
-  editor: { label: 'Editor', className: 'bg-blue-100 text-blue-700' },
-  designer: { label: 'Designer', className: 'bg-pink-100 text-pink-700' },
-  viewer: { label: 'Visualizador', className: 'bg-gray-100 text-gray-700' },
-};
+const ROLE_OPTIONS: { value: string; label: string; description: string; className: string }[] = [
+  { value: 'admin', label: 'Admin', description: 'Acesso total ao projeto', className: 'bg-purple-100 text-purple-700' },
+  { value: 'editor', label: 'Editor', description: 'Pode editar conteudo e midias', className: 'bg-blue-100 text-blue-700' },
+  { value: 'designer', label: 'Designer', description: 'Pode editar elementos visuais', className: 'bg-pink-100 text-pink-700' },
+  { value: 'viewer', label: 'Visualizador', description: 'Somente leitura', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
+];
+
+const ROLE_LABELS: Record<string, { label: string; className: string }> = Object.fromEntries(
+  ROLE_OPTIONS.map(r => [r.value, { label: r.label, className: r.className }])
+);
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-700' },
-  active: { label: 'Ativo', className: 'bg-green-100 text-green-700' },
+  active: { label: 'Ativo', className: 'bg-emerald-100 text-emerald-700' },
   revoked: { label: 'Revogado', className: 'bg-red-100 text-red-700' },
 };
 
@@ -29,10 +33,13 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
   const [inviteRole, setInviteRole] = useState<'admin' | 'editor' | 'designer' | 'viewer'>('editor');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [changingRole, setChangingRole] = useState<string | null>(null);
 
   const loadMembers = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -44,18 +51,28 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
 
       setMembers((data || []).map((m: any) => ({
         ...m,
+        userId: m.owner_id,
         memberEmail: m.member_email,
         invitedAt: new Date(m.invited_at),
         acceptedAt: m.accepted_at ? new Date(m.accepted_at) : undefined,
       })));
     } catch (err) {
       console.error('Failed to load team members:', err);
+      setError('Falha ao carregar membros da equipe.');
     } finally {
       setLoading(false);
     }
   }, [projectId]);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
+
+  // Auto-dismiss success message
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
@@ -77,6 +94,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
 
       if (insertError) throw insertError;
 
+      setSuccessMessage(`Convite enviado para ${inviteEmail.trim()}`);
       setInviteEmail('');
       setShowInviteForm(false);
       loadMembers();
@@ -90,15 +108,38 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
 
   const handleRevoke = async (memberId: string) => {
     try {
+      setError(null);
       const { error: updateError } = await supabase
         .from('studio_team_members')
         .update({ status: 'revoked' })
         .eq('id', memberId);
 
       if (updateError) throw updateError;
-      loadMembers();
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, status: 'revoked' as const } : m));
     } catch (err) {
       console.error('Revoke failed:', err);
+      setError('Falha ao revogar acesso do membro.');
+    }
+  };
+
+  const handleRoleChange = async (memberId: string, newRole: string) => {
+    try {
+      setChangingRole(memberId);
+      setError(null);
+      const { error: updateError } = await supabase
+        .from('studio_team_members')
+        .update({ role: newRole })
+        .eq('id', memberId);
+
+      if (updateError) throw updateError;
+      setMembers(prev => prev.map(m =>
+        m.id === memberId ? { ...m, role: newRole as StudioTeamMember['role'] } : m
+      ));
+    } catch (err) {
+      console.error('Role change failed:', err);
+      setError('Falha ao alterar funcao do membro.');
+    } finally {
+      setChangingRole(null);
     }
   };
 
@@ -121,9 +162,34 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
         </button>
       </div>
 
+      {/* Success Toast */}
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-700 font-medium"
+          >
+            {successMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error with Retry */}
       {error && (
-        <div className="p-3 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 text-sm text-ceramic-error">
-          {error}
+        <div className="p-3 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 text-sm text-ceramic-error flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={loadMembers}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-ceramic-error hover:bg-ceramic-error/10 transition-colors flex-shrink-0"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Tentar novamente
+          </button>
         </div>
       )}
 
@@ -157,10 +223,11 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
                 onChange={e => setInviteRole(e.target.value as any)}
                 className="w-full rounded-xl bg-ceramic-cool border border-ceramic-border px-3 py-2 text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-400/50"
               >
-                <option value="admin">Admin</option>
-                <option value="editor">Editor</option>
-                <option value="designer">Designer</option>
-                <option value="viewer">Visualizador</option>
+                {ROLE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label} — {opt.description}
+                  </option>
+                ))}
               </select>
             </div>
             <button
@@ -190,7 +257,10 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
         </div>
       ) : members.length === 0 ? (
         <div className="ceramic-inset rounded-2xl p-6 text-center">
-          <p className="text-sm text-ceramic-text-secondary">Nenhum membro na equipe ainda.</p>
+          <UserPlus className="w-8 h-8 text-ceramic-text-secondary/40 mx-auto mb-2" />
+          <p className="text-sm text-ceramic-text-secondary">
+            Nenhum membro na equipe. Convide alguem!
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -207,10 +277,27 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ceramic-text-primary truncate">{member.memberEmail}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${roleInfo.className}`}>
-                      {roleInfo.label}
-                    </span>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {/* Role badge / dropdown */}
+                    {member.status !== 'revoked' ? (
+                      <div className="relative">
+                        <select
+                          value={member.role}
+                          onChange={e => handleRoleChange(member.id, e.target.value)}
+                          disabled={changingRole === member.id}
+                          className={`appearance-none cursor-pointer px-2 py-0.5 pr-5 rounded text-[10px] font-bold border-0 focus:outline-none focus:ring-1 focus:ring-amber-400/50 ${roleInfo.className} ${changingRole === member.id ? 'opacity-50' : ''}`}
+                        >
+                          {ROLE_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-2.5 h-2.5 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+                      </div>
+                    ) : (
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${roleInfo.className}`}>
+                        {roleInfo.label}
+                      </span>
+                    )}
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusInfo.className}`}>
                       {statusInfo.label}
                     </span>
@@ -223,7 +310,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
                     onClick={() => handleRevoke(member.id)}
                     className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors px-2 py-1"
                   >
-                    Revogar
+                    Remover
                   </button>
                 )}
               </div>

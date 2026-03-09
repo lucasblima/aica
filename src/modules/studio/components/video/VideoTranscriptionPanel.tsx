@@ -1,50 +1,70 @@
 /**
  * VideoTranscriptionPanel - Transcription display for video projects
  *
- * Shows transcription content with timestamps and a placeholder for
- * future SRT subtitle generation.
+ * Reuses the podcast TranscriptionPanel patterns:
+ * - Calls studio-transcribe Edge Function
+ * - Displays speaker-segmented transcription with timestamps
+ * - Copy-to-clipboard per segment and full text
+ * - CeramicLoadingState during generation
+ * - Error state with retry
+ * - Portuguese UI text
  */
 
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   FileText,
-  Loader2,
+  Copy,
+  CheckCircle,
+  Clock,
+  User,
+  RefreshCw,
   Sparkles,
-  Subtitles,
   AlertCircle,
 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { CeramicLoadingState } from '@/components/ui';
+import type { StudioTranscription } from '../../types/studio';
 
 interface VideoTranscriptionPanelProps {
   projectId: string;
   hasVideo: boolean;
+  transcription?: StudioTranscription | null;
+  onTranscriptionGenerated: (transcription: StudioTranscription) => void;
 }
 
-interface TranscriptionSegment {
-  start: number;
-  end: number;
-  text: string;
-}
+const SPEAKER_COLORS = [
+  'bg-blue-100 text-blue-800',
+  'bg-amber-100 text-amber-800',
+  'bg-emerald-100 text-emerald-800',
+  'bg-purple-100 text-purple-800',
+  'bg-rose-100 text-rose-800',
+  'bg-cyan-100 text-cyan-800',
+];
 
-function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
+function formatTime(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
 export default function VideoTranscriptionPanel({
   projectId,
   hasVideo,
+  transcription,
+  onTranscriptionGenerated,
 }: VideoTranscriptionPanelProps) {
-  const [transcription, setTranscription] = useState<TranscriptionSegment[]>([]);
-  const [fullText, setFullText] = useState('');
-  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
-  const handleTranscribe = useCallback(async () => {
-    if (!hasVideo || isTranscribing) return;
-    setIsTranscribing(true);
+  const handleGenerate = useCallback(async () => {
+    if (!hasVideo || isGenerating) return;
+    setIsGenerating(true);
     setError(null);
 
     try {
@@ -53,22 +73,30 @@ export default function VideoTranscriptionPanel({
       });
 
       if (fnError) throw fnError;
+      if (!data?.success) throw new Error(data?.error || 'Falha ao gerar transcricao');
 
-      if (data?.segments) {
-        setTranscription(data.segments);
-        setFullText(data.fullText || data.segments.map((s: TranscriptionSegment) => s.text).join(' '));
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao transcrever video.');
+      onTranscriptionGenerated(data.data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro ao transcrever video.';
+      setError(message);
     } finally {
-      setIsTranscribing(false);
+      setIsGenerating(false);
     }
-  }, [projectId, hasVideo, isTranscribing]);
+  }, [projectId, hasVideo, isGenerating, onTranscriptionGenerated]);
 
+  const handleCopy = useCallback(async (text: string, sectionId: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedSection(sectionId);
+    setTimeout(() => setCopiedSection(null), 2000);
+  }, []);
+
+  // No video uploaded yet
   if (!hasVideo) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <FileText className="w-10 h-10 text-ceramic-text-secondary/30 mb-3" />
+        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
+          <FileText className="w-8 h-8 text-blue-500/40" />
+        </div>
         <p className="text-sm text-ceramic-text-secondary">
           Faca upload de um video primeiro para gerar a transcricao.
         </p>
@@ -76,80 +104,203 @@ export default function VideoTranscriptionPanel({
     );
   }
 
-  if (transcription.length === 0 && !isTranscribing) {
+  // Loading state
+  if (isGenerating) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <FileText className="w-10 h-10 text-blue-500/30 mb-3" />
-        <p className="text-sm text-ceramic-text-secondary mb-4">
-          Transcricao nao gerada ainda.
-        </p>
-        <button
-          onClick={handleTranscribe}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 text-white font-medium text-sm hover:bg-blue-600 transition-colors"
-        >
-          <Sparkles className="w-4 h-4" />
-          Transcrever Video
-        </button>
-
-        {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-ceramic-error/10 border border-ceramic-error/30 max-w-sm"
-          >
-            <AlertCircle className="w-4 h-4 text-ceramic-error flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-ceramic-error">{error}</p>
-          </motion.div>
-        )}
+      <div className="p-6">
+        <CeramicLoadingState
+          module="studio"
+          variant="list"
+          lines={5}
+          message="Transcrevendo video... Isso pode levar alguns minutos."
+        />
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-ceramic-border">
-        <h3 className="text-sm font-bold text-ceramic-text-primary">
-          Transcricao
+  // No transcription yet - show generate button
+  if (!transcription) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center py-16 px-4"
+      >
+        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
+          <FileText className="w-8 h-8 text-blue-500" />
+        </div>
+        <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
+          Nenhuma transcricao disponivel
         </h3>
+        <p className="text-sm text-ceramic-text-secondary text-center mb-6 max-w-sm">
+          Gere a transcricao automatica do video para desbloquear clips e legendas.
+        </p>
+
+        {error && (
+          <div className="text-center mb-4">
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-ceramic-error/10 border border-ceramic-error/30 max-w-sm mb-3">
+              <AlertCircle className="w-4 h-4 text-ceramic-error flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-ceramic-error">{error}</p>
+            </div>
+            <button
+              onClick={() => { setError(null); handleGenerate(); }}
+              className="flex items-center gap-2 px-4 py-2 mx-auto text-sm text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors"
+              aria-label="Tentar gerar transcricao novamente"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {!error && (
+          <button
+            onClick={handleGenerate}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            Transcrever Video
+          </button>
+        )}
+      </motion.div>
+    );
+  }
+
+  // Build speaker color map
+  const speakerColorMap = new Map<string, string>();
+  transcription.speakers.forEach((speaker, i) => {
+    speakerColorMap.set(speaker.name, SPEAKER_COLORS[i % SPEAKER_COLORS.length]);
+  });
+
+  // Build flat timeline (chapters + segments sorted by time)
+  type TimelineItem =
+    | { type: 'chapter'; title: string; startSeconds: number }
+    | { type: 'segment'; speaker: string; start: number; end: number; text: string };
+
+  const timeline: TimelineItem[] = [];
+  for (const chapter of transcription.chapters) {
+    timeline.push({ type: 'chapter', title: chapter.title, startSeconds: chapter.startSeconds });
+  }
+  for (const speaker of transcription.speakers) {
+    for (const seg of speaker.segments) {
+      timeline.push({ type: 'segment', speaker: speaker.name, start: seg.start, end: seg.end, text: seg.text });
+    }
+  }
+  timeline.sort((a, b) => {
+    const timeA = a.type === 'chapter' ? a.startSeconds : a.start;
+    const timeB = b.type === 'chapter' ? b.startSeconds : b.start;
+    return timeA - timeB;
+  });
+
+  const fullText = transcription.speakers
+    .flatMap(s => s.segments.map(seg => `[${s.name}] ${seg.text}`))
+    .join('\n');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-4"
+    >
+      {/* Header stats */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-1.5 text-sm text-ceramic-text-secondary">
+          <Clock className="w-4 h-4" />
+          <span>{formatTime(transcription.durationSeconds)}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-ceramic-text-secondary">
+          <User className="w-4 h-4" />
+          <span>{transcription.speakers.length} falantes</span>
+        </div>
+        <div className="text-sm text-ceramic-text-secondary">
+          {transcription.wordCount.toLocaleString('pt-BR')} palavras
+        </div>
         <button
-          disabled
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ceramic-border text-xs text-ceramic-text-secondary opacity-50 cursor-not-allowed"
-          title="Em breve"
+          onClick={() => handleCopy(fullText, 'full')}
+          className="ml-auto flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 transition-colors"
         >
-          <Subtitles className="w-3.5 h-3.5" />
-          Gerar Legendas SRT
+          {copiedSection === 'full' ? (
+            <>
+              <CheckCircle className="w-4 h-4" />
+              Copiado
+            </>
+          ) : (
+            <>
+              <Copy className="w-4 h-4" />
+              Copiar tudo
+            </>
+          )}
         </button>
       </div>
 
-      {/* Loading */}
-      {isTranscribing && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-3" />
-            <p className="text-sm text-ceramic-text-secondary">Transcrevendo video...</p>
-          </div>
-        </div>
-      )}
+      {/* Regenerate button */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleGenerate}
+          className="text-xs text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+        >
+          <RefreshCw className="w-3 h-3" />
+          Transcrever novamente
+        </button>
+      </div>
 
-      {/* Transcription Content */}
-      {!isTranscribing && transcription.length > 0 && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {transcription.map((segment, index) => (
+      {/* Timeline */}
+      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+        {timeline.map((item, idx) => {
+          if (item.type === 'chapter') {
+            return (
+              <div key={`ch-${idx}`} className="flex items-center gap-3 py-3">
+                <div className="h-px flex-1 bg-ceramic-border" />
+                <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                  {item.title}
+                </span>
+                <span className="text-xs text-ceramic-text-secondary">
+                  {formatTime(item.startSeconds)}
+                </span>
+                <div className="h-px flex-1 bg-ceramic-border" />
+              </div>
+            );
+          }
+
+          const colorClass = speakerColorMap.get(item.speaker) || SPEAKER_COLORS[0];
+          const segId = `seg-${idx}`;
+
+          return (
             <div
-              key={index}
-              className="flex gap-3 p-2 rounded-lg hover:bg-ceramic-cool transition-colors"
+              key={segId}
+              className="group flex gap-3 p-3 rounded-lg hover:bg-ceramic-cool transition-colors"
             >
-              <span className="text-xs font-mono text-blue-500 flex-shrink-0 pt-0.5 w-14 text-right">
-                {formatTimestamp(segment.start)}
-              </span>
-              <p className="text-sm text-ceramic-text-primary leading-relaxed">
-                {segment.text}
-              </p>
+              <div className="flex-shrink-0 pt-0.5">
+                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+                  {item.speaker}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-ceramic-text-primary leading-relaxed">
+                  {item.text}
+                </p>
+              </div>
+              <div className="flex-shrink-0 flex items-start gap-2">
+                <span className="text-xs text-ceramic-text-secondary tabular-nums mt-0.5">
+                  {formatTime(item.start)}
+                </span>
+                <button
+                  onClick={() => handleCopy(item.text, segId)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-ceramic-text-secondary hover:text-blue-600"
+                  title="Copiar segmento"
+                  aria-label="Copiar segmento da transcricao"
+                >
+                  {copiedSection === segId ? (
+                    <CheckCircle className="w-3.5 h-3.5 text-ceramic-success" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          );
+        })}
+      </div>
+    </motion.div>
   );
 }

@@ -1,11 +1,16 @@
 /**
  * VideoWorkspace - 4-stage workflow for video content
  *
- * Stages: Upload -> Transcricao -> Edicao -> Review
+ * Stages: Upload -> Transcricao -> Clips -> Review
  * Uses blue accent to differentiate from podcast (amber) and article (emerald).
+ *
+ * Manages shared state across panels:
+ * - uploadedFile flows from Upload to Transcription (hasVideo)
+ * - transcription flows from Transcription to Clips (hasTranscription)
+ * - clips are loaded from DB and shared between Clips and Review
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -14,9 +19,12 @@ import {
   Scissors,
   Eye,
   Film,
+  CheckCircle,
 } from 'lucide-react';
-import type { StudioProject } from '../../types/studio';
+import { supabase } from '@/services/supabaseClient';
+import type { StudioProject, StudioTranscription, StudioClip } from '../../types/studio';
 import { VideoUploadPanel } from '../video';
+import type { UploadedVideoFile } from '../video/VideoUploadPanel';
 import { VideoTranscriptionPanel } from '../video';
 import { VideoClipPanel } from '../video';
 
@@ -25,37 +33,127 @@ interface VideoWorkspaceProps {
   onBack: () => void;
 }
 
-type VideoStage = 'upload' | 'transcricao' | 'edicao' | 'review';
+type VideoStage = 'upload' | 'transcricao' | 'clips' | 'review';
 
 const STAGES: { key: VideoStage; label: string; icon: React.FC<{ className?: string }> }[] = [
   { key: 'upload', label: 'Upload', icon: Upload },
   { key: 'transcricao', label: 'Transcricao', icon: FileText },
-  { key: 'edicao', label: 'Edicao', icon: Scissors },
+  { key: 'clips', label: 'Clips', icon: Scissors },
   { key: 'review', label: 'Review', icon: Eye },
 ];
 
 export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps) {
   const [currentStage, setCurrentStage] = useState<VideoStage>('upload');
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; url?: string } | undefined>();
-  const [hasTranscription, setHasTranscription] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<UploadedVideoFile | undefined>();
+  const [transcription, setTranscription] = useState<StudioTranscription | null>(null);
+  const [clips, setClips] = useState<StudioClip[]>([]);
 
   const currentStageIndex = STAGES.findIndex(s => s.key === currentStage);
 
-  const handleFileSelected = useCallback((file: File) => {
-    // Simulate upload progress — real implementation would upload to storage
-    setUploadProgress(0);
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15 + 5;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setUploadedFile({ name: file.name, size: file.size });
+  // Load existing data from DB on mount (if project already has assets/transcription/clips)
+  useEffect(() => {
+    const loadExistingData = async () => {
+      try {
+        const [assetRes, transcRes, clipsRes] = await Promise.all([
+          supabase
+            .from('studio_assets')
+            .select('*')
+            .eq('project_id', project.id)
+            .eq('asset_type', 'video')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('studio_transcriptions')
+            .select('*')
+            .eq('project_id', project.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('studio_clips')
+            .select('*')
+            .eq('project_id', project.id)
+            .order('created_at', { ascending: false }),
+        ]);
+
+        // Restore uploaded file from asset
+        if (assetRes.data) {
+          const meta = (assetRes.data.metadata || {}) as Record<string, unknown>;
+          setUploadedFile({
+            name: (meta.original_name as string) || 'video',
+            size: assetRes.data.file_size || 0,
+            format: (meta.format as string) || 'Desconhecido',
+            assetId: assetRes.data.id,
+          });
+        }
+
+        // Restore transcription
+        if (transcRes.data) {
+          setTranscription({
+            id: transcRes.data.id,
+            userId: transcRes.data.user_id,
+            projectId: transcRes.data.project_id,
+            content: transcRes.data.content,
+            language: transcRes.data.language,
+            durationSeconds: transcRes.data.duration_seconds,
+            speakers: transcRes.data.speakers || [],
+            chapters: transcRes.data.chapters || [],
+            wordCount: transcRes.data.word_count,
+            createdAt: new Date(transcRes.data.created_at),
+          });
+        }
+
+        // Restore clips
+        if (clipsRes.data && clipsRes.data.length > 0) {
+          setClips(
+            clipsRes.data.map((c: Record<string, unknown>) => ({
+              id: c.id as string,
+              userId: c.user_id as string,
+              projectId: c.project_id as string,
+              title: c.title as string,
+              startTimeSeconds: c.start_time_seconds as number,
+              endTimeSeconds: c.end_time_seconds as number,
+              transcriptSegment: c.transcript_segment as string,
+              platform: c.platform as string,
+              status: c.status as StudioClip['status'],
+              caption: (c.caption as string) || '',
+              hashtags: (c.hashtags as string[]) || [],
+              thumbnailUrl: c.thumbnail_url as string | undefined,
+              createdAt: new Date(c.created_at as string),
+            }))
+          );
+        }
+
+        // Auto-advance to the furthest completed stage
+        if (clipsRes.data && clipsRes.data.length > 0) {
+          setCurrentStage('clips');
+        } else if (transcRes.data) {
+          setCurrentStage('transcricao');
+        } else if (assetRes.data) {
+          setCurrentStage('upload');
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar dados existentes do video:', err);
       }
-      setUploadProgress(Math.min(Math.round(progress), 100));
-    }, 300);
+    };
+
+    loadExistingData();
+  }, [project.id]);
+
+  const handleFileUploaded = useCallback((file: UploadedVideoFile) => {
+    setUploadedFile(file);
   }, []);
+
+  const handleTranscriptionGenerated = useCallback((t: StudioTranscription) => {
+    setTranscription(t);
+  }, []);
+
+  const handleClipsGenerated = useCallback((newClips: StudioClip[]) => {
+    setClips(newClips);
+  }, []);
+
+  const approvedClips = clips.filter(c => c.status === 'approved');
 
   return (
     <div className="flex flex-col h-screen bg-ceramic-base">
@@ -117,28 +215,37 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="h-full"
+            className="h-full overflow-y-auto"
           >
             {currentStage === 'upload' && (
               <VideoUploadPanel
-                onFileSelected={handleFileSelected}
-                uploadProgress={uploadProgress}
+                projectId={project.id}
+                onFileUploaded={handleFileUploaded}
                 uploadedFile={uploadedFile}
               />
             )}
 
             {currentStage === 'transcricao' && (
-              <VideoTranscriptionPanel
-                projectId={project.id}
-                hasVideo={!!uploadedFile}
-              />
+              <div className="p-4">
+                <VideoTranscriptionPanel
+                  projectId={project.id}
+                  hasVideo={!!uploadedFile}
+                  transcription={transcription}
+                  onTranscriptionGenerated={handleTranscriptionGenerated}
+                />
+              </div>
             )}
 
-            {currentStage === 'edicao' && (
-              <VideoClipPanel
-                projectId={project.id}
-                hasTranscription={hasTranscription}
-              />
+            {currentStage === 'clips' && (
+              <div className="p-4">
+                <VideoClipPanel
+                  projectId={project.id}
+                  hasTranscription={!!transcription}
+                  transcription={transcription}
+                  clips={clips}
+                  onClipsGenerated={handleClipsGenerated}
+                />
+              </div>
             )}
 
             {currentStage === 'review' && (
@@ -149,15 +256,50 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
                 <h2 className="text-lg font-bold text-ceramic-text-primary mb-2">
                   Revisao do Video
                 </h2>
-                <p className="text-sm text-ceramic-text-secondary max-w-sm">
+                <p className="text-sm text-ceramic-text-secondary max-w-sm mb-6">
                   Revise o video editado, clips selecionados e transcricao antes de publicar.
                 </p>
-                {uploadedFile && (
-                  <div className="mt-6 p-4 rounded-xl border border-ceramic-border bg-ceramic-cool">
-                    <p className="text-xs text-ceramic-text-secondary">Arquivo:</p>
-                    <p className="text-sm font-medium text-ceramic-text-primary">{uploadedFile.name}</p>
-                  </div>
-                )}
+
+                {/* Summary cards */}
+                <div className="w-full max-w-md space-y-3">
+                  {uploadedFile && (
+                    <div className="p-4 rounded-xl border border-ceramic-border bg-ceramic-cool text-left">
+                      <p className="text-xs text-ceramic-text-secondary mb-1">Arquivo</p>
+                      <p className="text-sm font-medium text-ceramic-text-primary">{uploadedFile.name}</p>
+                      <p className="text-xs text-ceramic-text-secondary">{uploadedFile.format}</p>
+                    </div>
+                  )}
+
+                  {transcription && (
+                    <div className="p-4 rounded-xl border border-ceramic-border bg-ceramic-cool text-left">
+                      <p className="text-xs text-ceramic-text-secondary mb-1">Transcricao</p>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-ceramic-success" />
+                        <p className="text-sm font-medium text-ceramic-text-primary">
+                          {transcription.wordCount.toLocaleString('pt-BR')} palavras &middot; {transcription.speakers.length} falantes
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {clips.length > 0 && (
+                    <div className="p-4 rounded-xl border border-ceramic-border bg-ceramic-cool text-left">
+                      <p className="text-xs text-ceramic-text-secondary mb-1">Clips</p>
+                      <div className="flex items-center gap-2">
+                        <Scissors className="w-4 h-4 text-blue-500" />
+                        <p className="text-sm font-medium text-ceramic-text-primary">
+                          {clips.length} clips &middot; {approvedClips.length} aprovados
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!uploadedFile && !transcription && clips.length === 0 && (
+                    <p className="text-sm text-ceramic-text-secondary/60">
+                      Nenhum conteudo para revisar ainda. Comece pelo upload do video.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </motion.div>
