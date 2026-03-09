@@ -72,3 +72,10 @@ export { useSuggestionCards } from './useSuggestionCards';
 
 export { useResearchChat } from './useResearchChat';
 export type { ChatMessage } from './useResearchChat';
+
+// ============================================
+// TEAM COLLABORATION (SPRINT 5)
+// ============================================
+
+export { useStudioComments } from './useStudioComments';
+export type { StudioCommentRow, UseStudioCommentsReturn } from './useStudioComments';
