@@ -8,7 +8,8 @@
 
 // prettier-ignore
 export { default as AchievementsView } from './AchievementsView';
-export { AgendaTimeline } from './AgendaTimeline';
+// Migrated to @/modules/agenda/components/calendar/ (re-export for backward compat)
+export { AgendaTimeline } from '@/modules/agenda/components/calendar/AgendaTimeline';
 export { CalendarSyncIndicator } from './CalendarSyncIndicator';
 export { ConnectionArchetypes } from './ConnectionArchetypes';
 // prettier-ignore
@@ -23,7 +24,8 @@ export { CreditBalanceWidget } from './CreditBalanceWidget';
 export { ProcessWithAicaButton } from './ProcessWithAicaButton';
 export { ProcessingEstimateModal } from './ProcessingEstimateModal';
 export { AnalysisResultsPanel } from './AnalysisResultsPanel';
-export { DailyTimeline } from './DailyTimeline';
+// Migrated to @/modules/agenda/components/calendar/ (re-export for backward compat)
+export { DailyTimeline } from '@/modules/agenda/components/calendar/DailyTimeline';
 export { ExploreMoreSection } from './ExploreMoreSection';
 export { DailySummaryView } from './DailySummaryView';
 // prettier-ignore
@@ -47,7 +49,8 @@ export { NotificationBell } from './NotificationBell';
 export { default as OnboardingWizard } from './OnboardingWizard';
 export { PomodoroTimer } from './PomodoroTimer';
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';
-export { WeeklyCalendarView } from './WeeklyCalendarView';
+// Migrated to @/modules/agenda/components/calendar/ (re-export for backward compat)
+export { WeeklyCalendarView } from '@/modules/agenda/components/calendar/WeekView';
 
 // Invite System - Viral Growth (Gmail-style)
 export { InviteBadge } from './InviteBadge';
