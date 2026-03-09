@@ -40,3 +40,6 @@ export { default as PautaStage } from './PautaStage';
 
 // Production Stage (Wave 5 Stream 3)
 export { default as ProductionStage } from './ProductionStage';
+
+// Brand Kit (Sprint 4)
+export { BrandKitEditor, BrandKitPreview } from '../brandkit';

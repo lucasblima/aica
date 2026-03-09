@@ -14,6 +14,8 @@ export type {
   PodcastProjectMetadata,
   VideoProjectMetadata,
   ArticleProjectMetadata,
+  NewsletterProjectMetadata,
+  StudioNewsletter,
   ProjectTypeConfig,
   StudioState,
   StudioAction,
@@ -41,6 +43,9 @@ export { StudioLibrary } from './views/StudioLibrary';
 export { default as StudioWizard } from './views/StudioWizard';
 // export { default as StudioMainView } from './views/StudioMainView';
 // export { default as StudioWorkspace } from './views/StudioWorkspace';
+
+// Newsletter Components
+export { NewsletterEditor, NewsletterPreview } from './components/newsletter';
 
 // Context (to be implemented)
 // export { StudioProvider, useStudio } from './context/StudioContext';

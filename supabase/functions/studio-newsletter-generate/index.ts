@@ -1,16 +1,24 @@
 /**
- * Edge Function: studio-generate-captions
- * Studio Creative Hub — Distribution Phase
+ * Edge Function: studio-newsletter-generate
+ * Studio Creative Hub — Newsletter Generation
  *
  * Purpose:
- * - Generate platform-optimized captions for content distribution
- * - Adapts length, tone, emojis, and hashtags per platform
- * - Supports Instagram, LinkedIn, Twitter/X, TikTok, YouTube
+ * - Generate newsletter content from episode context, show notes, or a topic
+ * - Returns subject line, HTML-safe markdown content, highlights, and CTA
  *
- * Input: { content: string, platforms: string[] }
- * Output: { [platform]: { caption, hashtags } }
+ * Input: {
+ *   projectId: string,
+ *   episodeId?: string,
+ *   topic: string,
+ *   audience: string,
+ *   tone: string,
+ *   showNotesContent?: string,
+ *   transcriptContent?: string
+ * }
  *
- * Gemini Model: gemini-2.5-flash
+ * Output: { success: true, data: { subject, content, highlights, callToAction } }
+ *
+ * Gemini Model: gemini-2.5-flash (maxOutputTokens: 4096)
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -19,7 +27,7 @@ import { getCorsHeaders } from '../_shared/cors.ts'
 import { withHealthTracking } from '../_shared/health-tracker.ts'
 import { createNamespacedLogger } from '../_shared/logger.ts'
 
-const logger = createNamespacedLogger('studio-generate-captions')
+const logger = createNamespacedLogger('studio-newsletter-generate')
 
 // =============================================================================
 // HELPERS
@@ -43,6 +51,7 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
 }
 
 function extractJSON(text: string): any {
+  // Strip code fences FIRST, then find JSON object
   const cleaned = text.replace(/```(?:json)?\s*\n?/g, '').replace(/```\s*$/g, '').trim()
   const jsonMatch = cleaned.match(/[\[{][\s\S]*[\]}]/)
   if (jsonMatch) return JSON.parse(jsonMatch[0])
@@ -58,6 +67,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
+    // Auth
     const authHeader = req.headers.get('Authorization')!
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -67,60 +77,79 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser()
     if (!user) throw new Error('Unauthorized')
 
-    const { content, platforms, brandKit } = await req.json()
-    if (!content || !platforms?.length) {
-      throw new Error('Campos "content" e "platforms" sao obrigatorios')
+    // Parse payload
+    const {
+      projectId,
+      episodeId,
+      topic,
+      audience,
+      tone,
+      showNotesContent,
+      transcriptContent,
+    } = await req.json()
+
+    if (!topic) {
+      throw new Error('Campo "topic" e obrigatorio')
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY')!
 
-    // Build brand kit context for the prompt
-    const brandKitContext = brandKit
-      ? `\nCONTEXTO DA MARCA:
-- Nome da marca: ${brandKit.brandName}
-- Tom de voz: ${brandKit.toneOfVoice || 'nao especificado'}
-- Cor primaria: ${brandKit.colorPrimary || 'nao especificada'}
-- Cor secundaria: ${brandKit.colorSecondary || 'nao especificada'}
-
-IMPORTANTE: Adapte todas as captions ao tom de voz "${brandKit.toneOfVoice || 'profissional'}" da marca "${brandKit.brandName}". Mencione ou referencie a marca quando natural.\n`
+    // Build context section
+    const contextParts: string[] = []
+    if (showNotesContent) {
+      contextParts.push(`SHOW NOTES DO EPISODIO:\n${showNotesContent}`)
+    }
+    if (transcriptContent) {
+      contextParts.push(`TRANSCRICAO (trecho):\n${transcriptContent.substring(0, 3000)}`)
+    }
+    const contextSection = contextParts.length > 0
+      ? `\nCONTEXTO ADICIONAL:\n${contextParts.join('\n\n')}\n`
       : ''
 
-    const prompt = `Voce e um social media manager experiente especializado em conteudo para o publico brasileiro.
+    const prompt = `Voce e um especialista em email marketing e criacao de newsletters para criadores de conteudo brasileiros.
 
-Gere captions otimizadas para cada plataforma listada abaixo.
-${brandKitContext}
-PLATAFORMAS: ${platforms.join(', ')}
+Gere uma newsletter completa com base nas seguintes informacoes:
 
-CONTEUDO BASE:
-${content}
+TOPICO: ${topic}
+PUBLICO-ALVO: ${audience || 'ouvintes de podcast e criadores de conteudo'}
+TOM: ${tone || 'profissional e engajador'}
+${contextSection}
 
-Regras por plataforma:
-- Instagram: visual, emojis moderados, ate 2200 caracteres, 5-10 hashtags relevantes
-- LinkedIn: profissional, sem emojis excessivos, ate 3000 caracteres, 3-5 hashtags
-- Twitter: conciso, ate 280 caracteres, 2-3 hashtags
-- TikTok: casual, hooks fortes, emojis, ate 2200 caracteres, 5-8 hashtags
-- YouTube: descritivo, SEO-friendly, ate 5000 caracteres, 5-10 tags
+A newsletter deve:
+- Ter um assunto (subject line) atrativo que gere abertura (max 80 caracteres)
+- Conteudo em markdown valido (pode usar **negrito**, *italico*, listas, links)
+- Ser escrita em portugues brasileiro
+- Incluir destaques relevantes do conteudo
+- Terminar com um call-to-action claro
 
 Retorne APENAS um JSON valido (sem markdown, sem explicacoes):
 {
-  "${platforms[0]}": {
-    "caption": "string",
-    "hashtags": ["string"]
-  }
+  "subject": "string - assunto da newsletter (max 80 caracteres)",
+  "content": "string - conteudo completo da newsletter em markdown",
+  "highlights": ["string - 3-5 destaques principais"],
+  "callToAction": "string - call-to-action final da newsletter"
 }`
 
+    logger.info('Generating newsletter', { projectId, episodeId, topic })
+
     const rawResponse = await withHealthTracking(
-      { functionName: 'studio-generate-captions', actionName: 'generate_captions' },
+      { functionName: 'studio-newsletter-generate', actionName: 'generate_newsletter' },
       supabaseClient,
       () => callGemini(apiKey, prompt)
     )
     const result = extractJSON(rawResponse)
 
+    logger.info('Newsletter generated successfully', {
+      projectId,
+      subjectLength: result.subject?.length,
+      highlightsCount: result.highlights?.length,
+    })
+
     return new Response(JSON.stringify({ success: true, data: result }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    logger.error('studio-generate-captions error:', error)
+    logger.error('studio-newsletter-generate error:', error)
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
