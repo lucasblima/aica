@@ -21,7 +21,7 @@ const ROLE_LABELS: Record<string, { label: string; className: string }> = Object
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-700' },
   active: { label: 'Ativo', className: 'bg-emerald-100 text-emerald-700' },
-  revoked: { label: 'Revogado', className: 'bg-red-100 text-red-700' },
+  revoked: { label: 'Revogado', className: 'bg-ceramic-error/10 text-ceramic-error' },
 };
 
 interface TeamPanelProps {
@@ -46,7 +46,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      let query = supabase.from('studio_team_members').select('*').eq('owner_id', user.id);
+      let query = supabase.from('studio_team_members').select('*').eq('user_id', user.id);
       if (projectId) query = query.eq('project_id', projectId);
 
       const { data, error: fetchError } = await query.order('invited_at', { ascending: false });
@@ -54,7 +54,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
 
       setMembers((data || []).map((m: any) => ({
         ...m,
-        userId: m.owner_id,
+        userId: m.user_id,
         memberEmail: m.member_email,
         invitedAt: new Date(m.invited_at),
         acceptedAt: m.accepted_at ? new Date(m.accepted_at) : undefined,
@@ -79,6 +79,11 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail.trim())) {
+      setError('Email inválido. Verifique o formato e tente novamente.');
+      return;
+    }
     try {
       setInviting(true);
       setError(null);
@@ -88,7 +93,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
       const { error: insertError } = await supabase
         .from('studio_team_members')
         .insert({
-          owner_id: user.id,
+          user_id: user.id,
           project_id: projectId || null,
           member_email: inviteEmail.trim(),
           role: inviteRole,
