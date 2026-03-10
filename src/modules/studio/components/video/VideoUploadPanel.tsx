@@ -72,7 +72,8 @@ export default function VideoUploadPanel({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const simulateUploadAndSave = useCallback(async (file: File) => {
+  // TODO: Implement real Supabase Storage upload. Currently only saves metadata.
+  const saveVideoMetadata = useCallback(async (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -169,8 +170,8 @@ export default function VideoUploadPanel({
       );
     }
 
-    simulateUploadAndSave(file);
-  }, [simulateUploadAndSave]);
+    saveVideoMetadata(file);
+  }, [saveVideoMetadata]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -232,6 +233,15 @@ export default function VideoUploadPanel({
   return (
     <div className="flex flex-col items-center justify-center h-full p-8">
       <div className="w-full max-w-md">
+        {/* Placeholder warning — real Supabase Storage upload not yet implemented */}
+        <div className="mb-4 flex items-start gap-3 p-3 rounded-lg bg-ceramic-warning/10 border border-ceramic-warning/30">
+          <AlertTriangle className="w-5 h-5 text-ceramic-warning flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-ceramic-text-primary">Upload em desenvolvimento</p>
+            <p className="text-ceramic-text-secondary">Apenas metadados do vídeo são salvos. O arquivo não é armazenado no servidor.</p>
+          </div>
+        </div>
+
         {/* Drop Zone */}
         <div
           onDrop={handleDrop}
