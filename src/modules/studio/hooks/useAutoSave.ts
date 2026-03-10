@@ -197,10 +197,14 @@ export function useAutoSave({
         };
 
         // Snapshot current DB topics before modifying, for rollback on failure
-        const { data: existingTopics } = await supabase
+        const { data: existingTopics, error: topicSnapshotError } = await supabase
           .from('podcast_topics')
           .select('*')
           .eq('episode_id', currentState.episodeId);
+
+        if (topicSnapshotError) {
+          log.warn('[useAutoSave] Could not snapshot topics for rollback:', topicSnapshotError);
+        }
 
         try {
           // Delete all existing topics for this episode
@@ -286,10 +290,14 @@ export function useAutoSave({
         };
 
         // Snapshot current DB categories before modifying, for rollback on failure
-        const { data: existingCategories } = await supabase
+        const { data: existingCategories, error: catSnapshotError } = await supabase
           .from('podcast_topic_categories')
           .select('*')
           .eq('episode_id', currentState.episodeId);
+
+        if (catSnapshotError) {
+          log.warn('[useAutoSave] Could not snapshot categories for rollback:', catSnapshotError);
+        }
 
         try {
           // Delete existing categories
@@ -310,6 +318,7 @@ export function useAutoSave({
               episode_id: currentState.episodeId,
               name: cat.name,
               color: cat.color,
+              icon: cat.icon || null,
               description: cat.description || null,
             }));
 
