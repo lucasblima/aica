@@ -80,18 +80,36 @@ async function computeFluxDomainScoreProvider(): Promise<DomainScore | null> {
     // Compute normalized score (0-1)
     const normalized = computeFluxDomainScore(avgReadiness, trainingConsistency, loadManagement);
 
-    // Determine trend by comparing current readiness against previous period
+    // Determine trend using snapshot heuristic.
+    // NOTE: This is a simplified heuristic comparing avgReadiness against absolute
+    // thresholds rather than a true temporal comparison (current vs previous period).
+    // A proper implementation would fetch readiness history from e.g. the last 7 vs
+    // prior 7 days and compare the means. Acceptable for MVP — revisit when
+    // life_score_history has enough Flux data points for temporal analysis.
     let trend: ScoreTrend = 'stable';
     if (readinessScores.length >= 2) {
-      // Use ACWR trend as a proxy: if most athletes have ACWR in sweet spot and improving, trend is improving
-      const avgAcwr = acwrValues.length > 0
+      // Only factor ACWR into trend when we actually have ACWR data;
+      // otherwise skip ACWR contribution to avoid the 1.0 default
+      // making trend appear "improving" with zero training data.
+      const hasAcwrData = acwrValues.length > 0;
+      const avgAcwr = hasAcwrData
         ? acwrValues.reduce((sum, v) => sum + v, 0) / acwrValues.length
-        : 1.0;
-      // Athletes with higher readiness + ACWR in sweet spot = improving
-      if (avgReadiness > 65 && avgAcwr >= 0.8 && avgAcwr <= 1.3) {
-        trend = 'improving';
-      } else if (avgReadiness < 40 || avgAcwr > 1.5) {
-        trend = 'declining';
+        : undefined;
+
+      if (hasAcwrData && avgAcwr !== undefined) {
+        // Athletes with higher readiness + ACWR in sweet spot = improving
+        if (avgReadiness > 65 && avgAcwr >= 0.8 && avgAcwr <= 1.3) {
+          trend = 'improving';
+        } else if (avgReadiness < 40 || avgAcwr > 1.5) {
+          trend = 'declining';
+        }
+      } else {
+        // No ACWR data — use readiness alone
+        if (avgReadiness > 65) {
+          trend = 'improving';
+        } else if (avgReadiness < 40) {
+          trend = 'declining';
+        }
       }
     }
 
