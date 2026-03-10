@@ -29,9 +29,9 @@ import {
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { CeramicLoadingState } from '@/components/ui';
+import type { StudioClip, StudioTranscription } from '../../types/studio';
 
 const log = createNamespacedLogger('VideoClipPanel');
-import type { StudioClip, StudioTranscription } from '../../types/studio';
 
 interface VideoClipPanelProps {
   projectId: string;

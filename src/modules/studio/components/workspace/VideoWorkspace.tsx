@@ -25,11 +25,12 @@ import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { StudioProject, StudioTranscription, StudioClip } from '../../types/studio';
 
-const log = createNamespacedLogger('VideoWorkspace');
 import { VideoUploadPanel } from '../video';
 import type { UploadedVideoFile } from '../video/VideoUploadPanel';
 import { VideoTranscriptionPanel } from '../video';
 import { VideoClipPanel } from '../video';
+
+const log = createNamespacedLogger('VideoWorkspace');
 
 interface VideoWorkspaceProps {
   project: StudioProject;

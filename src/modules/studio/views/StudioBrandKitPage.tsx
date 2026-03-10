@@ -14,10 +14,11 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { CeramicLoadingState } from '@/components/ui';
 import { HeaderGlobal } from '@/components/layout';
 
-const log = createNamespacedLogger('StudioBrandKitPage');
 import { BrandKitEditor } from '../components/brandkit';
 import { BrandKitPreview } from '../components/brandkit';
 import type { StudioBrandKit } from '../types/studio';
+
+const log = createNamespacedLogger('StudioBrandKitPage');
 
 function mapRowToKit(row: Record<string, unknown>): StudioBrandKit {
   return {
