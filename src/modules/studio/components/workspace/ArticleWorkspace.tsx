@@ -15,11 +15,14 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import type { StudioProject } from '../../types/studio';
-import type { SEOReadability, SEOHeaderStructure } from '../article/ArticleSEOPanel';
+import type { SEOReadability, SEOHeaderStructure } from '../../types/studio';
 import { ArticleOutlinePanel } from '../article';
 import { ArticleEditor } from '../article';
 import { ArticleSEOPanel } from '../article';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ArticleWorkspace');
 
 interface ArticleWorkspaceProps {
   project: StudioProject;
@@ -111,7 +114,7 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
         throw new Error(data.error);
       }
     } catch (err) {
-      console.error('Error analyzing SEO:', err);
+      log.error('Error analyzing SEO:', err);
       setSeoAnalyzeError(
         err instanceof Error ? err.message : 'Erro ao analisar SEO. Tente novamente.'
       );
@@ -164,7 +167,7 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
         setOutline(data.data);
       }
     } catch (err) {
-      console.error('Error generating outline:', err);
+      log.error('Error generating outline:', err);
     } finally {
       setIsGeneratingOutline(false);
     }
@@ -185,7 +188,7 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
       if (error) throw error;
       return data?.result || '';
     } catch (err) {
-      console.error('Error with AI assist:', err);
+      log.error('Error with AI assist:', err);
       return '';
     } finally {
       setIsAssisting(false);

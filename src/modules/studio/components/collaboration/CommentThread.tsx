@@ -2,8 +2,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Clock, MessageSquare, Reply } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { StudioComment } from '../../types/studio';
 import { CommentInput } from './CommentInput';
+
+const log = createNamespacedLogger('CommentThread');
 
 interface CommentThreadProps {
   projectId: string;
@@ -60,7 +63,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({ projectId, assetId
         createdAt: new Date(c.created_at),
       })));
     } catch (err) {
-      console.error('Failed to load comments:', err);
+      log.error('Failed to load comments:', err);
     } finally {
       setLoading(false);
     }
@@ -76,8 +79,10 @@ export const CommentThread: React.FC<CommentThreadProps> = ({ projectId, assetId
   }, [comments.length]);
 
   const handleSubmitComment = async (content: string, parentId?: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Sessao expirada. Faca login novamente para comentar.');
+    }
 
     const { error } = await supabase
       .from('studio_comments')
@@ -105,7 +110,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({ projectId, assetId
       if (error) throw error;
       setComments(prev => prev.map(c => c.id === commentId ? { ...c, resolved } : c));
     } catch (err) {
-      console.error('Failed to resolve comment:', err);
+      log.error('Failed to resolve comment:', err);
     }
   };
 

@@ -20,19 +20,7 @@ import {
   BookOpen,
   Link2,
 } from 'lucide-react';
-
-export interface SEOReadability {
-  score: number;
-  level: string;
-  details: string;
-}
-
-export interface SEOHeaderStructure {
-  h1: number;
-  h2: number;
-  h3: number;
-  suggestions: string[];
-}
+import type { SEOReadability, SEOHeaderStructure } from '../../types/studio';
 
 interface ArticleSEOPanelProps {
   seoScore?: number;

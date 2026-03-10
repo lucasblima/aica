@@ -52,6 +52,8 @@ function buildChain(tableName: string, operation: 'select' | 'insert'): any {
   chain.eq = vi.fn().mockReturnValue(chain)
   chain.or = vi.fn().mockReturnValue(chain)
   chain.ilike = vi.fn().mockReturnValue(chain)
+  chain.in = vi.fn().mockReturnValue(chain)
+  chain.contains = vi.fn().mockReturnValue(chain)
   chain.limit = vi.fn().mockReturnValue(chain)
   chain.single = vi.fn().mockImplementation(() => {
     // single() changes the resolved data shape
@@ -147,11 +149,13 @@ describe('crossModuleService', () => {
           dossier_topics: ['AI', 'Cloud'],
         },
       ]
+      mockSelectData['connection_spaces'] = [{ id: 'space-1' }]
       mockSelectData['connection_members'] = []
 
       const result = await fetchContactAsGuest('John', 'user-123')
 
       expect(mockFrom).toHaveBeenCalledWith('contact_network')
+      expect(mockFrom).toHaveBeenCalledWith('connection_spaces')
       expect(mockFrom).toHaveBeenCalledWith('connection_members')
       expect(result).toHaveLength(1)
       expect(result[0]).toEqual(
@@ -178,6 +182,7 @@ describe('crossModuleService', () => {
           dossier_topics: [],
         },
       ]
+      mockSelectData['connection_spaces'] = [{ id: 'space-1' }]
       mockSelectData['connection_members'] = [
         {
           id: 'cm-1',
@@ -210,6 +215,7 @@ describe('crossModuleService', () => {
           dossier_topics: [],
         },
       ]
+      mockSelectData['connection_spaces'] = [{ id: 'space-1' }]
       mockSelectData['connection_members'] = [
         {
           id: 'cm-1',
@@ -231,6 +237,7 @@ describe('crossModuleService', () => {
     it('should handle contact_network table not existing', async () => {
       // Make the first table throw, but second one should still work
       mockSelectThrows = true
+      mockSelectData['connection_spaces'] = [{ id: 'space-1' }]
       mockSelectData['connection_members'] = []
 
       const result = await fetchContactAsGuest('John', 'user-123')
@@ -242,6 +249,7 @@ describe('crossModuleService', () => {
 
     it('should handle Supabase query error on contact_network', async () => {
       mockSelectError = { message: 'permission denied' }
+      mockSelectData['connection_spaces'] = [{ id: 'space-1' }]
       mockSelectData['connection_members'] = []
 
       const result = await fetchContactAsGuest('Test', 'user-123')
