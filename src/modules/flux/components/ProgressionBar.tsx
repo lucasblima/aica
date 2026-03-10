@@ -64,7 +64,14 @@ export function ProgressionBar({
 
       {/* Progress Bar */}
       <div className="space-y-2">
-        <div className="relative h-3 bg-ceramic-text-secondary/10 rounded-full overflow-hidden">
+        <div
+          className="relative h-3 bg-ceramic-text-secondary/10 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={progressPercentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Progresso do ciclo: semana ${currentWeek} de ${totalWeeks} (${progressPercentage}%)`}
+        >
           {/* Background gradient */}
           <div
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-ceramic-info to-ceramic-accent rounded-full transition-all duration-500"

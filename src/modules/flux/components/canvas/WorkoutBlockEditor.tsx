@@ -12,6 +12,9 @@ import { X, Save, Activity, Target, MessageSquare, Loader2, CheckCircle, Externa
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutBlockData } from './WorkoutBlock';
 import type { WorkoutIntensity } from '../../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('WorkoutBlockEditor');
 
 interface WorkoutBlockEditorProps {
   workout: WorkoutBlockData | null;
@@ -61,7 +64,7 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
         setSaveStatus('idle');
       }, 600);
     } catch (err) {
-      console.error('Error saving workout:', err);
+      log.error('Error saving workout:', err);
       setSaveStatus('error');
       errorTimerRef.current = setTimeout(() => setSaveStatus('idle'), 3000);
     } finally {

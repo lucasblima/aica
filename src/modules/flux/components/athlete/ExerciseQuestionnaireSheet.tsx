@@ -175,7 +175,7 @@ export function ExerciseQuestionnaireSheet({
         // Replace notes with transcript (not append) to prevent duplication on re-record
         setNotes(text);
       }
-    } catch (err: any) {
+    } catch (err) {
       log.error('Transcription error:', err);
       setError('Erro na transcricao. Use o campo de texto.');
     } finally {

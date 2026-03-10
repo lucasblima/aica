@@ -65,7 +65,14 @@ export function MicrocycleProgressBar({
         </div>
 
         {/* Progress Bar */}
-        <div className="relative h-3 bg-ceramic-cool/30 rounded-full overflow-hidden">
+        <div
+          className="relative h-3 bg-ceramic-cool/30 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={safeCompletionPercentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Progresso geral do microciclo: ${safeCompletionPercentage}%`}
+        >
           <div
             className={`absolute inset-y-0 left-0 ${getProgressColor(
               safeCompletionPercentage
