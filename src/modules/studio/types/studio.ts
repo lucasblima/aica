@@ -391,6 +391,17 @@ export interface EpisodeProduction {
   updatedAt: string;
 }
 
+/** Metadata for a generated video/audio clip */
+export interface CutMetadata {
+  start_time: number;
+  end_time: number;
+  title: string;
+  platform: string;
+}
+
+/** Shared platform union for clips, calendar entries, and analytics */
+export type StudioPlatform = 'spotify' | 'youtube' | 'instagram' | 'tiktok' | 'linkedin' | 'twitter' | 'newsletter' | 'blog';
+
 /**
  * Maps to `podcast_episode_publication` table.
  * 1:1 relationship with podcast_episodes via episode_id (UNIQUE).
@@ -402,12 +413,12 @@ export interface EpisodePublication {
   id: string;
   episodeId: string;
   cutsGenerated: boolean;
-  cutsMetadata: unknown;
+  cutsMetadata: CutMetadata[] | null;
   blogPostGenerated: boolean;
   blogPostUrl: string | null;
-  publishedToSocial: unknown;
+  publishedToSocial: Record<string, boolean> | null;
   narrativeTensionScore: number | null;
-  peakEndMoments: unknown;
+  peakEndMoments: Record<string, unknown>[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -491,7 +502,7 @@ export interface StudioClip {
   /** DB column: `transcript_segment` (TEXT) */
   transcriptSegment: string;
   /** DB column: `platform` (TEXT) */
-  platform: string;
+  platform: StudioPlatform | string;
   /** DB column: `status` (TEXT, CHECK: 'suggested'|'draft'|'approved'|'published') */
   status: 'suggested' | 'draft' | 'approved' | 'published';
   /** DB column: `caption` (TEXT) */
@@ -673,7 +684,7 @@ export interface ContentCalendarEntry {
   /** DB column: `clip_id` (UUID, nullable) */
   clipId?: string;
   /** DB column: `platform` (TEXT, NOT NULL, CHECK constraint) */
-  platform: 'spotify' | 'youtube' | 'instagram' | 'tiktok' | 'linkedin' | 'twitter' | 'newsletter' | 'blog';
+  platform: StudioPlatform;
   /** DB column: `scheduled_at` (TIMESTAMPTZ, NOT NULL) */
   scheduledAt: Date;
   /** DB column: `published_at` (TIMESTAMPTZ) */
@@ -707,7 +718,7 @@ export interface StudioAnalyticsEntry {
   /** DB column: `project_id` (UUID, nullable) */
   projectId?: string;
   /** DB column: `platform` (TEXT, NOT NULL) */
-  platform: string;
+  platform: StudioPlatform | string;
   /** DB column: `metric_type` (TEXT, NOT NULL) */
   metricType: string;
   /** DB column: `metric_value` (NUMERIC, NOT NULL, default 0) */
@@ -764,4 +775,35 @@ export interface StudioComment {
   resolved: boolean;
   /** DB column: `created_at` (TIMESTAMPTZ, default now()) */
   createdAt: Date;
+}
+
+// ============================================================================
+// SEO ANALYSIS TYPES
+// ============================================================================
+
+/** SEO readability analysis result */
+export interface SEOReadability {
+  score: number;
+  level: 'facil' | 'medio' | 'dificil' | 'N/A';
+  details: string;
+}
+
+/** SEO header structure analysis */
+export interface SEOHeaderStructure {
+  h1: number;
+  h2: number;
+  h3: number;
+  suggestions: string[];
+}
+
+/** Complete SEO analysis result from studio-seo-analyze Edge Function */
+export interface SEOAnalysisResult {
+  score: number;
+  suggestions: string[];
+  titleSuggestions?: string[];
+  metaDescription: string;
+  readability: SEOReadability;
+  keywordDensity: Record<string, number>;
+  headerStructure: SEOHeaderStructure;
+  internalLinkSuggestions?: string[];
 }

@@ -27,7 +27,10 @@ import {
   Loader2,
 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import { CeramicLoadingState } from '@/components/ui';
+
+const log = createNamespacedLogger('VideoClipPanel');
 import type { StudioClip, StudioTranscription } from '../../types/studio';
 
 interface VideoClipPanelProps {
@@ -119,7 +122,10 @@ export default function VideoClipPanel({
         .eq('id', clipId);
 
       if (dbError) {
-        console.warn('Falha ao atualizar status do clip:', dbError.message);
+        log.warn('Falha ao atualizar status do clip:', dbError.message);
+        // Rollback optimistic update
+        onClipsGenerated(clips);
+        setError('Falha ao salvar status do clip. Tente novamente.');
       }
     } finally {
       setUpdatingClipId(null);

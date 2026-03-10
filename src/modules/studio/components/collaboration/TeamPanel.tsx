@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, X, Loader2, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { StudioTeamMember } from '../../types/studio';
+
+const log = createNamespacedLogger('TeamPanel');
 
 const ROLE_OPTIONS: { value: string; label: string; description: string; className: string }[] = [
   { value: 'admin', label: 'Admin', description: 'Acesso total ao projeto', className: 'bg-purple-100 text-purple-700' },
@@ -57,7 +60,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
         acceptedAt: m.accepted_at ? new Date(m.accepted_at) : undefined,
       })));
     } catch (err) {
-      console.error('Failed to load team members:', err);
+      log.error('Failed to load team members:', err);
       setError('Falha ao carregar membros da equipe.');
     } finally {
       setLoading(false);
@@ -99,7 +102,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
       setShowInviteForm(false);
       loadMembers();
     } catch (err) {
-      console.error('Invite failed:', err);
+      log.error('Invite failed:', err);
       setError('Falha ao convidar membro. Verifique o email e tente novamente.');
     } finally {
       setInviting(false);
@@ -117,7 +120,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
       if (updateError) throw updateError;
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, status: 'revoked' as const } : m));
     } catch (err) {
-      console.error('Revoke failed:', err);
+      log.error('Revoke failed:', err);
       setError('Falha ao revogar acesso do membro.');
     }
   };
@@ -136,7 +139,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
         m.id === memberId ? { ...m, role: newRole as StudioTeamMember['role'] } : m
       ));
     } catch (err) {
-      console.error('Role change failed:', err);
+      log.error('Role change failed:', err);
       setError('Falha ao alterar funcao do membro.');
     } finally {
       setChangingRole(null);

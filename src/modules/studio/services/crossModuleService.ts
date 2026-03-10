@@ -19,6 +19,14 @@ import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('StudioCrossModule');
 
+/**
+ * Sanitize search term to prevent PostgREST injection via special characters.
+ * Removes characters that have special meaning in PostgREST/PostgreSQL LIKE patterns.
+ */
+function sanitizeSearchTerm(term: string): string {
+  return term.replace(/[%_,().]/g, '')
+}
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -84,7 +92,7 @@ export async function fetchContactAsGuest(
       .from('contact_network')
       .select('id, contact_name, name, contact_phone, whatsapp_phone, dossier_summary, dossier_topics')
       .eq('user_id', userId)
-      .or(`contact_name.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
+      .or(`contact_name.ilike.%${sanitizeSearchTerm(searchTerm)}%,name.ilike.%${sanitizeSearchTerm(searchTerm)}%`)
       .limit(5);
 
     if (networkError) {
@@ -107,33 +115,44 @@ export async function fetchContactAsGuest(
   }
 
   // Search connection_members table (space members with external info)
+  // Filter by user's spaces to ensure user_id scoping
   try {
-    const { data: members, error: memberError } = await supabase
-      .from('connection_members')
-      .select('id, external_name, external_email, external_phone, context_data, space_id')
-      .eq('is_active', true)
-      .ilike('external_name', `%${searchTerm}%`)
-      .limit(5);
+    const { data: userSpaces } = await supabase
+      .from('connection_spaces')
+      .select('id')
+      .eq('user_id', userId);
 
-    if (memberError) {
-      log.warn('Error searching connection_members:', memberError.message);
-    } else if (members) {
-      for (const member of members) {
-        // Avoid duplicates (same name already found in contact_network)
-        const alreadyFound = results.some(
-          (r) => r.name.toLowerCase() === (member.external_name || '').toLowerCase()
-        );
-        if (!alreadyFound && member.external_name) {
-          const contextData = (member.context_data || {}) as Record<string, unknown>;
-          results.push({
-            id: member.id,
-            name: member.external_name,
-            email: member.external_email || null,
-            phone: member.external_phone || null,
-            bio: (contextData.bio as string) || (contextData.occupation as string) || null,
-            topics: [],
-            source: 'connection_members',
-          });
+    const spaceIds = userSpaces?.map(s => s.id) || [];
+
+    if (spaceIds.length > 0) {
+      const { data: members, error: memberError } = await supabase
+        .from('connection_members')
+        .select('id, external_name, external_email, external_phone, context_data, space_id')
+        .eq('is_active', true)
+        .in('space_id', spaceIds)
+        .ilike('external_name', `%${sanitizeSearchTerm(searchTerm)}%`)
+        .limit(5);
+
+      if (memberError) {
+        log.warn('Error searching connection_members:', memberError.message);
+      } else if (members) {
+        for (const member of members) {
+          // Avoid duplicates (same name already found in contact_network)
+          const alreadyFound = results.some(
+            (r) => r.name.toLowerCase() === (member.external_name || '').toLowerCase()
+          );
+          if (!alreadyFound && member.external_name) {
+            const contextData = (member.context_data || {}) as Record<string, unknown>;
+            results.push({
+              id: member.id,
+              name: member.external_name,
+              email: member.external_email || null,
+              phone: member.external_phone || null,
+              bio: (contextData.bio as string) || (contextData.occupation as string) || null,
+              topics: [],
+              source: 'connection_members',
+            });
+          }
         }
       }
     }
@@ -249,15 +268,15 @@ export async function awardEpisodeCompletionCP(
       .from('moments')
       .select('id')
       .eq('user_id', userId)
-      .ilike('content', `%Episodio publicado:%${episode.title}%`)
+      .contains('tags', [`#episode:${episode.id}`])
       .limit(1);
 
     if (existing && existing.length > 0) {
       log.debug('CP already awarded for episode:', episode.id);
       return null;
     }
-  } catch {
-    // If check fails, proceed with insert (worst case: duplicate moment)
+  } catch (err) {
+    log.warn('CP duplicate check failed, proceeding with insert:', err)
   }
 
   const CP_AMOUNT = 15;
@@ -270,7 +289,7 @@ export async function awardEpisodeCompletionCP(
         type: 'text',
         content: `Episodio publicado: ${episode.title}`,
         emotion: 'proud',
-        tags: ['#vitoria', '#studio', '#publicacao'],
+        tags: ['#vitoria', '#studio', '#publicacao', `#episode:${episode.id}`],
       })
       .select('id, content, emotion')
       .single();

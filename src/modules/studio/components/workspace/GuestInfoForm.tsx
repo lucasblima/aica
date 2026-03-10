@@ -28,6 +28,9 @@ import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { User, Phone, Mail, AlertCircle, Check, Send, Loader2, ExternalLink, Search, Link2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GuestInfoForm');
 import { fetchContactAsGuest } from '@/modules/studio/services/crossModuleService';
 import type { ContactAsGuest } from '@/modules/studio/services/crossModuleService';
 
@@ -123,7 +126,8 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
       const results = await fetchContactAsGuest(formData.name, user.id);
       setContactResults(results);
       setContactSearchDone(true);
-    } catch {
+    } catch (err) {
+      log.error('Failed to search contacts:', err);
       setContactSearchDone(true);
     } finally {
       setIsSearchingContacts(false);

@@ -426,7 +426,7 @@ describe('workspaceDatabaseService — Normalized Schema', () => {
 
       const result = await saveEpisodePublication('ep-1', {
         cutsGenerated: true,
-        cutsMetadata: { cuts: ['intro', 'main'] },
+        cutsMetadata: [{ start_time: 0, end_time: 30, title: 'intro', platform: 'youtube' }, { start_time: 30, end_time: 120, title: 'main', platform: 'spotify' }],
         narrativeTensionScore: 0.72,
       })
 

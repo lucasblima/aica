@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, BarChart3, Eye, Heart, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import { HeaderGlobal } from '@/components/layout';
 import type { StudioAnalyticsEntry } from '../types/studio';
+
+const log = createNamespacedLogger('StudioAnalyticsPage');
 
 interface MetricCard {
   label: string;
@@ -49,7 +52,7 @@ export default function StudioAnalyticsPage() {
         metricValue: e.metric_value,
       })));
     } catch (err) {
-      console.error('Failed to load analytics:', err);
+      log.error('Failed to load analytics:', err);
     } finally {
       setLoading(false);
     }
@@ -84,7 +87,7 @@ export default function StudioAnalyticsPage() {
       if (error) throw error;
       setInsights(data?.insights || []);
     } catch (err) {
-      console.error('Insight generation failed:', err);
+      log.error('Insight generation failed:', err);
       setInsightError('Falha ao gerar insights. Tente novamente.');
     } finally {
       setGeneratingInsights(false);

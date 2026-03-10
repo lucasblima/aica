@@ -22,7 +22,10 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { StudioProject, StudioTranscription, StudioClip } from '../../types/studio';
+
+const log = createNamespacedLogger('VideoWorkspace');
 import { VideoUploadPanel } from '../video';
 import type { UploadedVideoFile } from '../video/VideoUploadPanel';
 import { VideoTranscriptionPanel } from '../video';
@@ -134,7 +137,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
           setCurrentStage('upload');
         }
       } catch (err) {
-        console.warn('Erro ao carregar dados existentes do video:', err);
+        log.warn('Erro ao carregar dados existentes do video:', err);
       }
     };
 

@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, CalendarPlus, Loader2, RefreshCw, Palette } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import { CeramicLoadingState } from '@/components/ui';
 import { PlatformCard } from './PlatformCard';
 import { BrandKitPreview } from '../brandkit';
 import type { StudioBrandKit } from '@/modules/studio/types';
+
+const log = createNamespacedLogger('DistributionPanel');
 
 const ALL_PLATFORMS = ['spotify', 'youtube', 'instagram', 'tiktok', 'linkedin', 'twitter', 'newsletter', 'blog'];
 
@@ -84,7 +87,7 @@ export const DistributionPanel: React.FC<DistributionPanelProps> = ({ projectId,
           setSelectedKitId(kits[0].id);
         }
       } catch (err) {
-        console.error('Failed to fetch brand kits:', err);
+        log.error('Failed to fetch brand kits:', err);
       } finally {
         if (!cancelled) setLoadingKits(false);
       }
@@ -132,7 +135,7 @@ export const DistributionPanel: React.FC<DistributionPanelProps> = ({ projectId,
       });
       setCaptions(generated);
     } catch (err) {
-      console.error('Caption generation failed:', err);
+      log.error('Caption generation failed:', err);
       setError('Falha ao gerar captions. Tente novamente.');
     } finally {
       setGenerating(false);
@@ -179,7 +182,7 @@ export const DistributionPanel: React.FC<DistributionPanelProps> = ({ projectId,
 
       setCaptions(prev => prev.map(c => ({ ...c, status: c.scheduledAt ? 'scheduled' : c.status })));
     } catch (err) {
-      console.error('Schedule failed:', err);
+      log.error('Schedule failed:', err);
       setError('Falha ao agendar conteudo. Tente novamente.');
     } finally {
       setScheduling(false);

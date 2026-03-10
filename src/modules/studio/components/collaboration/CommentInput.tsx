@@ -1,5 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Send, Loader2, Clock } from 'lucide-react';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('CommentInput');
 
 interface CommentInputProps {
   /** Called when the user submits a comment. May throw on error. */
@@ -44,7 +47,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
       await onSubmit(content.trim(), parentId);
       setContent('');
     } catch (err) {
-      console.error('Failed to submit comment:', err);
+      log.error('Failed to submit comment:', err);
       setError('Falha ao enviar comentario. Tente novamente.');
     } finally {
       setSending(false);

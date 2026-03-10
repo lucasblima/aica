@@ -129,7 +129,7 @@ export async function createEpisode(episode: Partial<Episode>): Promise<Episode>
       syncEntityToGoogle('studio', data.id, eventData).catch((err) =>
         log.warn('Calendar sync failed for new episode:', err)
       )
-    })
+    }).catch((err) => log.warn('Calendar connection check failed:', err))
   }
 
   return data
@@ -180,7 +180,7 @@ export async function updateEpisode(id: string, updates: Partial<Episode>): Prom
       syncEntityToGoogle('studio', data.id, eventData).catch((err) =>
         log.warn('Calendar sync failed for updated episode:', err)
       )
-    })
+    }).catch((err) => log.warn('Calendar connection check failed:', err))
   }
 
   // Award CP when episode is published (Journey integration, non-blocking)
@@ -342,6 +342,8 @@ export async function createCategory(
 
     if (!updateError) {
       data.color = color
+    } else {
+      log.warn('Failed to set category color:', updateError.message)
     }
   }
 
@@ -416,8 +418,12 @@ export function subscribeToTopics(
       },
       async () => {
         // When any change happens, refetch all topics
-        const topics = await getTopics(episodeId)
-        callback(topics)
+        try {
+          const topics = await getTopics(episodeId)
+          callback(topics)
+        } catch (err) {
+          log.warn('Realtime topic refetch failed:', err)
+        }
       }
     )
     .subscribe()
@@ -441,8 +447,12 @@ export function subscribeToEpisodes(
         table: 'podcast_episodes'
       },
       async () => {
-        const episodes = await listEpisodes()
-        callback(episodes)
+        try {
+          const episodes = await listEpisodes()
+          callback(episodes)
+        } catch (err) {
+          log.warn('Realtime episode refetch failed:', err)
+        }
       }
     )
     .subscribe()

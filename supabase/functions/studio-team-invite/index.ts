@@ -45,15 +45,24 @@ const ROLE_LABELS: Record<string, string> = {
 // EMAIL
 // =============================================================================
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function buildInviteEmailHtml(
+  toEmail: string,
   memberName: string,
   role: string,
   projectName: string | undefined,
   inviterEmail: string
 ): string {
-  const roleLabel = ROLE_LABELS[role] || role
-  const projectLine = projectName
-    ? `<p>Voce foi convidado para colaborar no projeto <strong>${projectName}</strong> como <strong>${roleLabel}</strong>.</p>`
+  const roleLabel = escapeHtml(ROLE_LABELS[role] || role)
+  const safeMemberName = escapeHtml(memberName)
+  const safeProjectName = projectName ? escapeHtml(projectName) : undefined
+  const safeInviterEmail = escapeHtml(inviterEmail)
+  const safeToEmail = escapeHtml(toEmail)
+  const projectLine = safeProjectName
+    ? `<p>Voce foi convidado para colaborar no projeto <strong>${safeProjectName}</strong> como <strong>${roleLabel}</strong>.</p>`
     : `<p>Voce foi convidado para colaborar no Studio AICA como <strong>${roleLabel}</strong>.</p>`
 
   return `
@@ -65,11 +74,11 @@ function buildInviteEmailHtml(
             <p style="color: #666; margin: 5px 0 0 0;">Producao de Conteudo Colaborativa</p>
           </div>
 
-          <h2>Ola ${memberName}!</h2>
+          <h2>Ola ${safeMemberName}!</h2>
 
           ${projectLine}
 
-          <p><strong>${inviterEmail}</strong> te convidou para fazer parte da equipe.</p>
+          <p><strong>${safeInviterEmail}</strong> te convidou para fazer parte da equipe.</p>
 
           <div style="margin: 30px 0; text-align: center;">
             <a href="https://aica.guru/studio"
@@ -79,7 +88,7 @@ function buildInviteEmailHtml(
           </div>
 
           <p style="font-size: 14px; color: #666;">
-            Ao acessar a plataforma com o email <strong>${memberName}</strong>, voce tera acesso automatico como ${roleLabel}.
+            Ao acessar a plataforma com o email <strong>${safeToEmail}</strong>, voce tera acesso automatico como ${roleLabel}.
           </p>
 
           <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;" />
@@ -106,7 +115,7 @@ async function sendInviteEmail(
   }
 
   const subject = 'Convite para colaborar no Studio AICA'
-  const htmlContent = buildInviteEmailHtml(memberName, role, projectName, inviterEmail)
+  const htmlContent = buildInviteEmailHtml(toEmail, memberName, role, projectName, inviterEmail)
 
   try {
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {

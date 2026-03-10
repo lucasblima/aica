@@ -18,6 +18,9 @@ import {
   Info,
 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('VideoUploadPanel');
 
 export interface UploadedVideoFile {
   name: string;
@@ -108,7 +111,8 @@ export default function VideoUploadPanel({
         .single();
 
       if (dbError) {
-        console.warn('Falha ao salvar metadados do video:', dbError.message);
+        log.warn('Falha ao salvar metadados do video:', dbError.message);
+        setWarning('Video carregado, mas os metadados nao foram salvos. Tente novamente mais tarde.');
       }
 
       const uploadedVideo: UploadedVideoFile = {
@@ -120,7 +124,8 @@ export default function VideoUploadPanel({
       onFileUploaded(uploadedVideo);
     } catch (err) {
       // Even if DB save fails, report the file as uploaded (metadata save is best-effort)
-      console.warn('Erro ao salvar asset:', err);
+      log.warn('Erro ao salvar asset:', err);
+      setWarning('Video carregado, mas ocorreu um erro ao salvar metadados.');
       onFileUploaded({
         name: file.name,
         size: file.size,
