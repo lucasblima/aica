@@ -11,3 +11,6 @@ export type { TokenRefreshFailureNotification, UseGoogleCalendarEventsOptions } 
 
 export { useTimeline } from './useTimeline';
 export type { UseTimelineOptions, UseTimelineReturn } from './useTimeline';
+
+export { useRecurrence } from './useRecurrence';
+export type { RecurrencePattern, UseRecurrenceReturn } from './useRecurrence';

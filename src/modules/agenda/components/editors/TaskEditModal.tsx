@@ -4,8 +4,8 @@ import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText, FileText as Fil
 import { Task } from '@/types';
 import { Accordion } from '@/components/ui';
 import { SubtaskList, Subtask } from '@/components/ui';
-import { RecurrencePicker } from '@/components/ui';
 import { TagInput } from '@/components/ui';
+import { RecurrenceEditor } from './RecurrenceEditor';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('TaskEditModal');
@@ -345,10 +345,9 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                                         defaultExpanded={!!initialData.recurrence_rule}
                                         id="accordion-recurrence"
                                     >
-                                        <RecurrencePicker
-                                            value={recurrenceRule}
-                                            onChange={setRecurrenceRule}
-                                            baseDate={dueDate ? new Date(dueDate) : new Date()}
+                                        <RecurrenceEditor
+                                            value={recurrenceRule ?? null}
+                                            onChange={(rrule) => setRecurrenceRule(rrule ?? undefined)}
                                         />
                                     </Accordion>
                                 </div>
