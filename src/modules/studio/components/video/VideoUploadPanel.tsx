@@ -94,9 +94,11 @@ export default function VideoUploadPanel({
     // Save metadata to studio_assets
     const format = getFormatName(file.type);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error: dbError } = await supabase
         .from('studio_assets')
         .insert({
+          user_id: user?.id,
           project_id: projectId,
           asset_type: 'video',
           file_url: `uploads/videos/${file.name}`, // placeholder URL until real storage

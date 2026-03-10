@@ -20,7 +20,7 @@ const ROLE_LABELS: Record<string, { label: string; className: string }> = Object
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-700' },
-  active: { label: 'Ativo', className: 'bg-emerald-100 text-emerald-700' },
+  active: { label: 'Ativo', className: 'bg-ceramic-success/10 text-ceramic-success' },
   revoked: { label: 'Revogado', className: 'bg-ceramic-error/10 text-ceramic-error' },
 };
 
@@ -177,7 +177,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-700 font-medium"
+            className="p-3 rounded-xl bg-ceramic-success/10 border border-ceramic-success/30 text-sm text-ceramic-success font-medium"
           >
             {successMessage}
           </motion.div>
@@ -316,7 +316,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
                 {member.status !== 'revoked' && (
                   <button
                     onClick={() => handleRevoke(member.id)}
-                    className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors px-2 py-1"
+                    className="text-xs font-bold text-ceramic-error hover:text-ceramic-error/80 transition-colors px-2 py-1"
                   >
                     Remover
                   </button>
