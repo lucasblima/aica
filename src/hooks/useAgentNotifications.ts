@@ -245,15 +245,17 @@ export function useAgentNotifications(limit: number = 20): UseAgentNotifications
               prev.map((n) => (n.id === updated.id ? updated : n))
             );
             // Re-fetch unread count on update (could be mark-as-read from another device)
-            supabase
-              .rpc('get_unread_notification_count', { p_user_id: userId })
+            Promise.resolve(
+              supabase.rpc('get_unread_notification_count', { p_user_id: userId })
+            )
               .then(({ data }) => {
                 if (typeof data === 'number') {
                   setUnreadCount(data);
                 }
               })
-              .catch((err) => {
-                log.warn('Failed to refresh unread count:', { error: err?.message });
+              .catch((err: unknown) => {
+                const message = err instanceof Error ? err.message : 'unknown';
+                log.warn('Failed to refresh unread count:', { error: message });
               });
           }
         )
