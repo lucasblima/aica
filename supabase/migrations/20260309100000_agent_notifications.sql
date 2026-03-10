@@ -62,12 +62,12 @@ CREATE POLICY "Users update own agent notifications" ON agent_notifications
 -- Service role inserts notifications (agents run as service role)
 DROP POLICY IF EXISTS "Service role inserts agent notifications" ON agent_notifications;
 CREATE POLICY "Service role inserts agent notifications" ON agent_notifications
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT TO service_role WITH CHECK (true);
 
 -- Service role full access (for cleanup, admin operations)
 DROP POLICY IF EXISTS "Service role full access agent notifications" ON agent_notifications;
 CREATE POLICY "Service role full access agent notifications" ON agent_notifications
-  FOR ALL USING (true)
+  FOR ALL TO service_role USING (true)
   WITH CHECK (true);
 
 -- ============================================================================
@@ -84,21 +84,12 @@ GRANT ALL ON agent_notifications TO service_role;
 
 CREATE OR REPLACE FUNCTION get_unread_notification_count(p_user_id UUID)
 RETURNS INTEGER
-LANGUAGE plpgsql
+LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  v_count INTEGER;
-BEGIN
-  SELECT COUNT(*)::INTEGER
-  INTO v_count
-  FROM agent_notifications
-  WHERE user_id = p_user_id
-    AND read_at IS NULL;
-
-  RETURN COALESCE(v_count, 0);
-END;
+  SELECT COUNT(*)::INTEGER FROM agent_notifications
+  WHERE user_id = p_user_id AND read_at IS NULL;
 $$;
 
 -- ============================================================================
