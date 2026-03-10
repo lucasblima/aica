@@ -567,11 +567,12 @@ export const statementService = {
             },
           });
 
-          if (catResult?.categories && Array.isArray(catResult.categories)) {
+          const categories = catResult?.result?.categories || catResult?.categories;
+          if (categories && Array.isArray(categories)) {
             let applied = 0;
             uncategorized.forEach((t, i) => {
-              if (catResult.categories[i] && catResult.categories[i] !== 'other') {
-                t.category = catResult.categories[i];
+              if (categories[i] && categories[i] !== 'other') {
+                t.category = categories[i];
                 applied++;
               }
             });

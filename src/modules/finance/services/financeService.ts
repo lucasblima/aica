@@ -504,13 +504,14 @@ export async function getCategorySuggestions(
                 },
             });
 
-            if (catErr || !catResult?.categories?.length) {
+            const categories = catResult?.result?.categories || catResult?.categories;
+            if (catErr || !categories?.length) {
                 log.warn('[Recategorize] AI batch failed, skipping', catErr);
                 continue;
             }
 
             for (let j = 0; j < batch.length; j++) {
-                const newCat = catResult.categories[j];
+                const newCat = categories[j];
                 if (newCat && newCat !== batch[j].category) {
                     suggestions.push({
                         id: batch[j].id,
