@@ -8,7 +8,6 @@ import React, { useEffect } from 'react';
 import { Repeat } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRecurrence, type RecurrencePattern } from '../../hooks/useRecurrence';
-import { describeRRuleInPortuguese } from '../../services/taskRecurrenceService';
 
 export interface RecurrenceEditorProps {
   /** Current RRULE string, or null for no recurrence. */
