@@ -45,6 +45,8 @@ import { SettingsMenu, HelpButton } from '@/components'
 import { CeramicFilterTab } from '@/components/ui'
 import { InterviewCategoryPicker, InterviewSession as InterviewSessionView } from '../components/interviewer'
 import { FeatureGate } from '@/modules/liferpg/components/FeatureGate'
+import { LifeCouncilCard } from '@/components/features/LifeCouncilCard'
+import { useLifeCouncil } from '@/hooks/useLifeCouncil'
 
 // ── Skeleton Components ──────────────────────────────────────────
 
@@ -178,6 +180,16 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, newLevel, qualityFeedback, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
+
+  // Life Council — daily AI insight
+  const {
+    insight: councilInsight,
+    isLoading: isLoadingCouncil,
+    isRunning: isRunningCouncil,
+    error: councilError,
+    runCouncil,
+    markViewed: markCouncilViewed,
+  } = useLifeCouncil({ autoTrigger: true })
 
   // File Search integration
   const {
@@ -499,8 +511,19 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       {/* ═══ DESKTOP LAYOUT (lg+): 2-column — Insights left, Timeline right ═══ */}
       <div className="hidden lg:block max-w-7xl mx-auto p-6 pb-40">
         <div className="grid grid-cols-5 gap-6">
-          {/* LEFT COLUMN (3/5 = 60%) — Insights: Weekly Summary */}
+          {/* LEFT COLUMN (3/5 = 60%) — Insights: Life Council + Weekly Summary */}
           <div className="col-span-3 space-y-5">
+            {/* Life Council — daily AI insight */}
+            <LifeCouncilCard
+              insight={councilInsight}
+              isLoading={isLoadingCouncil}
+              isRunning={isRunningCouncil}
+              error={councilError}
+              onRun={runCouncil}
+              onMarkViewed={markCouncilViewed}
+              lastUpdated={councilInsight?.created_at}
+            />
+
             {/* Weekly Summary */}
             <FeatureGate featureId="weekly_summary">
               {isLoadingSummary ? (
@@ -681,6 +704,17 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
+              {/* Life Council — daily AI insight */}
+              <LifeCouncilCard
+                insight={councilInsight}
+                isLoading={isLoadingCouncil}
+                isRunning={isRunningCouncil}
+                error={councilError}
+                onRun={runCouncil}
+                onMarkViewed={markCouncilViewed}
+                lastUpdated={councilInsight?.created_at}
+              />
+
               <FeatureGate featureId="weekly_summary">
                 {isLoadingSummary ? (
                   <WeeklySummarySkeleton />
