@@ -55,7 +55,7 @@ export function useTrustLevel(): UseTrustLevelReturn {
       }
 
       // Parallel queries for engagement stats
-      const [momentsResult, tasksResult, profileResult] = await Promise.all([
+      const [momentsResult, tasksResult] = await Promise.all([
         supabase
           .from('moments')
           .select('id', { count: 'exact', head: true })
@@ -64,20 +64,23 @@ export function useTrustLevel(): UseTrustLevelReturn {
           .from('work_items')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id),
-        // Use the user's created_at from auth metadata for days active
-        Promise.resolve({ createdAt: user.created_at }),
       ])
 
       const totalMoments = momentsResult.count ?? 0
       const totalTasks = tasksResult.count ?? 0
 
-      // Calculate days active from account creation
-      const createdAt = profileResult.createdAt
-        ? new Date(profileResult.createdAt)
-        : new Date()
-      const daysActive = Math.floor(
-        (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
-      )
+      // Days active: count real interaction days via RPC
+      let daysActive = 0
+      try {
+        const { data } = await supabase.rpc('count_days_with_activity', {
+          p_user_id: user.id,
+        })
+        if (typeof data === 'number') daysActive = data
+      } catch {
+        // RPC may not exist yet, fallback to account age
+        const createdAt = user.created_at ? new Date(user.created_at) : new Date()
+        daysActive = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
+      }
 
       // Modules used: try RPC first, fallback to counting tables with data
       let modulesUsed = 3 // reasonable default
