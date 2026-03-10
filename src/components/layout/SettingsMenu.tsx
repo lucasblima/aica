@@ -37,7 +37,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                 .from('profiles')
                 .select('is_evangelist')
                 .eq('id', user.id)
-                .single()
+                .maybeSingle()
                 .then(({ data }) => {
                     if (data?.is_evangelist) setIsEvangelist(true);
                 });
