@@ -27,7 +27,31 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getCorsHeaders } from '../_shared/cors.ts'
+// ============================================================================
+// CORS (inlined — MCP deploy cannot resolve relative _shared/ imports)
+// ============================================================================
+
+const ALLOWED_ORIGINS = [
+  'https://dev.aica.guru',
+  'https://aica.guru',
+];
+
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/^http:\/\/localhost:\d+$/.test(origin)) return true;
+  return false;
+}
+
+function getCorsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigin = isAllowedOrigin(origin) ? origin : '';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-proactive-secret',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 // Environment variables
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -57,11 +81,7 @@ interface TriggerResult {
 }
 
 serve(async (req: Request) => {
-  const corsHeaders = {
-    ...getCorsHeaders(req),
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-proactive-secret',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-  }
+  const corsHeaders = getCorsHeaders(req)
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
