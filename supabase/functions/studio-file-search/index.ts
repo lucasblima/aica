@@ -179,10 +179,12 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    const status = message === 'Unauthorized' ? 401 : 500;
     logger.error('error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: message }),
+      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
