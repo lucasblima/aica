@@ -32,12 +32,14 @@ export async function createCalendarEvent(
 
 export async function updateCalendarEvent(
   id: string,
+  userId: string,
   updates: Partial<CalendarEvent>
 ): Promise<CalendarEvent> {
   const { data, error } = await supabase
     .from('calendar_events')
     .update(updates)
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single();
 
@@ -45,11 +47,12 @@ export async function updateCalendarEvent(
   return data;
 }
 
-export async function deleteCalendarEvent(id: string): Promise<void> {
+export async function deleteCalendarEvent(id: string, userId: string): Promise<void> {
   const { error } = await supabase
     .from('calendar_events')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }
