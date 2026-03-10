@@ -395,6 +395,13 @@ describe('IntensityCalculatorService', () => {
       expect(result.recommended_intensity).toBe('RPE 7');
     });
 
+    it('should handle FTP of 0 (edge case)', () => {
+      const profile = makeProfile({ modality: 'cycling', ftp: 0 });
+      // FTP of 0 is falsy, so it triggers the same guard as missing FTP
+      expect(() => IntensityCalculatorService.calculateIntensity(profile, 23))
+        .toThrow('FTP');
+    });
+
     it('should throw error for cycling without FTP', () => {
       const profile = makeProfile({ modality: 'cycling' });
 
