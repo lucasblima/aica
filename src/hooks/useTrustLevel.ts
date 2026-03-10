@@ -11,7 +11,7 @@
  * const { trustLevel, label, progress, isLoading } = useTrustLevel()
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/services/supabaseClient'
 import { getCachedUser } from '@/services/authCacheService'
 import {
@@ -120,9 +120,9 @@ export function useTrustLevel(): UseTrustLevelReturn {
     fetchStats()
   }, [fetchStats])
 
-  const trustLevel = calculateTrustLevel(stats)
-  const label = getTrustLevelLabel(trustLevel)
-  const { nextLevel, progress } = getTrustProgress(stats)
+  const trustLevel = useMemo(() => calculateTrustLevel(stats), [stats])
+  const label = useMemo(() => getTrustLevelLabel(trustLevel), [trustLevel])
+  const { nextLevel, progress } = useMemo(() => getTrustProgress(stats), [stats])
 
   return {
     trustLevel,

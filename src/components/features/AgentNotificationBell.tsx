@@ -33,6 +33,14 @@ const TYPE_COLORS: Record<string, string> = {
   system: 'bg-ceramic-cool text-ceramic-text-secondary',
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  insight: 'Insight',
+  deadline: 'Prazo',
+  pattern: 'Padrão',
+  action: 'Ação',
+  system: 'Sistema',
+};
+
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -81,7 +89,7 @@ function NotificationItem({
                 TYPE_COLORS[notification.notification_type] || TYPE_COLORS.system
               }`}
             >
-              {notification.notification_type}
+              {TYPE_LABELS[notification.notification_type] || notification.notification_type}
             </span>
             <span className="text-xs text-ceramic-text-secondary">{timeAgo}</span>
           </div>
@@ -116,17 +124,23 @@ export function AgentNotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or Escape key
   useEffect(() => {
+    if (!isOpen) return;
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     }
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setIsOpen(false);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [isOpen]);
 
   return (
@@ -135,6 +149,8 @@ export function AgentNotificationBell() {
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
         aria-label={`Notificações de agentes${unreadCount > 0 ? ` (${unreadCount} não lidas)` : ''}`}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
         <Bell size={20} />
         {unreadCount > 0 && (
