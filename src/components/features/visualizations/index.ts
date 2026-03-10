@@ -17,8 +17,9 @@ export { CircularScore } from './CircularScore';
 export { HeatmapGrid } from './HeatmapGrid';
 export type { HeatmapDay } from './HeatmapGrid';
 
-export { CalendarGrid } from './CalendarGrid';
-export type { CalendarEvent } from './CalendarGrid';
+// Migrated to @/modules/agenda/components/calendar/ (re-export for backward compat)
+export { CalendarGrid } from '@/modules/agenda/components/calendar/MonthGrid';
+export type { CalendarEvent } from '@/modules/agenda/components/calendar/MonthGrid';
 
 export { BarChartSimple } from './BarChartSimple';
 export type { BarGroup } from './BarChartSimple';
