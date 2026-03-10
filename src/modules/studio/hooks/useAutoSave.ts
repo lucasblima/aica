@@ -191,59 +191,86 @@ export function useAutoSave({
       if (topicsChanged) {
         log.debug('[useAutoSave] Topics changed, updating...');
 
-        // Delete all existing topics for this episode (simpler than selective update)
-        const { error: deleteError } = await supabase
+        // Helper function to validate UUID format
+        const isValidUUID = (str: string): boolean => {
+          return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+        };
+
+        // Snapshot current DB topics before modifying, for rollback on failure
+        const { data: existingTopics, error: topicSnapshotError } = await supabase
           .from('podcast_topics')
-          .delete()
+          .select('*')
           .eq('episode_id', currentState.episodeId);
 
-        if (deleteError) {
-          log.error('[useAutoSave] Topics delete failed:', deleteError);
-          throw deleteError;
+        if (topicSnapshotError) {
+          log.warn('[useAutoSave] Could not snapshot topics for rollback:', topicSnapshotError);
         }
 
-        // Insert updated topics
-        if (currentState.pauta.topics.length > 0) {
-          // Helper function to validate UUID format
-          const isValidUUID = (str: string): boolean => {
-            return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-          };
-
-          const topicsToInsert = currentState.pauta.topics.map((topic, index) => ({
-            id: topic.id,
-            episode_id: currentState.episodeId,
-            category: topic.categoryId || null,  // ✅ FIX: Use 'category' TEXT field instead of 'category_id' UUID
-            question_text: topic.text,
-            completed: topic.completed,
-            order: index,
-            archived: topic.archived || false,
-            sponsor_script: topic.sponsorScript || null,
-          }));
-
-          // ✅ FIX: Remove non-UUID topic IDs (e.g., "topic_1766361842098")
-          // Database expects UUID format, will auto-generate if ID is omitted
-          const cleanedTopics = topicsToInsert.map(topic => {
-            if (topic.id && isValidUUID(topic.id)) {
-              return topic;  // UUID válido, manter
-            }
-            // ID inválido (ex: "topic_1766361842098"), remover e deixar DB gerar UUID
-            const { id, ...rest } = topic;
-            log.debug(`[useAutoSave] Removing non-UUID topic ID: "${id}" - database will generate UUID`);
-            return rest;
-          });
-
-          log.debug('[useAutoSave] Inserting topics:', cleanedTopics);
-
-          const { error: insertError } = await supabase
+        try {
+          // Delete all existing topics for this episode
+          const { error: deleteError } = await supabase
             .from('podcast_topics')
-            .insert(cleanedTopics);
+            .delete()
+            .eq('episode_id', currentState.episodeId);
 
-          if (insertError) {
-            log.error('[useAutoSave] Topics insert failed:', insertError);
-            throw insertError;
+          if (deleteError) {
+            log.error('[useAutoSave] Topics delete failed:', deleteError);
+            throw deleteError;
           }
 
-          log.debug('[useAutoSave] Topics insert successful');
+          // Insert updated topics
+          if (currentState.pauta.topics.length > 0) {
+            const topicsToInsert = currentState.pauta.topics.map((topic, index) => ({
+              id: topic.id,
+              episode_id: currentState.episodeId,
+              category_id: topic.categoryId || null,
+              text: topic.text,
+              completed: topic.completed,
+              order: index,
+              archived: topic.archived || false,
+              sponsor_script: topic.sponsorScript || null,
+            }));
+
+            // Remove non-UUID topic IDs (e.g., "topic_1766361842098")
+            // Database expects UUID format, will auto-generate if ID is omitted
+            const cleanedTopics = topicsToInsert.map(topic => {
+              if (topic.id && isValidUUID(topic.id)) {
+                return topic;  // UUID válido, manter
+              }
+              // ID inválido (ex: "topic_1766361842098"), remover e deixar DB gerar UUID
+              const { id, ...rest } = topic;
+              log.debug(`[useAutoSave] Removing non-UUID topic ID: "${id}" - database will generate UUID`);
+              return rest;
+            });
+
+            log.debug('[useAutoSave] Inserting topics:', cleanedTopics);
+
+            const { error: insertError } = await supabase
+              .from('podcast_topics')
+              .insert(cleanedTopics);
+
+            if (insertError) {
+              log.error('[useAutoSave] Topics insert failed:', insertError);
+              throw insertError;
+            }
+
+            log.debug('[useAutoSave] Topics insert successful');
+          }
+        } catch (topicError) {
+          // Rollback: restore previously saved topics to prevent data loss
+          if (existingTopics && existingTopics.length > 0) {
+            log.warn('[useAutoSave] Topics save failed, attempting rollback with', existingTopics.length, 'topics');
+            const { error: rollbackError } = await supabase
+              .from('podcast_topics')
+              .insert(existingTopics);
+
+            if (rollbackError) {
+              log.error('[useAutoSave] Topics rollback ALSO failed — data may be lost:', rollbackError);
+            } else {
+              log.debug('[useAutoSave] Topics rollback successful, original data preserved');
+            }
+          }
+          throw topicError;
         }
       }
 
@@ -257,58 +284,84 @@ export function useAutoSave({
       if (categoriesChanged) {
         log.debug('[useAutoSave] Categories changed, updating...');
 
-        // Delete existing categories
-        const { error: deleteCatError } = await supabase
+        // Helper function to validate UUID format
+        const isValidUUID = (str: string): boolean => {
+          return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+        };
+
+        // Snapshot current DB categories before modifying, for rollback on failure
+        const { data: existingCategories, error: catSnapshotError } = await supabase
           .from('podcast_topic_categories')
-          .delete()
+          .select('*')
           .eq('episode_id', currentState.episodeId);
 
-        if (deleteCatError) {
-          log.error('[useAutoSave] Categories delete failed:', deleteCatError);
-          throw deleteCatError;
+        if (catSnapshotError) {
+          log.warn('[useAutoSave] Could not snapshot categories for rollback:', catSnapshotError);
         }
 
-        // Insert updated categories
-        if (currentState.pauta.categories.length > 0) {
-          // Helper function to validate UUID format
-          const isValidUUID = (str: string): boolean => {
-            return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-          };
-
-          const categoriesToInsert = currentState.pauta.categories.map(cat => ({
-            id: cat.id,
-            episode_id: currentState.episodeId,
-            name: cat.name,
-            color: cat.color,
-            description: cat.description || null,
-            // ✅ FIX: 'icon' column doesn't exist in podcast_topic_categories table
-            // Removed: icon: cat.icon || null,
-          }));
-
-          // ✅ FIX: Remove non-UUID category IDs (e.g., "quebra-gelo", "aprofundamento")
-          // Database expects UUID format, will auto-generate if ID is omitted
-          const cleanedCategories = categoriesToInsert.map(cat => {
-            if (cat.id && isValidUUID(cat.id)) {
-              return cat;  // UUID válido, manter
-            }
-            // ID inválido (ex: "quebra-gelo"), remover e deixar DB gerar UUID
-            const { id, ...rest } = cat;
-            log.debug(`[useAutoSave] Removing non-UUID category ID: "${id}" - database will generate UUID`);
-            return rest;
-          });
-
-          log.debug('[useAutoSave] Inserting categories:', cleanedCategories);
-
-          const { error: insertCatError } = await supabase
+        try {
+          // Delete existing categories
+          const { error: deleteCatError } = await supabase
             .from('podcast_topic_categories')
-            .insert(cleanedCategories);
+            .delete()
+            .eq('episode_id', currentState.episodeId);
 
-          if (insertCatError) {
-            log.error('[useAutoSave] Categories insert failed:', insertCatError);
-            throw insertCatError;
+          if (deleteCatError) {
+            log.error('[useAutoSave] Categories delete failed:', deleteCatError);
+            throw deleteCatError;
           }
 
-          log.debug('[useAutoSave] Categories insert successful');
+          // Insert updated categories
+          if (currentState.pauta.categories.length > 0) {
+            const categoriesToInsert = currentState.pauta.categories.map(cat => ({
+              id: cat.id,
+              episode_id: currentState.episodeId,
+              name: cat.name,
+              color: cat.color,
+              icon: cat.icon || null,
+              description: cat.description || null,
+            }));
+
+            // Remove non-UUID category IDs (e.g., "quebra-gelo", "aprofundamento")
+            // Database expects UUID format, will auto-generate if ID is omitted
+            const cleanedCategories = categoriesToInsert.map(cat => {
+              if (cat.id && isValidUUID(cat.id)) {
+                return cat;  // UUID válido, manter
+              }
+              // ID inválido (ex: "quebra-gelo"), remover e deixar DB gerar UUID
+              const { id, ...rest } = cat;
+              log.debug(`[useAutoSave] Removing non-UUID category ID: "${id}" - database will generate UUID`);
+              return rest;
+            });
+
+            log.debug('[useAutoSave] Inserting categories:', cleanedCategories);
+
+            const { error: insertCatError } = await supabase
+              .from('podcast_topic_categories')
+              .insert(cleanedCategories);
+
+            if (insertCatError) {
+              log.error('[useAutoSave] Categories insert failed:', insertCatError);
+              throw insertCatError;
+            }
+
+            log.debug('[useAutoSave] Categories insert successful');
+          }
+        } catch (catError) {
+          // Rollback: restore previously saved categories to prevent data loss
+          if (existingCategories && existingCategories.length > 0) {
+            log.warn('[useAutoSave] Categories save failed, attempting rollback with', existingCategories.length, 'categories');
+            const { error: rollbackError } = await supabase
+              .from('podcast_topic_categories')
+              .insert(existingCategories);
+
+            if (rollbackError) {
+              log.error('[useAutoSave] Categories rollback ALSO failed — data may be lost:', rollbackError);
+            } else {
+              log.debug('[useAutoSave] Categories rollback successful, original data preserved');
+            }
+          }
+          throw catError;
         }
       }
 

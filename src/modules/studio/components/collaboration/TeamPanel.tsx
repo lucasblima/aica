@@ -46,8 +46,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      let query = supabase.from('studio_team_members').select('*').eq('user_id', user.id);
-      if (projectId) query = query.eq('project_id', projectId);
+      const query = supabase.from('studio_team_members').select('*').eq('user_id', user.id);
 
       const { data, error: fetchError } = await query.order('invited_at', { ascending: false });
       if (fetchError) throw fetchError;
@@ -94,7 +93,10 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
         .from('studio_team_members')
         .insert({
           user_id: user.id,
+<<<<<<< HEAD
           project_id: projectId || null,
+=======
+>>>>>>> 5cabae5e (fix(studio): use correct column names in TeamPanel (user_id, not owner_id))
           member_email: inviteEmail.trim(),
           role: inviteRole,
           status: 'pending',
