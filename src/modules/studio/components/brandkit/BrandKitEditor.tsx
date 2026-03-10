@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Save, Loader2, Palette, Type, Music, AlertCircle } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { StudioBrandKit } from '@/modules/studio/types';
+
+const log = createNamespacedLogger('BrandKitEditor');
 
 // ============================================================================
 // CONSTANTS
@@ -145,7 +148,7 @@ export const BrandKitEditor: React.FC<BrandKitEditorProps> = ({
         if (data && onSaved) onSaved(mapRowToKit(data));
       }
     } catch (err) {
-      console.error('Brand kit save failed:', err);
+      log.error('Brand kit save failed:', err);
       setError('Falha ao salvar o brand kit. Tente novamente.');
     } finally {
       setSaving(false);

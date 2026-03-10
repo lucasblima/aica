@@ -10,11 +10,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Palette } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import { CeramicLoadingState } from '@/components/ui';
 import { HeaderGlobal } from '@/components/layout';
+
 import { BrandKitEditor } from '../components/brandkit';
 import { BrandKitPreview } from '../components/brandkit';
 import type { StudioBrandKit } from '../types/studio';
+
+const log = createNamespacedLogger('StudioBrandKitPage');
 
 function mapRowToKit(row: Record<string, unknown>): StudioBrandKit {
   return {
@@ -55,7 +59,7 @@ export default function StudioBrandKitPage() {
         if (error) throw error;
         if (data) setBrandKit(mapRowToKit(data));
       } catch (err) {
-        console.error('Failed to load brand kit:', err);
+        log.error('Failed to load brand kit:', err);
       } finally {
         setLoading(false);
       }

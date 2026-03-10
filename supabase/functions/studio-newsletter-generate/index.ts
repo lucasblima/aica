@@ -75,7 +75,12 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
     const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Parse payload
     const {
@@ -150,8 +155,9 @@ Retorne APENAS um JSON valido (sem markdown, sem explicacoes):
     })
   } catch (error) {
     logger.error('studio-newsletter-generate error:', error)
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
-      status: 400,
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return new Response(JSON.stringify({ success: false, error: message }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

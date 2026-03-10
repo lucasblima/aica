@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Plus, Clock, Mail } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import { HeaderGlobal } from '@/components/layout';
 import type { ContentCalendarEntry } from '../types/studio';
+
+const log = createNamespacedLogger('ContentCalendarPage');
 
 const PLATFORM_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   spotify: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
@@ -124,7 +127,7 @@ export default function ContentCalendarPage() {
 
       setEntries(merged);
     } catch (err) {
-      console.error('Failed to load calendar entries:', err);
+      log.error('Failed to load calendar entries:', err);
     } finally {
       setLoading(false);
     }

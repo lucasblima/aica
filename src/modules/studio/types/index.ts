@@ -55,6 +55,39 @@ export type {
   EpisodeProduction,
   EpisodePublication,
 
+  // Post-production types
+  CutMetadata,
+  StudioPlatform,
+  StudioTranscription,
+  StudioShowNotes,
+  StudioClip,
+  StudioAsset,
+
+  // Article types (full)
+  StudioArticleDraft,
+
+  // Newsletter
+  StudioNewsletter,
+
+  // Content Calendar
+  ContentCalendarEntry,
+
+  // Analytics
+  StudioAnalyticsEntry,
+
+  // Team Collaboration
+  StudioTeamMember,
+  StudioComment,
+
+  // Project Metadata subtypes
+  NewsletterProjectMetadata,
+  ClipProjectMetadata,
+
+  // SEO Analysis
+  SEOReadability,
+  SEOHeaderStructure,
+  SEOAnalysisResult,
+
   // Brand Kit (Sprint 4)
   StudioBrandKit,
 } from './studio';
