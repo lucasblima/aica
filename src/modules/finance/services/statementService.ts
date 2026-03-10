@@ -292,7 +292,7 @@ export const statementService = {
       log.warn('[PDF] Account auto-creation failed:', accError);
     }
 
-    // Update statement with parsed metadata
+    // Update statement with parsed metadata (keep status as 'processing' until transactions are saved)
     await this.updateStatement(statementId, {
       bank_name: parsed.bankName,
       account_type: parsed.accountType,
@@ -310,12 +310,26 @@ export const statementService = {
         .reduce((sum, t) => sum + Math.abs(t.amount), 0),
       markdown_content: markdown,
       markdown_generated_at: new Date().toISOString(),
+    });
+
+    // Save transactions BEFORE marking as completed
+    try {
+      await this.saveTransactions(statementId, userId, parsed.transactions, accountId);
+    } catch (txError) {
+      // Mark statement as failed so it doesn't stay stuck in 'processing'
+      await this.updateStatement(statementId, {
+        processing_status: 'failed',
+        processing_error: txError instanceof Error ? txError.message : 'Erro ao salvar transações',
+        processing_completed_at: new Date().toISOString(),
+      });
+      throw txError;
+    }
+
+    // Only mark as completed AFTER transactions are successfully saved
+    await this.updateStatement(statementId, {
       processing_status: 'completed',
       processing_completed_at: new Date().toISOString(),
     });
-
-    // Save transactions
-    await this.saveTransactions(statementId, userId, parsed.transactions, accountId);
   },
 
   /**
