@@ -19,7 +19,7 @@ const RISK_COLORS: Record<FatigueRisk, { stroke: string; text: string; bg: strin
   low: { stroke: '#6B7B5C', text: 'text-ceramic-success', bg: 'bg-ceramic-success-bg' },
   moderate: { stroke: '#C4883A', text: 'text-ceramic-warning', bg: 'bg-ceramic-warning-bg' },
   high: { stroke: '#9B4D3A', text: 'text-ceramic-error', bg: 'bg-ceramic-error-bg' },
-  overtraining: { stroke: '#9B4D3A', text: 'text-ceramic-error', bg: 'bg-ceramic-error-bg' },
+  overtraining: { stroke: '#7F1D1D', text: 'text-red-900', bg: 'bg-red-900/15' },
 };
 
 const RISK_LABELS: Record<FatigueRisk, string> = {
@@ -60,6 +60,8 @@ export const ReadinessGauge: React.FC<ReadinessGaugeProps> = ({ readiness, class
             width={GAUGE_SIZE}
             height={GAUGE_SIZE}
             viewBox={`0 0 ${GAUGE_SIZE} ${GAUGE_SIZE}`}
+            role="img"
+            aria-label={`Readiness score: ${readinessScore}%`}
           >
             {/* Background circle */}
             <circle

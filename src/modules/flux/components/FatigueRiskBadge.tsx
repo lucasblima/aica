@@ -32,8 +32,8 @@ const BADGE_CONFIG: Record<FatigueRisk, { bg: string; text: string; label: strin
     label: 'Alto',
   },
   overtraining: {
-    bg: 'bg-ceramic-error-bg',
-    text: 'text-ceramic-error',
+    bg: 'bg-red-900/15',
+    text: 'text-red-900',
     label: 'Overtraining',
   },
 };
@@ -58,7 +58,7 @@ export const FatigueRiskBadge: React.FC<FatigueRiskBadgeProps> = ({
           fatigueRisk === 'low' ? 'bg-ceramic-success' :
           fatigueRisk === 'moderate' ? 'bg-ceramic-warning' :
           fatigueRisk === 'high' ? 'bg-ceramic-error' :
-          'bg-ceramic-error'
+          'bg-red-900'
         }`}
       />
       {config.label}
