@@ -331,8 +331,11 @@ async function executeAgentForUser(
 /**
  * Execute agent locally using Supabase (fallback when ADK is not available)
  *
- * This creates a minimal execution that stores results in user_memory.
- * Full functionality requires the ADK backend.
+ * Handles all 4 agent types with real logic:
+ * - morning_briefing: calls run-life-council Edge Function, inserts notification
+ * - deadline_watcher: queries work_items for overdue/due-today, inserts notification
+ * - pattern_analyzer: calls synthesize-user-patterns Edge Function, inserts notification
+ * - session_cleanup: calls cleanup_expired_agent_sessions RPC
  */
 async function executeAgentLocally(
   agentName: string,
@@ -370,9 +373,149 @@ async function executeAgentLocally(
     }
   }
 
-  // Agent-specific minimal actions
+  // Agent-specific actions
   switch (agentName) {
-    case 'session_cleanup':
+    case 'morning_briefing': {
+      try {
+        const councilResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/run-life-council`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            },
+            body: JSON.stringify({ userId }),
+          }
+        )
+        const councilData = await councilResponse.json()
+
+        if (councilData.success) {
+          await supabase.from('agent_notifications').insert({
+            user_id: userId,
+            agent_name: 'morning_briefing',
+            notification_type: 'insight',
+            title: (councilData.insight?.headline || 'Briefing matinal').substring(0, 200),
+            body: (councilData.insight?.synthesis || 'Conselho do dia gerado').substring(0, 500),
+            metadata: {
+              insight_id: councilData.insight?.id,
+              overall_status: councilData.insight?.overall_status,
+            },
+          })
+        }
+        return {
+          success: true,
+          message: 'Morning briefing generated',
+          data: councilData,
+        }
+      } catch (err) {
+        console.error('morning_briefing failed:', err)
+        return {
+          success: false,
+          message: 'Morning briefing failed',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        }
+      }
+    }
+
+    case 'deadline_watcher': {
+      try {
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        const { data: urgentTasks } = await supabase
+          .from('work_items')
+          .select('id, title, due_date, status, priority')
+          .eq('user_id', userId)
+          .in('status', ['todo', 'in_progress', 'pending'])
+          .lte('due_date', tomorrow)
+          .order('due_date', { ascending: true })
+
+        if (urgentTasks && urgentTasks.length > 0) {
+          const today = new Date().toISOString().split('T')[0]
+          const overdue = urgentTasks.filter((t: { due_date: string }) => t.due_date < today)
+          const dueToday = urgentTasks.filter((t: { due_date: string }) => t.due_date === today)
+
+          const title = overdue.length > 0
+            ? `${overdue.length} tarefa(s) atrasada(s)`
+            : `${dueToday.length} tarefa(s) para hoje`
+
+          const body = urgentTasks
+            .slice(0, 5)
+            .map((t: { title: string }) => `\u2022 ${t.title}`)
+            .join('\n')
+            .substring(0, 500)
+
+          await supabase.from('agent_notifications').insert({
+            user_id: userId,
+            agent_name: 'deadline_watcher',
+            notification_type: 'deadline',
+            title,
+            body,
+            metadata: {
+              task_count: urgentTasks.length,
+              overdue_count: overdue.length,
+              due_today_count: dueToday.length,
+            },
+          })
+        }
+        return {
+          success: true,
+          message: `Found ${urgentTasks?.length || 0} urgent tasks`,
+          data: { task_count: urgentTasks?.length || 0 },
+        }
+      } catch (err) {
+        console.error('deadline_watcher failed:', err)
+        return {
+          success: false,
+          message: 'Deadline watcher failed',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        }
+      }
+    }
+
+    case 'pattern_analyzer': {
+      try {
+        const patternResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/synthesize-user-patterns`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            },
+            body: JSON.stringify({ userId }),
+          }
+        )
+        const patternData = await patternResponse.json()
+
+        if (patternData.success && patternData.new_patterns?.length > 0) {
+          await supabase.from('agent_notifications').insert({
+            user_id: userId,
+            agent_name: 'pattern_analyzer',
+            notification_type: 'pattern',
+            title: `${patternData.new_patterns.length} novo(s) padr\u00e3o(\u00f5es) detectado(s)`,
+            body: patternData.new_patterns
+              .map((p: { description: string }) => `\u2022 ${p.description}`)
+              .join('\n')
+              .substring(0, 500),
+            metadata: { patterns: patternData.new_patterns },
+          })
+        }
+        return {
+          success: true,
+          message: 'Pattern analysis complete',
+          data: patternData,
+        }
+      } catch (err) {
+        console.error('pattern_analyzer failed:', err)
+        return {
+          success: false,
+          message: 'Pattern analysis failed',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        }
+      }
+    }
+
+    case 'session_cleanup': {
       // Actually run cleanup
       const { error: cleanupError } = await supabase.rpc('cleanup_expired_agent_sessions')
       if (cleanupError) {
@@ -387,11 +530,12 @@ async function executeAgentLocally(
         message: 'Session cleanup executed via RPC',
         data: { execution_mode: 'rpc' },
       }
+    }
 
     default:
       return {
         success: true,
-        message: `Agent ${agentName} trigger recorded. Full execution requires ADK backend.`,
+        message: `Agent ${agentName} trigger recorded. No handler available.`,
         data: {
           execution_mode: 'edge_function_fallback',
           triggered_at: executionTime,
