@@ -48,13 +48,13 @@ async function computeFluxDomainScoreProvider(): Promise<DomainScore | null> {
 
     // 2. Training consistency: ratio of athletes with stress history in last 7 days
     // Fetch all histories in parallel to avoid N+1 sequential queries
-    const histories = await Promise.all(
+    const historyResults = await Promise.allSettled(
       athletes.map(a => getStressHistory(a.id, 7))
     );
+    const histories = historyResults.map(r => r.status === 'fulfilled' ? r.value : []);
 
     let athletesWithRecentTraining = 0;
     const acwrValues: number[] = [];
-    const historicalReadinessValues: number[] = [];
 
     for (const history of histories) {
       if (history.length > 0) {
@@ -64,9 +64,6 @@ async function computeFluxDomainScoreProvider(): Promise<DomainScore | null> {
         if (last.ctl > 0 || last.atl > 0) {
           acwrValues.push(computeACWR(last.atl, last.ctl));
         }
-        // Collect TSB values for historical readiness trend comparison
-        const avgTsb = history.reduce((sum, h) => sum + h.tsb, 0) / history.length;
-        historicalReadinessValues.push(avgTsb);
       }
     }
 
@@ -83,14 +80,17 @@ async function computeFluxDomainScoreProvider(): Promise<DomainScore | null> {
     // Compute normalized score (0-1)
     const normalized = computeFluxDomainScore(avgReadiness, trainingConsistency, loadManagement);
 
-    // Determine trend by comparing current average readiness against historical TSB averages
+    // Determine trend by comparing current readiness against previous period
     let trend: ScoreTrend = 'stable';
-    if (historicalReadinessValues.length > 0) {
-      const historicalAvg = historicalReadinessValues.reduce((sum, v) => sum + v, 0) / historicalReadinessValues.length;
-      const delta = avgReadiness - (50 + historicalAvg); // TSB centered around 0, readiness around 50
-      if (delta > 5) {
+    if (readinessScores.length >= 2) {
+      // Use ACWR trend as a proxy: if most athletes have ACWR in sweet spot and improving, trend is improving
+      const avgAcwr = acwrValues.length > 0
+        ? acwrValues.reduce((sum, v) => sum + v, 0) / acwrValues.length
+        : 1.0;
+      // Athletes with higher readiness + ACWR in sweet spot = improving
+      if (avgReadiness > 65 && avgAcwr >= 0.8 && avgAcwr <= 1.3) {
         trend = 'improving';
-      } else if (delta < -5) {
+      } else if (avgReadiness < 40 || avgAcwr > 1.5) {
         trend = 'declining';
       }
     }

@@ -17,22 +17,22 @@ interface WorkoutTemplateLibraryProps {
 }
 
 const CATEGORY_LABELS: Record<ExerciseCategory, { label: string; icon: string; color: string }> = {
-  warmup: { label: 'Aquecimento', icon: '🔥', color: 'bg-amber-50 border-amber-200 text-amber-700' },
-  main: { label: 'Principal', icon: '💪', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-  technique: { label: 'Técnica', icon: '🎯', color: 'bg-violet-50 border-violet-200 text-violet-700' },
-  cooldown: { label: 'Desaquecimento', icon: '❄️', color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
-  dryland: { label: 'Dryland', icon: '🏋️', color: 'bg-stone-50 border-stone-200 text-stone-700' },
+  warmup: { label: 'Aquecimento', icon: '🔥', color: 'bg-ceramic-warning/10 border-ceramic-warning/30 text-ceramic-warning' },
+  main: { label: 'Principal', icon: '💪', color: 'bg-ceramic-info/10 border-ceramic-info/30 text-ceramic-info' },
+  technique: { label: 'Técnica', icon: '🎯', color: 'bg-ceramic-accent/10 border-ceramic-accent/30 text-ceramic-accent' },
+  cooldown: { label: 'Desaquecimento', icon: '❄️', color: 'bg-ceramic-info/10 border-ceramic-info/30 text-ceramic-info' },
+  dryland: { label: 'Dryland', icon: '🏋️', color: 'bg-ceramic-cool border-ceramic-border text-ceramic-text-secondary' },
 };
 
 const INTENSITY_COLORS: Record<string, string> = {
-  low: 'bg-emerald-100 text-emerald-700',
-  medium: 'bg-amber-100 text-amber-700',
-  high: 'bg-rose-100 text-rose-700',
-  z1: 'bg-emerald-100 text-emerald-700',
-  z2: 'bg-emerald-100 text-emerald-700',
-  z3: 'bg-amber-100 text-amber-700',
-  z4: 'bg-rose-100 text-rose-700',
-  z5: 'bg-rose-100 text-rose-700',
+  low: 'bg-ceramic-success/20 text-ceramic-success',
+  medium: 'bg-ceramic-warning/20 text-ceramic-warning',
+  high: 'bg-ceramic-error/20 text-ceramic-error',
+  z1: 'bg-ceramic-success/20 text-ceramic-success',
+  z2: 'bg-ceramic-success/20 text-ceramic-success',
+  z3: 'bg-ceramic-warning/20 text-ceramic-warning',
+  z4: 'bg-ceramic-error/20 text-ceramic-error',
+  z5: 'bg-ceramic-error/20 text-ceramic-error',
 };
 
 const INTENSITY_LABELS: Record<string, string> = {
@@ -206,7 +206,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, modalityColor, on
           <span className="text-xs text-ceramic-text-secondary">
             {template.duration} min
           </span>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${INTENSITY_COLORS[template.intensity] || 'bg-gray-100 text-gray-700'}`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${INTENSITY_COLORS[template.intensity] || 'bg-ceramic-cool text-ceramic-text-secondary'}`}>
             {INTENSITY_LABELS[template.intensity] || template.intensity}
           </span>
         </div>
