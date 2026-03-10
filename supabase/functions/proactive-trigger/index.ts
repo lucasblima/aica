@@ -32,7 +32,7 @@ import { getCorsHeaders } from '../_shared/cors.ts'
 // Environment variables
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const PROACTIVE_TRIGGER_SECRET = Deno.env.get('PROACTIVE_TRIGGER_SECRET') || 'dev-secret-change-in-production'
+const PROACTIVE_TRIGGER_SECRET = Deno.env.get('PROACTIVE_TRIGGER_SECRET')
 const ADK_BACKEND_URL = Deno.env.get('ADK_BACKEND_URL') || 'http://localhost:8000'
 
 // Valid agent names
@@ -75,7 +75,11 @@ serve(async (req: Request) => {
     const secret = req.headers.get('x-proactive-secret')
     const authHeader = req.headers.get('authorization')
 
-    if (secret !== PROACTIVE_TRIGGER_SECRET && !authHeader?.includes(SUPABASE_SERVICE_KEY)) {
+    const bearerToken = authHeader?.replace('Bearer ', '')
+    const hasValidSecret = PROACTIVE_TRIGGER_SECRET && secret === PROACTIVE_TRIGGER_SECRET
+    const hasValidServiceKey = bearerToken === SUPABASE_SERVICE_KEY
+
+    if (!hasValidSecret && !hasValidServiceKey) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         {
@@ -146,7 +150,6 @@ async function handleStatus(corsHeaders: Record<string, string>): Promise<Respon
         timezone: 'America/Sao_Paulo',
       },
     },
-    adk_backend_url: ADK_BACKEND_URL,
     timestamp: new Date().toISOString(),
   }
 
