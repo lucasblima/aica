@@ -214,7 +214,7 @@ export interface TimelineEvent {
     attendees?: string[]; // emails dos participantes
     organizer?: string;
     isAllDay: boolean;
-    source: 'google_calendar' | 'flux_workout';
+    source: 'google_calendar' | 'flux_workout' | 'flux' | 'finance' | 'studio' | string;
     color?: string;
     /** If this event was created by AICA, which module originated it (flux, atlas, studio, grants) */
     aicaModule?: string;

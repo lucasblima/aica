@@ -20,3 +20,6 @@ export type { UseTimeBlockingReturn } from './useTimeBlocking';
 
 export { useTemplates } from './useTemplates';
 export type { UseTemplatesReturn } from './useTemplates';
+
+export { useCrossModuleEvents } from './useCrossModuleEvents';
+export type { UseCrossModuleEventsOptions, UseCrossModuleEventsReturn } from './useCrossModuleEvents';

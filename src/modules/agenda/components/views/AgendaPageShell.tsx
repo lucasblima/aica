@@ -43,7 +43,7 @@ import { detectEventCategory, calculateTimeUntil } from '@/components/features/N
 import { useTaskFilters } from '@/modules/agenda/hooks/useTaskFilters';
 import { useTaskCompletion } from '@/modules/agenda/hooks/useTaskCompletion';
 import { useGoogleCalendarEvents } from '@/modules/agenda/hooks/useGoogleCalendarEvents';
-import { useFluxAgendaEvents } from '@/modules/flux/hooks/useFluxAgendaEvents';
+import { useCrossModuleEvents } from '@/modules/agenda/hooks/useCrossModuleEvents';
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import { useWeatherInsight } from '@/hooks/useWeatherInsight';
 
@@ -177,16 +177,18 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
     endDate: dateRange.nextWeek
   });
 
-  // Flux workout slots as calendar events
-  const { events: fluxEvents } = useFluxAgendaEvents();
+  // Cross-module events (Flux workouts, Finance transactions, Studio recordings)
+  const { events: crossModuleEvents } = useCrossModuleEvents({
+    range: { start: dateRange.today, end: dateRange.nextWeek },
+  });
 
-  // Merge Google Calendar + Flux workout events
+  // Merge Google Calendar + cross-module events
   const calendarEvents = useMemo(() => {
     const externalGoogleEvents = googleCalendarEvents.filter(e => !e.aicaModule);
-    return [...externalGoogleEvents, ...fluxEvents].sort((a, b) =>
+    return [...externalGoogleEvents, ...crossModuleEvents].sort((a, b) =>
       a.startTime.localeCompare(b.startTime)
     );
-  }, [googleCalendarEvents, fluxEvents]);
+  }, [googleCalendarEvents, crossModuleEvents]);
 
   const calendarGridEvents = useMemo(() => {
     return calendarEvents.map(e => ({
