@@ -17,3 +17,6 @@ export type { RecurrencePattern, UseRecurrenceReturn } from './useRecurrence';
 
 export { useTimeBlocking, snapTo15Min } from './useTimeBlocking';
 export type { UseTimeBlockingReturn } from './useTimeBlocking';
+
+export { useTemplates } from './useTemplates';
+export type { UseTemplatesReturn } from './useTemplates';

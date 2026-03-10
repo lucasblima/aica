@@ -37,6 +37,14 @@ export {
   describeRRuleInPortuguese,
 } from './taskRecurrenceService';
 
+// Routine Templates
+export type { RoutineTemplate, RoutineTemplateItem } from './templateService';
+export {
+  getSystemTemplates,
+  getTemplateById,
+  applyTemplate,
+} from './templateService';
+
 // calendar_events CRUD (created in Task 5)
 export {
   fetchCalendarEvents as fetchCalendarEventsFromDB,
