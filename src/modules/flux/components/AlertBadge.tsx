@@ -33,6 +33,14 @@ export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps)
 
   const Icon = getAlertIcon();
 
+  // Severity indicator text (accessibility: not color-only)
+  const SEVERITY_INDICATOR: Record<string, string> = {
+    critical: '!!',
+    high: '!',
+    medium: '!',
+    low: 'i',
+  };
+
   // Color mapping by severity
   const getSeverityClasses = () => {
     switch (alert.severity) {
@@ -83,6 +91,9 @@ export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps)
         `}
       >
         <Icon className={`w-3.5 h-3.5 ${colors.icon} flex-shrink-0`} />
+        <span className={`text-[9px] font-black ${colors.text} flex-shrink-0`} title={alert.severity}>
+          {SEVERITY_INDICATOR[alert.severity]}
+        </span>
         <p className={`text-[10px] font-medium ${colors.text} line-clamp-1 flex-1`}>
           {alert.message_preview}
         </p>
@@ -125,8 +136,9 @@ export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps)
                 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
                 ${colors.bg} ${colors.text}
               `}
+              title={`Severity: ${alert.severity}`}
             >
-              {alert.severity}
+              {SEVERITY_INDICATOR[alert.severity]} {alert.severity}
             </span>
           </div>
 

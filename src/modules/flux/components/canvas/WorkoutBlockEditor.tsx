@@ -7,7 +7,7 @@
  * - Coach notes (free text)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Activity, Target, MessageSquare, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutBlockData } from './WorkoutBlock';
@@ -30,6 +30,15 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
   const [formData, setFormData] = useState<WorkoutBlockData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
 
   // Sync form data when workout changes
   useEffect(() => {
@@ -47,14 +56,14 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
     try {
       await onSave(formData);
       setSaveStatus('success');
-      setTimeout(() => {
+      saveTimerRef.current = setTimeout(() => {
         onClose();
         setSaveStatus('idle');
       }, 600);
     } catch (err) {
       console.error('Error saving workout:', err);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      errorTimerRef.current = setTimeout(() => setSaveStatus('idle'), 3000);
     } finally {
       setIsSaving(false);
     }
@@ -77,6 +86,9 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
 
       {/* Drawer */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={formData.name ? `Editando treino: ${formData.name}` : 'Novo treino'}
         className="fixed right-0 top-0 h-full w-96 bg-ceramic-base border-l border-ceramic-text-secondary/10 shadow-2xl z-50 flex flex-col animate-slide-in-right"
       >
         {/* Header */}

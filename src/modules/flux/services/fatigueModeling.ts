@@ -67,6 +67,16 @@ const ATL_DAYS = 7;   // Acute window
 const CTL_DECAY = 2 / (CTL_DAYS + 1);  // EMA smoothing factor
 const ATL_DECAY = 2 / (ATL_DAYS + 1);  // EMA smoothing factor
 
+// ACWR Thresholds (Gabbett 2016)
+const ACWR_SWEET_SPOT_LOW = 0.8;
+const ACWR_SWEET_SPOT_HIGH = 1.3;
+const ACWR_DANGER_ZONE = 1.5;
+
+// Readiness Score Weights
+const READINESS_WEIGHT_TSB = 0.40;
+const READINESS_WEIGHT_ACWR = 0.30;
+const READINESS_WEIGHT_RPE = 0.30;
+
 // ============================================================================
 // CORE CALCULATIONS
 // ============================================================================
@@ -77,6 +87,7 @@ const ATL_DECAY = 2 / (ATL_DAYS + 1);  // EMA smoothing factor
  */
 export function computeEMA(tssHistory: number[], decay: number): number[] {
   if (tssHistory.length === 0) return [];
+  // Seed with first value (Banister convention — assumes prior steady-state at this level)
   const ema: number[] = [tssHistory[0]];
   for (let i = 1; i < tssHistory.length; i++) {
     ema.push(tssHistory[i] * decay + ema[i - 1] * (1 - decay));
@@ -102,7 +113,7 @@ export function computeATL(tssHistory: number[]): number[] {
  * Compute TSB = CTL - ATL for each day
  */
 export function computeTSB(ctlHistory: number[], atlHistory: number[]): number[] {
-  return ctlHistory.map((ctl, i) => ctl - atlHistory[i]);
+  return ctlHistory.map((ctl, i) => ctl - (atlHistory[i] ?? 0));
 }
 
 /**
@@ -177,9 +188,9 @@ export function assessReadiness(
 
   // Readiness score components
   const tsbComponent = Math.max(0, Math.min(100, (tsb + 30) * (100 / 60))); // -30=0, +30=100
-  const acwrComponent = acwr >= 0.8 && acwr <= 1.3 ? 100 :
-    acwr < 0.8 ? 60 : // Under-training
-    acwr <= 1.5 ? 50 : // Slightly high
+  const acwrComponent = acwr >= ACWR_SWEET_SPOT_LOW && acwr <= ACWR_SWEET_SPOT_HIGH ? 100 :
+    acwr < ACWR_SWEET_SPOT_LOW ? 60 : // Under-training
+    acwr <= ACWR_DANGER_ZONE ? 50 : // Slightly high
     20; // Danger zone
 
   // RPE component — lower recent RPE = more ready
@@ -189,16 +200,17 @@ export function assessReadiness(
   const rpeComponent = Math.max(0, (10 - avgRPE) * 10); // RPE 1=90, RPE 5=50, RPE 10=0
 
   const readinessScore = Math.round(
-    0.40 * tsbComponent +
-    0.30 * acwrComponent +
-    0.30 * rpeComponent
+    READINESS_WEIGHT_TSB * tsbComponent +
+    READINESS_WEIGHT_ACWR * acwrComponent +
+    READINESS_WEIGHT_RPE * rpeComponent
   );
 
   // Suggested intensity
   const suggestedIntensity: ReadinessAssessment['suggestedIntensity'] =
-    readinessScore >= 80 ? 'hard' :
-    readinessScore >= 65 ? 'moderate' :
-    readinessScore >= 45 ? 'easy' :
+    readinessScore >= 90 ? 'race_pace' :
+    readinessScore >= 75 ? 'hard' :
+    readinessScore >= 60 ? 'moderate' :
+    readinessScore >= 40 ? 'easy' :
     readinessScore >= 25 ? 'recovery' : 'rest';
 
   // Recommendation in PT-BR
@@ -209,7 +221,7 @@ export function assessReadiness(
       ? 'Fadiga elevada. Priorize sessoes de recuperacao ativa ou descanso. Evite treinos intensos.'
       : fatigueRisk === 'moderate'
       ? 'Carga moderada. Treino normal pode continuar, mas monitore sinais de fadiga.'
-      : acwr > 1.5
+      : acwr > ACWR_DANGER_ZONE
       ? 'Carga aguda muito alta em relacao ao cronico. Reduza volume para evitar lesoes.'
       : readinessScore >= 80
       ? 'Atleta descansado e pronto para treino intenso ou competicao.'
@@ -285,13 +297,17 @@ export async function updateAthleteReadiness(
   readiness: ReadinessAssessment
 ): Promise<void> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
     const { error } = await supabase
       .from('athletes')
       .update({
         readiness_score: readiness.readinessScore,
         fatigue_risk: readiness.fatigueRisk,
       })
-      .eq('id', athleteId);
+      .eq('id', athleteId)
+      .eq('user_id', user.id);
 
     if (error) throw error;
   } catch (err) {

@@ -110,7 +110,7 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
             {fatigueAssessment && (
               <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-border/30 space-y-3">
                 <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-emerald-500" />
+                  <Activity className="w-4 h-4 text-ceramic-success" />
                   <span className="text-xs font-bold text-ceramic-text-primary">Avaliacao de Fadiga (AI)</span>
                   <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full ${
                     fatigueAssessment.fatigueRisk === 'low' ? 'bg-ceramic-success/15 text-ceramic-success' :

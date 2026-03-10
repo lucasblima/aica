@@ -288,7 +288,7 @@ export function WhatsAppMessageModal({
         {/* Actions */}
         <div className="p-4 border-t border-ceramic-text-secondary/10">
           {sendStatus === 'sent' ? (
-            <div className="flex items-center justify-center gap-2 py-2">
+            <div className="flex items-center justify-center gap-2 py-2" aria-live="polite">
               <CheckCircle className="w-5 h-5 text-ceramic-success" />
               <span className="text-sm font-bold text-ceramic-success">
                 Mensagem enviada! Fechando...

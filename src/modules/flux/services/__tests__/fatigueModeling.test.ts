@@ -53,6 +53,9 @@ import {
   computeSessionRPE,
   computeFluxDomainScore,
   computeTrainingLoad,
+  storeStressEntry,
+  updateAthleteReadiness,
+  getStressHistory,
 } from '@/modules/flux/services/fatigueModeling';
 
 // ============================================================================
@@ -131,6 +134,12 @@ describe('computeEMA', () => {
   it('with decay=1 returns each input value', () => {
     const result = computeEMA([10, 20, 30], 1);
     expect(result).toEqual([10, 20, 30]);
+  });
+
+  it('returns single element unchanged for any decay', () => {
+    expect(computeEMA([42], 0)).toEqual([42]);
+    expect(computeEMA([42], 0.5)).toEqual([42]);
+    expect(computeEMA([42], 1)).toEqual([42]);
   });
 });
 
@@ -235,13 +244,13 @@ describe('computeTSB', () => {
     tsb.forEach(v => expect(v).toBeLessThan(0));
   });
 
-  it('handles mismatched array lengths gracefully', () => {
+  it('handles mismatched array lengths gracefully (defaults missing ATL to 0)', () => {
     const result = computeTSB([50, 60, 70], [30, 40]);
     expect(result).toHaveLength(3);
     expect(result[0]).toBe(20);
     expect(result[1]).toBe(20);
-    // Third element: 70 - undefined = NaN (documents current behavior)
-    expect(Number.isNaN(result[2])).toBe(true);
+    // Third element: 70 - 0 = 70 (missing ATL defaults to 0 via ?? guard)
+    expect(result[2]).toBe(70);
   });
 });
 
@@ -587,5 +596,57 @@ describe('assessReadiness', () => {
 
     expect(['building', 'maintaining', 'declining']).toContain(result.trainingLoad.ctlTrend);
     expect(['increasing', 'stable', 'decreasing']).toContain(result.trainingLoad.atlTrend);
+  });
+
+  it('returns different intensity levels based on readiness score', () => {
+    // Test the full range of suggested intensities
+    // Very rested athlete (long steady load + very low RPE)
+    const veryRested = Array(60).fill(50);
+    const r1 = assessReadiness(veryRested, [1, 1, 1]);
+    // Should be hard or race_pace for very high readiness
+    expect(['hard', 'race_pace']).toContain(r1.suggestedIntensity);
+
+    // Moderate readiness
+    const moderate = Array(30).fill(50);
+    const r2 = assessReadiness(moderate, [6, 6, 6]);
+    expect(['moderate', 'easy']).toContain(r2.suggestedIntensity);
+  });
+});
+
+// ============================================================================
+// ASYNC SUPABASE FUNCTIONS — storeStressEntry, getStressHistory, updateAthleteReadiness
+// ============================================================================
+
+describe('storeStressEntry', () => {
+  it('requires authentication', async () => {
+    // The mock returns user: null, so it should throw
+    await expect(storeStressEntry('athlete-1', {
+      date: '2026-01-01',
+      tss: 100,
+    }, { ctl: 50, atl: 60, tsb: -10, ctlTrend: 'building', atlTrend: 'stable' }))
+      .rejects.toThrow('Not authenticated');
+  });
+});
+
+describe('getStressHistory', () => {
+  it('returns empty array when not authenticated', async () => {
+    const result = await getStressHistory('athlete-1', 30);
+    expect(result).toEqual([]);
+  });
+});
+
+describe('updateAthleteReadiness', () => {
+  it('requires authentication', async () => {
+    const readiness = {
+      readinessScore: 75,
+      fatigueRisk: 'moderate' as const,
+      trainingLoad: { ctl: 50, atl: 60, tsb: -10, ctlTrend: 'building' as const, atlTrend: 'stable' as const },
+      recommendation: 'Test',
+      suggestedIntensity: 'moderate' as const,
+      acuteChronicRatio: 1.2,
+    };
+    // With the auth check in production code, this should throw 'Not authenticated'
+    await expect(updateAthleteReadiness('athlete-1', readiness))
+      .rejects.toThrow('Not authenticated');
   });
 });

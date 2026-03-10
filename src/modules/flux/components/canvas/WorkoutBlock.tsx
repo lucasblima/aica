@@ -38,12 +38,12 @@ interface WorkoutBlockProps {
 }
 
 const MODALITY_COLORS: Record<TrainingModality, string> = {
-  swimming: 'bg-blue-400',
-  running: 'bg-orange-400',
-  cycling: 'bg-emerald-400',
-  strength: 'bg-purple-400',
-  walking: 'bg-sky-400',
-  triathlon: 'bg-rose-400',
+  swimming: 'bg-ceramic-info',
+  running: 'bg-ceramic-warning',
+  cycling: 'bg-ceramic-success',
+  strength: 'bg-ceramic-accent',
+  walking: 'bg-ceramic-info/70',
+  triathlon: 'bg-ceramic-error/70',
 };
 
 const MODALITY_LABELS: Record<TrainingModality, string> = {
