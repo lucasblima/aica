@@ -87,12 +87,12 @@ serve(async (req: Request) => {
 
     // Route: GET /proactive-trigger/status
     if (req.method === 'GET' && url.pathname.endsWith('/status')) {
-      return await handleStatus()
+      return await handleStatus(corsHeaders)
     }
 
     // Route: POST /proactive-trigger
     if (req.method === 'POST') {
-      return await handleTrigger(req)
+      return await handleTrigger(req, corsHeaders)
     }
 
     return new Response(
@@ -121,7 +121,7 @@ serve(async (req: Request) => {
 /**
  * Handle status request - returns available agents and their schedules
  */
-async function handleStatus(): Promise<Response> {
+async function handleStatus(corsHeaders: Record<string, string>): Promise<Response> {
   const status = {
     available_agents: VALID_AGENTS,
     schedules: {
@@ -162,7 +162,7 @@ async function handleStatus(): Promise<Response> {
 /**
  * Handle trigger request - execute proactive agent
  */
-async function handleTrigger(req: Request): Promise<Response> {
+async function handleTrigger(req: Request, corsHeaders: Record<string, string>): Promise<Response> {
   const body: TriggerRequest = await req.json()
 
   // Validate request
@@ -366,11 +366,7 @@ async function executeAgentLocally(
     })
 
   if (error) {
-    return {
-      success: false,
-      message: 'Failed to store execution record',
-      error: error.message,
-    }
+    console.warn('Failed to store execution record (non-blocking):', error.message)
   }
 
   // Agent-specific actions
@@ -402,10 +398,15 @@ async function executeAgentLocally(
               overall_status: councilData.insight?.overall_status,
             },
           })
+          return {
+            success: true,
+            message: 'Morning briefing generated',
+            data: councilData,
+          }
         }
         return {
-          success: true,
-          message: 'Morning briefing generated',
+          success: false,
+          message: 'Life council call returned unsuccessful',
           data: councilData,
         }
       } catch (err) {
