@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
+import { getCachedUser } from '@/services/authCacheService';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -59,11 +60,11 @@ export function useAgentNotifications(limit: number = 20): UseAgentNotifications
   // ============================================================================
 
   const getCurrentUserId = useCallback(async (): Promise<string | null> => {
-    const { data, error: authError } = await supabase.auth.getUser();
-    if (authError || !data.user) {
+    const { user, error: authError } = await getCachedUser();
+    if (authError || !user) {
       return null;
     }
-    return data.user.id;
+    return user.id;
   }, []);
 
   // ============================================================================
@@ -141,12 +142,13 @@ export function useAgentNotifications(limit: number = 20): UseAgentNotifications
 
         // Optimistic update: mark notifications as read in local state
         const now = new Date().toISOString();
-        setNotifications((prev) =>
-          prev.map((n) =>
-            ids.includes(n.id) ? { ...n, read_at: now } : n
-          )
-        );
-        setUnreadCount((prev) => Math.max(0, prev - ids.length));
+        setNotifications((prev) => {
+          const actuallyUnread = prev.filter((n) => ids.includes(n.id) && !n.read_at).length;
+          setUnreadCount((c) => Math.max(0, c - actuallyUnread));
+          return prev.map((n) =>
+            ids.includes(n.id) ? { ...n, read_at: n.read_at || now } : n
+          );
+        });
 
         log.info('Marked notifications as read:', { ids });
       } catch (err) {
@@ -249,6 +251,9 @@ export function useAgentNotifications(limit: number = 20): UseAgentNotifications
                 if (typeof data === 'number') {
                   setUnreadCount(data);
                 }
+              })
+              .catch((err) => {
+                log.warn('Failed to refresh unread count:', { error: err?.message });
               });
           }
         )

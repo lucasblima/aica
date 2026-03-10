@@ -24,7 +24,7 @@ const {
   mockChannel,
   mockSelect,
   mockRpc,
-  mockGetUser,
+  mockGetCachedUser,
   mockFrom,
   mockChannelFn,
 } = vi.hoisted(() => {
@@ -39,7 +39,7 @@ const {
 
   const mockSelect = vi.fn();
   const mockRpc = vi.fn();
-  const mockGetUser = vi.fn();
+  const mockGetCachedUser = vi.fn();
   const mockFrom = vi.fn();
   const mockChannelFn = vi.fn();
 
@@ -50,7 +50,7 @@ const {
     mockChannel,
     mockSelect,
     mockRpc,
-    mockGetUser,
+    mockGetCachedUser,
     mockFrom,
     mockChannelFn,
   };
@@ -76,14 +76,15 @@ function buildQueryChain(resolvedValue: { data: any; error: any }): any {
 
 vi.mock('@/services/supabaseClient', () => ({
   supabase: {
-    auth: {
-      getUser: mockGetUser,
-    },
     from: mockFrom,
     rpc: mockRpc,
     channel: mockChannelFn,
     removeChannel: mockRemoveChannel,
   },
+}));
+
+vi.mock('@/services/authCacheService', () => ({
+  getCachedUser: mockGetCachedUser,
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -136,9 +137,9 @@ describe('useAgentNotifications', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Default: getUser returns a test user
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: 'test-user-id' } },
+    // Default: getCachedUser returns a test user
+    mockGetCachedUser.mockResolvedValue({
+      user: { id: 'test-user-id' },
       error: null,
     });
 
@@ -346,8 +347,8 @@ describe('useAgentNotifications', () => {
   });
 
   it('handles missing user gracefully', async () => {
-    mockGetUser.mockResolvedValue({
-      data: { user: null },
+    mockGetCachedUser.mockResolvedValue({
+      user: null,
       error: null,
     });
 
