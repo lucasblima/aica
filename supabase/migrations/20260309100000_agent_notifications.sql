@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS agent_notifications (
   read_at TIMESTAMPTZ,  -- NULL when unread
 
   -- Timestamps
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================================
@@ -59,12 +59,10 @@ CREATE POLICY "Users update own agent notifications" ON agent_notifications
   FOR UPDATE USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- Service role inserts notifications (agents run as service role)
-DROP POLICY IF EXISTS "Service role inserts agent notifications" ON agent_notifications;
-CREATE POLICY "Service role inserts agent notifications" ON agent_notifications
-  FOR INSERT TO service_role WITH CHECK (true);
+-- DELETE intentionally omitted — notifications are agent-generated,
+-- cleanup handled by service role. Users can only read and mark-as-read.
 
--- Service role full access (for cleanup, admin operations)
+-- Service role full access (insert, cleanup, admin operations)
 DROP POLICY IF EXISTS "Service role full access agent notifications" ON agent_notifications;
 CREATE POLICY "Service role full access agent notifications" ON agent_notifications
   FOR ALL TO service_role USING (true)
