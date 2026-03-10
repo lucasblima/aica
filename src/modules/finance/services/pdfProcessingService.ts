@@ -182,7 +182,39 @@ export class PDFProcessingService {
     try {
       log.debug('[PDFProcessingService] Calling Edge Function for AI parsing...')
 
-      const parsed = await EdgeFunctionService.parseStatement({ rawText })
+      // Simulate incremental progress during long Edge Function call
+      // (Edge Functions don't support streaming progress, so provide UX feedback)
+      const AI_MESSAGES = [
+        'Gemini está interpretando o extrato...',
+        'Identificando receitas e despesas...',
+        'Extraindo datas e valores...',
+        'Analisando categorias de transações...',
+        'Processando informações bancárias...',
+        'Calculando saldos parciais...',
+      ]
+      let simulatedProgress = 50
+      let msgIdx = 0
+      const startTime = Date.now()
+      const progressTimer = setInterval(() => {
+        if (simulatedProgress < 82) {
+          simulatedProgress += 2
+          msgIdx = (msgIdx + 1) % AI_MESSAGES.length
+          const elapsed = Math.floor((Date.now() - startTime) / 1000)
+          onProgress?.({
+            stage: 'ai_parsing',
+            message: AI_MESSAGES[msgIdx],
+            detail: `${elapsed}s decorridos...`,
+            progress: simulatedProgress,
+          })
+        }
+      }, 4000)
+
+      let parsed
+      try {
+        parsed = await EdgeFunctionService.parseStatement({ rawText })
+      } finally {
+        clearInterval(progressTimer)
+      }
 
       if (!parsed || typeof parsed !== 'object') {
         log.error('[PDFProcessingService] Edge Function returned invalid data:', parsed)
