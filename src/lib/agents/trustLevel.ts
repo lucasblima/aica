@@ -13,7 +13,6 @@ export interface UserStats {
   totalTasks: number
   daysActive: number
   modulesUsed: number
-  patternsCount: number
 }
 
 const THRESHOLDS = {

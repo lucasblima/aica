@@ -6,6 +6,9 @@
  * not tied to a single module.
  */
 
+// Autonomous Agent Notifications
+export { AgentNotificationBell } from './AgentNotificationBell';
+
 // prettier-ignore
 export { default as AchievementsView } from './AchievementsView';
 export { AgendaTimeline } from './AgendaTimeline';
@@ -91,6 +94,9 @@ export { EthicalGuardrailsBanner } from './EthicalGuardrailsBanner';
 
 // Weather Strip — Compact weather display for header and agenda
 export { WeatherStrip } from './WeatherStrip';
+
+// Unified Agent Chat — Trust-level-aware AI chat wrapper
+export { UnifiedAgentChat, TrustLevelBadge } from './UnifiedAgentChat';
 
 // Shared Visualizations — Landing-to-App consistent charts
 export * from './visualizations';
