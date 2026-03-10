@@ -11,7 +11,6 @@ const newUser: UserStats = {
   totalTasks: 0,
   daysActive: 0,
   modulesUsed: 1,
-  patternsCount: 0,
 }
 
 describe('calculateTrustLevel', () => {
@@ -62,7 +61,6 @@ describe('calculateTrustLevel', () => {
       totalTasks: 100,
       daysActive: 60,
       modulesUsed: 5,
-      patternsCount: 10,
     }
     expect(calculateTrustLevel(stats)).toBe('jarvis')
   })
@@ -74,7 +72,6 @@ describe('calculateTrustLevel', () => {
       totalTasks: 100,
       daysActive: 60,
       modulesUsed: 4,
-      patternsCount: 10,
     }
     expect(calculateTrustLevel(missingModules)).toBe('execute_validate')
 
@@ -84,7 +81,6 @@ describe('calculateTrustLevel', () => {
       totalTasks: 100,
       daysActive: 59,
       modulesUsed: 5,
-      patternsCount: 10,
     }
     expect(calculateTrustLevel(missingDays)).toBe('execute_validate')
 
@@ -94,7 +90,6 @@ describe('calculateTrustLevel', () => {
       totalTasks: 99,
       daysActive: 60,
       modulesUsed: 5,
-      patternsCount: 10,
     }
     expect(calculateTrustLevel(missingTasks)).toBe('execute_validate')
 
@@ -104,7 +99,6 @@ describe('calculateTrustLevel', () => {
       totalTasks: 100,
       daysActive: 60,
       modulesUsed: 5,
-      patternsCount: 10,
     }
     expect(calculateTrustLevel(missingMoments)).toBe('execute_validate')
   })
@@ -125,7 +119,6 @@ describe('getTrustProgress', () => {
       totalTasks: 100,
       daysActive: 60,
       modulesUsed: 5,
-      patternsCount: 10,
     }
     const result = getTrustProgress(stats)
     expect(result.current).toBe('jarvis')
@@ -142,7 +135,6 @@ describe('getTrustProgress', () => {
       totalTasks: 50,
       daysActive: 30,
       modulesUsed: 3,
-      patternsCount: 5,
     }
     const result = getTrustProgress(stats)
     expect(result.current).toBe('execute_validate')
@@ -158,8 +150,7 @@ describe('getTrustProgress', () => {
       totalTasks: 15,
       daysActive: 7,
       modulesUsed: 1,
-      patternsCount: 0,
-    }
+        }
     const result = getTrustProgress(stats)
     expect(result.current).toBe('suggest_confirm')
     expect(result.nextLevel).toBe('execute_validate')

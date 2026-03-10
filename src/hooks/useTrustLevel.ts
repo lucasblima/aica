@@ -39,7 +39,6 @@ const DEFAULT_STATS: UserStats = {
   totalTasks: 0,
   daysActive: 0,
   modulesUsed: 0,
-  patternsCount: 0,
 }
 
 export function useTrustLevel(): UseTrustLevelReturn {
@@ -82,35 +81,33 @@ export function useTrustLevel(): UseTrustLevelReturn {
         daysActive = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
       }
 
-      // Modules used: try RPC first, fallback to counting tables with data
-      let modulesUsed = 3 // reasonable default
-      try {
-        const { data } = await supabase.rpc('count_distinct_modules_used', {
-          p_user_id: user.id,
-        })
-        if (typeof data === 'number') modulesUsed = data
-      } catch {
-        // RPC may not exist yet, use default
-      }
-
-      // Patterns count: try fetching from user_patterns
-      let patternsCount = 0
-      try {
-        const { count } = await supabase
-          .from('user_patterns')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-        patternsCount = count ?? 0
-      } catch {
-        // Table may not exist
-      }
+      // Modules used: count tables that have at least one row for this user
+      let modulesUsed = 0
+      const moduleTables = [
+        'moments',          // Journey
+        'work_items',       // Atlas
+        'finance_transactions', // Finance
+        'podcast_episodes', // Studio
+        'workout_blocks',   // Flux
+        'calendar_events',  // Agenda
+      ]
+      const moduleChecks = await Promise.all(
+        moduleTables.map(table =>
+          supabase
+            .from(table)
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .then(({ count }) => (count ?? 0) > 0 ? 1 : 0)
+            .catch(() => 0)
+        )
+      )
+      modulesUsed = moduleChecks.reduce((sum, v) => sum + v, 0)
 
       setStats({
         totalMoments,
         totalTasks,
         daysActive,
         modulesUsed,
-        patternsCount,
       })
     } catch (err) {
       log.error('Failed to fetch trust level stats:', err)

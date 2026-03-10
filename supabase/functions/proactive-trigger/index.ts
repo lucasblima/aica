@@ -59,6 +59,10 @@ const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const PROACTIVE_TRIGGER_SECRET = Deno.env.get('PROACTIVE_TRIGGER_SECRET')
 const ADK_BACKEND_URL = Deno.env.get('ADK_BACKEND_URL') || 'http://localhost:8000'
 
+if (!PROACTIVE_TRIGGER_SECRET) {
+  console.warn('PROACTIVE_TRIGGER_SECRET not set — only service role key auth will work')
+}
+
 // Valid agent names
 const VALID_AGENTS = [
   'morning_briefing',
@@ -240,7 +244,17 @@ async function handleTrigger(req: Request, corsHeaders: Record<string, string>):
     // System-level cleanup (no specific user)
     userIds = ['system']
   } else {
-    // Single user
+    // Single user — validate UUID format
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!UUID_RE.test(body.user_id)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid user_id format. Expected UUID or "all".' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
     userIds = [body.user_id]
   }
 
@@ -324,6 +338,7 @@ async function executeAgentForUser(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
       },
       body: JSON.stringify({
         user_id: userId,
