@@ -3,6 +3,9 @@ import { NavigationProvider } from '../contexts/NavigationContext';
 import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
 
+// Register cross-module timeline providers (Flux, Finance, Studio) at app startup
+import '../modules/agenda/providers/init';
+
 /**
  * AppProviders - Centralized Provider Management
  *

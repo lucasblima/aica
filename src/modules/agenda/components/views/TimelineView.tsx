@@ -5,11 +5,12 @@
  * and CompletedTasksSection. Used for both desktop and mobile "agenda" mode.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { LayoutTemplate } from 'lucide-react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { NextTwoDaysView } from '@/components/features/NextTwoDaysView';
 import { AgendaTimeline } from '@/modules/agenda/components/calendar';
-import { TaskCreationQuickAdd } from '@/modules/agenda/components/editors';
+import { TaskCreationQuickAdd, TemplateSelector } from '@/modules/agenda/components/editors';
 import { CompletedTasksSection } from '@/modules/agenda/components/shared';
 import { notificationService } from '@/services/notificationService';
 import type { Task } from '@/types';
@@ -80,6 +81,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onUncomplete,
   completionTimers,
 }) => {
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+
   return (
     <>
       {/* PROXIMOS 2 DIAS */}
@@ -94,13 +97,28 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         />
       </section>
 
-      {/* Quick Add de Tarefas */}
-      <section className="w-full" data-tour="add-task-button">
+      {/* Quick Add de Tarefas + Rotinas */}
+      <section className="w-full space-y-2" data-tour="add-task-button">
         <TaskCreationQuickAdd
           userId={userId}
           onTaskCreated={onTaskCreated}
         />
+        <button
+          type="button"
+          onClick={() => setIsTemplateSelectorOpen(true)}
+          className="w-full flex items-center justify-center gap-2 py-2 text-ceramic-text-secondary hover:text-amber-600 transition-colors text-sm font-medium"
+        >
+          <LayoutTemplate className="w-4 h-4" />
+          Modelos de Rotina
+        </button>
       </section>
+
+      <TemplateSelector
+        isOpen={isTemplateSelectorOpen}
+        onClose={() => setIsTemplateSelectorOpen(false)}
+        userId={userId}
+        onApplied={onTaskCreated}
+      />
 
       {/* TIMELINE: Mais Tarde */}
       {restOfDay.length > 0 && (
