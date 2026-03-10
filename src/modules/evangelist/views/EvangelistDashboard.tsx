@@ -17,7 +17,7 @@ function daysSince(dateStr: string): number {
 }
 
 function formatPeriod(monthStr: string): string {
-  // period_month comes as "YYYY-MM"
+  // period_month comes as "YYYY-MM-DD" (PostgreSQL DATE column)
   const [year, month] = monthStr.split('-');
   const MONTHS = [
     'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
