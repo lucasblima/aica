@@ -235,8 +235,9 @@ export function AppRouter() {
    useEffect(() => {
       const savedRef = localStorage.getItem('aica_ref_code');
       if (savedRef && user?.id) {
+         // Plan is determined at confirmation time by confirm-referral Edge Function
          supabase.functions.invoke('track-referral', {
-            body: { referral_code: savedRef, plan: 'pro' }
+            body: { referral_code: savedRef, plan: 'pending' }
          }).then(({ data, error }) => {
             // Clear ref code regardless of result — tracking is fire-once
             localStorage.removeItem('aica_ref_code');
