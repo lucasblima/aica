@@ -27,13 +27,41 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getCorsHeaders } from '../_shared/cors.ts'
+// ============================================================================
+// CORS (inlined — MCP deploy cannot resolve relative _shared/ imports)
+// ============================================================================
+
+const ALLOWED_ORIGINS = [
+  'https://dev.aica.guru',
+  'https://aica.guru',
+];
+
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/^http:\/\/localhost:\d+$/.test(origin)) return true;
+  return false;
+}
+
+function getCorsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigin = isAllowedOrigin(origin) ? origin : '';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-proactive-secret',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 // Environment variables
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const PROACTIVE_TRIGGER_SECRET = Deno.env.get('PROACTIVE_TRIGGER_SECRET') || 'dev-secret-change-in-production'
+const PROACTIVE_TRIGGER_SECRET = Deno.env.get('PROACTIVE_TRIGGER_SECRET')
 const ADK_BACKEND_URL = Deno.env.get('ADK_BACKEND_URL') || 'http://localhost:8000'
+
+if (!PROACTIVE_TRIGGER_SECRET) {
+  console.warn('PROACTIVE_TRIGGER_SECRET not set — only service role key auth will work')
+}
 
 // Valid agent names
 const VALID_AGENTS = [
@@ -57,11 +85,7 @@ interface TriggerResult {
 }
 
 serve(async (req: Request) => {
-  const corsHeaders = {
-    ...getCorsHeaders(req),
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-proactive-secret',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-  }
+  const corsHeaders = getCorsHeaders(req)
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -75,7 +99,11 @@ serve(async (req: Request) => {
     const secret = req.headers.get('x-proactive-secret')
     const authHeader = req.headers.get('authorization')
 
-    if (secret !== PROACTIVE_TRIGGER_SECRET && !authHeader?.includes(SUPABASE_SERVICE_KEY)) {
+    const bearerToken = authHeader?.replace('Bearer ', '')
+    const hasValidSecret = PROACTIVE_TRIGGER_SECRET && secret === PROACTIVE_TRIGGER_SECRET
+    const hasValidServiceKey = bearerToken === SUPABASE_SERVICE_KEY
+
+    if (!hasValidSecret && !hasValidServiceKey) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         {
@@ -87,12 +115,12 @@ serve(async (req: Request) => {
 
     // Route: GET /proactive-trigger/status
     if (req.method === 'GET' && url.pathname.endsWith('/status')) {
-      return await handleStatus()
+      return await handleStatus(corsHeaders)
     }
 
     // Route: POST /proactive-trigger
     if (req.method === 'POST') {
-      return await handleTrigger(req)
+      return await handleTrigger(req, corsHeaders)
     }
 
     return new Response(
@@ -121,7 +149,7 @@ serve(async (req: Request) => {
 /**
  * Handle status request - returns available agents and their schedules
  */
-async function handleStatus(): Promise<Response> {
+async function handleStatus(corsHeaders: Record<string, string>): Promise<Response> {
   const status = {
     available_agents: VALID_AGENTS,
     schedules: {
@@ -146,7 +174,6 @@ async function handleStatus(): Promise<Response> {
         timezone: 'America/Sao_Paulo',
       },
     },
-    adk_backend_url: ADK_BACKEND_URL,
     timestamp: new Date().toISOString(),
   }
 
@@ -162,7 +189,7 @@ async function handleStatus(): Promise<Response> {
 /**
  * Handle trigger request - execute proactive agent
  */
-async function handleTrigger(req: Request): Promise<Response> {
+async function handleTrigger(req: Request, corsHeaders: Record<string, string>): Promise<Response> {
   const body: TriggerRequest = await req.json()
 
   // Validate request
@@ -217,7 +244,17 @@ async function handleTrigger(req: Request): Promise<Response> {
     // System-level cleanup (no specific user)
     userIds = ['system']
   } else {
-    // Single user
+    // Single user — validate UUID format
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!UUID_RE.test(body.user_id)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid user_id format. Expected UUID or "all".' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
     userIds = [body.user_id]
   }
 
@@ -301,6 +338,7 @@ async function executeAgentForUser(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
       },
       body: JSON.stringify({
         user_id: userId,
@@ -331,8 +369,11 @@ async function executeAgentForUser(
 /**
  * Execute agent locally using Supabase (fallback when ADK is not available)
  *
- * This creates a minimal execution that stores results in user_memory.
- * Full functionality requires the ADK backend.
+ * Handles all 4 agent types with real logic:
+ * - morning_briefing: calls run-life-council Edge Function, inserts notification
+ * - deadline_watcher: queries work_items for overdue/due-today, inserts notification
+ * - pattern_analyzer: calls synthesize-user-patterns Edge Function, inserts notification
+ * - session_cleanup: calls cleanup_expired_agent_sessions RPC
  */
 async function executeAgentLocally(
   agentName: string,
@@ -363,16 +404,157 @@ async function executeAgentLocally(
     })
 
   if (error) {
-    return {
-      success: false,
-      message: 'Failed to store execution record',
-      error: error.message,
-    }
+    console.warn('Failed to store execution record (non-blocking):', error.message)
   }
 
-  // Agent-specific minimal actions
+  // Agent-specific actions
   switch (agentName) {
-    case 'session_cleanup':
+    case 'morning_briefing': {
+      try {
+        const councilResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/run-life-council`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            },
+            body: JSON.stringify({ userId }),
+          }
+        )
+        const councilData = await councilResponse.json()
+
+        if (councilData.success) {
+          await supabase.from('agent_notifications').insert({
+            user_id: userId,
+            agent_name: 'morning_briefing',
+            notification_type: 'insight',
+            title: (councilData.insight?.headline || 'Briefing matinal').substring(0, 200),
+            body: (councilData.insight?.synthesis || 'Conselho do dia gerado').substring(0, 500),
+            metadata: {
+              insight_id: councilData.insight?.id,
+              overall_status: councilData.insight?.overall_status,
+            },
+          })
+          return {
+            success: true,
+            message: 'Morning briefing generated',
+            data: councilData,
+          }
+        }
+        return {
+          success: false,
+          message: 'Life council call returned unsuccessful',
+          data: councilData,
+        }
+      } catch (err) {
+        console.error('morning_briefing failed:', err)
+        return {
+          success: false,
+          message: 'Morning briefing failed',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        }
+      }
+    }
+
+    case 'deadline_watcher': {
+      try {
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        const { data: urgentTasks } = await supabase
+          .from('work_items')
+          .select('id, title, due_date, status, priority')
+          .eq('user_id', userId)
+          .in('status', ['todo', 'in_progress', 'pending'])
+          .lte('due_date', tomorrow)
+          .order('due_date', { ascending: true })
+
+        if (urgentTasks && urgentTasks.length > 0) {
+          const today = new Date().toISOString().split('T')[0]
+          const overdue = urgentTasks.filter((t: { due_date: string }) => t.due_date < today)
+          const dueToday = urgentTasks.filter((t: { due_date: string }) => t.due_date === today)
+
+          const title = overdue.length > 0
+            ? `${overdue.length} tarefa(s) atrasada(s)`
+            : `${dueToday.length} tarefa(s) para hoje`
+
+          const body = urgentTasks
+            .slice(0, 5)
+            .map((t: { title: string }) => `\u2022 ${t.title}`)
+            .join('\n')
+            .substring(0, 500)
+
+          await supabase.from('agent_notifications').insert({
+            user_id: userId,
+            agent_name: 'deadline_watcher',
+            notification_type: 'deadline',
+            title,
+            body,
+            metadata: {
+              task_count: urgentTasks.length,
+              overdue_count: overdue.length,
+              due_today_count: dueToday.length,
+            },
+          })
+        }
+        return {
+          success: true,
+          message: `Found ${urgentTasks?.length || 0} urgent tasks`,
+          data: { task_count: urgentTasks?.length || 0 },
+        }
+      } catch (err) {
+        console.error('deadline_watcher failed:', err)
+        return {
+          success: false,
+          message: 'Deadline watcher failed',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        }
+      }
+    }
+
+    case 'pattern_analyzer': {
+      try {
+        const patternResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/synthesize-user-patterns`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            },
+            body: JSON.stringify({ userId }),
+          }
+        )
+        const patternData = await patternResponse.json()
+
+        if (patternData.success && patternData.new_patterns?.length > 0) {
+          await supabase.from('agent_notifications').insert({
+            user_id: userId,
+            agent_name: 'pattern_analyzer',
+            notification_type: 'pattern',
+            title: `${patternData.new_patterns.length} novo(s) padr\u00e3o(\u00f5es) detectado(s)`,
+            body: patternData.new_patterns
+              .map((p: { description: string }) => `\u2022 ${p.description}`)
+              .join('\n')
+              .substring(0, 500),
+            metadata: { patterns: patternData.new_patterns },
+          })
+        }
+        return {
+          success: true,
+          message: 'Pattern analysis complete',
+          data: patternData,
+        }
+      } catch (err) {
+        console.error('pattern_analyzer failed:', err)
+        return {
+          success: false,
+          message: 'Pattern analysis failed',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        }
+      }
+    }
+
+    case 'session_cleanup': {
       // Actually run cleanup
       const { error: cleanupError } = await supabase.rpc('cleanup_expired_agent_sessions')
       if (cleanupError) {
@@ -387,11 +569,12 @@ async function executeAgentLocally(
         message: 'Session cleanup executed via RPC',
         data: { execution_mode: 'rpc' },
       }
+    }
 
     default:
       return {
         success: true,
-        message: `Agent ${agentName} trigger recorded. Full execution requires ADK backend.`,
+        message: `Agent ${agentName} trigger recorded. No handler available.`,
         data: {
           execution_mode: 'edge_function_fallback',
           triggered_at: executionTime,

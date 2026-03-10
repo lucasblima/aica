@@ -3,7 +3,7 @@ import { User, Users, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SettingsMenu } from './SettingsMenu';
 import { CeramicTabSelector, Logo } from '../ui';
-import { InviteBadge, InviteModal } from '../features';
+import { AgentNotificationBell, InviteBadge, InviteModal } from '../features';
 
 interface HeaderGlobalProps {
     title: string;
@@ -76,6 +76,7 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
                 </div>
                 {/* Invite Badge & Settings Menu */}
                 <div className="flex items-center gap-3">
+                    <AgentNotificationBell />
                     <InviteBadge onClick={() => setShowInviteModal(true)} />
                     <SettingsMenu
                         userEmail={userEmail}
