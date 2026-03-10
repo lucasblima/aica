@@ -6,6 +6,9 @@
  * not tied to a single module.
  */
 
+// Autonomous Agent Notifications
+export { AgentNotificationBell } from './AgentNotificationBell';
+
 // prettier-ignore
 export { default as AchievementsView } from './AchievementsView';
 export { AgendaTimeline } from './AgendaTimeline';
