@@ -7,7 +7,7 @@
  * Wave 3: Context Migration - Updated type imports to new paths
  */
 
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useRef } from 'react';
 import type {
   PodcastWorkspaceState,
   WorkspaceAction,
@@ -602,6 +602,10 @@ export function PodcastWorkspaceProvider({
 }: PodcastWorkspaceProviderProps) {
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
 
+  // Keep a ref to current state so actions can read it without being a dependency
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   // Calculate stage completions
   const stageCompletions = useMemo<StageCompletionMap>(() => {
     return {
@@ -647,8 +651,8 @@ export function PodcastWorkspaceProvider({
 
       dispatch({ type: 'START_DOSSIER_GENERATION' });
       try {
-        const { guestName, theme } = state.setup;
-        const { customSources } = state.research;
+        const { guestName, theme } = stateRef.current.setup;
+        const { customSources } = stateRef.current.research;
 
         const dossier = await onGenerateDossier(guestName, theme, customSources);
         dispatch({ type: 'FINISH_DOSSIER_GENERATION', payload: dossier });
@@ -663,8 +667,8 @@ export function PodcastWorkspaceProvider({
 
       dispatch({ type: 'START_DOSSIER_GENERATION' });
       try {
-        const { guestName, theme } = state.setup;
-        const { customSources } = state.research;
+        const { guestName, theme } = stateRef.current.setup;
+        const { customSources } = stateRef.current.research;
 
         const dossier = await onGenerateDossier(guestName, theme, customSources);
         dispatch({ type: 'FINISH_DOSSIER_GENERATION', payload: dossier });
@@ -677,7 +681,7 @@ export function PodcastWorkspaceProvider({
     deepResearch: async (depth: 'quick' | 'standard' | 'deep' = 'standard') => {
       dispatch({ type: 'START_DOSSIER_GENERATION' });
       try {
-        const { guestName, guestReference, guestBio, theme } = state.setup;
+        const { guestName, guestReference, guestBio, theme } = stateRef.current.setup;
         // Build guestContext from available fields — studio-deep-research requires non-empty string
         const guestContext = guestBio || guestReference || theme || guestName;
         const result = await deepResearchGuest(guestName, guestContext, depth);
@@ -690,7 +694,7 @@ export function PodcastWorkspaceProvider({
 
         const dossier: Dossier = {
           guestName,
-          episodeTheme: state.setup.theme || result.suggestedThemes[0] || 'Carreira & Atualidades',
+          episodeTheme: stateRef.current.setup.theme || result.suggestedThemes[0] || 'Carreira & Atualidades',
           biography: result.dossier.biography,
           controversies: result.dossier.controversies.map(c =>
             typeof c === 'string' ? c : c.title
@@ -716,15 +720,15 @@ export function PodcastWorkspaceProvider({
 
     // Suggestion card actions (NotebookLM UX)
     analyzeGaps: async () => {
-      const { dossier, customSources } = state.research;
+      const { dossier, customSources } = stateRef.current.research;
       if (!dossier) return;
 
       dispatch({ type: 'SET_ANALYZING_GAPS', payload: true });
       try {
         const result = await analyzeGaps(
           dossier,
-          state.setup.guestName,
-          state.setup.theme,
+          stateRef.current.setup.guestName,
+          stateRef.current.setup.theme,
           customSources.length > 0 ? customSources : undefined
         );
         if (result.success && result.data) {
@@ -748,7 +752,7 @@ export function PodcastWorkspaceProvider({
     },
 
     insertCardToDossier: (cardId: string) => {
-      const card = state.research.suggestionCards.find(c => c.id === cardId);
+      const card = stateRef.current.research.suggestionCards.find(c => c.id === cardId);
       if (!card) return;
       dispatch({
         type: 'INSERT_CARD_TO_DOSSIER',
@@ -761,7 +765,7 @@ export function PodcastWorkspaceProvider({
     },
 
     indexCustomSources: async () => {
-      const { customSources } = state.research;
+      const { customSources } = stateRef.current.research;
       if (customSources.length === 0) return;
 
       try {
@@ -846,7 +850,7 @@ export function PodcastWorkspaceProvider({
       if (onSave) {
         dispatch({ type: 'SET_LOADING', payload: true });
         try {
-          await onSave(state);
+          await onSave(stateRef.current);
           dispatch({ type: 'MARK_SAVED' });
         } catch (error) {
           log.error('Error saving workspace:', error);
@@ -860,7 +864,7 @@ export function PodcastWorkspaceProvider({
     hydrate: (data: Partial<PodcastWorkspaceState>) => {
       dispatch({ type: 'HYDRATE', payload: data });
     },
-  }), [state, onSave, onGenerateDossier, onSearchGuestProfile]);
+  }), [onSave, onGenerateDossier, onSearchGuestProfile]);
 
   const value = useMemo(
     () => ({ state, dispatch, actions, stageCompletions }),
