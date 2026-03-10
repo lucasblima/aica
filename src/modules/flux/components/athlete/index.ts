@@ -10,7 +10,7 @@ export { FeedbackForm } from './FeedbackForm';
 export type { FeedbackFormProps } from './FeedbackForm';
 export { FeedbackEntryCard } from './FeedbackEntryCard';
 export type { FeedbackEntryCardProps } from './FeedbackEntryCard';
-export { WeeklyFeedbackCard, DayFeedbackCard } from './WeeklyFeedbackCard';
+export { WeeklyFeedbackCard } from './WeeklyFeedbackCard';
 export type { WeeklyFeedbackCardProps } from './WeeklyFeedbackCard';
 export { ScaleInput } from './ScaleInput';
 export type { ScaleInputProps } from './ScaleInput';
