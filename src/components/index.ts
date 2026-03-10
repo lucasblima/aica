@@ -49,7 +49,8 @@ export { HelpButton } from './layout/HelpButton';
 // ============ Features ============
 // prettier-ignore
 export { default as AchievementsView } from './features/AchievementsView';
-export { AgendaTimeline } from './features/AgendaTimeline';
+// Migrated to @/modules/agenda/components/calendar/ (re-export for backward compat)
+export { AgendaTimeline } from '@/modules/agenda/components/calendar/AgendaTimeline';
 export { CalendarSyncIndicator } from './features/CalendarSyncIndicator';
 export { ConnectionArchetypes } from './features/ConnectionArchetypes';
 // prettier-ignore
@@ -61,7 +62,8 @@ export { InviteShareCard } from './features/InviteShareCard';
 // prettier-ignore
 export { default as ContactDetailModal } from './features/ContactDetailModal';
 export { ContactProfileView } from './features/ContactProfileView';
-export { DailyTimeline } from './features/DailyTimeline';
+// Migrated to @/modules/agenda/components/calendar/ (re-export for backward compat)
+export { DailyTimeline } from '@/modules/agenda/components/calendar/DailyTimeline';
 export { DailySummaryView } from './features/DailySummaryView';
 // prettier-ignore
 export { default as EfficiencyControlPanel } from './features/EfficiencyControlPanel';
@@ -84,7 +86,8 @@ export { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from './feat
 export { default as OnboardingWizard } from './features/OnboardingWizard';
 export { PomodoroTimer } from './features/PomodoroTimer';
 export { UnifiedJourneyCard } from './features/UnifiedJourneyCard';
-export { WeeklyCalendarView } from './features/WeeklyCalendarView';
+// Migrated to @/modules/agenda/components/calendar/ (re-export for backward compat)
+export { WeeklyCalendarView } from '@/modules/agenda/components/calendar/WeekView';
 
 // Scientific Scoring Engine — Issue #575
 export { ScoreCard } from './features/ScoreCard';
@@ -92,15 +95,16 @@ export { ScoreExplainer } from './features/ScoreExplainer';
 export { DomainWeightSliders } from './features/DomainWeightSliders';
 
 // ============ Domain-Specific ============
-export { AgendaModeToggle } from './domain/AgendaModeToggle';
+// Migrated to @/modules/agenda/components/ (re-exports for backward compat)
+export { AgendaModeToggle } from '@/modules/agenda/components/shared/ModeToggle';
 export { EmptyQuadrantState } from './domain/EmptyQuadrantState';
-export { PriorityMatrix } from './domain/PriorityMatrix';
-export { TaskCreationQuickAdd } from './domain/TaskCreationQuickAdd';
-export { TaskEditModal } from './domain/TaskEditModal';
+export { PriorityMatrix } from '@/modules/agenda/components/views/MatrixView';
+export { TaskCreationQuickAdd } from '@/modules/agenda/components/editors/QuickAdd';
+export { TaskEditModal } from '@/modules/agenda/components/editors/TaskEditModal';
 export { TaskEditDrawer } from './domain/TaskEditDrawer';
-export { TaskListView } from './domain/TaskListView';
-export { TaskKanbanView } from './domain/TaskKanbanView';
-export { TaskFilterBar } from './domain/TaskFilterBar';
+export { TaskListView } from '@/modules/agenda/components/views/ListView';
+export { TaskKanbanView } from '@/modules/agenda/components/views/KanbanView';
+export { TaskFilterBar } from '@/modules/agenda/components/shared/FilterBar';
 
 // ============ Legacy Organization (keeping for gradual migration) ============
 // These will be moved to appropriate subdirectories in future sprints

@@ -26,6 +26,7 @@ export { default as TagInput } from './TagInput';
 export { default as RecurrencePicker } from './RecurrencePicker';
 // prettier-ignore
 export { default as SubtaskList } from './SubtaskList';
+export type { Subtask } from './SubtaskList';
 export { CalendarStatusDot } from './CalendarStatusDot';
 
 // Import UI components that were already in ui/

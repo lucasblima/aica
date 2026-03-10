@@ -16,7 +16,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange }) =
 
   const items: { view: ViewState | 'people'; icon: typeof LayoutGrid; label: string }[] = [
     { view: 'vida', icon: LayoutGrid, label: 'Vida' },
-    { view: 'agenda', icon: Calendar, label: 'Agenda' },
+    { view: 'agenda', icon: Calendar, label: 'Meu Dia' },
     { view: 'journey', icon: Sparkles, label: 'Jornada' },
     { view: 'connections', icon: Network, label: 'Conexões' },
     { view: 'people', icon: Users, label: 'Pessoas' },
