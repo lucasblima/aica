@@ -9,7 +9,7 @@
  * This is the unified entry point for AI chat across all modules.
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Bot, ChevronDown } from 'lucide-react'
 import { ModuleAgentChat } from '@/components/features/ModuleAgentChat/ModuleAgentChat'
 import { MODULE_AGENT_CONFIGS } from '@/components/features/ModuleAgentChat/moduleAgentConfigs'
@@ -19,6 +19,8 @@ import type { AgentModule } from '@/lib/agents'
 
 // Modules available for selection (exclude coordinator)
 const SELECTABLE_MODULES = Object.keys(MODULE_AGENT_CONFIGS) as Exclude<AgentModule, 'coordinator'>[]
+
+const STORAGE_KEY = 'aica-unified-chat-module'
 
 const TRUST_DESCRIPTIONS: Record<string, string> = {
   suggest_confirm: 'O agente sugere acoes e aguarda sua confirmacao antes de executar.',
@@ -40,9 +42,23 @@ export function UnifiedAgentChat({
   onClose,
   initialModule = 'atlas',
 }: UnifiedAgentChatProps) {
-  const [selectedModule, setSelectedModule] = useState<Exclude<AgentModule, 'coordinator'>>(initialModule)
+  const [selectedModule, setSelectedModule] = useState<Exclude<AgentModule, 'coordinator'>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved && SELECTABLE_MODULES.includes(saved as any)) {
+        return saved as Exclude<AgentModule, 'coordinator'>
+      }
+    } catch {}
+    return initialModule
+  })
   const [showModuleSelector, setShowModuleSelector] = useState(false)
   const { trustLevel, progress, isLoading } = useTrustLevel()
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, selectedModule)
+    } catch {}
+  }, [selectedModule])
 
   const moduleConfig = MODULE_AGENT_CONFIGS[selectedModule]
 
