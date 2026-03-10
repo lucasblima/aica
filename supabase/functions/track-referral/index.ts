@@ -82,6 +82,15 @@ serve(async (req: Request) => {
       )
     }
 
+    // 1b. Block self-referral
+    if (evangelist.user_id === user.id) {
+      console.log('[track-referral] Self-referral blocked:', user.id)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Cannot refer yourself' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
     // 2. Check if user was already referred (unique constraint on referred_user_id)
     const { data: existingConversion } = await supabase
       .from('referral_conversions')
