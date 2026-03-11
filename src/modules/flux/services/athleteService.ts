@@ -433,21 +433,7 @@ export class AthleteService {
    */
   static async unlinkSelf(): Promise<{ error: any }> {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        return { error: new Error('User not authenticated') };
-      }
-
-      const { error } = await supabase
-        .from('athletes')
-        .update({
-          auth_user_id: null,
-          invitation_status: 'none',
-          status: 'churned' as AthleteStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('auth_user_id', userData.user.id);
-
+      const { error } = await supabase.rpc('athlete_unlink_self');
       return { error };
     } catch (error) {
       console.error('[AthleteService] Error unlinking self:', error);
