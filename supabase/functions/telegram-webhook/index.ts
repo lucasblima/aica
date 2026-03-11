@@ -120,6 +120,59 @@ async function reply(
 }
 
 // ============================================================================
+// EMAIL VALIDATION
+// ============================================================================
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isValidEmail(email: string): boolean {
+  if (!email || email.length > 254) return false
+  if (email.endsWith('@telegram.aica.guru')) return false // reject synthetic emails
+  return EMAIL_REGEX.test(email)
+}
+
+// ============================================================================
+// FLOW STATE MANAGEMENT
+// ============================================================================
+
+async function getActiveFlow(
+  supabase: SupabaseClient,
+  userId: string,
+  chatId: number,
+): Promise<{ activeFlow: string | null; flowState: Record<string, unknown> }> {
+  const { data } = await supabase
+    .from('telegram_conversations')
+    .select('active_flow, flow_state')
+    .eq('user_id', userId)
+    .eq('telegram_chat_id', chatId)
+    .single()
+
+  return {
+    activeFlow: data?.active_flow || null,
+    flowState: (data?.flow_state as Record<string, unknown>) || {},
+  }
+}
+
+async function setActiveFlow(
+  supabase: SupabaseClient,
+  userId: string,
+  chatId: number,
+  activeFlow: string | null,
+  flowState: Record<string, unknown> = {},
+): Promise<void> {
+  await supabase
+    .from('telegram_conversations')
+    .upsert({
+      user_id: userId,
+      telegram_chat_id: chatId,
+      active_flow: activeFlow,
+      flow_state: flowState,
+      last_message_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,telegram_chat_id' })
+}
+
+// ============================================================================
 // GUEST ACCOUNT CREATION
 // ============================================================================
 
