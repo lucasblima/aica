@@ -221,6 +221,26 @@ export function useAuth() {
     }
   }, [])
 
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const sendMagicLink = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const sendPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    return { error: error?.message ?? null }
+  }, [])
+
   // CRITICAL: Memoize return object to prevent cascading re-renders
   // Without useMemo, the entire object reference changes on every render,
   // causing all consumers to re-render even if values haven't changed.
@@ -231,7 +251,10 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user,
     signOut,
-  }), [user, session, isLoading, signOut])
+    signInWithEmail,
+    sendMagicLink,
+    sendPasswordReset,
+  }), [user, session, isLoading, signOut, signInWithEmail, sendMagicLink, sendPasswordReset])
 
   return returnValue
 }
