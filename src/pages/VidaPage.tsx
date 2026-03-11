@@ -188,6 +188,10 @@ export default function VidaPage({
          window.location.href = '/';
       } catch (error) {
          log.error('Error deleting account:', error);
+         notificationService.showError(
+            'Erro ao excluir conta',
+            'Ocorreu um erro inesperado. Tente novamente ou entre em contato com contato@aica.guru.'
+         );
       }
    };
 
