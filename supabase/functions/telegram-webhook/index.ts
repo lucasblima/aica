@@ -7,9 +7,9 @@
  * handlers, and logs all interactions.
  *
  * Phase 1 — Commands:
- * /start        — Welcome + linking instructions
+ * /start        — Guest account creation + LGPD consent
  * /help         — Command list (Portuguese)
- * /status       — Account link status
+ * /status       — Account status (guest vs full)
  * /vincular     — Link Telegram to AICA via one-time code
  * /desvincular  — Unlink account (with confirmation)
  * /privacidade  — LGPD info + data rights
@@ -160,10 +160,9 @@ async function createGuestAccount(
       if (raceUser && raceUser.length > 0) {
         return raceUser[0].user_id
       }
-      // Auth user exists but no link row — find auth user by email and create link
-      const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1, page: 1 })
-      // listUsers doesn't filter by email; use the known user_id from metadata instead
-      throw new Error(`Guest account created by concurrent request but link missing. Retry /start.`)
+      // Auth user exists but link row not yet created by the concurrent request.
+      // A retry will succeed once the other request completes the insert.
+      throw new Error(`Guest account created by concurrent request but link not yet visible. Retry /start.`)
     }
     throw new Error(`Failed to create guest account: ${authError.message}`)
   }
@@ -288,9 +287,11 @@ async function handleStatus(
   if (data && data.length > 0) {
     const user = data[0]
     // Check if user has a synthetic email (guest account from Telegram)
-    const { data: authUser } = await supabase.auth.admin.getUserById(user.user_id)
-    const isSyntheticEmail = authUser?.user?.email?.endsWith('@telegram.aica.guru') || false
-    const accountType = isSyntheticEmail ? '📱 Conta Telegram (convidado)' : '🌐 Conta AICA completa'
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user.user_id)
+    const isSyntheticEmail = !authError && authUser?.user?.email?.endsWith('@telegram.aica.guru') || false
+    const accountType = authError
+      ? '⚠️ Conta (status indisponivel)'
+      : isSyntheticEmail ? '📱 Conta Telegram (convidado)' : '🌐 Conta AICA completa'
 
     await reply(tg, msg, [
       '✅ <b>Conta ativa</b>',
