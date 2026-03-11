@@ -758,9 +758,11 @@ export function AppRouter() {
                />
 
                {/* Welcome Page - For Telegram magic link users (Phase 2) */}
+               {/* Uses AuthGuard only (not ProtectedRoute) because Telegram guests */}
+               {/* don't have user_profiles rows, so ActivationGuard would block them */}
                <Route
                   path="/welcome"
-                  element={<ProtectedRoute><WelcomePage /></ProtectedRoute>}
+                  element={<AuthGuard><WelcomePage /></AuthGuard>}
                />
 
                {/* Onboarding Flow - Protected, for new users */}
