@@ -80,7 +80,7 @@ export function StudioDemo() {
             {selectedDetail.icon} {selectedDetail.label}
           </p>
           <p className="text-xs text-ceramic-text-secondary mt-1">
-            {selectedDetail.status === 'completed' && 'Concluido com sucesso'}
+            {selectedDetail.status === 'completed' && 'Concluído com sucesso'}
             {selectedDetail.status === 'active' && 'Em andamento agora'}
             {selectedDetail.status === 'pending' && 'Aguardando etapas anteriores'}
           </p>

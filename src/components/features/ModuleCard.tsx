@@ -78,6 +78,10 @@ export function ModuleCard({
       setTasks(data);
       setLoading(false);
       onTasksLoaded?.(moduleId, data.length);
+    }).catch((err) => {
+      console.warn(`[ModuleCard] Failed to load tasks for ${moduleId}:`, err);
+      setLoading(false);
+      onTasksLoaded?.(moduleId, 0);
     });
   }, [moduleId, onTasksLoaded]);
 

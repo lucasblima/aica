@@ -68,7 +68,7 @@ export function FluxDemo() {
 
       {expandedDay === null && (
         <p className="text-[10px] text-ceramic-text-secondary text-center">
-          Clique em um dia para ver os exercicios
+          Clique em um dia para ver os exercícios
         </p>
       )}
     </div>

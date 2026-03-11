@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Logo } from '@/components/ui';
 
 export function FooterSection() {
@@ -15,19 +16,19 @@ export function FooterSection() {
 
           {/* Center: Links */}
           <nav className="flex items-center gap-4 text-sm font-medium text-ceramic-text-secondary">
-            <a
-              href="/privacy-policy"
+            <Link
+              to="/privacy-policy"
               className="hover:text-ceramic-text-primary transition-colors"
             >
               Privacidade
-            </a>
+            </Link>
             <span className="text-ceramic-border">|</span>
-            <a
-              href="/terms"
+            <Link
+              to="/terms"
               className="hover:text-ceramic-text-primary transition-colors"
             >
               Termos
-            </a>
+            </Link>
             <span className="text-ceramic-border">|</span>
             <a
               href="mailto:contato@aica.guru"
@@ -39,7 +40,7 @@ export function FooterSection() {
 
           {/* Right: Tagline */}
           <p className="text-sm text-ceramic-text-secondary italic">
-            Feito com ceramica digital
+            Feito com cerâmica digital
           </p>
         </div>
 

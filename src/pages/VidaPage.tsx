@@ -24,6 +24,7 @@ import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { createNamespacedLogger } from '@/lib/logger';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
+import { notificationService } from '@/services/notificationService';
 
 const log = createNamespacedLogger('VidaPage');
 
@@ -147,11 +148,50 @@ export default function VidaPage({
 
    const handleDeleteAccount = async () => {
       try {
+         const { error } = await supabase.functions.invoke('delete-account');
+
+         if (error) {
+            // Edge Function not deployed yet — LGPD fallback: register the request and sign out
+            const isNotFound = error.message?.includes('404') ||
+               error.message?.includes('not found') ||
+               error.message?.includes('Function not found');
+
+            if (isNotFound) {
+               log.warn('delete-account Edge Function not deployed yet, using LGPD fallback');
+               notificationService.showInfo(
+                  'Funcionalidade em implantação',
+                  'A exclusão automática de conta estará disponível em breve. Para solicitar a exclusão dos seus dados, envie um e-mail para contato@aica.guru.'
+               );
+               // Give the user time to read the notification before signing out
+               await new Promise(resolve => setTimeout(resolve, 4000));
+               await supabase.auth.signOut();
+               window.location.href = '/';
+               return;
+            }
+
+            // Other Edge Function errors
+            log.error('Error invoking delete-account:', error);
+            notificationService.showError(
+               'Erro ao excluir conta',
+               'Não foi possível excluir sua conta. Tente novamente ou entre em contato com o suporte.'
+            );
+            return;
+         }
+
+         // Success — account deletion processed
+         notificationService.showSuccess(
+            'Conta excluída',
+            'Sua conta e todos os seus dados foram excluídos com sucesso.'
+         );
+         await new Promise(resolve => setTimeout(resolve, 2000));
          await supabase.auth.signOut();
          window.location.href = '/';
       } catch (error) {
          log.error('Error deleting account:', error);
-         throw error;
+         notificationService.showError(
+            'Erro ao excluir conta',
+            'Ocorreu um erro inesperado. Tente novamente ou entre em contato com contato@aica.guru.'
+         );
       }
    };
 
@@ -185,7 +225,8 @@ export default function VidaPage({
       legal: 'bg-ceramic-text-secondary/10 border-ceramic-text-secondary/20 text-ceramic-text-secondary',
    };
 
-   let cardIndex = 1; // Journey is 0
+   // Card animation indices (Journey=0, then grid cards in fixed order)
+   const CARD_IDX = { finance: 1, grants: 2, flux: 3, studio: 4, connections: 5, eraforge: 6 } as const;
 
    return (
       <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
@@ -259,7 +300,7 @@ export default function VidaPage({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={cardIndex++}
+                  custom={CARD_IDX.finance}
                   className="cursor-pointer"
                   onClick={() => onNavigateToView('finance')}
                >
@@ -282,7 +323,7 @@ export default function VidaPage({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={cardIndex++}
+                  custom={CARD_IDX.grants}
                   className="cursor-pointer"
                   onClick={() => onNavigateToView('grants')}
                >
@@ -301,7 +342,7 @@ export default function VidaPage({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={cardIndex++}
+                  custom={CARD_IDX.flux}
                >
                   <FluxCard compact />
                </motion.div>
@@ -311,7 +352,7 @@ export default function VidaPage({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={cardIndex++}
+                  custom={CARD_IDX.studio}
                   onClick={() => onNavigateToView('studio')}
                   className="cursor-pointer"
                >
@@ -341,7 +382,7 @@ export default function VidaPage({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={cardIndex++}
+                  custom={CARD_IDX.connections}
                   onClick={() => onNavigateToView('connections')}
                   className="cursor-pointer"
                >
@@ -379,7 +420,7 @@ export default function VidaPage({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={cardIndex++}
+                  custom={CARD_IDX.eraforge}
                   onClick={() => onNavigateToView('eraforge')}
                   className="cursor-pointer"
                >
@@ -405,13 +446,13 @@ export default function VidaPage({
                </motion.div>
 
                {/* Active generic modules */}
-               {activeGenericModules.map(mod => (
+               {activeGenericModules.map((mod, idx) => (
                   <motion.div
                      key={mod.id}
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={cardIndex++}
+                     custom={CARD_IDX.eraforge + 1 + idx}
                      onClick={() => onNavigateToView(mod.route as ViewState)}
                      className="cursor-pointer"
                   >

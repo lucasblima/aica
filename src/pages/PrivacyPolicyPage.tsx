@@ -19,7 +19,7 @@ export function PrivacyPolicyPage() {
           <button
             onClick={() => navigate('/landing')}
             className="flex items-center gap-2 text-[#5C554B] hover:text-[#2B1B17] transition-colors focus:outline-none focus:ring-2 focus:ring-[#6B9EFF] rounded-lg p-2"
-            aria-label="Voltar para a pagina inicial"
+            aria-label="Voltar para a página inicial"
           >
             <ArrowLeft size={20} />
             <span className="text-sm font-medium">Voltar</span>
@@ -30,55 +30,55 @@ export function PrivacyPolicyPage() {
       {/* Main Content */}
       <main className="max-w-[900px] mx-auto px-6 md:px-8 py-12">
         <h1 className="text-4xl md:text-5xl font-bold text-[#2B1B17] mb-4">
-          Politica de Privacidade
+          Política de Privacidade
         </h1>
         <p className="text-sm text-[#5C554B] mb-8">
-          Ultima atualizacao: 28 de fevereiro de 2026
+          Última atualização: 28 de fevereiro de 2026
         </p>
 
         <div className="prose prose-slate max-w-none space-y-8">
           {/* Section 1 - Introducao e Escopo */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">1. Introducao e Escopo</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">1. Introdução e Escopo</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A AICA Life OS (&quot;AICA&quot;, &quot;nos&quot;, &quot;nosso&quot; ou &quot;nossa&quot;) e um Sistema Operacional de Vida
-              Integral que integra produtividade pessoal e profissional. A plataforma oferece modulos de
-              gestao de tarefas, calendario, jornada pessoal, financas, conexoes, producao de conteudo,
-              editais e treinamento fisico, com suporte de inteligencia artificial.
+              A AICA Life OS (&quot;AICA&quot;, &quot;nós&quot;, &quot;nosso&quot; ou &quot;nossa&quot;) é um Sistema Operacional de Vida
+              Integral que integra produtividade pessoal e profissional. A plataforma oferece módulos de
+              gestão de tarefas, calendário, jornada pessoal, finanças, conexões, produção de conteúdo,
+              editais e treinamento físico, com suporte de inteligência artificial.
             </p>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Esta Politica de Privacidade descreve como coletamos, utilizamos, armazenamos, compartilhamos
-              e protegemos seus dados pessoais ao utilizar a AICA, aplicando-se a todos os usuarios,
-              independentemente de sua localizacao geografica.
+              Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos, compartilhamos
+              e protegemos seus dados pessoais ao utilizar a AICA, aplicando-se a todos os usuários,
+              independentemente de sua localização geográfica.
             </p>
             <p className="text-[#5C554B] leading-relaxed">
-              Ao utilizar a AICA, voce reconhece que leu, compreendeu e concorda com as praticas descritas
-              nesta Politica. Caso nao concorde, recomendamos que nao utilize a plataforma. Esta Politica
-              foi elaborada em conformidade com as seguintes legislacoes e normas:
+              Ao utilizar a AICA, você reconhece que leu, compreendeu e concorda com as práticas descritas
+              nesta Política. Caso não concorde, recomendamos que não utilize a plataforma. Esta Política
+              foi elaborada em conformidade com as seguintes legislações e normas:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mt-4">
-              <li>Lei Geral de Protecao de Dados (LGPD - Lei n. 13.709/2018)</li>
-              <li>Regulamento Geral sobre Protecao de Dados (GDPR - Regulamento UE 2016/679)</li>
+              <li>Lei Geral de Proteção de Dados (LGPD - Lei n. 13.709/2018)</li>
+              <li>Regulamento Geral sobre Proteção de Dados (GDPR - Regulamento UE 2016/679)</li>
               <li>California Consumer Privacy Act / California Privacy Rights Act (CCPA/CPRA)</li>
               <li>Marco Civil da Internet (Lei n. 12.965/2014)</li>
-              <li>Codigo de Defesa do Consumidor (CDC - Lei n. 8.078/1990)</li>
+              <li>Código de Defesa do Consumidor (CDC - Lei n. 8.078/1990)</li>
             </ul>
           </section>
 
           {/* Section 2 - Identificacao do Controlador */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">2. Identificacao do Controlador</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">2. Identificação do Controlador</h2>
             <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6 space-y-2">
-              <p className="text-[#5C554B]"><strong>Razao Social:</strong> Comtxae Educacao Cultura e Tecnologia Ltda.</p>
+              <p className="text-[#5C554B]"><strong>Razão Social:</strong> Comtxae Educação Cultura e Tecnologia Ltda.</p>
               <p className="text-[#5C554B]"><strong>CNPJ:</strong> [CNPJ]</p>
-              <p className="text-[#5C554B]"><strong>Endereco:</strong> [ENDERECO]</p>
-              <p className="text-[#5C554B]"><strong>Encarregado de Protecao de Dados (DPO):</strong> Lucas Boscacci Pereira Lima da Silva</p>
+              <p className="text-[#5C554B]"><strong>Endereço:</strong> [ENDEREÇO]</p>
+              <p className="text-[#5C554B]"><strong>Encarregado de Proteção de Dados (DPO):</strong> Lucas Boscacci Pereira Lima da Silva</p>
               <p className="text-[#5C554B]"><strong>E-mail do DPO:</strong> dpo@aica.life</p>
               <p className="text-[#5C554B]"><strong>E-mail geral:</strong> contato@aica.guru</p>
             </div>
             <p className="text-[#5C554B] leading-relaxed mt-4">
-              Na qualidade de controlador (LGPD) / controller (GDPR) / business (CCPA), somos responsaveis
-              pelas decisoes referentes ao tratamento dos seus dados pessoais.
+              Na qualidade de controlador (LGPD) / controller (GDPR) / business (CCPA), somos responsáveis
+              pelas decisões referentes ao tratamento dos seus dados pessoais.
             </p>
           </section>
 
@@ -86,41 +86,41 @@ export function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">3. Dados que Coletamos</h2>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.1. Dados Fornecidos Diretamente por Voce</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.1. Dados Fornecidos Diretamente por Você</h3>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>Dados de cadastro:</strong> nome, endereco de e-mail, foto de perfil (via Google Sign-In)</li>
-              <li><strong>Conteudo criado:</strong> tarefas, notas, momentos de jornada, episodios de podcast, projetos de editais</li>
-              <li><strong>Dados de calendario:</strong> eventos sincronizados via Google Calendar (quando autorizado)</li>
-              <li><strong>Dados financeiros:</strong> transacoes, categorias e orcamentos inseridos no modulo Financas</li>
-              <li><strong>Comunicacoes:</strong> mensagens importadas do Telegram (quando autorizado), feedback e suporte</li>
+              <li><strong>Dados de cadastro:</strong> nome, endereço de e-mail, foto de perfil (via Google Sign-In)</li>
+              <li><strong>Conteúdo criado:</strong> tarefas, notas, momentos de jornada, episódios de podcast, projetos de editais</li>
+              <li><strong>Dados de calendário:</strong> eventos sincronizados via Google Calendar (quando autorizado)</li>
+              <li><strong>Dados financeiros:</strong> transações, categorias e orçamentos inseridos no módulo Finanças</li>
+              <li><strong>Comunicações:</strong> mensagens importadas do Telegram (quando autorizado), feedback e suporte</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.2. Dados Coletados Automaticamente</h3>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>Dados de uso:</strong> paginas visitadas, funcionalidades utilizadas, frequencia e duracao de sessoes</li>
-              <li><strong>Dados de dispositivo:</strong> tipo de dispositivo, sistema operacional, versao do navegador</li>
-              <li><strong>Dados de rede:</strong> endereco IP, provedor de internet, localizacao aproximada</li>
-              <li><strong>Cookies e tecnologias similares:</strong> conforme detalhado na Secao 12</li>
+              <li><strong>Dados de uso:</strong> páginas visitadas, funcionalidades utilizadas, frequência e duração de sessões</li>
+              <li><strong>Dados de dispositivo:</strong> tipo de dispositivo, sistema operacional, versão do navegador</li>
+              <li><strong>Dados de rede:</strong> endereço IP, provedor de internet, localização aproximada</li>
+              <li><strong>Cookies e tecnologias similares:</strong> conforme detalhado na Seção 12</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.3. Dados Recebidos de Terceiros</h3>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>Google Sign-In:</strong> nome, e-mail e foto de perfil da conta Google utilizada para autenticacao</li>
-              <li><strong>Google Calendar:</strong> eventos de calendario (titulos, datas, horarios, participantes, status), mediante consentimento explicito</li>
-              <li><strong>Telegram:</strong> mensagens exportadas pelo usuario para analise de intencoes e criacao de dossies de contatos</li>
+              <li><strong>Google Sign-In:</strong> nome, e-mail e foto de perfil da conta Google utilizada para autenticação</li>
+              <li><strong>Google Calendar:</strong> eventos de calendário (títulos, datas, horários, participantes, status), mediante consentimento explícito</li>
+              <li><strong>Telegram:</strong> mensagens exportadas pelo usuário para análise de intenções e criação de dossiês de contatos</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.4. Categorias de Informacao Pessoal (CCPA/CPRA)</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">3.4. Categorias de Informação Pessoal (CCPA/CPRA)</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Para fins de conformidade com a legislacao californiana, as categorias de informacao pessoal
+              Para fins de conformidade com a legislação californiana, as categorias de informação pessoal
               que coletamos incluem:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
-              <li>Identificadores (nome, e-mail, endereco IP)</li>
-              <li>Informacoes comerciais (transacoes financeiras)</li>
-              <li>Atividade na Internet (dados de uso e navegacao)</li>
-              <li>Inferencias (perfis de produtividade gerados por IA)</li>
-              <li>Informacoes pessoais sensiveis: nenhuma coletada intencionalmente</li>
+              <li>Identificadores (nome, e-mail, endereço IP)</li>
+              <li>Informações comerciais (transações financeiras)</li>
+              <li>Atividade na Internet (dados de uso e navegação)</li>
+              <li>Inferências (perfis de produtividade gerados por IA)</li>
+              <li>Informações pessoais sensíveis: nenhuma coletada intencionalmente</li>
             </ul>
           </section>
 
@@ -142,34 +142,34 @@ export function PrivacyPolicyPage() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Prestacao do servico e funcionamento da plataforma</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Execucao de contrato (Art. 7, V)</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Execucao de contrato (Art. 6(1)(b))</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Prestação do serviço e funcionamento da plataforma</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Execução de contrato (Art. 7, V)</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Execução de contrato (Art. 6(1)(b))</td>
                   </tr>
                   <tr className="bg-[#F8F7F5]">
-                    <td className="border border-[#E8E6E0] px-4 py-3">Personalizacao com IA e recomendacoes</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Personalização com IA e recomendações</td>
                     <td className="border border-[#E8E6E0] px-4 py-3">Consentimento (Art. 7, I)</td>
                     <td className="border border-[#E8E6E0] px-4 py-3">Consentimento (Art. 6(1)(a))</td>
                   </tr>
                   <tr>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Analises de uso e melhorias do servico</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legitimo (Art. 7, IX)</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legitimo (Art. 6(1)(f))</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Análises de uso e melhorias do serviço</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legítimo (Art. 7, IX)</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legítimo (Art. 6(1)(f))</td>
                   </tr>
                   <tr className="bg-[#F8F7F5]">
-                    <td className="border border-[#E8E6E0] px-4 py-3">Comunicacoes sobre o servico e novidades</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legitimo (Art. 7, IX)</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legitimo (Art. 6(1)(f))</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Comunicações sobre o serviço e novidades</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legítimo (Art. 7, IX)</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legítimo (Art. 6(1)(f))</td>
                   </tr>
                   <tr>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Seguranca, prevencao a fraudes e incidentes</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legitimo (Art. 7, IX)</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legitimo (Art. 6(1)(f))</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Segurança, prevenção a fraudes e incidentes</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legítimo (Art. 7, IX)</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Interesse legítimo (Art. 6(1)(f))</td>
                   </tr>
                   <tr className="bg-[#F8F7F5]">
-                    <td className="border border-[#E8E6E0] px-4 py-3">Cumprimento de obrigacoes legais e regulatorias</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Obrigacao legal (Art. 7, II)</td>
-                    <td className="border border-[#E8E6E0] px-4 py-3">Obrigacao legal (Art. 6(1)(c))</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Cumprimento de obrigações legais e regulatórias</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Obrigação legal (Art. 7, II)</td>
+                    <td className="border border-[#E8E6E0] px-4 py-3">Obrigação legal (Art. 6(1)(c))</td>
                   </tr>
                 </tbody>
               </table>
@@ -178,46 +178,46 @@ export function PrivacyPolicyPage() {
 
           {/* Section 5 - Processamento por IA */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">5. Processamento por Inteligencia Artificial</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">5. Processamento por Inteligência Artificial</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A AICA utiliza a Google Gemini API para fornecer funcionalidades de inteligencia artificial.
+              A AICA utiliza a Google Gemini API para fornecer funcionalidades de inteligência artificial.
               Todos os processamentos de IA ocorrem exclusivamente em Edge Functions no servidor, nunca
-              diretamente no dispositivo do usuario.
+              diretamente no dispositivo do usuário.
             </p>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.1. Funcionalidades de IA</h3>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li>Geracao de insights de produtividade e bem-estar</li>
-              <li>Sugestoes contextuais de tarefas e compromissos</li>
-              <li>Analise de sentimentos em comunicacoes importadas</li>
-              <li>Resumos automaticos de conteudo e reunioes</li>
-              <li>Recomendacoes personalizadas para crescimento pessoal</li>
+              <li>Geração de insights de produtividade e bem-estar</li>
+              <li>Sugestões contextuais de tarefas e compromissos</li>
+              <li>Análise de sentimentos em comunicações importadas</li>
+              <li>Resumos automáticos de conteúdo e reuniões</li>
+              <li>Recomendações personalizadas para crescimento pessoal</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.2. Salvaguardas</h3>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>Human-in-the-loop:</strong> Decisoes criticas sempre requerem confirmacao do usuario antes da execucao</li>
-              <li><strong>Nao treina modelos:</strong> Seus dados nao sao utilizados para treinar, refinar ou melhorar modelos de IA publicos ou de terceiros</li>
-              <li><strong>Consentimento separado:</strong> Funcionalidades de IA que processam dados pessoais requerem consentimento especifico e podem ser desativadas individualmente</li>
-              <li><strong>Limitacoes:</strong> A IA pode gerar respostas imprecisas ou incompletas. Resultados de IA sao fornecidos como sugestoes e nao constituem aconselhamento profissional</li>
+              <li><strong>Human-in-the-loop:</strong> Decisões críticas sempre requerem confirmação do usuário antes da execução</li>
+              <li><strong>Não treina modelos:</strong> Seus dados não são utilizados para treinar, refinar ou melhorar modelos de IA públicos ou de terceiros</li>
+              <li><strong>Consentimento separado:</strong> Funcionalidades de IA que processam dados pessoais requerem consentimento específico e podem ser desativadas individualmente</li>
+              <li><strong>Limitações:</strong> A IA pode gerar respostas imprecisas ou incompletas. Resultados de IA são fornecidos como sugestões e não constituem aconselhamento profissional</li>
             </ul>
           </section>
 
           {/* Section 6 - Integracao com Google Calendar API */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Integracao com Google Calendar API</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Integração com Google Calendar API</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A AICA oferece integracao opcional com o Google Calendar para sincronizar seus eventos
-              e compromissos. Esta secao descreve como utilizamos os dados obtidos atraves da Google Calendar API.
+              A AICA oferece integração opcional com o Google Calendar para sincronizar seus eventos
+              e compromissos. Esta seção descreve como utilizamos os dados obtidos através da Google Calendar API.
             </p>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.1. Escopos de Acesso Solicitados</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Quando voce conecta seu Google Calendar, solicitamos os seguintes escopos:
+              Quando você conecta seu Google Calendar, solicitamos os seguintes escopos:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>calendar.events:</strong> Acesso de leitura e escrita aos seus eventos de calendario. A AICA sincroniza seus eventos de forma bidirecional: exibe seus compromissos no modulo Agenda e pode criar eventos a partir de tarefas e treinos agendados.</li>
-              <li><strong>userinfo.email:</strong> Acesso ao seu endereco de e-mail Google para identificacao da conta conectada.</li>
+              <li><strong>calendar.events:</strong> Acesso de leitura e escrita aos seus eventos de calendário. A AICA sincroniza seus eventos de forma bidirecional: exibe seus compromissos no módulo Agenda e pode criar eventos a partir de tarefas e treinos agendados.</li>
+              <li><strong>userinfo.email:</strong> Acesso ao seu endereço de e-mail Google para identificação da conta conectada.</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.2. Dados Acessados e Uso</h3>
@@ -225,33 +225,33 @@ export function PrivacyPolicyPage() {
               Os dados acessados do Google Calendar incluem:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li>Titulos e descricoes de eventos</li>
-              <li>Datas, horarios e fusos horarios</li>
+              <li>Títulos e descrições de eventos</li>
+              <li>Datas, horários e fusos horários</li>
               <li>Participantes e organizadores</li>
               <li>Status do evento (confirmado, tentativo, cancelado)</li>
             </ul>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Esses dados sao utilizados exclusivamente para:
+              Esses dados são utilizados exclusivamente para:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li>Exibir seus compromissos no modulo Agenda da AICA</li>
-              <li>Criar eventos no seu calendario a partir de tarefas e treinos agendados na plataforma</li>
-              <li>Detectar conflitos de horario entre eventos</li>
+              <li>Exibir seus compromissos no módulo Agenda da AICA</li>
+              <li>Criar eventos no seu calendário a partir de tarefas e treinos agendados na plataforma</li>
+              <li>Detectar conflitos de horário entre eventos</li>
               <li>Gerar insights de produtividade baseados na sua agenda</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.3. Armazenamento de Tokens</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Os tokens de acesso OAuth sao armazenados de forma segura no banco de dados, associados
-              ao seu usuario e protegidos por politicas de Row Level Security (RLS). Os tokens sao
+              Os tokens de acesso OAuth são armazenados de forma segura no banco de dados, associados
+              ao seu usuário e protegidos por políticas de Row Level Security (RLS). Os tokens são
               renovados automaticamente e podem ser revogados a qualquer momento.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.4. Revogacao de Acesso</h3>
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.4. Revogação de Acesso</h3>
             <p className="text-[#5C554B] leading-relaxed">
-              Voce pode desconectar o Google Calendar a qualquer momento atraves das configuracoes
-              da plataforma. Ao desconectar, os tokens de acesso sao removidos do nosso banco de dados
-              e o acesso ao seu calendario e imediatamente revogado.
+              Você pode desconectar o Google Calendar a qualquer momento através das configurações
+              da plataforma. Ao desconectar, os tokens de acesso são removidos do nosso banco de dados
+              e o acesso ao seu calendário é imediatamente revogado.
             </p>
           </section>
 
@@ -355,7 +355,7 @@ export function PrivacyPolicyPage() {
               Seus dados primarios sao armazenados e processados em servidores localizados no Brasil
               (Sao Paulo), onde estao hospedados nosso banco de dados (Supabase) e servidor de aplicacao
               (Google Cloud Run). Alguns dados podem ser transferidos para servidores nos Estados Unidos
-              para processamento por servicos auxiliares, como inteligencia artificial (Google Gemini API)
+              para processamento por servicos auxiliares, como inteligência artificial (Google Gemini API)
               e autenticacao (Google OAuth).
             </p>
             <p className="text-[#5C554B] leading-relaxed mb-4">
@@ -570,7 +570,7 @@ export function PrivacyPolicyPage() {
             <ul className="list-disc list-inside space-y-1 text-sm text-[#5C554B] mt-2">
               <li>Lei Geral de Protecao de Dados (LGPD - Lei n. 13.709/2018)</li>
               <li>Marco Civil da Internet (Lei n. 12.965/2014)</li>
-              <li>Codigo de Defesa do Consumidor (CDC - Lei n. 8.078/1990)</li>
+              <li>Código de Defesa do Consumidor (CDC - Lei n. 8.078/1990)</li>
               <li>Regulamento Geral sobre Protecao de Dados (GDPR - Regulamento UE 2016/679)</li>
               <li>California Consumer Privacy Act / California Privacy Rights Act (CCPA/CPRA)</li>
               <li>

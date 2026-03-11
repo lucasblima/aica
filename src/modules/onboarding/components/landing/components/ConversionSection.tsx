@@ -13,6 +13,7 @@ interface ConversionSectionProps {
     inviteCode: string;
     onCodeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onCodeSubmit: () => void;
+    onEnterOS: () => void;
     codeValid: boolean;
     codeError: string;
 }
@@ -26,6 +27,7 @@ export function ConversionSection({
     inviteCode,
     onCodeChange,
     onCodeSubmit,
+    onEnterOS,
     codeValid,
     codeError
 }: ConversionSectionProps) {
@@ -101,7 +103,7 @@ export function ConversionSection({
                         {/* Badge */}
                         <div className="flex items-center justify-center gap-2 mt-4 text-sm text-ceramic-text-secondary">
                             <Sparkles size={14} className="text-amber-500" />
-                            <span>Teste rapido — disponivel 24/7</span>
+                            <span>Teste rápido — disponível 24/7</span>
                         </div>
 
                         {/* Telegram CTA */}
@@ -158,8 +160,8 @@ export function ConversionSection({
                                 </div>
 
                                 <button
-                                    onClick={onCodeSubmit}
-                                    disabled={inviteCode.length < 9}
+                                    onClick={codeValid ? onEnterOS : onCodeSubmit}
+                                    disabled={!codeValid && inviteCode.length < 9}
                                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${codeValid
                                         ? 'bg-amber-600 text-white shadow-[0_8px_20px_rgba(180,83,9,0.3)] scale-105'
                                         : 'bg-ceramic-text-primary text-white shadow-lg opacity-90 hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed'
@@ -173,9 +175,9 @@ export function ConversionSection({
 
                         {/* Waitlist card */}
                         <div className="bg-[#DEDCD5] rounded-3xl p-8 md:p-10 shadow-inner relative overflow-hidden">
-                            <h3 className="text-2xl font-black text-ceramic-text-primary mb-2">Proxima Fornada</h3>
+                            <h3 className="text-2xl font-black text-ceramic-text-primary mb-2">Próxima Fornada</h3>
                             <p className="text-ceramic-text-secondary font-medium mb-6 text-sm">
-                                Nao empilhamos usuarios, esculpimos rotinas.
+                                Não empilhamos usuários, esculpimos rotinas.
                             </p>
 
                             {submitted ? (
