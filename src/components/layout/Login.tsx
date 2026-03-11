@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../ui';
+import { useAuth } from '@/hooks/useAuth';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { springHover, springPress } from '@/lib/animations/ceramic-motion';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -16,11 +17,64 @@ interface LoginProps {
 
 export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
   const { login, error, loading } = useGoogleAuth();
+  const { signInWithEmail, sendMagicLink, sendPasswordReset } = useAuth();
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleGoogleLogin = async () => {
     await login();
     // Note: onLogin will be called after OAuth redirect completes
+  };
+
+  const handleEmailLogin = async () => {
+    if (!email.trim()) return;
+    setEmailError(null);
+    setSuccessMessage(null);
+    setEmailLoading(true);
+    const { error } = await signInWithEmail(email, password);
+    setEmailLoading(false);
+    if (error) {
+      setEmailError(error === 'Invalid login credentials' ? 'Email ou senha incorretos' : error);
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email.trim()) {
+      setEmailError('Digite seu email primeiro');
+      return;
+    }
+    setEmailError(null);
+    setSuccessMessage(null);
+    setEmailLoading(true);
+    const { error } = await sendMagicLink(email);
+    setEmailLoading(false);
+    if (error) {
+      setEmailError(error);
+    } else {
+      setSuccessMessage('Link enviado! Verifique seu email.');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setEmailError('Digite seu email primeiro');
+      return;
+    }
+    setEmailError(null);
+    setSuccessMessage(null);
+    setEmailLoading(true);
+    const { error } = await sendPasswordReset(email);
+    setEmailLoading(false);
+    if (error) {
+      setEmailError(error);
+    } else {
+      setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.');
+    }
   };
 
   const isSheet = variant === 'sheet';
@@ -109,6 +163,76 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
             )}
           </AnimatePresence>
         </motion.button>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-ceramic-border" />
+          <span className="text-xs text-ceramic-text-secondary">ou</span>
+          <div className="flex-1 h-px bg-ceramic-border" />
+        </div>
+
+        {/* Email/Password Form */}
+        {successMessage ? (
+          <div className="text-center">
+            <p className="text-sm text-ceramic-success mb-3">{successMessage}</p>
+            <button
+              type="button"
+              onClick={() => setSuccessMessage(null)}
+              className="text-sm text-ceramic-text-secondary hover:underline"
+            >
+              Voltar
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              className="w-full px-4 py-3 bg-ceramic-base border border-ceramic-border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-ceramic-text-primary text-sm"
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Sua senha"
+              className="w-full px-4 py-3 bg-ceramic-base border border-ceramic-border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-ceramic-text-primary text-sm"
+              onKeyDown={(e) => e.key === 'Enter' && handleEmailLogin()}
+            />
+
+            {emailError && (
+              <p className="text-sm text-ceramic-error">{emailError}</p>
+            )}
+
+            <button
+              type="button"
+              onClick={handleEmailLogin}
+              disabled={emailLoading || !email.trim()}
+              className="w-full bg-ceramic-cool text-ceramic-text-primary py-3 rounded-xl font-medium text-sm disabled:opacity-50 hover:bg-ceramic-border transition-colors"
+              data-testid="email-login-button"
+            >
+              {emailLoading ? 'Entrando...' : 'Entrar com email'}
+            </button>
+
+            <div className="flex justify-between text-xs">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-ceramic-text-secondary hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+              <button
+                type="button"
+                onClick={handleMagicLink}
+                className="text-amber-600 hover:underline"
+              >
+                Entrar com magic link
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Footer note with fade in */}
         <motion.p
@@ -227,6 +351,60 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
             )}
           </AnimatePresence>
         </motion.button>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-[#D5D0C7]" />
+          <span className="text-xs text-[#948D82]">ou</span>
+          <div className="flex-1 h-px bg-[#D5D0C7]" />
+        </div>
+
+        {/* Email/Password Form (full-page styling) */}
+        {successMessage ? (
+          <div className="text-center">
+            <p className="text-sm text-ceramic-success mb-3">{successMessage}</p>
+            <button type="button" onClick={() => setSuccessMessage(null)}
+              className="text-sm text-[#948D82] hover:underline">
+              Voltar
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              className="w-full px-4 py-3 bg-[#EBE9E4] rounded-xl text-[#5C554B] text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              style={{ boxShadow: 'inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff' }}
+            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="Sua senha"
+              className="w-full px-4 py-3 bg-[#EBE9E4] rounded-xl text-[#5C554B] text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              style={{ boxShadow: 'inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff' }}
+              onKeyDown={(e) => e.key === 'Enter' && handleEmailLogin()}
+            />
+
+            {emailError && <p className="text-sm text-ceramic-error">{emailError}</p>}
+
+            <button type="button" onClick={handleEmailLogin}
+              disabled={emailLoading || !email.trim()}
+              className="w-full bg-[#F0EFE9] text-[#5C554B] py-4 rounded-2xl font-bold text-sm disabled:opacity-50"
+              style={{ boxShadow: '5px 5px 10px #c5c5c5, -5px -5px 10px #ffffff' }}
+              data-testid="email-login-button-fullpage"
+            >
+              {emailLoading ? 'Entrando...' : 'Entrar com email'}
+            </button>
+
+            <div className="flex justify-between text-xs">
+              <button type="button" onClick={handleForgotPassword}
+                className="text-[#948D82] hover:underline">
+                Esqueci minha senha
+              </button>
+              <button type="button" onClick={handleMagicLink}
+                className="text-amber-600 hover:underline">
+                Entrar com magic link
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Subtle footer note */}
         <motion.p
