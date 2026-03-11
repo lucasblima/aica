@@ -363,6 +363,7 @@ export interface GoogleCalendarEvent {
         email: string;
         displayName?: string;
     };
+    location?: string;
     transparency?: string; // 'opaque' ou 'transparent'
     status: 'confirmed' | 'tentative' | 'cancelled';
     extendedProperties?: {

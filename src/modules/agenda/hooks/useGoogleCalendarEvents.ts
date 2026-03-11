@@ -117,10 +117,9 @@ export function useGoogleCalendarEvents(
             }
         };
 
-        checkConnection();
-
-        // Ouvir mudanças de conexão
-        const interval = setInterval(checkConnection, 10000); // Verificar a cada 10s
+        const safeCheck = () => { checkConnection().catch(err => console.warn('[Agenda] Calendar connection check failed:', err)); };
+        safeCheck();
+        const interval = setInterval(safeCheck, 10000); // Verificar a cada 10s
         return () => clearInterval(interval);
     }, []);
 
