@@ -120,13 +120,21 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
     'low': []
   });
   const [timelineTasks, setTimelineTasks] = useState<Task[]>([]);
-  const [allDueDateTasks, setAllDueDateTasks] = useState<any[]>([]);
+  const [allDueDateTasks, setAllDueDateTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [skippedEvents, setSkippedEvents] = useState<Set<string>>(new Set());
   const completionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  // Cleanup all pending completion timers on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      completionTimers.current.forEach(timer => clearTimeout(timer));
+      completionTimers.current.clear();
+    };
+  }, []);
 
   // Task filters for Lista/Kanban views
   const {
@@ -319,7 +327,7 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
       startTime: event.startTime,
       endTime: event.endTime,
       type: 'event' as const,
-      location: (event as any).location,
+      location: event.location,
       color: event.color || '#D97706'
     }));
     const todayTasks = timelineTasks
@@ -356,7 +364,7 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
         startTime: nextEventData.startTime,
         endTime: nextEventData.endTime,
         description: nextEventData.description,
-        location: (nextEventData as any).location,
+        location: nextEventData.location,
         attendees: nextEventData.attendees,
         organizer: nextEventData.organizer,
         isNow
@@ -392,7 +400,7 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
           startTime: event.startTime,
           endTime: event.endTime,
           description: event.description,
-          location: (event as any).location,
+          location: event.location,
           category: detectEventCategory(event.title, event.description),
           isToday,
           isTomorrow,
@@ -461,13 +469,19 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
 
       if (error) throw error;
 
+      // Cast Supabase rows to Task — the select shape matches Task but
+      // associations comes as an array from the join; Task.associations
+      // is defined as a single object. The cast is safe because only the
+      // first association entry (if any) is ever used downstream.
+      const tasks = (data || []) as unknown as Task[];
+
       const matrix: Record<Quadrant, Task[]> = {
         'urgent-important': [], 'important': [], 'urgent': [], 'low': []
       };
       const timeline: Task[] = [];
       const flat: Task[] = [];
 
-      data?.forEach((task: any) => {
+      tasks.forEach((task) => {
         flat.push(task);
         if (task.due_date === dateStr) {
           timeline.push(task);
@@ -483,7 +497,7 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
       setMatrixTasks(matrix);
       setTimelineTasks(timeline);
       setAllTasks(flat);
-      setAllDueDateTasks((data || []).filter((t: any) => t.due_date));
+      setAllDueDateTasks(tasks.filter((t) => t.due_date));
     } catch (error) {
       log.error('Error loading tasks:', error);
     } finally {
@@ -634,14 +648,20 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
 
   // Load skipped events from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('skippedEvents');
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem('skippedEvents');
+      if (stored) {
         const parsed = JSON.parse(stored);
-        setSkippedEvents(new Set(parsed));
-      } catch (e) {
-        log.error('Error parsing skipped events:', e);
+        if (Array.isArray(parsed)) {
+          setSkippedEvents(new Set(parsed));
+        } else {
+          log.warn('Skipped events data is not an array, resetting');
+          localStorage.removeItem('skippedEvents');
+        }
       }
+    } catch (e) {
+      log.error('Error parsing skipped events from localStorage, resetting:', e);
+      localStorage.removeItem('skippedEvents');
     }
   }, []);
 
@@ -658,7 +678,7 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
         'low': prev['low'].filter(t => t.id !== taskId),
       }));
       setTimelineTasks(prev => prev.filter(t => t.id !== taskId));
-      setAllDueDateTasks(prev => prev.filter((t: any) => t.id !== taskId));
+      setAllDueDateTasks(prev => prev.filter(t => t.id !== taskId));
       completionTimers.current.delete(taskId);
     }, 2200);
     completionTimers.current.set(taskId, timer);
@@ -698,7 +718,7 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
       notificationService.show({
         type: 'error',
         title: 'Erro ao remover tarefa',
-        message: 'Nao foi possivel remover a tarefa da agenda',
+        message: 'Não foi possível remover a tarefa da agenda',
         icon: '❌',
         duration: 5000
       });
@@ -718,7 +738,11 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
     try {
       await disconnectGoogleCalendar();
       log.debug('Google Calendar desconectado com sucesso');
-      window.location.reload();
+      // Reset calendar-related state instead of reloading the page
+      setSkippedEvents(new Set());
+      localStorage.removeItem('skippedEvents');
+      // Reload task data to refresh the view without calendar events
+      await loadAllTasks(undefined, { silent: true });
     } catch (error) {
       log.error('Erro ao desconectar:', error);
     }
@@ -792,102 +816,117 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {mobileMode === 'agenda' && isDesktop ? (
-          /* Desktop agenda: full-width timeline */
-          <main className="flex-1 overflow-y-auto px-6 pb-32 pt-6 space-y-6">
-            <TimelineView
-              userId={userId}
-              nextTwoDaysEvents={nextTwoDaysEvents}
-              restOfDay={restOfDay}
-              completedTodayTasks={completedTodayTasks}
-              isLoadingCompleted={isLoadingCompleted}
-              completingTaskIds={completingTaskIds}
-              forecast={weather?.forecast}
-              onSkipEvent={handleSkipEvent}
-              onUnskipEvent={handleUnskipEvent}
-              onTaskComplete={handleComplete}
-              onTaskCreated={() => loadAllTasks()}
-              onUncomplete={handleUncomplete}
-              completionTimers={completionTimers}
-            />
-          </main>
-        ) : (
-          /* All other modes: animated content */
-          <AnimatePresence mode="wait">
-            <motion.main
-              key={mobileMode}
-              drag={isDesktop ? false : "x"}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.15}
-              dragDirectionLock
-              onDragEnd={handleSwipe}
-              variants={pageTransitionVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="flex-1 overflow-y-auto px-4 pb-32 pt-6 space-y-6 touch-pan-y"
-            >
-              {mobileMode === 'agenda' ? (
-                <TimelineView
-                  userId={userId}
-                  nextTwoDaysEvents={nextTwoDaysEvents}
-                  restOfDay={restOfDay}
-                  completedTodayTasks={completedTodayTasks}
-                  isLoadingCompleted={isLoadingCompleted}
-                  completingTaskIds={completingTaskIds}
-                  forecast={weather?.forecast}
-                  onSkipEvent={handleSkipEvent}
-                  onUnskipEvent={handleUnskipEvent}
-                  onTaskComplete={handleComplete}
-                  onTaskCreated={() => loadAllTasks()}
-                  onUncomplete={handleUncomplete}
-                  completionTimers={completionTimers}
-                />
-              ) : (
-                <>
-                  {/* Filter bar — visible in list/kanban modes */}
-                  <TaskFilterBar
-                    filters={taskFilters}
-                    taskCounts={taskCounts}
-                    availableTags={availableTags}
-                    activeFilterCount={activeFilterCount}
-                    onStatusChange={setFilterStatus}
-                    onPriorityChange={setFilterPriority}
-                    onSearchChange={setFilterSearch}
-                    onSortChange={setFilterSort}
-                    onToggleTag={toggleFilterTag}
-                    onClear={clearFilters}
+        <ErrorBoundary
+          fallback={
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="text-center max-w-md">
+                <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
+                  Erro ao carregar visualizacao
+                </h3>
+                <p className="text-ceramic-text-secondary mb-4">
+                  Ocorreu um erro inesperado. Tente mudar de modo ou recarregar a pagina.
+                </p>
+              </div>
+            </div>
+          }
+        >
+          {mobileMode === 'agenda' && isDesktop ? (
+            /* Desktop agenda: full-width timeline */
+            <main className="flex-1 overflow-y-auto px-6 pb-32 pt-6 space-y-6">
+              <TimelineView
+                userId={userId}
+                nextTwoDaysEvents={nextTwoDaysEvents}
+                restOfDay={restOfDay}
+                completedTodayTasks={completedTodayTasks}
+                isLoadingCompleted={isLoadingCompleted}
+                completingTaskIds={completingTaskIds}
+                forecast={weather?.forecast}
+                onSkipEvent={handleSkipEvent}
+                onUnskipEvent={handleUnskipEvent}
+                onTaskComplete={handleComplete}
+                onTaskCreated={() => loadAllTasks()}
+                onUncomplete={handleUncomplete}
+                completionTimers={completionTimers}
+              />
+            </main>
+          ) : (
+            /* All other modes: animated content */
+            <AnimatePresence mode="wait">
+              <motion.main
+                key={mobileMode}
+                drag={isDesktop ? false : "x"}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.15}
+                dragDirectionLock
+                onDragEnd={handleSwipe}
+                variants={pageTransitionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="flex-1 overflow-y-auto px-4 pb-32 pt-6 space-y-6 touch-pan-y"
+              >
+                {mobileMode === 'agenda' ? (
+                  <TimelineView
+                    userId={userId}
+                    nextTwoDaysEvents={nextTwoDaysEvents}
+                    restOfDay={restOfDay}
+                    completedTodayTasks={completedTodayTasks}
+                    isLoadingCompleted={isLoadingCompleted}
+                    completingTaskIds={completingTaskIds}
+                    forecast={weather?.forecast}
+                    onSkipEvent={handleSkipEvent}
+                    onUnskipEvent={handleUnskipEvent}
+                    onTaskComplete={handleComplete}
+                    onTaskCreated={() => loadAllTasks()}
+                    onUncomplete={handleUncomplete}
+                    completionTimers={completionTimers}
                   />
-
-                  {mobileMode === 'list' && (
-                    <TaskListView
-                      tasks={filteredTasks}
-                      onOpenTask={(task) => log.debug('Open task:', task.id)}
-                      onCompleteTask={handleCompleteTaskFromList}
-                      isLoading={isLoading}
+                ) : (
+                  <>
+                    {/* Filter bar — visible in list/kanban modes */}
+                    <TaskFilterBar
+                      filters={taskFilters}
+                      taskCounts={taskCounts}
+                      availableTags={availableTags}
+                      activeFilterCount={activeFilterCount}
+                      onStatusChange={setFilterStatus}
+                      onPriorityChange={setFilterPriority}
+                      onSearchChange={setFilterSearch}
+                      onSortChange={setFilterSort}
+                      onToggleTag={toggleFilterTag}
+                      onClear={clearFilters}
                     />
-                  )}
 
-                  {mobileMode === 'kanban' && (
-                    <TaskKanbanView
-                      tasks={filteredTasks}
-                      onOpenTask={(task) => log.debug('Open task:', task.id)}
-                      onCompleteTask={handleCompleteTaskFromList}
-                      onMoveTask={handleMoveTask}
-                      isLoading={isLoading}
-                    />
-                  )}
+                    {mobileMode === 'list' && (
+                      <TaskListView
+                        tasks={filteredTasks}
+                        onOpenTask={(task) => log.debug('Open task:', task.id)}
+                        onCompleteTask={handleCompleteTaskFromList}
+                        isLoading={isLoading}
+                      />
+                    )}
 
-                  {mobileMode === 'matrix' && renderMatrixView()}
+                    {mobileMode === 'kanban' && (
+                      <TaskKanbanView
+                        tasks={filteredTasks}
+                        onOpenTask={(task) => log.debug('Open task:', task.id)}
+                        onCompleteTask={handleCompleteTaskFromList}
+                        onMoveTask={handleMoveTask}
+                        isLoading={isLoading}
+                      />
+                    )}
 
-                  {mobileMode === 'calendar' && (
-                    <CalendarView calendarGridEvents={calendarGridEvents} />
-                  )}
-                </>
-              )}
-            </motion.main>
-          </AnimatePresence>
-        )}
+                    {mobileMode === 'matrix' && renderMatrixView()}
+
+                    {mobileMode === 'calendar' && (
+                      <CalendarView calendarGridEvents={calendarGridEvents} />
+                    )}
+                  </>
+                )}
+              </motion.main>
+            </AnimatePresence>
+          )}
+        </ErrorBoundary>
 
         <DragOverlay>
           {activeTask ? (

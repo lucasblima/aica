@@ -51,7 +51,7 @@ export async function fetchCalendarEvents(
         if (options.q) params.append('q', options.q);
 
         // Request extendedProperties so we can identify AICA-synced events
-        params.append('fields', 'items(id,summary,description,start,end,attendees,organizer,transparency,status,extendedProperties),nextPageToken');
+        params.append('fields', 'items(id,summary,description,location,start,end,attendees,organizer,transparency,status,extendedProperties),nextPageToken');
 
         const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
 
@@ -216,6 +216,8 @@ export interface TimelineEvent {
     isAllDay: boolean;
     source: 'google_calendar' | 'flux_workout' | 'flux' | 'finance' | 'studio' | string;
     color?: string;
+    /** Physical location or video link from Google Calendar */
+    location?: string;
     /** If this event was created by AICA, which module originated it (flux, atlas, studio, grants) */
     aicaModule?: string;
     /** If this event was created by AICA, the entity ID it maps to */
@@ -277,6 +279,7 @@ export function transformGoogleEvent(event: GoogleCalendarEvent): TimelineEvent 
         id: `google-${event.id}`,
         title: event.summary,
         description: event.description,
+        location: event.location,
         startTime,
         endTime,
         duration,

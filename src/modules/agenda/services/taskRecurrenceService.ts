@@ -3,7 +3,8 @@
  * Handles parsing and generation of recurring tasks using iCalendar RRULE format (RFC 5545)
  */
 
-import { RRuleSet } from 'rrule';
+import { RRule, RRuleSet, Frequency, Weekday } from 'rrule';
+import type { Options, WeekdayStr } from 'rrule';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('TaskRecurrenceService');
@@ -40,8 +41,14 @@ export function parseRecurrenceRule(rrule: string): RecurrencePattern {
     return acc;
   }, {} as Record<string, string>);
 
+  const validFrequencies: RecurrencePattern['frequency'][] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
+  const freqValue = parts.FREQ || 'DAILY';
+  const frequency: RecurrencePattern['frequency'] = validFrequencies.includes(freqValue as RecurrencePattern['frequency'])
+    ? (freqValue as RecurrencePattern['frequency'])
+    : 'DAILY';
+
   const pattern: RecurrencePattern = {
-    frequency: (parts.FREQ || 'DAILY') as any,
+    frequency,
     interval: parseInt(parts.INTERVAL || '1', 10),
   };
 
@@ -109,10 +116,9 @@ export function generateNextOccurrence(
   try {
     // Create RRULE with start date
     const rruleSet = new RRuleSet();
-    rruleSet.rrule(new (RRuleSet as any).rrule({
-      ...parseRRuleToObject(rruleString),
-      dtstart: startDate,
-    }));
+    const ruleOptions = parseRRuleToObject(rruleString);
+    ruleOptions.dtstart = startDate;
+    rruleSet.rrule(new RRule(ruleOptions));
 
     // Get next occurrence after now
     const now = new Date();
@@ -138,11 +144,10 @@ export function generateUpcomingOccurrences(
 
   try {
     const rruleSet = new RRuleSet();
-    rruleSet.rrule(new (RRuleSet as any).rrule({
-      ...parseRRuleToObject(rruleString),
-      dtstart: startDate,
-      count, // Limit to N occurrences
-    }));
+    const ruleOptions = parseRRuleToObject(rruleString);
+    ruleOptions.dtstart = startDate;
+    ruleOptions.count = count;
+    rruleSet.rrule(new RRule(ruleOptions));
 
     const now = new Date();
     return rruleSet.all().filter(date => date > now);
@@ -194,31 +199,51 @@ export function describeRRuleInPortuguese(rrule: string): string {
 }
 
 /**
- * Helper to convert RRULE object to string format for RRuleSet
+ * Map from RRULE FREQ string values to rrule library Frequency enum
  */
-function parseRRuleToObject(rruleString: string): Record<string, any> {
-  const obj: Record<string, any> = {};
+const FREQ_MAP: Record<string, Frequency> = {
+  YEARLY: Frequency.YEARLY,
+  MONTHLY: Frequency.MONTHLY,
+  WEEKLY: Frequency.WEEKLY,
+  DAILY: Frequency.DAILY,
+  HOURLY: Frequency.HOURLY,
+  MINUTELY: Frequency.MINUTELY,
+  SECONDLY: Frequency.SECONDLY,
+};
+
+/**
+ * Valid WeekdayStr values for type-safe lookup
+ */
+const VALID_WEEKDAYS: WeekdayStr[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+function isWeekdayStr(value: string): value is WeekdayStr {
+  return VALID_WEEKDAYS.includes(value as WeekdayStr);
+}
+
+/**
+ * Helper to convert RRULE string to rrule library Options object
+ */
+function parseRRuleToObject(rruleString: string): Partial<Options> {
+  const obj: Partial<Options> = {};
   const parts = rruleString.split(';');
 
   for (const part of parts) {
     const [key, value] = part.split('=');
-    if (key === 'FREQ') obj.freq = (RRuleSet as any)[value];
-    else if (key === 'INTERVAL') obj.interval = parseInt(value, 10);
-    else if (key === 'BYDAY') obj.byweekday = value.split(',').map(day => {
-      const days: Record<string, any> = {
-        MO: (RRuleSet as any).MO,
-        TU: (RRuleSet as any).TU,
-        WE: (RRuleSet as any).WE,
-        TH: (RRuleSet as any).TH,
-        FR: (RRuleSet as any).FR,
-        SA: (RRuleSet as any).SA,
-        SU: (RRuleSet as any).SU,
-      };
-      return days[day];
-    });
-    else if (key === 'BYMONTHDAY') obj.bymonthday = parseInt(value, 10);
-    else if (key === 'UNTIL') obj.until = new Date(value);
-    else if (key === 'COUNT') obj.count = parseInt(value, 10);
+    if (key === 'FREQ') {
+      obj.freq = FREQ_MAP[value] ?? Frequency.DAILY;
+    } else if (key === 'INTERVAL') {
+      obj.interval = parseInt(value, 10);
+    } else if (key === 'BYDAY') {
+      obj.byweekday = value.split(',')
+        .filter(isWeekdayStr)
+        .map(day => Weekday.fromStr(day));
+    } else if (key === 'BYMONTHDAY') {
+      obj.bymonthday = parseInt(value, 10);
+    } else if (key === 'UNTIL') {
+      obj.until = new Date(value);
+    } else if (key === 'COUNT') {
+      obj.count = parseInt(value, 10);
+    }
   }
 
   return obj;
