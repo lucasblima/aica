@@ -15,7 +15,6 @@ export * from './types';
 // =====================================================
 export { financeService } from './services/financeService';
 export { pdfProcessingService, PDFProcessingService } from './services/pdfProcessingService';
-export { financeAgentService, FinanceAgentService } from './services/financeAgentService';
 export { statementService } from './services/statementService';
 export { getMonthlyDigest, clearDigestCache } from './services/financeDigestService';
 export {
@@ -67,7 +66,6 @@ export { FinanceDashboard } from './views/FinanceDashboard';
 // =====================================================
 // Hooks
 // =====================================================
-export { useFinanceStatements } from './hooks/useFinanceStatements';
 export { useTransactions } from './hooks/useTransactions';
 export { useFinancialHealth } from './hooks/useFinancialHealth';
 export { useLossFraming } from './hooks/useLossFraming';
