@@ -429,15 +429,19 @@ export class AthleteService {
   /**
    * Unlink the current athlete from their coach's training program.
    * Sets auth_user_id=NULL, invitation_status='none', status='churned'.
-   * No params — uses the authenticated user's ID (auth.uid()).
+   * Returns google_event_ids of deleted calendar sync entries for
+   * best-effort Google Calendar cleanup.
    */
-  static async unlinkSelf(): Promise<{ error: any }> {
+  static async unlinkSelf(): Promise<{ googleEventIds: string[]; error: any }> {
     try {
-      const { error } = await supabase.rpc('athlete_unlink_self');
-      return { error };
+      const { data, error } = await supabase.rpc('athlete_unlink_self');
+      const googleEventIds = (data as { google_event_id: string }[] | null)
+        ?.map((r) => r.google_event_id)
+        .filter(Boolean) ?? [];
+      return { googleEventIds, error };
     } catch (error) {
       console.error('[AthleteService] Error unlinking self:', error);
-      return { error: error instanceof Error ? error : new Error('Unknown error') };
+      return { googleEventIds: [], error: error instanceof Error ? error : new Error('Unknown error') };
     }
   }
 

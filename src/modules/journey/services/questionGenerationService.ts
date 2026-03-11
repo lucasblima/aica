@@ -394,9 +394,9 @@ async function callEdgeFunction(
 
   if (response.error) {
     // Extract actual error from Edge Function response body (response.data has the JSON body)
-    const serverData = response.data as any
-    const serverError = serverData?.error
-    const failedStep = serverData?.failed_step
+    const serverData = response.data as Record<string, unknown> | null
+    const serverError = serverData?.error as string | undefined
+    const failedStep = serverData?.failed_step as string | undefined
     const errorMsg = serverError || response.error.message || 'Generation failed'
 
     log.warn('Edge Function error details:', { serverError, failedStep, errorType: serverData?.error_type, rawData: serverData })
@@ -410,14 +410,15 @@ async function callEdgeFunction(
     throw EdgeFunctionError.fromResponse(status, errorMsg)
   }
 
+  const raw = response.data as Record<string, unknown>
   const result = response.data as GenerationResult
 
   return {
     success: result.success,
-    questionsGenerated: result.questionsGenerated || (result as any).questions_generated || 0,
+    questionsGenerated: result.questionsGenerated || (raw.questions_generated as number) || 0,
     questions: result.questions || [],
-    contextUpdated: result.contextUpdated || (result as any).context_updated || false,
-    processingTimeMs: result.processingTimeMs || (result as any).processing_time_ms,
+    contextUpdated: result.contextUpdated || (raw.context_updated as boolean) || false,
+    processingTimeMs: result.processingTimeMs || (raw.processing_time_ms as number),
     error: result.error,
   }
 }

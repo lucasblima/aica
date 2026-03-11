@@ -187,8 +187,9 @@ export async function addReflectionToSummary(
     if (updateError) throw updateError
 
     // Build summary context for quality evaluation
-    const summaryData = summary.summary_data as any
-    const summaryContext = summaryData?.insights?.slice(0, 2)?.join('; ') || ''
+    const summaryData = summary.summary_data as Record<string, unknown> | null
+    const insights = Array.isArray(summaryData?.insights) ? summaryData.insights as string[] : []
+    const summaryContext = insights.slice(0, 2).join('; ')
 
     // Evaluate quality and calculate CP
     const qualityResult = await evaluateAndCalculateCP(
