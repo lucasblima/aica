@@ -90,6 +90,7 @@ const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ de
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
 const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
+const WelcomePage = lazy(() => import('../pages/WelcomePage'));
 
 // Invite System - Public page for invite acceptance
 const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m => ({ default: m.InviteAcceptPage })));
@@ -754,6 +755,12 @@ export function AppRouter() {
                <Route
                   path="/invite/:token"
                   element={<InviteAcceptPage />}
+               />
+
+               {/* Welcome Page - For Telegram magic link users (Phase 2) */}
+               <Route
+                  path="/welcome"
+                  element={<ProtectedRoute><WelcomePage /></ProtectedRoute>}
                />
 
                {/* Onboarding Flow - Protected, for new users */}
