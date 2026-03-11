@@ -30,6 +30,7 @@ import type { CategorySuggestion } from '../services/financeService';
 import { RecategorizationReview } from '../components/RecategorizationReview';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
+import { FinanceProvider, useFinanceContext } from '../contexts/FinanceContext';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement, BudgetAlert, FinanceTransaction } from '../types';
 
 // =====================================================
@@ -63,17 +64,34 @@ const VIEW_TABS: ViewTab[] = [
 // =====================================================
 
 /* data-tour markers: finance-header, balance-overview, income-expenses, budget-categories, transaction-list, upload-statement, ai-insights, goals-tracking */
-export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
+export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ userId, onBack }) => {
+  return (
+    <FinanceProvider userId={userId}>
+      <FinanceDashboardInner userId={userId} onBack={onBack} />
+    </FinanceProvider>
+  );
+};
+
+const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   userId,
   onBack,
 }) => {
   // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
   useTourAutoStart('finance-first-visit');
 
+  // Shared state from FinanceContext
+  const {
+    selectedYear,
+    selectedMonth,
+    setSelectedYear,
+    setSelectedMonth,
+    statements,
+    refreshAll,
+  } = useFinanceContext();
+
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([]);
-  const [statements, setStatements] = useState<FinanceStatement[]>([]);
   const [allTransactions, setAllTransactions] = useState<FinanceTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
@@ -86,8 +104,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [activeView, setActiveView] = useState<DashboardView>('history');
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
   // Persist visibility toggle
   useEffect(() => {
@@ -123,18 +139,17 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       const trendStart = twoYearsAgo.toISOString().split('T')[0];
       const trendEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-      const [summaryData, burnRateData, categoryData, statementsData, trendTransactions] = await Promise.all([
+      // Statements are loaded by FinanceContext — only fetch local analytics here
+      const [summaryData, burnRateData, categoryData, trendTransactions] = await Promise.all([
         getAllTimeSummary(userId),
         getBurnRate(userId),
         getAllTimeCategoryBreakdown(userId),
-        statementService.getStatements(userId),
         getTransactionsByDateRange(userId, trendStart, trendEnd),
       ]);
 
       setSummary(summaryData);
       setBurnRate(burnRateData);
       setCategoryBreakdown(categoryData);
-      setStatements(statementsData);
       setAllTransactions(trendTransactions);
     } catch (error) {
       log.error('Error loading finance data:', error);
@@ -143,10 +158,10 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     }
   };
 
-  const handleUploadComplete = (statement: FinanceStatement) => {
-    setStatements((prev) => [statement, ...prev]);
+  const handleUploadComplete = (_statement: FinanceStatement) => {
     setShowUpload(false);
-    loadData(); // Refresh all data
+    refreshAll(); // Refresh context (statements, categories, accounts)
+    loadData(); // Refresh local analytics
   };
 
   const handleDelete = async (statementId: string) => {
@@ -157,8 +172,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     try {
       setDeletingId(statementId);
       await statementService.deleteStatement(statementId);
-      setStatements((prev) => prev.filter((s) => s.id !== statementId));
-      loadData(); // Refresh summary
+      await refreshAll(); // Refresh context (statements, categories, accounts)
+      loadData(); // Refresh local analytics
     } catch (error) {
       log.error('Error deleting statement:', error);
       alert('Erro ao deletar extrato. Tente novamente.');
@@ -180,8 +195,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         await statementService.deleteStatement(statement.id);
       }
 
-      setStatements([]);
-      loadData(); // Refresh summary
+      await refreshAll(); // Refresh context (statements, categories, accounts)
+      loadData(); // Refresh local analytics
       setShowManagement(false);
       alert('Todos os extratos foram deletados com sucesso!');
     } catch (error) {
@@ -431,6 +446,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         setBulkProgress(`Erro: ${error}`);
       } else {
         setBulkProgress(`${updated} de ${total} transações re-categorizadas`);
+        await refreshAll();
         await loadData();
       }
     } catch (err) {
@@ -449,6 +465,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         log.error('Apply suggestions error:', error);
       } else {
         log.info(`Applied ${updated} category changes`);
+        await refreshAll();
         await loadData();
       }
       setCategorySuggestions(null);
@@ -723,7 +740,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         {showCSVUpload && (
           <CSVUpload
             userId={userId}
-            onSuccess={() => { loadData(); setShowCSVUpload(false); }}
+            onSuccess={() => { refreshAll(); loadData(); setShowCSVUpload(false); }}
             onClose={() => setShowCSVUpload(false)}
           />
         )}
