@@ -33,6 +33,9 @@ export default function WelcomePage() {
     )
   }
 
+  // AuthGuard handles redirect, but guard here to prevent brief flash
+  if (!user) return null
+
   const handleSetPassword = async () => {
     setPasswordError('')
 

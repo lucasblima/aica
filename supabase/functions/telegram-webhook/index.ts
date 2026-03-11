@@ -498,7 +498,7 @@ async function handleStatus(
       '',
       ...(isSyntheticEmail
         ? ['💡 Envie seu email aqui para acessar a AICA pelo navegador.', '']
-        : [`📧 Email: <b>${authUser?.user?.email || 'N/A'}</b>`, '']),
+        : [`📧 Email: <b>${escapeHtml(authUser?.user?.email || 'N/A')}</b>`, '']),
       'Use /desvincular para remover a vinculacao.',
     ].join('\n'), statusOptions)
   } else {
