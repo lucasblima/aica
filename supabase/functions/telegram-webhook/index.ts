@@ -7,9 +7,9 @@
  * handlers, and logs all interactions.
  *
  * Phase 1 — Commands:
- * /start        — Welcome + linking instructions
+ * /start        — Guest account creation + LGPD consent
  * /help         — Command list (Portuguese)
- * /status       — Account link status
+ * /status       — Account status (guest vs full)
  * /vincular     — Link Telegram to AICA via one-time code
  * /desvincular  — Unlink account (with confirmation)
  * /privacidade  — LGPD info + data rights
@@ -120,27 +120,129 @@ async function reply(
 }
 
 // ============================================================================
+// GUEST ACCOUNT CREATION
+// ============================================================================
+
+async function createGuestAccount(
+  supabase: SupabaseClient,
+  telegramId: number,
+  firstName: string,
+  username?: string,
+): Promise<string> {
+  // Check if account already exists (prevent duplicates)
+  const { data: existingUser } = await supabase
+    .rpc('get_telegram_user', { p_telegram_id: telegramId })
+
+  if (existingUser && existingUser.length > 0) {
+    return existingUser[0].user_id
+  }
+
+  const syntheticEmail = `tg_${telegramId}@telegram.aica.guru`
+
+  // Create Supabase Auth user with synthetic email
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    email: syntheticEmail,
+    email_confirm: true,
+    user_metadata: {
+      telegram_id: telegramId,
+      first_name: firstName,
+      source: 'telegram_bot',
+    },
+  })
+
+  // C2 fix: Handle race condition — if another /start created the user concurrently,
+  // look up the existing auth user by email instead of failing
+  if (authError) {
+    if (authError.message?.includes('already been registered') || authError.message?.includes('duplicate')) {
+      // Race condition: another request created this user. Re-check the link table.
+      const { data: raceUser } = await supabase
+        .rpc('get_telegram_user', { p_telegram_id: telegramId })
+      if (raceUser && raceUser.length > 0) {
+        return raceUser[0].user_id
+      }
+      // Auth user exists but link row not yet created by the concurrent request.
+      // A retry will succeed once the other request completes the insert.
+      throw new Error(`Guest account created by concurrent request but link not yet visible. Retry /start.`)
+    }
+    throw new Error(`Failed to create guest account: ${authError.message}`)
+  }
+
+  if (!authUser?.user) {
+    throw new Error('Failed to create guest account: no user returned')
+  }
+
+  // C1 fix: Check insert result and clean up orphaned auth user on failure
+  const { error: insertError } = await supabase.from('user_telegram_links').insert({
+    user_id: authUser.user.id,
+    telegram_id: telegramId,
+    telegram_username: username || null,
+    telegram_first_name: firstName,
+    status: 'linked',
+    consent_given: false,
+    linked_at: new Date().toISOString(),
+  })
+
+  if (insertError) {
+    // Clean up orphaned auth user to prevent stuck state
+    console.error(`[telegram-webhook] Link insert failed, cleaning up auth user: ${insertError.message}`)
+    await supabase.auth.admin.deleteUser(authUser.user.id)
+    throw new Error(`Failed to link telegram account: ${insertError.message}`)
+  }
+
+  return authUser.user.id
+}
+
+// ============================================================================
 // COMMAND HANDLERS
 // ============================================================================
 
 async function handleStart(
   tg: TelegramAdapter,
   msg: UnifiedMessage,
+  supabase: SupabaseClient,
 ): Promise<void> {
   const name = msg.sender.firstName || 'usuario'
+  const telegramId = Number(msg.sender.channelUserId)
+
+  // Create guest account or get existing user
+  let userId: string
+  try {
+    userId = await createGuestAccount(
+      supabase,
+      telegramId,
+      msg.sender.firstName || 'usuario',
+      msg.sender.username || undefined,
+    )
+  } catch (err) {
+    console.error(`[telegram-webhook] Guest account creation failed: ${(err as Error).message}`)
+    await reply(tg, msg, '❌ Erro ao criar conta. Tente novamente em alguns instantes.')
+    return
+  }
+
+  // Show welcome message with LGPD consent inline buttons
   await reply(tg, msg, [
     `Ola, <b>${name}</b>! 👋`,
     '',
     'Eu sou a <b>AICA</b> — seu Sistema Operacional de Vida Integrada.',
     '',
-    'Para comecar, vincule sua conta AICA ao Telegram:',
+    'Criei uma conta para voce! Para continuar, preciso da sua autorizacao para processar mensagens com IA.',
     '',
-    '1. Acesse <b>aica.guru</b> → Conexoes → Telegram',
-    '2. Clique em "Vincular Telegram" para gerar um codigo',
-    '3. Envie <code>/vincular CODIGO</code> aqui',
-    '',
-    'Use /help para ver todos os comandos disponiveis.',
-  ].join('\n'))
+    '📋 <b>Dados coletados:</b> ID Telegram, resumo de mensagens',
+    '🤖 <b>Processamento:</b> IA analisa para executar acoes',
+    '🗑️ <b>Retencao:</b> Historico de 30 dias',
+  ].join('\n'), {
+    inlineKeyboard: {
+      rows: [
+        [
+          { text: '✅ Aceitar e Continuar', callbackData: 'consent_accept' },
+          { text: '❌ Recusar', callbackData: 'consent_reject' },
+        ],
+        [
+          { text: '📜 Ver Politica Completa', url: 'https://aica.guru/privacy' },
+        ],
+      ],
+    },
+  })
 }
 
 async function handleHelp(
@@ -184,20 +286,30 @@ async function handleStatus(
 
   if (data && data.length > 0) {
     const user = data[0]
+    // Check if user has a synthetic email (guest account from Telegram)
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user.user_id)
+    const isSyntheticEmail = !authError && authUser?.user?.email?.endsWith('@telegram.aica.guru') || false
+    const accountType = authError
+      ? '⚠️ Conta (status indisponivel)'
+      : isSyntheticEmail ? '📱 Conta Telegram (convidado)' : '🌐 Conta AICA completa'
+
     await reply(tg, msg, [
-      '✅ <b>Conta vinculada</b>',
+      '✅ <b>Conta ativa</b>',
       '',
+      `Tipo: ${accountType}`,
       `Usuario: @${user.telegram_username || 'N/A'}`,
       `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
       '',
+      ...(isSyntheticEmail
+        ? ['💡 Acesse <b>aica.guru</b> para configurar email e senha.', '']
+        : []),
       'Use /desvincular para remover a vinculacao.',
     ].join('\n'))
   } else {
     await reply(tg, msg, [
-      '❌ <b>Conta nao vinculada</b>',
+      '❌ <b>Conta nao encontrada</b>',
       '',
-      'Para vincular, acesse aica.guru → Conexoes → Telegram',
-      'e siga as instrucoes, ou use /start para mais detalhes.',
+      'Use /start para criar sua conta e comecar a usar a AICA!',
     ].join('\n'))
   }
 }
@@ -273,8 +385,8 @@ async function handleVincular(
     inlineKeyboard: {
       rows: [
         [
-          { text: '✅ Aceitar e Continuar', callbackData: `consent_accept:${link.user_id}` },
-          { text: '❌ Recusar', callbackData: `consent_reject:${link.user_id}` },
+          { text: '✅ Aceitar e Continuar', callbackData: 'consent_accept' },
+          { text: '❌ Recusar', callbackData: 'consent_reject' },
         ],
         [
           { text: '📜 Ver Politica Completa', url: 'https://aica.guru/privacy' },
@@ -436,8 +548,8 @@ async function handleCallbackQuery(
   // SECURITY: Resolve user from telegram_id (trusted), never from callback_data (attacker-controlled)
   const telegramId = Number(msg.sender.channelUserId)
 
-  // Route by callback prefix
-  if (data.startsWith('consent_accept:')) {
+  // Route by callback data (userId resolved from telegramId, never from callback string)
+  if (data === 'consent_accept' || data.startsWith('consent_accept:')) {
     await supabase.rpc('grant_telegram_consent', {
       p_telegram_id: telegramId,
       p_scope: ['messages', 'notifications', 'ai_processing'],
@@ -445,11 +557,16 @@ async function handleCallbackQuery(
     await reply(tg, msg, [
       '✅ <b>Consentimento registrado!</b>',
       '',
-      'Agora voce pode interagir com a AICA pelo Telegram.',
-      'Use /help para ver os comandos disponiveis.',
+      'Pronto! Agora voce pode conversar comigo naturalmente. Experimente:',
+      '',
+      '• "Adiciona tarefa: revisar proposta"',
+      '• "Gastei R$50 no almoco"',
+      '• "Como ta meu dia?"',
+      '',
+      'Use /help para ver todos os comandos.',
     ].join('\n'))
 
-  } else if (data.startsWith('consent_reject:')) {
+  } else if (data === 'consent_reject' || data.startsWith('consent_reject:')) {
     await reply(tg, msg, [
       '❌ Consentimento recusado.',
       '',
@@ -584,7 +701,7 @@ async function routeCommand(
 
   switch (command) {
     case '/start':
-      await handleStart(tg, msg)
+      await handleStart(tg, msg, supabase)
       return 'start'
     case '/help':
       await handleHelp(tg, msg)
@@ -685,13 +802,10 @@ serve(async (req) => {
         await tg.sendTypingAction(message.chat.chatId, message.chat.messageThreadId)
 
         if (!aicaUserId) {
-          // User not linked — prompt to link first
-          await reply(tg, message, [
-            '❌ Para usar a AICA, vincule sua conta primeiro.',
-            '',
-            'Acesse <b>aica.guru</b> → Conexoes → Telegram',
-            'e use /vincular <code>CODIGO</code> para conectar.',
-          ].join('\n'))
+          // User not linked — prompt to create account via /start
+          await reply(tg, message,
+            'Use /start para criar sua conta e comecar a usar a AICA!'
+          )
           result.processed = true
         } else {
           // Check LGPD consent before AI processing
@@ -704,7 +818,7 @@ serve(async (req) => {
             ].join('\n'), {
               inlineKeyboard: {
                 rows: [[
-                  { text: '✅ Autorizar', callbackData: `consent_accept:${aicaUserId}` },
+                  { text: '✅ Autorizar', callbackData: 'consent_accept' },
                   { text: '📜 Politica', url: 'https://aica.guru/privacy' },
                 ]],
               },
@@ -749,12 +863,9 @@ serve(async (req) => {
         await tg.sendTypingAction(message.chat.chatId, message.chat.messageThreadId)
 
         if (!aicaUserId) {
-          await reply(tg, message, [
-            '❌ Para usar a AICA, vincule sua conta primeiro.',
-            '',
-            'Acesse <b>aica.guru</b> → Conexoes → Telegram',
-            'e use /vincular <code>CODIGO</code> para conectar.',
-          ].join('\n'))
+          await reply(tg, message,
+            'Use /start para criar sua conta e comecar a usar a AICA!'
+          )
           result.processed = true
         } else {
           const consentGiven = userData?.[0]?.consent_given
@@ -766,7 +877,7 @@ serve(async (req) => {
             ].join('\n'), {
               inlineKeyboard: {
                 rows: [[
-                  { text: '✅ Autorizar', callbackData: `consent_accept:${aicaUserId}` },
+                  { text: '✅ Autorizar', callbackData: 'consent_accept' },
                   { text: '📜 Politica', url: 'https://aica.guru/privacy' },
                 ]],
               },
