@@ -93,10 +93,6 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
         .from('studio_team_members')
         .insert({
           user_id: user.id,
-<<<<<<< HEAD
-          project_id: projectId || null,
-=======
->>>>>>> 5cabae5e (fix(studio): use correct column names in TeamPanel (user_id, not owner_id))
           member_email: inviteEmail.trim(),
           role: inviteRole,
           status: 'pending',
