@@ -31,6 +31,8 @@ import { RecategorizationReview } from '../components/RecategorizationReview';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import { FinanceProvider, useFinanceContext } from '../contexts/FinanceContext';
+import { FinancialHealthCard } from '../components/FinancialHealthCard';
+import { useFinancialHealth } from '../hooks/useFinancialHealth';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement, BudgetAlert, FinanceTransaction } from '../types';
 
 // =====================================================
@@ -103,6 +105,9 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [activeView, setActiveView] = useState<DashboardView>('panorama');
+
+  // Financial Health Score
+  const { result: healthResult, loading: healthLoading, compute: computeHealth } = useFinancialHealth();
 
   // Persist visibility toggle
   useEffect(() => {
@@ -397,6 +402,31 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
 
     return { income, expenses, balance, count: selectedMonthTransactions.length, hasStatement: !!monthStatement };
   }, [selectedMonthTransactions, statements, selectedYear, selectedMonth]);
+
+  // Trigger Financial Health Score computation when monthly summary data is available
+  useEffect(() => {
+    if (!summary || summary.transactionCount === 0) return;
+    if (selectedMonthSummary.income === 0 && selectedMonthSummary.expenses === 0) return;
+
+    const monthlyIncome = selectedMonthSummary.income;
+    const monthlyExpenses = selectedMonthSummary.expenses;
+    const savingsRate = monthlyIncome > 0
+      ? Math.max(0, (monthlyIncome - monthlyExpenses) / monthlyIncome)
+      : 0;
+
+    computeHealth({
+      monthlyIncome,
+      monthlyExpenses,
+      billsOnTimeRate: 1.0, // Not tracked yet — assume on-time
+      emergencyFundMonths: 0, // Not tracked yet
+      savingsRate,
+      debtToIncomeRatio: 0, // Not tracked yet
+      creditUtilization: 0, // Not tracked yet
+      hasInsurance: false, // Not tracked yet
+      retirementSaving: false, // Not tracked yet
+      hasEmergencyFund: false, // Not tracked yet
+    });
+  }, [summary, selectedMonthSummary, computeHealth]);
 
   // Poorly categorized transactions for selected month
   const poorlyCategorized = useMemo(() => {
@@ -750,6 +780,14 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
         {/* Everything below only shows when there's data */}
         {hasData && (
           <div className="max-w-7xl mx-auto space-y-6">
+            {/* Financial Health Score */}
+            {healthResult && !healthLoading && (
+              <FinancialHealthCard
+                result={healthResult}
+                trend={burnRate?.trend === 'decreasing' ? 'improving' : burnRate?.trend === 'increasing' ? 'declining' : 'stable'}
+              />
+            )}
+
             {/* Row 1: Alerts — side by side on desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Monthly Digest — AI Insights */}
