@@ -664,18 +664,20 @@ export async function fetchUnifiedTimelineEvents(
   }
 
   // Apply sentiment filter if present
-  if (filters.sentiments && filters.sentiments.length > 0) {
+  const sentimentFilter = filters.sentiments
+  if (sentimentFilter && sentimentFilter.length > 0) {
     allEvents = allEvents.filter((event) => {
       const sentiment = 'sentiment' in event ? event.sentiment : undefined
-      return sentiment && filters.sentiments!.includes(sentiment)
+      return sentiment && sentimentFilter.includes(sentiment)
     })
   }
 
   // Apply tag filter if present
-  if (filters.tags && filters.tags.length > 0) {
+  const tagFilter = filters.tags
+  if (tagFilter && tagFilter.length > 0) {
     allEvents = allEvents.filter((event) => {
       const tags = 'tags' in event ? event.tags : undefined
-      return tags && tags.some((tag) => filters.tags!.includes(tag))
+      return tags && tags.some((tag) => tagFilter.includes(tag))
     })
   }
 
