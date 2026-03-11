@@ -130,7 +130,178 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [autoProcessTriggered, setAutoProcessTriggered] = useState(false);
+  const [successCount, setSuccessCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processAllFiles = useCallback(async () => {
+    // Validate all files have metadata
+    const missingMetadata = files.some(f => !f.bankName || !f.month || !f.year);
+    if (missingMetadata) {
+      onError?.('Preencha banco, mês e ano para todos os arquivos antes de processar.');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    // Process each file sequentially
+    for (let i = 0; i < files.length; i++) {
+      const fileWithMeta = files[i];
+
+      try {
+        // Step 1: Calculate hash
+        updateFileProgress(i, { stage: 'uploading', progress: 10, message: 'Verificando...' }, 'uploading');
+        const fileHash = await pdfProcessingService.calculateFileHash(fileWithMeta.file);
+
+        // Check duplicates
+        const isDuplicate = await statementService.checkDuplicate(userId, fileHash);
+        if (isDuplicate) {
+          updateFileProgress(i, { stage: 'error', progress: 0, message: 'Já enviado' });
+          continue;
+        }
+
+        // CSV processing path — bypass PDF pipeline entirely
+        const isCSV = fileWithMeta.file.name.endsWith('.csv') || fileWithMeta.file.type === 'text/csv';
+
+        if (isCSV && fileWithMeta.cachedCSV) {
+          const csvParsed = fileWithMeta.cachedCSV;
+          const periodStart = `${fileWithMeta.year}-${fileWithMeta.month}-01`;
+          const lastDay = new Date(parseInt(fileWithMeta.year!), parseInt(fileWithMeta.month!), 0).getDate();
+          const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${String(lastDay).padStart(2, '0')}`;
+
+          // Check period overlap
+          const { hasOverlap, overlapping } = await statementService.checkPeriodOverlap(userId, periodStart, periodEnd);
+          if (hasOverlap) {
+            const names = overlapping.map(s => s.file_name).join(', ');
+            updateFileProgress(i, { stage: 'error', progress: 0, message: `Período já importado: ${names}` });
+            continue;
+          }
+
+          // Create statement record
+          updateFileProgress(i, { stage: 'uploading', progress: 20, message: 'Criando registro...' }, 'creating');
+          const statement = await statementService.createStatement({
+            user_id: userId,
+            file_name: fileWithMeta.file.name,
+            file_size_bytes: fileWithMeta.file.size,
+            file_hash: fileHash,
+            processing_status: 'processing',
+          });
+
+          const enhancedParsed = {
+            bankName: fileWithMeta.bankName,
+            accountType: 'checking' as const,
+            periodStart,
+            periodEnd,
+            openingBalance: 0,
+            closingBalance: 0,
+            currency: 'BRL',
+            transactions: csvParsed.transactions,
+          };
+
+          updateFileProgress(i, { stage: 'saving', progress: 90, message: 'Salvando CSV...' }, 'saving');
+          const markdown = `# Extrato CSV — ${fileWithMeta.bankName} ${fileWithMeta.month}/${fileWithMeta.year}\n\n${csvParsed.transactions.length} transações importadas`;
+          await statementService.saveParsedData(statement.id, userId, enhancedParsed, markdown);
+
+          updateFileProgress(i, { stage: 'complete', progress: 100, message: 'Concluído!' });
+          await addXP(userId, 25);
+
+          const updatedStatement = await statementService.getStatement(statement.id);
+          if (updatedStatement) onUploadComplete(updatedStatement);
+          continue;
+        }
+
+        // Step 2: Create statement
+        updateFileProgress(i, { stage: 'uploading', progress: 20, message: 'Criando registro...' }, 'creating');
+        const statement = await statementService.createStatement({
+          user_id: userId,
+          file_name: fileWithMeta.file.name,
+          file_size_bytes: fileWithMeta.file.size,
+          file_hash: fileHash,
+          processing_status: 'processing',
+        });
+
+        // Step 3: Upload to storage
+        updateFileProgress(i, { stage: 'uploading', progress: 30, message: 'Upload...' }, 'storage');
+        try {
+          const storagePath = await statementService.uploadPDF(userId, fileWithMeta.file);
+          await statementService.updateStatement(statement.id, { storage_path: storagePath });
+        } catch (uploadError) {
+          log.warn('Storage upload failed:', uploadError);
+        }
+
+        // Step 4: Use cached parsed result or re-parse if not available
+        let parsed;
+        if (fileWithMeta.cachedParsed) {
+          updateFileProgress(i, { stage: 'extracting', progress: 75, message: 'Usando análise anterior...' }, 'ai_parsing');
+          parsed = fileWithMeta.cachedParsed;
+        } else {
+          updateFileProgress(i, { stage: 'extracting', progress: 40, message: 'Extraindo texto do PDF...' }, 'extracting');
+          // Progress callback for AI parsing stage
+          const onProgress = (update: PDFProgressUpdate) => {
+            const aiProgress = 50 + (update.progress / 100) * 35; // Map 0-100 → 50-85
+            updateFileProgress(i, { stage: 'extracting', progress: aiProgress, message: update.message }, 'ai_parsing');
+          };
+          parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId, onProgress);
+        }
+
+        // Override with user metadata
+        // Calculate last day of month (month is 1-indexed, but Date expects 0-indexed)
+        const lastDay = new Date(
+          parseInt(fileWithMeta.year),
+          parseInt(fileWithMeta.month),  // Using next month's 0th day gives us last day of current month
+          0
+        ).getDate();
+        const periodStart = `${fileWithMeta.year}-${fileWithMeta.month}-01`;
+        const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${lastDay.toString().padStart(2, '0')}`;
+
+        const enhancedParsed = {
+          ...parsed,
+          bankName: fileWithMeta.bankName,
+          periodStart,
+          periodEnd,
+        };
+
+        // Step 6: Save
+        updateFileProgress(i, { stage: 'saving', progress: 90, message: 'Salvando...' }, 'saving');
+        const markdown = pdfProcessingService.generateMarkdown(enhancedParsed);
+        await statementService.saveParsedData(statement.id, userId, enhancedParsed, markdown);
+
+        // Complete
+        updateFileProgress(i, { stage: 'complete', progress: 100, message: 'Concluído!' });
+
+        // Award XP
+        await addXP(userId, 25);
+        await awardAchievement(userId, 'first_finance_upload');
+
+        // Notify completion
+        const updatedStatement = await statementService.getStatement(statement.id);
+        if (updatedStatement) {
+          onUploadComplete(updatedStatement);
+        }
+      } catch (error) {
+        log.error(`Error processing file ${i}:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'Erro';
+        updateFileProgress(i, { stage: 'error', progress: 0, message: errorMessage });
+      }
+    }
+
+    setIsProcessing(false);
+
+    // Count successful imports
+    const completed = files.filter((_, idx) => {
+      const f = files[idx];
+      return f.progress?.stage === 'complete';
+    }).length;
+    if (completed > 0) {
+      setSuccessCount(completed);
+    }
+
+    // Reset after delay (longer so user can see success)
+    setTimeout(() => {
+      setFiles([]);
+      setAutoProcessTriggered(false);
+      setSuccessCount(0);
+    }, 6000);
+  }, [files, userId, onUploadComplete, onError]);
 
   // Auto-process files when all metadata is complete
   useEffect(() => {
@@ -153,7 +324,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         processAllFiles();
       }, 500);
     }
-  }, [files, isAnalyzing, isProcessing, autoProcessTriggered]);
+  }, [files, isAnalyzing, isProcessing, autoProcessTriggered, processAllFiles]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -327,166 +498,6 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const processAllFiles = async () => {
-    // Validate all files have metadata
-    const missingMetadata = files.some(f => !f.bankName || !f.month || !f.year);
-    if (missingMetadata) {
-      onError?.('Preencha banco, mês e ano para todos os arquivos antes de processar.');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    // Process each file sequentially
-    for (let i = 0; i < files.length; i++) {
-      const fileWithMeta = files[i];
-
-      try {
-        // Step 1: Calculate hash
-        updateFileProgress(i, { stage: 'uploading', progress: 10, message: 'Verificando...' }, 'uploading');
-        const fileHash = await pdfProcessingService.calculateFileHash(fileWithMeta.file);
-
-        // Check duplicates
-        const isDuplicate = await statementService.checkDuplicate(userId, fileHash);
-        if (isDuplicate) {
-          updateFileProgress(i, { stage: 'error', progress: 0, message: 'Já enviado' });
-          continue;
-        }
-
-        // CSV processing path — bypass PDF pipeline entirely
-        const isCSV = fileWithMeta.file.name.endsWith('.csv') || fileWithMeta.file.type === 'text/csv';
-
-        if (isCSV && fileWithMeta.cachedCSV) {
-          const csvParsed = fileWithMeta.cachedCSV;
-          const periodStart = `${fileWithMeta.year}-${fileWithMeta.month}-01`;
-          const lastDay = new Date(parseInt(fileWithMeta.year!), parseInt(fileWithMeta.month!), 0).getDate();
-          const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${String(lastDay).padStart(2, '0')}`;
-
-          // Check period overlap
-          const { hasOverlap, overlapping } = await statementService.checkPeriodOverlap(userId, periodStart, periodEnd);
-          if (hasOverlap) {
-            const names = overlapping.map(s => s.file_name).join(', ');
-            updateFileProgress(i, { stage: 'error', progress: 0, message: `Período já importado: ${names}` });
-            continue;
-          }
-
-          // Create statement record
-          updateFileProgress(i, { stage: 'uploading', progress: 20, message: 'Criando registro...' }, 'creating');
-          const statement = await statementService.createStatement({
-            user_id: userId,
-            file_name: fileWithMeta.file.name,
-            file_size_bytes: fileWithMeta.file.size,
-            file_hash: fileHash,
-            processing_status: 'processing',
-          });
-
-          const enhancedParsed = {
-            bankName: fileWithMeta.bankName,
-            accountType: 'checking' as const,
-            periodStart,
-            periodEnd,
-            openingBalance: 0,
-            closingBalance: 0,
-            currency: 'BRL',
-            transactions: csvParsed.transactions,
-          };
-
-          updateFileProgress(i, { stage: 'saving', progress: 90, message: 'Salvando CSV...' }, 'saving');
-          const markdown = `# Extrato CSV — ${fileWithMeta.bankName} ${fileWithMeta.month}/${fileWithMeta.year}\n\n${csvParsed.transactions.length} transações importadas`;
-          await statementService.saveParsedData(statement.id, userId, enhancedParsed, markdown);
-
-          updateFileProgress(i, { stage: 'complete', progress: 100, message: 'Concluído!' });
-          await addXP(userId, 25);
-
-          const updatedStatement = await statementService.getStatement(statement.id);
-          if (updatedStatement) onUploadComplete(updatedStatement);
-          continue;
-        }
-
-        // Step 2: Create statement
-        updateFileProgress(i, { stage: 'uploading', progress: 20, message: 'Criando registro...' }, 'creating');
-        const statement = await statementService.createStatement({
-          user_id: userId,
-          file_name: fileWithMeta.file.name,
-          file_size_bytes: fileWithMeta.file.size,
-          file_hash: fileHash,
-          processing_status: 'processing',
-        });
-
-        // Step 3: Upload to storage
-        updateFileProgress(i, { stage: 'uploading', progress: 30, message: 'Upload...' }, 'storage');
-        try {
-          const storagePath = await statementService.uploadPDF(userId, fileWithMeta.file);
-          await statementService.updateStatement(statement.id, { storage_path: storagePath });
-        } catch (uploadError) {
-          log.warn('Storage upload failed:', uploadError);
-        }
-
-        // Step 4: Use cached parsed result or re-parse if not available
-        let parsed;
-        if (fileWithMeta.cachedParsed) {
-          updateFileProgress(i, { stage: 'extracting', progress: 75, message: 'Usando análise anterior...' }, 'ai_parsing');
-          parsed = fileWithMeta.cachedParsed;
-        } else {
-          updateFileProgress(i, { stage: 'extracting', progress: 40, message: 'Extraindo texto do PDF...' }, 'extracting');
-          // Progress callback for AI parsing stage
-          const onProgress = (update: PDFProgressUpdate) => {
-            const aiProgress = 50 + (update.progress / 100) * 35; // Map 0-100 → 50-85
-            updateFileProgress(i, { stage: 'extracting', progress: aiProgress, message: update.message }, 'ai_parsing');
-          };
-          parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId, onProgress);
-        }
-
-        // Override with user metadata
-        // Calculate last day of month (month is 1-indexed, but Date expects 0-indexed)
-        const lastDay = new Date(
-          parseInt(fileWithMeta.year),
-          parseInt(fileWithMeta.month),  // Using next month's 0th day gives us last day of current month
-          0
-        ).getDate();
-        const periodStart = `${fileWithMeta.year}-${fileWithMeta.month}-01`;
-        const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${lastDay.toString().padStart(2, '0')}`;
-
-        const enhancedParsed = {
-          ...parsed,
-          bankName: fileWithMeta.bankName,
-          periodStart,
-          periodEnd,
-        };
-
-        // Step 6: Save
-        updateFileProgress(i, { stage: 'saving', progress: 90, message: 'Salvando...' }, 'saving');
-        const markdown = pdfProcessingService.generateMarkdown(enhancedParsed);
-        await statementService.saveParsedData(statement.id, userId, enhancedParsed, markdown);
-
-        // Complete
-        updateFileProgress(i, { stage: 'complete', progress: 100, message: 'Concluído!' });
-
-        // Award XP
-        await addXP(userId, 25);
-        await awardAchievement(userId, 'first_finance_upload');
-
-        // Notify completion
-        const updatedStatement = await statementService.getStatement(statement.id);
-        if (updatedStatement) {
-          onUploadComplete(updatedStatement);
-        }
-      } catch (error) {
-        log.error(`Error processing file ${i}:`, error);
-        const errorMessage = error instanceof Error ? error.message : 'Erro';
-        updateFileProgress(i, { stage: 'error', progress: 0, message: errorMessage });
-      }
-    }
-
-    setIsProcessing(false);
-
-    // Reset after delay
-    setTimeout(() => {
-      setFiles([]);
-      setAutoProcessTriggered(false);
-    }, 3000);
-  };
-
   const clearAll = () => {
     setFiles([]);
     setAutoProcessTriggered(false);
@@ -521,6 +532,48 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
       return <AlertCircle className={`w-4 h-4 ${color}`} />;
     }
     return <Loader2 className={`w-4 h-4 ${color} animate-spin`} />;
+  };
+
+  /**
+   * AnalysisProgressDisplay - Smooth progress during AI analysis with elapsed time
+   */
+  const AnalysisProgressDisplay: React.FC<{ progress: PDFProgressUpdate }> = ({ progress }) => {
+    const [smoothProgress, setSmoothProgress] = useState(0);
+
+    useEffect(() => {
+      const target = progress.progress || 0;
+      if (target <= smoothProgress) return;
+      const timer = setInterval(() => {
+        setSmoothProgress(prev => {
+          const next = prev + 0.3;
+          if (next >= target) { clearInterval(timer); return target; }
+          return next;
+        });
+      }, 50);
+      return () => clearInterval(timer);
+    }, [progress.progress]);
+
+    return (
+      <>
+        <div className="flex items-center gap-2">
+          <Loader2 className="w-4 h-4 text-ceramic-accent animate-spin flex-shrink-0" />
+          <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300">
+            {progress.message}
+          </p>
+        </div>
+        {progress.detail && (
+          <p className="text-[10px] text-ceramic-text-secondary ml-6">
+            {progress.detail}
+          </p>
+        )}
+        <div className="ceramic-trough p-1 rounded-full">
+          <div
+            className="h-1.5 rounded-full bg-ceramic-accent transition-[width] duration-300 ease-out"
+            style={{ width: `${smoothProgress}%` }}
+          />
+        </div>
+      </>
+    );
   };
 
   /**
@@ -703,25 +756,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
                       <div className="space-y-2 py-2">
                         {/* Progressive analysis feedback */}
                         {fileWithMeta.analysisProgress ? (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <Loader2 className="w-4 h-4 text-ceramic-accent animate-spin flex-shrink-0" />
-                              <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300">
-                                {fileWithMeta.analysisProgress.message}
-                              </p>
-                            </div>
-                            {fileWithMeta.analysisProgress.detail && (
-                              <p className="text-[10px] text-ceramic-text-secondary ml-6">
-                                {fileWithMeta.analysisProgress.detail}
-                              </p>
-                            )}
-                            <div className="ceramic-trough p-1 rounded-full">
-                              <div
-                                className="h-1.5 rounded-full bg-ceramic-accent transition-all duration-700 ease-out"
-                                style={{ width: `${fileWithMeta.analysisProgress.progress}%` }}
-                              />
-                            </div>
-                          </>
+                          <AnalysisProgressDisplay progress={fileWithMeta.analysisProgress} />
                         ) : (
                           <div className="flex items-center gap-2">
                             <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
@@ -825,6 +860,23 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
               </span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Success Banner */}
+      {successCount > 0 && !isProcessing && (
+        <div className="ceramic-card bg-ceramic-success/10 border border-ceramic-success/20 p-4 flex items-center gap-3 animate-in fade-in duration-300">
+          <CheckCircle className="w-6 h-6 text-ceramic-success flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-ceramic-success">
+              {successCount === 1
+                ? 'Extrato importado com sucesso!'
+                : `${successCount} extratos importados com sucesso!`}
+            </p>
+            <p className="text-xs text-ceramic-text-secondary mt-0.5">
+              As transações já estão disponíveis no painel financeiro.
+            </p>
+          </div>
         </div>
       )}
 
