@@ -246,6 +246,106 @@ async function createGuestAccount(
 }
 
 // ============================================================================
+// EMAIL REGISTRATION FLOW (Phase 2)
+// ============================================================================
+
+async function handleEmailRegistration(
+  tg: TelegramAdapter,
+  msg: UnifiedMessage,
+  supabase: SupabaseClient,
+  userId: string,
+  flowState: Record<string, unknown>,
+): Promise<void> {
+  const text = (msg.content.text || '').trim()
+
+  if (flowState.step === 'waiting_email') {
+    // Validate email format
+    if (!isValidEmail(text)) {
+      await reply(tg, msg, [
+        '⚠️ Esse email nao parece valido. Envie no formato:',
+        '<code>seu@email.com</code>',
+        '',
+        'Ou use o botao abaixo para pular esta etapa.',
+      ].join('\n'), {
+        inlineKeyboard: {
+          rows: [[
+            { text: '⏭️ Pular por agora', callbackData: 'email_skip' },
+          ]],
+        },
+      })
+      return
+    }
+
+    const email = text.toLowerCase()
+    const chatId = Number(msg.chat.chatId)
+
+    // Update guest account: replace synthetic email with real email
+    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+      email: email,
+      email_confirm: true, // Confirm immediately so magic link works
+      user_metadata: {
+        email_registered_via: 'telegram',
+        email_registered_at: new Date().toISOString(),
+      },
+    })
+
+    if (updateError) {
+      if (updateError.message?.includes('already been registered') || updateError.message?.includes('duplicate')) {
+        await reply(tg, msg, [
+          '⚠️ Esse email ja esta vinculado a outra conta AICA.',
+          '',
+          'Se essa conta e sua, acesse <b>aica.guru</b> e faca login.',
+          'Ou envie um email diferente.',
+        ].join('\n'), {
+          inlineKeyboard: {
+            rows: [[
+              { text: '⏭️ Pular por agora', callbackData: 'email_skip' },
+            ]],
+          },
+        })
+        return
+      }
+      console.error(`[telegram-webhook] Email update failed: ${updateError.message}`)
+      await reply(tg, msg, '❌ Erro ao registrar email. Tente novamente em alguns instantes.')
+      return
+    }
+
+    // Send magic link via Supabase OTP
+    const redirectUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: email,
+      options: {
+        emailRedirectTo: `${redirectUrl}/welcome`,
+      },
+    })
+
+    if (otpError) {
+      console.error(`[telegram-webhook] Magic link send failed: ${otpError.message}`)
+      // Email was updated successfully, so the user can still use /status to see their email
+      await reply(tg, msg, [
+        '✅ Email registrado: <b>' + email + '</b>',
+        '',
+        '⚠️ Nao consegui enviar o link magico agora.',
+        'Acesse <b>aica.guru</b> e use "Entrar com email" para receber um novo link.',
+      ].join('\n'))
+    } else {
+      await reply(tg, msg, [
+        '✅ <b>Email registrado!</b>',
+        '',
+        `Enviei um link magico para <b>${email}</b>.`,
+        'Clique no link do email para acessar a AICA pelo navegador.',
+        '',
+        '💡 O link expira em 1 hora.',
+        '📱 Enquanto isso, voce pode continuar usando a AICA aqui pelo Telegram!',
+      ].join('\n'))
+    }
+
+    // Clear the flow — back to normal NLP routing
+    await setActiveFlow(supabase, userId, chatId, null, {})
+  }
+}
+
+// ============================================================================
 // COMMAND HANDLERS
 // ============================================================================
 
