@@ -146,9 +146,9 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
 
       {/* Deadline Warning */}
       {deadlineWarning && (
-        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-          <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
-          <p className="text-[11px] text-red-700">{deadlineWarning}</p>
+        <div className="flex items-start gap-2 bg-ceramic-error/10 border border-ceramic-error/20 rounded-lg px-3 py-2 mb-3">
+          <AlertTriangle className="w-3.5 h-3.5 text-ceramic-error mt-0.5 shrink-0" />
+          <p className="text-[11px] text-ceramic-error">{deadlineWarning}</p>
         </div>
       )}
 
@@ -161,9 +161,9 @@ export const SavingsGoalProjection: React.FC<SavingsGoalProjectionProps> = ({
       )}
 
       {progressFrame.frameType === 'gain' && (
-        <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-3">
-          <TrendingUp className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" />
-          <p className="text-[11px] text-green-700">{progressFrame.message}</p>
+        <div className="flex items-start gap-2 bg-ceramic-success/10 border border-ceramic-success/20 rounded-lg px-3 py-2 mb-3">
+          <TrendingUp className="w-3.5 h-3.5 text-ceramic-success mt-0.5 shrink-0" />
+          <p className="text-[11px] text-ceramic-success">{progressFrame.message}</p>
         </div>
       )}
 

@@ -312,6 +312,64 @@ export class PDFProcessingService {
         })
 
         // Normalize data — validate type field since Gemini may return unexpected values
+        const normalizedTransactions = (parsed.transactions || []).map((t: ParsedGeminiTransaction) => {
+          const amount = Number(t.amount) || 0
+          let type: 'income' | 'expense' = t.type
+          if (type !== 'income' && type !== 'expense') {
+            type = amount >= 0 ? 'income' : 'expense'
+            log.warn(`[PDFProcessingService] Invalid type "${t.type}" for "${t.description}", inferred: ${type}`)
+          }
+          return {
+            date: t.date,
+            description: t.description,
+            amount,
+            type,
+            balance: t.balance != null ? Number(t.balance) : 0,
+            suggestedCategory: t.category || 'other'
+          }
+        })
+
+        // 2nd pass: re-categorize poorly classified transactions via dedicated categorizer
+        const poorlyClassified = normalizedTransactions.filter(
+          t => t.suggestedCategory === 'transfer' || t.suggestedCategory === 'other'
+        )
+
+        if (poorlyClassified.length > 0) {
+          log.info(`[PDFProcessingService] 2nd pass: re-categorizing ${poorlyClassified.length} transfer/other transactions`)
+          onProgress?.({
+            stage: 'categorizing',
+            message: 'Refinando categorias com IA...',
+            detail: `${poorlyClassified.length} transações PIX sendo re-classificadas`,
+            progress: 90,
+          })
+
+          try {
+            const catResult = await EdgeFunctionService.callGeminiEdgeFunction('categorize_transactions', {
+              transactions: poorlyClassified.map(t => ({
+                description: t.description,
+                amount: t.amount,
+                type: t.type,
+              })),
+            })
+
+            const categories = (catResult as any)?.categories
+            if (Array.isArray(categories) && categories.length === poorlyClassified.length) {
+              // Build a map of description+amount → new category for lookup
+              let improved = 0
+              for (let j = 0; j < poorlyClassified.length; j++) {
+                const newCat = categories[j]
+                if (newCat && newCat !== poorlyClassified[j].suggestedCategory) {
+                  poorlyClassified[j].suggestedCategory = newCat
+                  improved++
+                }
+              }
+              log.info(`[PDFProcessingService] 2nd pass improved ${improved} of ${poorlyClassified.length} categories`)
+            }
+          } catch (catError) {
+            log.warn('[PDFProcessingService] 2nd pass categorization failed (non-critical):', catError)
+          }
+        }
+
         return {
           bankName: parsed.bankName || 'Banco Desconhecido',
           accountType: parsed.accountType || 'checking',
@@ -320,22 +378,7 @@ export class PDFProcessingService {
           openingBalance: Number(parsed.openingBalance) || 0,
           closingBalance: Number(parsed.closingBalance) || 0,
           currency: parsed.currency || 'BRL',
-          transactions: (parsed.transactions || []).map((t: ParsedGeminiTransaction) => {
-            const amount = Number(t.amount) || 0
-            let type: 'income' | 'expense' = t.type
-            if (type !== 'income' && type !== 'expense') {
-              type = amount >= 0 ? 'income' : 'expense'
-              log.warn(`[PDFProcessingService] Invalid type "${t.type}" for "${t.description}", inferred: ${type}`)
-            }
-            return {
-              date: t.date,
-              description: t.description,
-              amount,
-              type,
-              balance: t.balance != null ? Number(t.balance) : 0,
-              suggestedCategory: t.category || 'other'
-            }
-          }),
+          transactions: normalizedTransactions,
           piiSanitized: false
         }
       } catch (error) {

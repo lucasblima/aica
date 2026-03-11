@@ -54,7 +54,7 @@ export function exportToCSV(
   const rows = txToExport.map((tx) => [
     tx.transaction_date,
     `"${(tx.description || '').replace(/"/g, '""')}"`,
-    tx.amount.toFixed(2),
+    Number(tx.amount).toFixed(2),
     tx.type === 'income' ? 'Receita' : 'Despesa',
     tx.category,
     tx.is_recurring ? 'Sim' : 'Nao',
@@ -86,7 +86,7 @@ export function exportToPDF(
       <td>${tx.transaction_date}</td>
       <td>${escapeHtml(tx.description)}</td>
       <td style="color:${tx.type === 'income' ? '#16a34a' : '#dc2626'}">
-        ${tx.type === 'income' ? '+' : '-'} R$ ${Math.abs(tx.amount).toFixed(2)}
+        ${tx.type === 'income' ? '+' : '-'} R$ ${Math.abs(Number(tx.amount)).toFixed(2)}
       </td>
       <td>${tx.category}</td>
     </tr>`

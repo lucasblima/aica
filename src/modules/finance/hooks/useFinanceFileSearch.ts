@@ -232,7 +232,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
           custom_metadata: {
             document_type: 'transactions_list',
             transaction_count: transactions.length,
-            total_amount: transactions.reduce((sum, t) => sum + t.amount, 0),
+            total_amount: transactions.reduce((sum, t) => sum + Number(t.amount), 0),
             ...metadata,
           },
         });

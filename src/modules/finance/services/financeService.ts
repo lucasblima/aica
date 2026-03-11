@@ -19,10 +19,12 @@ const log = createNamespacedLogger('FinanceService');
 export async function getAllTimeSummary(userId: string): Promise<FinanceSummary> {
     try {
         // Fetch ALL transactions for user
+        // PostgREST defaults to 1000 rows — set explicit limit for all-time queries
         const { data: transactions, error: txError } = await supabase
             .from('finance_transactions')
             .select('type, amount')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .limit(50000);
 
         if (txError) throw txError;
 
@@ -85,7 +87,8 @@ export async function getCurrentMonthSummary(userId: string): Promise<FinanceSum
             .select('*')
             .eq('user_id', userId)
             .gte('transaction_date', firstDayStr)
-            .lte('transaction_date', lastDayStr);
+            .lte('transaction_date', lastDayStr)
+            .limit(50000);
 
         if (error) throw error;
 
@@ -144,7 +147,8 @@ export async function getBurnRate(userId: string): Promise<BurnRateData> {
             .select('amount, transaction_date')
             .eq('user_id', userId)
             .eq('type', 'expense')
-            .gte('transaction_date', threeMonthsAgoStr);
+            .gte('transaction_date', threeMonthsAgoStr)
+            .limit(50000);
 
         if (error) throw error;
 
@@ -220,7 +224,8 @@ export async function getAllTimeCategoryBreakdown(userId: string): Promise<Categ
             .from('finance_transactions')
             .select('category, amount, type')
             .eq('user_id', userId)
-            .eq('type', 'expense'); // Only expenses for breakdown
+            .eq('type', 'expense')
+            .limit(50000);
 
         if (error) throw error;
 
@@ -277,7 +282,8 @@ export async function getCategoryBreakdown(userId: string): Promise<CategoryBrea
             .select('category, amount, type')
             .eq('user_id', userId)
             .gte('transaction_date', firstDayStr)
-            .lte('transaction_date', lastDayStr);
+            .lte('transaction_date', lastDayStr)
+            .limit(50000);
 
         if (error) throw error;
 
@@ -348,13 +354,16 @@ export async function getTransactionsByDateRange(
     endDate: string
 ): Promise<FinanceTransaction[]> {
     try {
+        // PostgREST defaults to 1000 rows — must set explicit limit
+        // to avoid silently truncating older months in multi-year ranges
         const { data, error } = await supabase
             .from('finance_transactions')
             .select('*')
             .eq('user_id', userId)
             .gte('transaction_date', startDate)
             .lte('transaction_date', endDate)
-            .order('transaction_date', { ascending: false });
+            .order('transaction_date', { ascending: false })
+            .limit(50000);
 
         if (error) throw error;
 
@@ -578,4 +587,83 @@ export async function recategorizeTransactions(
 
     const { updated } = await applyCategorySuggestions(autoApproved);
     return { updated, total: suggestions.length };
+}
+
+/**
+ * Bulk re-categorize ALL poorly categorized transactions across all months.
+ * Fetches all transfer/other/null category transactions and sends them
+ * to AI in batches for re-classification.
+ */
+export async function recategorizeAllTransactions(
+    userId: string,
+    onProgress?: (done: number, total: number) => void
+): Promise<{ updated: number; total: number; error?: string }> {
+    try {
+        // Fetch ALL poorly categorized transactions (no month filter)
+        const { data: transactions, error: fetchErr } = await supabase
+            .from('finance_transactions')
+            .select('id, description, amount, type, category')
+            .eq('user_id', userId)
+            .or('category.eq.transfer,category.eq.other,category.is.null')
+            .limit(50000);
+
+        if (fetchErr) throw fetchErr;
+        if (!transactions || transactions.length === 0) {
+            return { updated: 0, total: 0 };
+        }
+
+        log.info(`[RecategorizeAll] Found ${transactions.length} poorly categorized transactions`);
+
+        const suggestions: CategorySuggestion[] = [];
+        const BATCH_SIZE = 50;
+
+        for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+            const batch = transactions.slice(i, i + BATCH_SIZE);
+            onProgress?.(i, transactions.length);
+
+            const { data: catResult, error: catErr } = await supabase.functions.invoke('gemini-chat', {
+                body: {
+                    action: 'categorize_transactions',
+                    payload: {
+                        transactions: batch.map(t => ({
+                            description: t.description,
+                            amount: t.amount,
+                            type: t.type,
+                        })),
+                    },
+                },
+            });
+
+            const categories = catResult?.result?.categories || catResult?.categories;
+            if (catErr || !categories?.length) {
+                log.warn(`[RecategorizeAll] Batch ${i}/${transactions.length} failed, skipping`, catErr);
+                continue;
+            }
+
+            for (let j = 0; j < batch.length; j++) {
+                const newCat = categories[j];
+                if (newCat && newCat !== batch[j].category && newCat !== 'other') {
+                    suggestions.push({
+                        id: batch[j].id,
+                        description: batch[j].description,
+                        amount: batch[j].amount,
+                        type: batch[j].type,
+                        currentCategory: batch[j].category || 'sem categoria',
+                        suggestedCategory: newCat,
+                    });
+                }
+            }
+        }
+
+        onProgress?.(transactions.length, transactions.length);
+        log.info(`[RecategorizeAll] Generated ${suggestions.length} suggestions from ${transactions.length} transactions`);
+
+        // Apply all suggestions
+        const approved = suggestions.map(s => ({ ...s, accepted: true }));
+        const { updated } = await applyCategorySuggestions(approved);
+        return { updated, total: transactions.length };
+    } catch (err) {
+        log.error('[RecategorizeAll] Error:', err);
+        return { updated: 0, total: 0, error: err instanceof Error ? err.message : 'Erro na recategorização em massa' };
+    }
 }

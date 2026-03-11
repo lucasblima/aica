@@ -20,6 +20,7 @@ import {
 import { createNamespacedLogger } from '@/lib/logger';
 import { useTransactions } from '../hooks/useTransactions';
 import type { FinanceTransaction, TransactionFilters } from '../types';
+import { TRANSACTION_CATEGORIES } from '../types';
 import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
 
 const log = createNamespacedLogger('TransactionListView');
@@ -387,13 +388,13 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
                         className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
-                          isIncome ? 'bg-emerald-50' : 'bg-red-50'
+                          isIncome ? 'bg-ceramic-success/10' : 'bg-ceramic-error/10'
                         }`}
                       >
                         {isIncome ? (
-                          <ArrowUpCircle className="w-4 h-4 text-emerald-600" />
+                          <ArrowUpCircle className="w-4 h-4 text-ceramic-success" />
                         ) : (
-                          <ArrowDownCircle className="w-4 h-4 text-red-500" />
+                          <ArrowDownCircle className="w-4 h-4 text-ceramic-error" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -417,7 +418,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                     <div className="flex items-center gap-2 shrink-0 ml-2">
                       <span
                         className={`text-sm font-bold ${
-                          isIncome ? 'text-emerald-600' : 'text-red-500'
+                          isIncome ? 'text-ceramic-success' : 'text-ceramic-error'
                         }`}
                       >
                         {isIncome ? '+' : '-'}
@@ -505,7 +506,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                               <span className="text-xs text-ceramic-error">Tem certeza?</span>
                               <button
                                 onClick={() => handleDelete(tx.id)}
-                                className="text-xs bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors"
+                                className="text-xs bg-ceramic-error text-white px-3 py-1 rounded-md hover:bg-ceramic-error/90 transition-colors"
                               >
                                 Sim, excluir
                               </button>
@@ -519,7 +520,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                           ) : (
                             <button
                               onClick={() => setDeleteConfirmId(tx.id)}
-                              className="flex items-center gap-1.5 text-xs text-ceramic-error hover:text-red-700 transition-colors"
+                              className="flex items-center gap-1.5 text-xs text-ceramic-error hover:text-ceramic-error/80 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               Excluir
