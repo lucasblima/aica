@@ -326,12 +326,13 @@ async function analyzeMomentFull(content: string, momentId: string, userId: stri
     log.debug('Full moment analysis completed:', momentId)
 
     // Track AI usage (non-blocking, fire-and-forget)
-    const resp = response as any
+    const resp = response as unknown as Record<string, unknown>
+    const usageMeta = resp.usageMetadata as Record<string, number> | undefined
     trackAIUsage({
       operation_type: 'text_generation',
-      ai_model: resp.model || 'gemini-2.5-flash',
-      input_tokens: resp.usageMetadata?.promptTokenCount || 0,
-      output_tokens: resp.usageMetadata?.candidatesTokenCount || 0,
+      ai_model: (resp.model as string) || 'gemini-2.5-flash',
+      input_tokens: usageMeta?.promptTokenCount || 0,
+      output_tokens: usageMeta?.candidatesTokenCount || 0,
       module_type: 'journey',
       duration_seconds: (Date.now() - startTime) / 1000,
       request_metadata: {

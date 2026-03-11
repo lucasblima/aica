@@ -385,11 +385,11 @@ export function useDailyQuestionAICached() {
     // Issue #202: Guard localStorage access for SSR compatibility
     if (typeof window === 'undefined') return
 
-    const cacheKey = `daily_question_${user.id}`
-    const cached = localStorage.getItem(cacheKey)
+    try {
+      const cacheKey = `daily_question_${user.id}`
+      const cached = localStorage.getItem(cacheKey)
 
-    if (cached) {
-      try {
+      if (cached) {
         const cachedData = JSON.parse(cached)
         const cacheAge = Date.now() - cachedData.timestamp
 
@@ -399,9 +399,9 @@ export function useDailyQuestionAICached() {
           log.debug('Using cached daily question')
           return
         }
-      } catch (e) {
-        log.error('Error parsing cached question:', e)
       }
+    } catch (e) {
+      log.warn('Error reading cached question:', e)
     }
   }, [user?.id, hook.question])
 
@@ -419,7 +419,11 @@ export function useDailyQuestionAICached() {
       timestamp: Date.now(),
     }
 
-    localStorage.setItem(cacheKey, JSON.stringify(cacheData))
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData))
+    } catch (e) {
+      log.warn('Failed to cache daily question (storage quota or private browsing):', e)
+    }
   }, [user?.id, hook.question, hook.source])
 
   return hook
