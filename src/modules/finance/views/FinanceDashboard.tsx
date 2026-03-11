@@ -16,6 +16,7 @@ import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
 import { BudgetView } from './BudgetView';
+import { getBudgetSummary } from '../services/budgetService';
 import { MonthlyDigestCard } from '../components/MonthlyDigestCard';
 import { FinanceEmptyState } from '../components/FinanceEmptyState';
 import { FinanceNotificationCard } from '../components/FinanceNotificationCard';
@@ -23,6 +24,7 @@ import { TransactionListView } from '../components/TransactionListView';
 import { MonthComparisonView } from '../components/MonthComparisonView';
 import { LossFramingBanner } from '../components/LossFramingBanner';
 import { AccountManagement } from '../components/AccountManagement';
+import { SettingsView } from './SettingsView';
 import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, getCategorySuggestions, applyCategorySuggestions, recategorizeAllTransactions } from '../services/financeService';
 import type { CategorySuggestion } from '../services/financeService';
 import { RecategorizationReview } from '../components/RecategorizationReview';
@@ -196,29 +198,37 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
     return points;
   }, [allTransactions]);
 
-  // Generate budget alerts from category breakdown vs rough budget thresholds
-  const budgetAlerts = useMemo((): BudgetAlert[] => {
-    if (!summary || !categoryBreakdown || categoryBreakdown.length === 0) return [];
+  // Budget alerts from real finance_budgets table
+  const [budgetAlerts, setBudgetAlerts] = useState<BudgetAlert[]>([]);
 
-    const alerts: BudgetAlert[] = [];
-    const avgPerCategory = summary.totalExpenses / Math.max(categoryBreakdown.length, 1);
+  useEffect(() => {
+    if (!userId || selectedMonth === null || selectedMonth === undefined) return;
 
-    categoryBreakdown.forEach((cat) => {
-      if (cat.amount > avgPerCategory * 2) {
-        alerts.push({
-          id: `alert-${cat.category}`,
-          type: 'warning',
-          category: cat.category,
-          message: `${cat.category} representa ${cat.percentage.toFixed(0)}% das despesas`,
-          amount: cat.amount,
-          threshold: avgPerCategory,
-          created_at: new Date().toISOString(),
-        });
-      }
-    });
-
-    return alerts;
-  }, [summary, categoryBreakdown]);
+    getBudgetSummary(userId, selectedMonth, selectedYear)
+      .then(budgets => {
+        const alerts: BudgetAlert[] = budgets
+          .filter(b => b.budget_amount > 0 && b.spent / b.budget_amount >= 0.8)
+          .map(b => {
+            const ratio = b.spent / b.budget_amount;
+            return {
+              id: `budget-${b.category}`,
+              type: ratio >= 1 ? 'exceeded' as const : 'warning' as const,
+              category: b.category,
+              message: ratio >= 1
+                ? `${b.category} estourou o orcamento (${Math.round(ratio * 100)}%)`
+                : `${b.category} atingiu ${Math.round(ratio * 100)}% do orcamento`,
+              amount: b.spent,
+              threshold: b.budget_amount,
+              created_at: new Date().toISOString(),
+            };
+          });
+        setBudgetAlerts(alerts);
+      })
+      .catch(() => {
+        // If getBudgetSummary fails (e.g., no budgets set), clear alerts
+        setBudgetAlerts([]);
+      });
+  }, [userId, selectedYear, selectedMonth]);
 
   // Compute all available year-months from statements
   const availableMonths = useMemo(() => {
@@ -429,11 +439,7 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
           </div>
         );
       case 'settings':
-        return (
-          <div className="flex-1 overflow-y-auto px-6 pb-40">
-            <AccountManagement userId={userId} />
-          </div>
-        );
+        return <SettingsView userId={userId} />;
       default:
         return null;
     }
