@@ -461,28 +461,29 @@ async function getUserContext(userId: string): Promise<UserContext> {
           headline: councilResult.value.data.headline,
           synthesis: councilResult.value.data.synthesis,
           status: councilResult.value.data.overall_status,
-          actions: (councilResult.value.data.actions as any[])?.map((a: any) => a.text || a.action || String(a)) || [],
+          actions: (Array.isArray(councilResult.value.data.actions) ? councilResult.value.data.actions : [])
+            .map((a: Record<string, unknown>) => (a.text || a.action || String(a)) as string),
         }
       : null
 
     const patternsData = patternsResult.status === 'fulfilled' && patternsResult.value.data
-      ? patternsResult.value.data.map((p: any) => ({
-          type: p.pattern_type,
-          description: p.description,
-          confidence: p.confidence_score,
+      ? patternsResult.value.data.map((p: Record<string, unknown>) => ({
+          type: p.pattern_type as string,
+          description: p.description as string,
+          confidence: p.confidence_score as number,
         }))
       : []
 
     const summaryRaw = summaryResult.status === 'fulfilled' && summaryResult.value.data?.summary_data
-      ? summaryResult.value.data.summary_data as any
+      ? summaryResult.value.data.summary_data as Record<string, unknown>
       : null
 
     const weeklySummaryData = summaryRaw
       ? {
-          emotionalTrend: summaryRaw.emotionalTrend || summaryRaw.emotional_trend || 'stable',
-          dominantEmotions: summaryRaw.dominantEmotions || summaryRaw.dominant_emotions || [],
-          insights: summaryRaw.insights || [],
-          suggestedFocus: summaryRaw.suggestedFocus || summaryRaw.suggested_focus || '',
+          emotionalTrend: (summaryRaw.emotionalTrend || summaryRaw.emotional_trend || 'stable') as string,
+          dominantEmotions: (summaryRaw.dominantEmotions || summaryRaw.dominant_emotions || []) as string[],
+          insights: (summaryRaw.insights || []) as string[],
+          suggestedFocus: (summaryRaw.suggestedFocus || summaryRaw.suggested_focus || '') as string,
         }
       : null
 
@@ -505,7 +506,7 @@ async function getUserContext(userId: string): Promise<UserContext> {
         completionPercentage: j.completion_percentage,
       })) || [],
       recentResponses: (recentResponses || []).map(r => ({
-        questionText: (r.daily_questions as any)?.question_text || '',
+        questionText: ((r.daily_questions as unknown as Record<string, string> | null)?.question_text) || '',
         answer: r.response_text,
         date: r.responded_at,
       })),

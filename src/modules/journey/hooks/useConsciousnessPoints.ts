@@ -3,7 +3,7 @@
  * React hook for managing Consciousness Points (CP) and gamification
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -196,9 +196,20 @@ export function useCPAnimation() {
   const [leveledUp, setLeveledUp] = useState(false)
   const [newLevel, setNewLevel] = useState<{ level: number; name: string } | null>(null)
   const [qualityFeedback, setQualityFeedback] = useState<string | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   const triggerAnimation = useCallback(
     (points: number, didLevelUp: boolean = false, level?: { level: number; name: string }, feedback?: string) => {
+      // Clear any existing timer
+      if (timerRef.current) clearTimeout(timerRef.current)
+
       setPointsEarned(points)
       setLeveledUp(didLevelUp)
       setNewLevel(level || null)
@@ -206,9 +217,10 @@ export function useCPAnimation() {
       setShowAnimation(true)
 
       // Auto-hide after 3.5 seconds (slightly longer to read feedback)
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         setShowAnimation(false)
         setQualityFeedback(null)
+        timerRef.current = null
       }, 3500)
     },
     []

@@ -177,6 +177,14 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
   // Track answered question IDs to prevent re-displaying the same question after refresh
   const answeredIdsRef = useRef<Set<string>>(new Set())
+  const questionRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (questionRefreshTimerRef.current) clearTimeout(questionRefreshTimerRef.current)
+    }
+  }, [])
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, newLevel, qualityFeedback, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
@@ -298,13 +306,11 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
           log.warn('Failed to generate post-capture insight (non-critical):', error)
         })
 
-      // Refresh stats and timeline in background
+      // Refresh stats and timeline in background (allSettled never rejects)
       Promise.allSettled([
         refreshStats(),
         refreshTimeline()
-      ]).catch((error) => {
-        log.warn('Background refresh failed (non-critical):', error)
-      })
+      ])
 
     } catch (error) {
       log.error('Error creating moment:', error)
@@ -337,11 +343,13 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
         })
       }
 
-      refreshStats()
+      refreshStats().catch(err => log.warn('Background refreshStats failed:', err))
 
       // Fetch next question after delay to show success feedback.
-      setTimeout(() => {
+      if (questionRefreshTimerRef.current) clearTimeout(questionRefreshTimerRef.current)
+      questionRefreshTimerRef.current = setTimeout(() => {
         refreshQuestion()
+        questionRefreshTimerRef.current = null
       }, 2000)
     } catch (error) {
       // Remove from answered set on failure so the user can retry
@@ -375,7 +383,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
         })
       }
 
-      refreshStats()
+      refreshStats().catch(err => log.warn('Background refreshStats failed:', err))
     } catch (error) {
       log.error('Error answering carousel question:', error)
       throw error
@@ -390,7 +398,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       // Trigger CP animation
       triggerAnimation(result.cp_earned, false, undefined, result.quality_feedback)
 
-      refreshStats()
+      refreshStats().catch(err => log.warn('Background refreshStats failed:', err))
     } catch (error) {
       log.error('Error adding reflection:', error)
     }

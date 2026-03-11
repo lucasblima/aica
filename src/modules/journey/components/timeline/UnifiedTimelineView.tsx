@@ -45,7 +45,7 @@ function groupEventsByDay(events: UnifiedEvent[]): DayGroup[] {
     if (!groups.has(dateKey)) {
       groups.set(dateKey, [])
     }
-    groups.get(dateKey)!.push(event)
+    groups.get(dateKey)?.push(event)
   })
 
   const dayGroups: DayGroup[] = []
