@@ -216,7 +216,7 @@ export default function VideoUploadPanel({
               O video foi carregado com sucesso.
             </p>
             <div className="flex items-center gap-3 p-3 rounded-lg bg-ceramic-cool">
-              <Film className="w-8 h-8 text-blue-500 flex-shrink-0" />
+              <Film className="w-8 h-8 text-ceramic-info flex-shrink-0" />
               <div className="text-left min-w-0">
                 <p className="text-sm font-medium text-ceramic-text-primary truncate">
                   {uploadedFile.name}
@@ -252,10 +252,10 @@ export default function VideoUploadPanel({
           onClick={() => !isUploading && fileInputRef.current?.click()}
           className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-12 text-center transition-all duration-200 ${
             isUploading
-              ? 'border-blue-400 bg-blue-50/50 cursor-default'
+              ? 'border-ceramic-info/70 bg-ceramic-info/5 cursor-default'
               : isDragging
-                ? 'border-blue-500 bg-blue-50 scale-[1.02]'
-                : 'border-ceramic-border hover:border-blue-400 hover:bg-ceramic-cool'
+                ? 'border-ceramic-info bg-ceramic-info/5 scale-[1.02]'
+                : 'border-ceramic-border hover:border-ceramic-info/70 hover:bg-ceramic-cool'
           }`}
         >
           <input
@@ -275,7 +275,7 @@ export default function VideoUploadPanel({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <Film className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+                <Film className="w-12 h-12 mx-auto mb-4 text-ceramic-info" />
                 <p className="text-sm font-medium text-ceramic-text-primary mb-1">
                   Enviando video...
                 </p>
@@ -284,7 +284,7 @@ export default function VideoUploadPanel({
                 </p>
                 <div className="h-2 rounded-full bg-ceramic-border overflow-hidden">
                   <motion.div
-                    className="h-full bg-blue-500 rounded-full"
+                    className="h-full bg-ceramic-info rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${uploadProgress}%` }}
                     transition={{ duration: 0.3 }}
@@ -300,7 +300,7 @@ export default function VideoUploadPanel({
               >
                 <Upload
                   className={`w-12 h-12 mx-auto mb-4 transition-colors ${
-                    isDragging ? 'text-blue-500' : 'text-ceramic-text-secondary/40'
+                    isDragging ? 'text-ceramic-info' : 'text-ceramic-text-secondary/40'
                   }`}
                 />
                 <p className="text-sm font-medium text-ceramic-text-primary mb-1">

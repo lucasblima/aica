@@ -23,8 +23,8 @@ function getCurrentMonth(): string {
 // ---------------------------------------------------------------------------
 
 const STATUS_CONFIG: Record<Evangelist['status'], { label: string; classes: string }> = {
-  active: { label: 'Ativo', classes: 'bg-green-100 text-green-800' },
-  suspended: { label: 'Suspenso', classes: 'bg-red-100 text-red-800' },
+  active: { label: 'Ativo', classes: 'bg-ceramic-success/10 text-ceramic-success' },
+  suspended: { label: 'Suspenso', classes: 'bg-ceramic-error/10 text-ceramic-error' },
   inactive: { label: 'Inativo', classes: 'bg-ceramic-cool text-ceramic-text-secondary' },
 };
 
@@ -211,8 +211,8 @@ export function EvangelistsAdmin() {
         <div
           className={`rounded-lg px-4 py-3 text-sm font-medium ${
             actionMessage.type === 'success'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
+              ? 'bg-ceramic-success/10 text-ceramic-success'
+              : 'bg-ceramic-error/10 text-ceramic-error'
           }`}
         >
           {actionMessage.text}
@@ -227,7 +227,7 @@ export function EvangelistsAdmin() {
           <SummaryCard
             label="Total Evangelistas Ativos"
             value={String(summary.total_evangelists)}
-            accent="text-green-600"
+            accent="text-ceramic-success"
           />
           <SummaryCard
             label="Comissoes a Pagar"
@@ -315,7 +315,7 @@ export function EvangelistsAdmin() {
           {inviteMessage && (
             <p
               className={`text-sm font-medium ${
-                inviteMessage.type === 'success' ? 'text-green-700' : 'text-red-700'
+                inviteMessage.type === 'success' ? 'text-ceramic-success' : 'text-ceramic-error'
               }`}
             >
               {inviteMessage.text}
@@ -389,7 +389,7 @@ export function EvangelistsAdmin() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleMarkPaid(ev.id)}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                            className="text-xs text-ceramic-info hover:text-ceramic-info/80 font-medium transition-colors"
                             title="Marcar comissoes do periodo atual como pagas"
                           >
                             Marcar Pago
@@ -398,8 +398,8 @@ export function EvangelistsAdmin() {
                             onClick={() => handleToggleStatus(ev.id, ev.status)}
                             className={`text-xs font-medium transition-colors ${
                               ev.status === 'active'
-                                ? 'text-red-600 hover:text-red-800'
-                                : 'text-green-600 hover:text-green-800'
+                                ? 'text-ceramic-error hover:text-ceramic-error/80'
+                                : 'text-ceramic-success hover:text-ceramic-success/80'
                             }`}
                           >
                             {ev.status === 'active' ? 'Suspender' : 'Reativar'}

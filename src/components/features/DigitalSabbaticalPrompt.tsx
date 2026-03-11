@@ -75,29 +75,29 @@ function ActiveSabbaticalCard({
   };
 
   return (
-    <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+    <div className="bg-ceramic-success/10 border border-ceramic-success/30 rounded-xl p-5">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-          <Sun size={20} className="text-green-600" />
+        <div className="w-10 h-10 rounded-full bg-ceramic-success/15 flex items-center justify-center flex-shrink-0">
+          <Sun size={20} className="text-ceramic-success" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-green-800">
+          <h3 className="text-sm font-medium text-ceramic-success">
             Pausa Digital em Andamento
           </h3>
-          <p className="text-xs text-green-700 mt-1">
+          <p className="text-xs text-ceramic-success/80 mt-1">
             Aproveite este tempo para recarregar. Suas métricas estão pausadas
             e não serão afetadas.
           </p>
           <div className="flex items-center gap-2 mt-3">
-            <Timer size={14} className="text-green-600" />
-            <span className="text-sm font-medium text-green-800">
+            <Timer size={14} className="text-ceramic-success" />
+            <span className="text-sm font-medium text-ceramic-success">
               {remainingDays} {remainingDays === 1 ? 'dia restante' : 'dias restantes'}
             </span>
           </div>
           <button
             onClick={handleEnd}
             disabled={ending}
-            className="mt-3 text-xs text-green-700 hover:text-green-900 transition-colors underline underline-offset-2 disabled:opacity-50"
+            className="mt-3 text-xs text-ceramic-success/80 hover:text-ceramic-success transition-colors underline underline-offset-2 disabled:opacity-50"
           >
             {ending ? 'Encerrando...' : 'Encerrar pausa antecipadamente'}
           </button>

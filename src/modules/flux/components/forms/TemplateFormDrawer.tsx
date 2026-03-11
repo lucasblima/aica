@@ -246,10 +246,10 @@ export default function TemplateFormDrawer({
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-lg"
+                    className="flex items-start gap-3 p-4 bg-ceramic-success/10 border border-ceramic-success/20 rounded-lg"
                   >
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm font-medium text-green-600">
+                    <CheckCircle className="w-5 h-5 text-ceramic-success mt-0.5" />
+                    <p className="text-sm font-medium text-ceramic-success">
                       Exercício salvo com sucesso!
                     </p>
                   </motion.div>

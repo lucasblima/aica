@@ -438,7 +438,7 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
                   <button
                     type="button"
                     onClick={() => removePhoto(i)}
-                    className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[8px] rounded-bl-md flex items-center justify-center hover:bg-red-600"
+                    className="absolute top-0 right-0 w-4 h-4 bg-ceramic-error text-white text-[8px] rounded-bl-md flex items-center justify-center hover:bg-ceramic-error/90"
                     title="Remover foto"
                   >
                     X

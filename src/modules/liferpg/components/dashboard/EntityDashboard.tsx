@@ -269,11 +269,11 @@ export const EntityDashboard: React.FC<EntityDashboardProps> = ({ personaId }) =
               <div className="text-[10px] text-ceramic-text-secondary">Valor total</div>
             </div>
             {dashboard.inventorySummary.lowConditionCount > 0 && (
-              <div className="text-center p-3 bg-red-50 rounded-xl">
-                <div className="text-xl font-bold text-red-600">
+              <div className="text-center p-3 bg-ceramic-error/10 rounded-xl">
+                <div className="text-xl font-bold text-ceramic-error">
                   {dashboard.inventorySummary.lowConditionCount}
                 </div>
-                <div className="text-[10px] text-red-600">Condicao ruim</div>
+                <div className="text-[10px] text-ceramic-error">Condicao ruim</div>
               </div>
             )}
             {dashboard.inventorySummary.expiringCount > 0 && (

@@ -525,7 +525,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
         <button
           type="button"
           onClick={() => { onComplete(task); onClose(); }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-green-700 bg-green-50 hover:bg-green-100 transition-all"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-ceramic-success bg-ceramic-success/10 hover:bg-ceramic-success/15 transition-all"
         >
           <Check className="w-4 h-4" />
           Concluir

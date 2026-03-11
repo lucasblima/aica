@@ -135,10 +135,10 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
           <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
             <div className="w-full max-w-lg max-h-[90vh] bg-ceramic-base rounded-2xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto">
             {/* Header */}
-            <div className="p-6 border-b border-ceramic-border bg-green-50 flex-shrink-0">
+            <div className="p-6 border-b border-ceramic-border bg-ceramic-success/10 flex-shrink-0">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="bg-green-500 p-3 rounded-xl">
+                  <div className="bg-ceramic-success p-3 rounded-xl">
                     <Send className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -163,13 +163,13 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
             <div className="p-6 space-y-5 flex-1 overflow-y-auto">
               {/* Success Banner */}
               {publishStatus === 'success' && (
-                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
-                  <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                <div className="flex items-center gap-3 p-4 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
+                  <CheckCircle className="w-6 h-6 text-ceramic-success flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-bold text-green-800">
+                    <p className="text-sm font-bold text-ceramic-success">
                       {sendNow ? 'Treino enviado!' : 'Envio agendado!'}
                     </p>
-                    <p className="text-xs text-green-600">
+                    <p className="text-xs text-ceramic-success/80">
                       {sendNow
                         ? 'O WhatsApp foi aberto com a mensagem pronta para envio.'
                         : 'O envio sera feito automaticamente no domingo as 18h.'}
@@ -180,11 +180,11 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
 
               {/* Error Banner */}
               {publishStatus === 'error' && (
-                <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                <div className="flex items-center gap-3 p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
+                  <AlertCircle className="w-6 h-6 text-ceramic-error flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-bold text-red-800">Erro no envio</p>
-                    <p className="text-xs text-red-600">{errorMessage}</p>
+                    <p className="text-sm font-bold text-ceramic-error">Erro no envio</p>
+                    <p className="text-xs text-ceramic-error/80">{errorMessage}</p>
                   </div>
                 </div>
               )}
@@ -227,11 +227,11 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                       type="radio"
                       checked={sendNow}
                       onChange={() => setSendNow(true)}
-                      className="w-4 h-4 text-green-500 focus:ring-green-500"
+                      className="w-4 h-4 text-ceramic-success focus:ring-ceramic-success"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-600" />
+                        <Check className="w-4 h-4 text-ceramic-success" />
                         <span className="text-sm font-bold text-ceramic-text-primary">Enviar Agora</span>
                       </div>
                       <p className="text-xs text-ceramic-text-secondary mt-0.5">
@@ -246,7 +246,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                       type="radio"
                       checked={!sendNow}
                       onChange={() => setSendNow(false)}
-                      className="w-4 h-4 text-green-500 focus:ring-green-500"
+                      className="w-4 h-4 text-ceramic-success focus:ring-ceramic-success"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -276,7 +276,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                   <button
                     onClick={handlePublish}
                     disabled={publishStatus === 'sending'}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {publishStatus === 'sending' ? (
                       <>

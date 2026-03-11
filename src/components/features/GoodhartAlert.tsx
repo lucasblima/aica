@@ -39,30 +39,30 @@ function getSeverityConfig(severity: GoodhartAlertType['severity']) {
   switch (severity) {
     case 'critical':
       return {
-        bg: 'bg-red-50',
-        border: 'border-red-200',
-        text: 'text-red-800',
-        textMuted: 'text-red-600',
-        buttonBg: 'bg-red-100 hover:bg-red-200 text-red-700',
+        bg: 'bg-ceramic-error/10',
+        border: 'border-ceramic-error/30',
+        text: 'text-ceramic-error',
+        textMuted: 'text-ceramic-error/80',
+        buttonBg: 'bg-ceramic-error/15 hover:bg-ceramic-error/25 text-ceramic-error',
         Icon: AlertTriangle,
       };
     case 'warning':
       return {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        text: 'text-amber-800',
-        textMuted: 'text-amber-600',
-        buttonBg: 'bg-amber-100 hover:bg-amber-200 text-amber-700',
+        bg: 'bg-ceramic-warning/10',
+        border: 'border-ceramic-warning/30',
+        text: 'text-ceramic-warning',
+        textMuted: 'text-ceramic-warning/80',
+        buttonBg: 'bg-ceramic-warning/15 hover:bg-ceramic-warning/25 text-ceramic-warning',
         Icon: AlertTriangle,
       };
     case 'info':
     default:
       return {
-        bg: 'bg-blue-50',
-        border: 'border-blue-200',
-        text: 'text-blue-800',
-        textMuted: 'text-blue-600',
-        buttonBg: 'bg-blue-100 hover:bg-blue-200 text-blue-700',
+        bg: 'bg-ceramic-info/10',
+        border: 'border-ceramic-info/30',
+        text: 'text-ceramic-info',
+        textMuted: 'text-ceramic-info/80',
+        buttonBg: 'bg-ceramic-info/15 hover:bg-ceramic-info/25 text-ceramic-info',
         Icon: Info,
       };
   }

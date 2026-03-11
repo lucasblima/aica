@@ -86,7 +86,7 @@ export function FloatingActionButtonAdvanced({
         relative
         ${isActive
           ? `${variantStyle.active} text-white shadow-lg`
-          : 'bg-gray-200 text-gray-400 opacity-50'}
+          : 'bg-ceramic-cool text-ceramic-text-secondary opacity-50'}
       `}
       animate={{
         scale: isActive ? 1 : 0.9,
@@ -112,7 +112,7 @@ export function FloatingActionButtonAdvanced({
             transition={springElevation}
             className="
               absolute -top-2 -right-2
-              bg-white text-gray-800
+              bg-ceramic-base text-ceramic-text-primary
               rounded-full
               min-w-[24px] h-6
               flex items-center justify-center

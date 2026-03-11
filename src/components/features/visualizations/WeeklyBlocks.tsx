@@ -52,7 +52,7 @@ const COLOR_MAP: Record<string, { bg: string; text: string; ring: string }> = {
   '#f59e0b': { bg: 'bg-amber-100',   text: 'text-amber-700',   ring: 'ring-amber-400' },
   '#8b5cf6': { bg: 'bg-purple-100',  text: 'text-purple-700',  ring: 'ring-purple-400' },
   '#10b981': { bg: 'bg-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-400' },
-  '#6b7280': { bg: 'bg-gray-100',    text: 'text-gray-600',    ring: 'ring-gray-400' },
+  '#6b7280': { bg: 'bg-ceramic-cool',    text: 'text-ceramic-text-secondary',    ring: 'ring-ceramic-border' },
   '#06b6d4': { bg: 'bg-cyan-100',    text: 'text-cyan-700',    ring: 'ring-cyan-400' },
   '#f97316': { bg: 'bg-orange-100',  text: 'text-orange-700',  ring: 'ring-orange-400' },
   '#84cc16': { bg: 'bg-lime-100',    text: 'text-lime-700',    ring: 'ring-lime-400' },

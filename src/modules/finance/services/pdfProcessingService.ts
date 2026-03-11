@@ -26,8 +26,9 @@ interface ParsedGeminiTransaction {
     category?: string;
 }
 
-// Configure PDF.js worker - use CDN to guarantee version match with API
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+// Configure PDF.js worker - Vite handles as static asset (same origin, correct MIME, version-matched)
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl
 
 // =====================================================
 // Progress Callback Types
@@ -49,6 +50,14 @@ export interface PDFProgressUpdate {
 }
 
 export type OnProgressCallback = (update: PDFProgressUpdate) => void
+
+interface TextStats {
+  lineCount: number
+  estimatedTransactions: number
+  dateCount: number
+  currencyCount: number
+  dateRange: string | null
+}
 
 // =====================================================
 // PDF Processing Service
@@ -133,33 +142,43 @@ export class PDFProcessingService {
       throw new Error('PDF não contém texto suficiente. Verifique se não é um PDF de imagem (escaneado).')
     }
 
-    // Step 2: Detect bank from text (quick local heuristic)
+    // Step 2: Quick local analysis before AI — gather stats for rich progress
+    const textStats = this.analyzeExtractedText(extraction.rawText)
+
     onProgress?.({
       stage: 'detecting_bank',
-      message: 'Identificando banco e formato...',
-      detail: `${extraction.pageCount} página(s), ${Math.round(extraction.rawText.length / 1024)} KB`,
-      progress: 35,
+      message: 'Analisando estrutura do extrato...',
+      detail: `${extraction.pageCount} página(s) · ${textStats.lineCount} linhas · ${Math.round(extraction.rawText.length / 1024)} KB`,
+      progress: 33,
     })
 
     const bankHint = this.detectBankFromText(extraction.rawText)
-    if (bankHint) {
+
+    onProgress?.({
+      stage: 'detecting_bank',
+      message: bankHint ? `Banco identificado: ${bankHint}` : 'Formato de banco não reconhecido',
+      detail: `~${textStats.estimatedTransactions} transações estimadas · ${textStats.dateRange || 'período a confirmar'}`,
+      progress: 40,
+    })
+
+    if (textStats.currencyCount > 0) {
       onProgress?.({
         stage: 'detecting_bank',
-        message: `Banco detectado: ${bankHint}`,
-        detail: 'Enviando para análise com IA...',
-        progress: 40,
+        message: 'Dados financeiros detectados',
+        detail: `${textStats.currencyCount} valores monetários · ${textStats.dateCount} datas encontradas`,
+        progress: 45,
       })
     }
 
     // Step 3: Parse with Gemini via Edge Function
     onProgress?.({
       stage: 'ai_parsing',
-      message: 'IA analisando transações...',
-      detail: 'Gemini está interpretando o extrato',
+      message: 'Enviando para Gemini...',
+      detail: `${textStats.lineCount} linhas para análise de IA`,
       progress: 50,
     })
 
-    const parsed = await this.parseStatementWithGeminiFallback(extraction.rawText, onProgress)
+    const parsed = await this.parseStatementWithGeminiFallback(extraction.rawText, onProgress, textStats)
 
     // Step 4: Done
     onProgress?.({
@@ -173,95 +192,236 @@ export class PDFProcessingService {
   }
 
   /**
-   * Parse statement using Gemini via Edge Function (secure backend call)
+   * Pre-process raw PDF text to reduce noise before sending to Gemini.
+   * Strips blank lines, page markers, repeated headers, and trims whitespace.
+   */
+  private preprocessText(rawText: string): string {
+    const lines = rawText.split('\n')
+    const cleaned: string[] = []
+    let lastLine = ''
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim()
+      // Skip empty lines (collapse multiple blanks)
+      if (!line) continue
+      // Skip page markers (e.g., "Página 1 de 5", "Page 1/5")
+      if (/^p[aá]gina\s+\d+/i.test(line)) continue
+      if (/^page\s+\d+/i.test(line)) continue
+      // Skip standalone page numbers
+      if (/^\d{1,3}$/.test(line)) continue
+      // Skip repeated consecutive lines (headers/footers on each page)
+      if (line === lastLine) continue
+      // Skip common PDF artifacts
+      if (/^={3,}$|^-{3,}$|^\*{3,}$/.test(line)) continue
+
+      cleaned.push(line)
+      lastLine = line
+    }
+
+    const result = cleaned.join('\n')
+    log.debug(`[PDFProcessingService] Text preprocessed: ${rawText.length} → ${result.length} chars (${Math.round((1 - result.length / rawText.length) * 100)}% reduction)`)
+    return result
+  }
+
+  /**
+   * Check if an error is a retryable network/timeout issue
+   */
+  private isRetryableError(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message.toLowerCase() : ''
+    return msg.includes('failed to send') ||
+           msg.includes('fetch') ||
+           msg.includes('timeout') ||
+           msg.includes('504') ||
+           msg.includes('502') ||
+           msg.includes('network') ||
+           msg.includes('econnreset')
+  }
+
+  /**
+   * Parse statement using Gemini via Edge Function with retry logic.
+   * Retries up to MAX_RETRIES times on transient failures (timeout, network).
    */
   async parseStatementWithGeminiFallback(
     rawText: string,
-    onProgress?: OnProgressCallback
+    onProgress?: OnProgressCallback,
+    textStats?: TextStats
   ): Promise<ParsedStatement> {
-    try {
-      log.debug('[PDFProcessingService] Calling Edge Function for AI parsing...')
+    const MAX_RETRIES = 3
+    const BACKOFF_BASE_MS = 3000 // 3s, 6s, 12s
 
-      // Simulate incremental progress during long Edge Function call
-      // (Edge Functions don't support streaming progress, so provide UX feedback)
-      const AI_MESSAGES = [
-        'Gemini está interpretando o extrato...',
-        'Identificando receitas e despesas...',
-        'Extraindo datas e valores...',
-        'Analisando categorias de transações...',
-        'Processando informações bancárias...',
-        'Calculando saldos parciais...',
-      ]
-      let simulatedProgress = 50
-      let msgIdx = 0
-      const startTime = Date.now()
-      const progressTimer = setInterval(() => {
-        if (simulatedProgress < 82) {
-          simulatedProgress += 2
-          msgIdx = (msgIdx + 1) % AI_MESSAGES.length
-          const elapsed = Math.floor((Date.now() - startTime) / 1000)
+    // Pre-process text to reduce noise and improve Gemini accuracy
+    const cleanedText = this.preprocessText(rawText)
+
+    const stats = textStats || { lineCount: 0, estimatedTransactions: 0, dateCount: 0, currencyCount: 0, dateRange: null }
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const isRetry = attempt > 1
+        log.debug(`[PDFProcessingService] AI parsing attempt ${attempt}/${MAX_RETRIES}...`)
+
+        // Build context-aware progress messages
+        const retryLabel = isRetry ? ` (tentativa ${attempt}/${MAX_RETRIES})` : ''
+        const AI_STEPS: Array<{ message: string; detail: string }> = [
+          { message: `Gemini lendo o extrato...${retryLabel}`, detail: `Processando ${stats.lineCount} linhas de dados` },
+          { message: `Identificando ~${stats.estimatedTransactions} transações...`, detail: `${stats.dateCount} datas · ${stats.currencyCount} valores encontrados` },
+          { message: 'Classificando receitas e despesas...', detail: stats.dateRange ? `Período: ${stats.dateRange}` : 'Analisando período do extrato' },
+          { message: 'Extraindo descrições e valores...', detail: 'Interpretando formato bancário' },
+          { message: 'Categorizando transações...', detail: 'Alimentação, transporte, moradia, lazer...' },
+          { message: 'Validando dados extraídos...', detail: 'Conferindo consistência de saldos' },
+          { message: 'Estruturando resultado final...', detail: 'Montando JSON com transações' },
+        ]
+        let simulatedProgress = isRetry ? 45 : 50
+        let stepIdx = 0
+        let tickCount = 0
+        const startTime = Date.now()
+        const progressTimer = setInterval(() => {
+          if (simulatedProgress < 82) {
+            simulatedProgress += 0.5
+            tickCount++
+            if (tickCount % 10 === 0 && stepIdx < AI_STEPS.length - 1) {
+              stepIdx++
+            }
+            const elapsed = Math.floor((Date.now() - startTime) / 1000)
+            const step = AI_STEPS[stepIdx]
+            onProgress?.({
+              stage: 'ai_parsing',
+              message: step.message,
+              detail: `${step.detail} · ${elapsed}s`,
+              progress: simulatedProgress,
+            })
+          }
+        }, 1000)
+
+        let parsed
+        try {
+          parsed = await EdgeFunctionService.parseStatement({ rawText: cleanedText })
+        } finally {
+          clearInterval(progressTimer)
+        }
+
+        if (!parsed || typeof parsed !== 'object') {
+          log.error('[PDFProcessingService] Edge Function returned invalid data:', parsed)
+          throw new Error('Não foi possível extrair dados válidos da resposta')
+        }
+
+        onProgress?.({
+          stage: 'categorizing',
+          message: 'Categorizando transações...',
+          detail: `${(parsed.transactions || []).length} transações identificadas`,
+          progress: 85,
+        })
+
+        // Normalize data — validate type field since Gemini may return unexpected values
+        return {
+          bankName: parsed.bankName || 'Banco Desconhecido',
+          accountType: parsed.accountType || 'checking',
+          periodStart: parsed.periodStart || new Date().toISOString().split('T')[0],
+          periodEnd: parsed.periodEnd || new Date().toISOString().split('T')[0],
+          openingBalance: Number(parsed.openingBalance) || 0,
+          closingBalance: Number(parsed.closingBalance) || 0,
+          currency: parsed.currency || 'BRL',
+          transactions: (parsed.transactions || []).map((t: ParsedGeminiTransaction) => {
+            const amount = Number(t.amount) || 0
+            let type: 'income' | 'expense' = t.type
+            if (type !== 'income' && type !== 'expense') {
+              type = amount >= 0 ? 'income' : 'expense'
+              log.warn(`[PDFProcessingService] Invalid type "${t.type}" for "${t.description}", inferred: ${type}`)
+            }
+            return {
+              date: t.date,
+              description: t.description,
+              amount,
+              type,
+              balance: t.balance != null ? Number(t.balance) : 0,
+              suggestedCategory: t.category || 'other'
+            }
+          }),
+          piiSanitized: false
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+
+        // Auth errors should not be retried
+        if (errorMessage.includes('Authentication') || errorMessage.includes('log in')) {
+          log.error('[PDFProcessingService] Auth error — no retry:', errorMessage)
+          onProgress?.({ stage: 'error', message: 'Sessão expirada. Faça login novamente.', detail: errorMessage, progress: 0 })
+          throw error instanceof Error ? error : new Error(errorMessage)
+        }
+
+        // Check if retryable
+        if (this.isRetryableError(error) && attempt < MAX_RETRIES) {
+          const waitMs = BACKOFF_BASE_MS * Math.pow(2, attempt - 1)
+          log.warn(`[PDFProcessingService] Attempt ${attempt} failed (${errorMessage}). Retrying in ${waitMs / 1000}s...`)
           onProgress?.({
             stage: 'ai_parsing',
-            message: AI_MESSAGES[msgIdx],
-            detail: `${elapsed}s decorridos...`,
-            progress: simulatedProgress,
+            message: `Conexão instável — tentando novamente (${attempt}/${MAX_RETRIES})...`,
+            detail: `Aguardando ${waitMs / 1000}s antes de reconectar`,
+            progress: 42,
           })
+          await new Promise(resolve => setTimeout(resolve, waitMs))
+          continue
         }
-      }, 4000)
 
-      let parsed
-      try {
-        parsed = await EdgeFunctionService.parseStatement({ rawText })
-      } finally {
-        clearInterval(progressTimer)
+        // Final failure — no more retries
+        log.error(`[PDFProcessingService] All ${attempt} attempt(s) failed:`, error)
+        onProgress?.({
+          stage: 'error',
+          message: attempt >= MAX_RETRIES
+            ? `Falha após ${MAX_RETRIES} tentativas — servidor IA indisponível`
+            : 'Falha ao processar extrato com IA',
+          detail: errorMessage,
+          progress: 0,
+        })
+        throw new Error(`Falha ao processar extrato com IA: ${errorMessage}`)
       }
+    }
 
-      if (!parsed || typeof parsed !== 'object') {
-        log.error('[PDFProcessingService] Edge Function returned invalid data:', parsed)
-        throw new Error('Não foi possível extrair dados válidos da resposta')
+    // Should never reach here, but TypeScript needs it
+    throw new Error('Falha inesperada no processamento')
+  }
+
+  /**
+   * Quick local analysis of extracted text — gather stats for rich progress messages
+   */
+  private analyzeExtractedText(text: string): TextStats {
+    const lines = text.split('\n').filter(l => l.trim().length > 0)
+
+    // Count date patterns (DD/MM/YYYY, DD/MM/YY, YYYY-MM-DD)
+    const dateMatches = text.match(/\d{2}\/\d{2}\/\d{2,4}|\d{4}-\d{2}-\d{2}/g) || []
+
+    // Count currency patterns (R$ X.XXX,XX or -X.XXX,XX or numbers with comma decimals)
+    const currencyMatches = text.match(/R\$\s?[\d.,]+|-?\d+[.,]\d{2}\b/g) || []
+
+    // Estimate transactions: lines that start with a date pattern
+    const transactionLines = lines.filter(l => /^\s*\d{2}\/\d{2}/.test(l))
+
+    // Try to extract date range from dates found
+    let dateRange: string | null = null
+    if (dateMatches.length >= 2) {
+      const parseDMY = (d: string) => {
+        const parts = d.split('/')
+        if (parts.length === 3) {
+          const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2]
+          return new Date(`${year}-${parts[1]}-${parts[0]}`)
+        }
+        return new Date(d)
       }
-
-      onProgress?.({
-        stage: 'categorizing',
-        message: 'Categorizando transações...',
-        detail: `${(parsed.transactions || []).length} transações identificadas`,
-        progress: 85,
-      })
-
-      // Normalize data
-      return {
-        bankName: parsed.bankName || 'Banco Desconhecido',
-        accountType: parsed.accountType || 'checking',
-        periodStart: parsed.periodStart || new Date().toISOString().split('T')[0],
-        periodEnd: parsed.periodEnd || new Date().toISOString().split('T')[0],
-        openingBalance: Number(parsed.openingBalance) || 0,
-        closingBalance: Number(parsed.closingBalance) || 0,
-        currency: parsed.currency || 'BRL',
-        transactions: (parsed.transactions || []).map((t: ParsedGeminiTransaction) => ({
-          date: t.date,
-          description: t.description,
-          amount: Number(t.amount) || 0,
-          type: t.type,
-          balance: t.balance != null ? Number(t.balance) : 0,
-          suggestedCategory: t.category || 'other'
-        })),
-        piiSanitized: false
+      const dates = dateMatches
+        .map(parseDMY)
+        .filter(d => !isNaN(d.getTime()))
+        .sort((a, b) => a.getTime() - b.getTime())
+      if (dates.length >= 2) {
+        const fmt = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+        dateRange = `${fmt(dates[0])} a ${fmt(dates[dates.length - 1])}`
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      log.error('[PDFProcessingService] Gemini parsing failed:', error)
-      onProgress?.({
-        stage: 'error',
-        message: 'Falha ao processar extrato com IA',
-        detail: errorMessage,
-        progress: 0,
-      })
+    }
 
-      // Preserve auth-related errors so the user knows to re-login
-      if (errorMessage.includes('Authentication') || errorMessage.includes('log in')) {
-        throw error instanceof Error ? error : new Error(errorMessage)
-      }
-      throw new Error(`Falha ao processar extrato com IA: ${errorMessage}`)
+    return {
+      lineCount: lines.length,
+      estimatedTransactions: transactionLines.length || Math.max(Math.floor(currencyMatches.length / 2), 1),
+      dateCount: dateMatches.length,
+      currencyCount: currencyMatches.length,
+      dateRange,
     }
   }
 
@@ -291,27 +451,6 @@ export class PDFProcessingService {
       if (pattern.test(lower)) return name
     }
     return null
-  }
-
-  /**
-   * Infer account type from transaction patterns
-   */
-  private inferAccountType(transactions: any[]): AccountType {
-    const descriptions = transactions
-      .map(t => (t.description || '').toLowerCase())
-      .join(' ')
-
-    if (descriptions.includes('cartão') || descriptions.includes('fatura')) {
-      return 'credit_card'
-    }
-    if (descriptions.includes('poupança') || descriptions.includes('rendimento')) {
-      return 'savings'
-    }
-    if (descriptions.includes('investimento') || descriptions.includes('aplicação')) {
-      return 'investment'
-    }
-
-    return 'checking'
   }
 
   /**

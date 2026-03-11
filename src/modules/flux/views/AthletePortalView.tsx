@@ -342,13 +342,13 @@ export default function AthletePortalView() {
   if (error || !isLinked || !profile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base px-6">
-        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-sm text-center space-y-4">
+        <div className="bg-ceramic-base rounded-2xl shadow-sm p-8 max-w-sm text-center space-y-4">
           <Dumbbell className="w-12 h-12 text-ceramic-text-secondary mx-auto" />
           <h1 className="text-xl font-black text-ceramic-text-primary">Meu Treino</h1>
           <p className="text-sm text-ceramic-text-secondary">
             {error || 'Nenhum treino vinculado a sua conta. Peca ao seu coach para adicionar seu email no cadastro.'}
           </p>
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 mx-auto px-4 py-2 bg-white rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 mx-auto px-4 py-2 bg-ceramic-base rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
             <ArrowLeft className="w-4 h-4" />Voltar
           </button>
         </div>
@@ -363,7 +363,7 @@ export default function AthletePortalView() {
   if (parqRequired && parqBlocked && !parqCompleted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base px-6">
-        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-sm text-center space-y-4">
+        <div className="bg-ceramic-base rounded-2xl shadow-sm p-8 max-w-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-ceramic-error/10 flex items-center justify-center mx-auto">
             <Dumbbell className="w-8 h-8 text-ceramic-error" />
           </div>
@@ -372,7 +372,7 @@ export default function AthletePortalView() {
             Suas respostas no questionario PAR-Q+ indicaram condicoes que requerem liberacao medica antes de iniciar os treinos. Seu coach foi notificado.
           </p>
           <p className="text-xs text-ceramic-text-secondary">Envie o atestado medico pelo portal ou entre em contato com seu coach.</p>
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 mx-auto px-4 py-2 bg-white rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 mx-auto px-4 py-2 bg-ceramic-base rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
             <ArrowLeft className="w-4 h-4" />Voltar
           </button>
         </div>
@@ -471,7 +471,7 @@ export default function AthletePortalView() {
 
       {/* Profile Card */}
       <motion.section className="px-5 mb-4" custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
-        <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
+        <div className="bg-ceramic-base rounded-2xl shadow-sm p-5 space-y-3">
           <div className="flex items-center gap-3">
             {/* Avatar with fallback to initials */}
             {avatarUrl ? (
@@ -550,13 +550,13 @@ export default function AthletePortalView() {
       {profile.parq_clearance_status &&
        ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
         <motion.div className="px-5 mb-3" custom={1.6} initial="hidden" animate="visible" variants={sectionVariants}>
-          <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-              <FileText className="w-4 h-4 text-blue-600" />
+          <div className="flex items-center gap-3 px-4 py-3 bg-ceramic-info/5 border border-ceramic-info/20 rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-ceramic-info/10 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 text-ceramic-info" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-blue-800">Documentos Pendentes</p>
-              <p className="text-xs text-blue-600">
+              <p className="text-sm font-bold text-ceramic-info">Documentos Pendentes</p>
+              <p className="text-xs text-ceramic-info">
                 {profile.parq_clearance_status === 'expired'
                   ? 'Seus documentos de saude expiraram'
                   : profile.parq_clearance_status === 'blocked'
@@ -630,14 +630,14 @@ export default function AthletePortalView() {
                 {hasUnscheduledWorkouts && (
                   <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
                     <MoveHorizontal className="w-4 h-4 text-ceramic-info flex-shrink-0" />
-                    <p className="text-xs text-blue-800 leading-relaxed">
+                    <p className="text-xs text-ceramic-info leading-relaxed">
                       <span className="font-bold">Organize seus horarios!</span> Arraste os treinos para os horarios que funcionam melhor para voce.
                       {!calendarConnected && ' Conecte o Google Calendar para ver seus compromissos.'}
                     </p>
                     {!calendarConnected && (
                       <a
                         href="/agenda?connect=google"
-                        className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-ceramic-info text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-blue-600 transition-colors"
+                        className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-ceramic-info text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-ceramic-info/90 transition-colors"
                       >
                         <CalendarDays className="w-3 h-3" />
                         Conectar
@@ -645,7 +645,7 @@ export default function AthletePortalView() {
                     )}
                   </div>
                 )}
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
+                <div className="bg-ceramic-base rounded-2xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
                   <WeeklyGrid weekNumber={selectedWeek} workouts={canvasWorkouts} calendarEvents={calendarBusySlots}
                     onReorderWorkout={handleCanvasReorder} onWorkoutClick={(id) => handleGridWorkoutClick(id)}
                     startDate={canvasWeekStart} isLoading={false} />
@@ -723,7 +723,7 @@ export default function AthletePortalView() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 py-3 px-4 rounded-xl bg-ceramic-cool/50">
-                          <Leaf className="w-4 h-4 text-green-400" />
+                          <Leaf className="w-4 h-4 text-ceramic-success" />
                           <span className="text-xs text-ceramic-text-secondary italic">Descanso</span>
                         </div>
                       )}

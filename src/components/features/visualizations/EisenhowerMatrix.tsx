@@ -17,8 +17,8 @@ interface EisenhowerMatrixProps {
 }
 
 const QUADRANT_CONFIG: Record<QuadrantKey, { label: string; sublabel: string; bg: string; border: string }> = {
-  'urgent-important': { label: 'Urgente + Importante', sublabel: 'Fazer agora', bg: 'bg-red-50', border: 'border-red-200' },
-  'important': { label: 'Importante', sublabel: 'Agendar', bg: 'bg-blue-50', border: 'border-blue-200' },
+  'urgent-important': { label: 'Urgente + Importante', sublabel: 'Fazer agora', bg: 'bg-ceramic-error/10', border: 'border-ceramic-error/30' },
+  'important': { label: 'Importante', sublabel: 'Agendar', bg: 'bg-ceramic-info/10', border: 'border-ceramic-info/30' },
   'urgent': { label: 'Urgente', sublabel: 'Delegar', bg: 'bg-amber-50', border: 'border-amber-200' },
   'low': { label: 'Nem Urgente', sublabel: 'Eliminar', bg: 'bg-ceramic-cool', border: 'border-ceramic-border' },
 };

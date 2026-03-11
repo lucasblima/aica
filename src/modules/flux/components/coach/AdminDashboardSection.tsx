@@ -83,7 +83,7 @@ export function AdminDashboardSection({ athletes, templateCount }: AdminDashboar
           Resumo Geral
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-ceramic-border/30">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-ceramic-base border border-ceramic-border/30">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-ceramic-success/10">
               <Users className="w-4 h-4 text-ceramic-success" />
             </div>
@@ -92,7 +92,7 @@ export function AdminDashboardSection({ athletes, templateCount }: AdminDashboar
               <p className="text-xs text-ceramic-text-secondary">Atletas ativos</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-ceramic-border/30">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-ceramic-base border border-ceramic-border/30">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10">
               <BookOpen className="w-4 h-4 text-amber-600" />
             </div>
@@ -101,7 +101,7 @@ export function AdminDashboardSection({ athletes, templateCount }: AdminDashboar
               <p className="text-xs text-ceramic-text-secondary">Exercicios na biblioteca</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-ceramic-border/30">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-ceramic-base border border-ceramic-border/30">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-ceramic-info/10">
               <Dumbbell className="w-4 h-4 text-ceramic-info" />
             </div>
@@ -123,7 +123,7 @@ export function AdminDashboardSection({ athletes, templateCount }: AdminDashboar
             <button
               key={group.label}
               onClick={() => navigate(`/flux/crm?filter=${group.filterKey}`)}
-              className="flex items-center gap-3 p-3 rounded-lg bg-white border border-ceramic-border/30 hover:shadow-md hover:border-ceramic-accent/30 transition-all cursor-pointer text-left"
+              className="flex items-center gap-3 p-3 rounded-lg bg-ceramic-base border border-ceramic-border/30 hover:shadow-md hover:border-ceramic-accent/30 transition-all cursor-pointer text-left"
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${group.colorClasses}`}>
                 {group.icon}

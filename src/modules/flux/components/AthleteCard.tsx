@@ -150,7 +150,7 @@ export function AthleteCard({
               {/* Status Indicators — #389 */}
               {athlete.financial_status && athlete.financial_status !== 'ok' && (
                 <span
-                  className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0"
+                  className="w-2.5 h-2.5 rounded-full bg-ceramic-error animate-pulse flex-shrink-0"
                   title={athlete.financial_status === 'overdue' ? 'Pagamento em atraso' : 'Pagamento pendente'}
                 />
               )}

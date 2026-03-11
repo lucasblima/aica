@@ -483,7 +483,7 @@ interface EpisodeCardProps {
 const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
   const statusConfig: Record<Episode['status'], { bg: string; text: string; label: string }> = {
     draft: { bg: 'bg-ceramic-base', text: 'text-ceramic-text-secondary', label: 'Rascunho' },
-    planning: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Planejando' },
+    planning: { bg: 'bg-ceramic-info/10', text: 'text-ceramic-info', label: 'Planejando' },
     in_progress: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Em progresso' },
     in_production: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Produzindo' },
     scheduled: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Agendado' },

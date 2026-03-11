@@ -52,9 +52,9 @@ function SpiralBanner({ alert }: { alert: SpiralAlert }) {
   if (!alert.detected) return null;
 
   const isCritical = alert.severity === 'critical';
-  const bgClass = isCritical ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200';
-  const textClass = isCritical ? 'text-red-800' : 'text-amber-800';
-  const iconClass = isCritical ? 'text-red-600' : 'text-amber-600';
+  const bgClass = isCritical ? 'bg-ceramic-error/10 border-ceramic-error/30' : 'bg-ceramic-warning/10 border-ceramic-warning/30';
+  const textClass = isCritical ? 'text-ceramic-error' : 'text-ceramic-warning';
+  const iconClass = isCritical ? 'text-ceramic-error' : 'text-ceramic-warning';
 
   return (
     <div className={`${bgClass} border rounded-xl p-4`}>

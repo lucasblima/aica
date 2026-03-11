@@ -220,13 +220,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   className="px-5 pb-4"
                 >
                   {error && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-ceramic-error/10 text-ceramic-error text-sm">
                       <X className="w-4 h-4 flex-shrink-0" />
                       {error}
                     </div>
                   )}
                   {successMessage && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 text-green-700 text-sm">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-ceramic-success/10 text-ceramic-success text-sm">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                       {successMessage}
                     </div>

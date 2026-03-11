@@ -399,14 +399,14 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                             exit={{ opacity: 0, height: 0 }}
                             className="mb-3 overflow-hidden"
                         >
-                            <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-red-50 border border-red-200/60 rounded-xl">
+                            <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
                                 <div className="flex items-center gap-2 min-w-0">
-                                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                                    <span className="text-sm text-red-700 truncate">{categorizeError}</span>
+                                    <AlertCircle className="w-4 h-4 text-ceramic-error flex-shrink-0" />
+                                    <span className="text-sm text-ceramic-error truncate">{categorizeError}</span>
                                 </div>
                                 <button
                                     onClick={categorize}
-                                    className="text-xs font-medium text-red-600 hover:text-red-800 whitespace-nowrap px-2 py-1 rounded-md hover:bg-red-100 transition-colors"
+                                    className="text-xs font-medium text-ceramic-error hover:text-ceramic-error/80 whitespace-nowrap px-2 py-1 rounded-md hover:bg-ceramic-error/10 transition-colors"
                                 >
                                     Tentar novamente
                                 </button>
@@ -440,9 +440,9 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                             exit={{ opacity: 0, height: 0 }}
                             className="mb-3 overflow-hidden"
                         >
-                            <div className="flex items-center gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200/60 rounded-xl">
-                                <Users className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                                <span className="text-sm font-medium text-blue-800">
+                            <div className="flex items-center gap-2 px-3 py-2.5 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
+                                <Users className="w-4 h-4 text-ceramic-info flex-shrink-0" />
+                                <span className="text-sm font-medium text-ceramic-info">
                                     {contactSyncResult.synced} novo{contactSyncResult.synced === 1 ? '' : 's'} contato{contactSyncResult.synced === 1 ? '' : 's'} identificado{contactSyncResult.synced === 1 ? '' : 's'}
                                 </span>
                             </div>

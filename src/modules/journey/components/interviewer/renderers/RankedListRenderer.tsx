@@ -51,7 +51,7 @@ export function RankedListRenderer({ question, value, onChange }: RankedListRend
       {value.map((val, index) => (
         <div
           key={val}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl border border-ceramic-border bg-white transition-all"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl border border-ceramic-border bg-ceramic-base transition-all"
         >
           <span className="flex-shrink-0 w-7 h-7 rounded-full bg-amber-500 text-white text-sm font-bold flex items-center justify-center">
             {index + 1}

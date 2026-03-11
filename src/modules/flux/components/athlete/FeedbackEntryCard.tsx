@@ -60,7 +60,7 @@ export function FeedbackEntryCard({ entry, index = 0, modality }: FeedbackEntryC
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.3 }}
-      className="bg-white rounded-2xl shadow-sm p-5 space-y-3"
+      className="bg-ceramic-base rounded-2xl shadow-sm p-5 space-y-3"
     >
       {/* Header row */}
       <div className="flex items-center justify-between">

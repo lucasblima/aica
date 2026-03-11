@@ -94,8 +94,8 @@ export default function VideoTranscriptionPanel({
   if (!hasVideo) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
-          <FileText className="w-8 h-8 text-blue-500/40" />
+        <div className="w-16 h-16 rounded-2xl bg-ceramic-info/10 flex items-center justify-center mb-4">
+          <FileText className="w-8 h-8 text-ceramic-info/40" />
         </div>
         <p className="text-sm text-ceramic-text-secondary">
           Faca upload de um video primeiro para gerar a transcricao.
@@ -126,8 +126,8 @@ export default function VideoTranscriptionPanel({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-16 px-4"
       >
-        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
-          <FileText className="w-8 h-8 text-blue-500" />
+        <div className="w-16 h-16 rounded-2xl bg-ceramic-info/10 flex items-center justify-center mb-4">
+          <FileText className="w-8 h-8 text-ceramic-info" />
         </div>
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
           Nenhuma transcricao disponivel
@@ -156,7 +156,7 @@ export default function VideoTranscriptionPanel({
         {!error && (
           <button
             onClick={handleGenerate}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90 transition-colors"
           >
             <Sparkles className="w-4 h-4" />
             Transcrever Video
@@ -217,7 +217,7 @@ export default function VideoTranscriptionPanel({
         </div>
         <button
           onClick={() => handleCopy(fullText, 'full')}
-          className="ml-auto flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+          className="ml-auto flex items-center gap-1.5 text-sm text-ceramic-info hover:text-ceramic-info/80 transition-colors"
         >
           {copiedSection === 'full' ? (
             <>
@@ -237,7 +237,7 @@ export default function VideoTranscriptionPanel({
       <div className="flex justify-end">
         <button
           onClick={handleGenerate}
-          className="text-xs text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+          className="text-xs text-ceramic-info hover:text-ceramic-info/80 transition-colors flex items-center gap-1"
         >
           <RefreshCw className="w-3 h-3" />
           Transcrever novamente
@@ -251,7 +251,7 @@ export default function VideoTranscriptionPanel({
             return (
               <div key={`ch-${idx}`} className="flex items-center gap-3 py-3">
                 <div className="h-px flex-1 bg-ceramic-border" />
-                <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                <span className="text-xs font-semibold text-ceramic-info uppercase tracking-wide">
                   {item.title}
                 </span>
                 <span className="text-xs text-ceramic-text-secondary">
@@ -286,7 +286,7 @@ export default function VideoTranscriptionPanel({
                 </span>
                 <button
                   onClick={() => handleCopy(item.text, segId)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-ceramic-text-secondary hover:text-blue-600"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-ceramic-text-secondary hover:text-ceramic-info"
                   title="Copiar segmento"
                   aria-label="Copiar segmento da transcricao"
                 >

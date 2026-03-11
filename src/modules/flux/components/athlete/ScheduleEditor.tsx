@@ -49,7 +49,7 @@ export function ScheduleEditor({
               className={`w-9 h-9 rounded-full text-xs font-bold transition-all ${
                 isSelected
                   ? 'bg-amber-500 text-white shadow-sm'
-                  : 'bg-white text-ceramic-text-secondary hover:bg-ceramic-cool'
+                  : 'bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {label}

@@ -45,11 +45,11 @@ export function ProgressTimeline({
               : 0;
           const clickable = !!onWeekSelect;
 
-          let pillStyle = 'bg-white shadow-sm';
+          let pillStyle = 'bg-ceramic-base shadow-sm';
           if (isCurrent && isSelected) {
             pillStyle = 'bg-amber-50 ring-2 ring-amber-400 shadow-md';
           } else if (isSelected) {
-            pillStyle = 'bg-white ring-2 ring-sky-400 shadow-md';
+            pillStyle = 'bg-ceramic-base ring-2 ring-sky-400 shadow-md';
           } else if (isCurrent) {
             pillStyle = 'bg-amber-50/50 ring-2 ring-amber-400/50 shadow-sm';
           }

@@ -233,7 +233,7 @@ export function CreditBalanceWidget({
                   onKeyDown={(e) => e.key === 'Enter' && handleRedeemCoupon()}
                   placeholder="CODIGO"
                   disabled={isRedeeming}
-                  className="flex-1 border border-ceramic-border rounded-lg px-3 py-1.5 text-sm uppercase bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50"
+                  className="flex-1 border border-ceramic-border rounded-lg px-3 py-1.5 text-sm uppercase bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50"
                 />
                 <button
                   onClick={handleRedeemCoupon}

@@ -29,8 +29,8 @@ const CATEGORY_CONFIG: Record<EmailCategory, CategoryConfig> = {
   informational: {
     label: 'Info',
     Icon: Info,
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-700',
+    bgColor: 'bg-ceramic-info/10',
+    textColor: 'text-ceramic-info',
   },
   newsletter: {
     label: 'Newsletter',
@@ -41,8 +41,8 @@ const CATEGORY_CONFIG: Record<EmailCategory, CategoryConfig> = {
   receipt: {
     label: 'Recibo',
     Icon: Receipt,
-    bgColor: 'bg-green-100',
-    textColor: 'text-green-700',
+    bgColor: 'bg-ceramic-success/10',
+    textColor: 'text-ceramic-success',
   },
   personal: {
     label: 'Pessoal',
@@ -53,8 +53,8 @@ const CATEGORY_CONFIG: Record<EmailCategory, CategoryConfig> = {
   notification: {
     label: 'Notificacao',
     Icon: Bell,
-    bgColor: 'bg-orange-100',
-    textColor: 'text-orange-700',
+    bgColor: 'bg-ceramic-warning/10',
+    textColor: 'text-ceramic-warning',
   },
 };
 

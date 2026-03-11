@@ -61,7 +61,7 @@ export function ExampleWithHook() {
     if (!isConnected) {
         return (
             <div className="p-6 text-center">
-                <p className="text-gray-600">Por favor, conecte ao Google Calendar primeiro</p>
+                <p className="text-ceramic-text-secondary">Por favor, conecte ao Google Calendar primeiro</p>
             </div>
         );
     }
@@ -73,20 +73,20 @@ export function ExampleWithHook() {
                 <button
                     onClick={sync}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                    className="px-4 py-2 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90 disabled:opacity-50"
                 >
                     {isLoading ? 'Sincronizando...' : 'Sincronizar Agora'}
                 </button>
             </div>
 
             {error && (
-                <div className="mb-4 p-4 bg-red-100 border border-red-400 rounded-lg text-red-700">
+                <div className="mb-4 p-4 bg-ceramic-error/10 border border-ceramic-error/40 rounded-lg text-ceramic-error">
                     Erro: {error}
                 </div>
             )}
 
             {lastSyncTime && (
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-ceramic-text-secondary mb-4">
                     Última sincronização: {lastSyncTime.toLocaleTimeString('pt-BR')}
                 </p>
             )}
@@ -96,18 +96,18 @@ export function ExampleWithHook() {
                     events.map((event) => (
                         <div
                             key={event.id}
-                            className="p-4 bg-white border rounded-lg shadow-sm"
+                            className="p-4 bg-ceramic-base border rounded-lg shadow-sm"
                         >
                             <h3 className="font-semibold text-lg">{event.title}</h3>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-ceramic-text-secondary mt-1">
                                 {new Date(event.startTime).toLocaleString('pt-BR')}
                             </p>
                             {event.description && (
-                                <p className="text-sm text-gray-500 mt-2">{event.description}</p>
+                                <p className="text-sm text-ceramic-text-secondary mt-2">{event.description}</p>
                             )}
                             {event.attendees && event.attendees.length > 0 && (
                                 <div className="mt-3 pt-3 border-t">
-                                    <p className="text-xs text-gray-600">
+                                    <p className="text-xs text-ceramic-text-secondary">
                                         Participantes: {event.attendees.join(', ')}
                                     </p>
                                 </div>
@@ -115,7 +115,7 @@ export function ExampleWithHook() {
                         </div>
                     ))
                 ) : (
-                    <p className="text-gray-500 text-center py-8">Nenhum evento sincronizado</p>
+                    <p className="text-ceramic-text-secondary text-center py-8">Nenhum evento sincronizado</p>
                 )}
             </div>
         </div>
@@ -162,7 +162,7 @@ export function ExampleCompleteIntegration() {
                             <button
                                 onClick={sync}
                                 disabled={isLoading}
-                                className="text-sm px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+                                className="text-sm px-3 py-1 bg-ceramic-cool rounded hover:bg-ceramic-border disabled:opacity-50"
                             >
                                 {isLoading ? 'Atualizando...' : 'Atualizar'}
                             </button>
@@ -194,7 +194,7 @@ export function ExampleCompleteIntegration() {
                                     ))}
                             </div>
                         ) : (
-                            <p className="text-gray-500 text-center py-6">
+                            <p className="text-ceramic-text-secondary text-center py-6">
                                 Nenhum evento para hoje
                             </p>
                         )}
@@ -216,12 +216,12 @@ export function ExampleCompleteIntegration() {
                                     .map((event) => (
                                         <div
                                             key={event.id}
-                                            className="p-3 bg-gray-50 border-l-4 border-gray-300 rounded"
+                                            className="p-3 bg-ceramic-cool border-l-4 border-ceramic-border rounded"
                                         >
-                                            <p className="font-semibold text-gray-900">
+                                            <p className="font-semibold text-ceramic-text-primary">
                                                 {event.title}
                                             </p>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-ceramic-text-secondary">
                                                 {new Date(event.startTime).toLocaleDateString('pt-BR')} -
                                                 {new Date(event.startTime).getHours()}h
                                                 {new Date(event.startTime).getMinutes()
@@ -231,7 +231,7 @@ export function ExampleCompleteIntegration() {
                                         </div>
                                     ))}
                                 {futureEvents.length > 5 && (
-                                    <p className="text-sm text-gray-500 text-center py-2">
+                                    <p className="text-sm text-ceramic-text-secondary text-center py-2">
                                         +{futureEvents.length - 5} eventos futuros
                                     </p>
                                 )}
@@ -240,16 +240,16 @@ export function ExampleCompleteIntegration() {
                     )}
 
                     {/* Estatísticas */}
-                    <section className="bg-gray-50 p-6 rounded-lg">
+                    <section className="bg-ceramic-cool p-6 rounded-lg">
                         <h4 className="font-bold mb-4">Estatísticas</h4>
                         <div className="grid grid-cols-2 gap-6">
                             <div>
                                 <p className="text-2xl font-bold">{todayEvents.length}</p>
-                                <p className="text-sm text-gray-600">Eventos hoje</p>
+                                <p className="text-sm text-ceramic-text-secondary">Eventos hoje</p>
                             </div>
                             <div>
                                 <p className="text-2xl font-bold">{events.length}</p>
-                                <p className="text-sm text-gray-600">Total sincronizado</p>
+                                <p className="text-sm text-ceramic-text-secondary">Total sincronizado</p>
                             </div>
                         </div>
                     </section>

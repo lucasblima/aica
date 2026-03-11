@@ -51,24 +51,20 @@ function getDomainLabel(domain: string): string {
 function getStrengthColor(strength: CorrelationResult['strength'], direction: CorrelationResult['direction']): string {
   if (strength === 'negligible') return 'text-ceramic-text-secondary';
   if (direction === 'positive') {
-    if (strength === 'strong') return 'text-green-700';
-    if (strength === 'moderate') return 'text-green-600';
-    return 'text-green-500';
+    return 'text-ceramic-success';
   }
   // negative
-  if (strength === 'strong') return 'text-red-700';
-  if (strength === 'moderate') return 'text-red-600';
-  return 'text-red-500';
+  return 'text-ceramic-error';
 }
 
 function getStrengthBg(strength: CorrelationResult['strength'], direction: CorrelationResult['direction']): string {
   if (strength === 'negligible') return 'bg-ceramic-cool/50';
   if (direction === 'positive') {
-    if (strength === 'strong') return 'bg-green-50';
-    return 'bg-green-50/60';
+    if (strength === 'strong') return 'bg-ceramic-success/10';
+    return 'bg-ceramic-success/5';
   }
-  if (strength === 'strong') return 'bg-red-50';
-  return 'bg-red-50/60';
+  if (strength === 'strong') return 'bg-ceramic-error/10';
+  return 'bg-ceramic-error/5';
 }
 
 function getStrengthLabel(strength: CorrelationResult['strength']): string {
@@ -83,11 +79,11 @@ function getStrengthLabel(strength: CorrelationResult['strength']): string {
 function getSeverityStyles(severity: 'info' | 'warning' | 'critical'): { bg: string; border: string; icon: string } {
   switch (severity) {
     case 'critical':
-      return { bg: 'bg-red-50', border: 'border-red-200', icon: 'text-red-600' };
+      return { bg: 'bg-ceramic-error/10', border: 'border-ceramic-error/30', icon: 'text-ceramic-error' };
     case 'warning':
-      return { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600' };
+      return { bg: 'bg-ceramic-warning/10', border: 'border-ceramic-warning/30', icon: 'text-ceramic-warning' };
     default:
-      return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600' };
+      return { bg: 'bg-ceramic-info/10', border: 'border-ceramic-info/30', icon: 'text-ceramic-info' };
   }
 }
 
@@ -133,8 +129,8 @@ function SpiralAlertSection({ alert }: { alert: SpiralAlert }) {
   if (!alert.detected) return null;
 
   const severityStyles = alert.severity === 'critical'
-    ? { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: 'text-red-600' }
-    : { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', icon: 'text-amber-600' };
+    ? { bg: 'bg-ceramic-error/10', border: 'border-ceramic-error/30', text: 'text-ceramic-error', icon: 'text-ceramic-error' }
+    : { bg: 'bg-ceramic-warning/10', border: 'border-ceramic-warning/30', text: 'text-ceramic-warning', icon: 'text-ceramic-warning' };
 
   return (
     <div className={`${severityStyles.bg} border ${severityStyles.border} rounded-xl p-4`}>

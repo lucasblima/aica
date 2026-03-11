@@ -13,6 +13,7 @@ import { pdfProcessingService, type PDFProgressUpdate } from '../services/pdfPro
 import { statementService } from '../services/statementService';
 import { csvParserService } from '../services/csvParserService';
 import { addXP, awardAchievement } from '../../../services/gamificationService';
+import type { CSVParseResult } from '../services/csvParserService';
 import type { UploadProgress, FinanceStatement } from '../types';
 
 // =====================================================
@@ -113,7 +114,7 @@ interface FileWithMetadata {
   analysisProgress?: PDFProgressUpdate | null; // Progressive analysis feedback
   transactionCount?: number; // Extracted transaction count for display
   cachedParsed?: import('../types').ParsedStatement | null; // Cache AI parsing result to avoid duplicate calls
-  cachedCSV?: any; // Cached CSV parse result
+  cachedCSV?: CSVParseResult | null; // Cached CSV parse result
 }
 
 // =====================================================

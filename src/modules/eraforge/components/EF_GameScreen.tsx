@@ -128,7 +128,7 @@ const SOCIAL_MODE_LABELS: Record<SocialMode, string> = {
 };
 
 const SOCIAL_MODE_COLORS: Record<SocialMode, string> = {
-  solo: 'bg-gray-100 text-gray-600 border-gray-200',
+  solo: 'bg-ceramic-cool text-ceramic-text-secondary border-ceramic-border',
   encounter: 'bg-amber-100 text-amber-700 border-amber-200',
   collaborative: 'bg-green-100 text-green-700 border-green-200',
   interdependent: 'bg-purple-100 text-purple-700 border-purple-200',
