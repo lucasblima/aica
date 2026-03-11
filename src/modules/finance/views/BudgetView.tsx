@@ -17,7 +17,9 @@ import { getBudgetSummary, upsertBudget } from '../services/budgetService';
 import { getBurnRate, getAllTimeSummary } from '../services/financeService';
 import { supabase } from '../../../services/supabaseClient';
 import { BurnRateCard } from '../components/BurnRateCard';
-import type { FinanceTransaction, BudgetSummaryRow, BurnRateData } from '../types';
+import { GoalTracker } from '../components/GoalTracker';
+import { SavingsGoalProjection } from '../components/SavingsGoalProjection';
+import type { FinanceTransaction, BudgetSummaryRow, BurnRateData, FinanceGoal } from '../types';
 
 // =====================================================
 // Types
@@ -79,6 +81,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
   const [currentBalance, setCurrentBalance] = useState<number | undefined>(undefined);
+  const [goals, setGoals] = useState<FinanceGoal[]>([]);
 
   // Inline budget editing state
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
@@ -99,8 +102,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
       const firstDayStr = firstDay.toISOString().split('T')[0];
       const lastDayStr = lastDay.toISOString().split('T')[0];
 
-      // Fetch transactions for the selected month + budget summary + burn rate + balance
-      const [txResult, budgetData, burnRateData, summaryData] = await Promise.all([
+      // Fetch transactions for the selected month + budget summary + burn rate + balance + goals
+      const [txResult, budgetData, burnRateData, summaryData, goalsData] = await Promise.all([
         supabase
           .from('finance_transactions')
           .select('*')
@@ -110,6 +113,13 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
         getBudgetSummary(userId, selectedMonth, selectedYear).catch(() => []),
         getBurnRate(userId).catch(() => null),
         getAllTimeSummary(userId).catch(() => null),
+        supabase
+          .from('finance_goals')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .then(({ data }) => (data || []) as FinanceGoal[]),
       ]);
 
       if (txResult.error) throw txResult.error;
@@ -118,6 +128,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
       setDbBudgetSummary(budgetData);
       setBurnRate(burnRateData);
       setCurrentBalance(summaryData?.currentBalance);
+      setGoals(goalsData);
     } catch (error) {
       log.error('Error loading budget data:', error);
     } finally {
@@ -211,6 +222,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
 
   const totalBudget = budgetCategories.reduce((sum, cat) => sum + cat.budget, 0);
   const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
+  const monthlySavings = monthIncome - totalSpent;
 
   // Get month name
   const monthName = new Date(selectedYear, selectedMonth - 1).toLocaleString('pt-BR', {
@@ -497,6 +509,24 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
             </div>
           );
         })}
+      </div>
+
+      {/* Section 4: Metas Financeiras */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-medium text-ceramic-text-primary">Metas Financeiras</h2>
+        <GoalTracker userId={userId} />
+
+        {/* Savings Projections for active goals with remaining target */}
+        {goals.filter(g => g.target_amount > (g.current_amount || 0)).map(goal => (
+          <SavingsGoalProjection
+            key={goal.id}
+            goalTitle={goal.title}
+            targetAmount={goal.target_amount}
+            currentAmount={goal.current_amount || 0}
+            monthlyContribution={monthlySavings > 0 ? monthlySavings : 0}
+            deadline={goal.deadline}
+          />
+        ))}
       </div>
 
       {/* Insights Section -- only show when there are transactions */}
