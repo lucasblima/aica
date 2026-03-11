@@ -160,7 +160,7 @@ async function setActiveFlow(
   activeFlow: string | null,
   flowState: Record<string, unknown> = {},
 ): Promise<void> {
-  await supabase
+  const { error } = await supabase
     .from('telegram_conversations')
     .upsert({
       user_id: userId,
@@ -170,6 +170,10 @@ async function setActiveFlow(
       last_message_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,telegram_chat_id' })
+
+  if (error) {
+    console.error(`[telegram-webhook] setActiveFlow failed: ${error.message}`)
+  }
 }
 
 // ============================================================================
@@ -280,10 +284,15 @@ async function handleEmailRegistration(
     const chatId = Number(msg.chat.chatId)
 
     // Update guest account: replace synthetic email with real email
+    // C1 fix: Merge existing metadata to preserve telegram_id, first_name, source
+    const { data: existingAuth } = await supabase.auth.admin.getUserById(userId)
+    const existingMeta = existingAuth?.user?.user_metadata || {}
+
     const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
       email: email,
       email_confirm: true, // Confirm immediately so magic link works
       user_metadata: {
+        ...existingMeta,
         email_registered_via: 'telegram',
         email_registered_at: new Date().toISOString(),
       },
@@ -312,10 +321,12 @@ async function handleEmailRegistration(
 
     // Send magic link via Supabase OTP
     const redirectUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
+    // C2 fix: shouldCreateUser: false prevents duplicate user creation
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
         emailRedirectTo: `${redirectUrl}/welcome`,
+        shouldCreateUser: false,
       },
     })
 
@@ -832,6 +843,12 @@ async function handleCallbackQuery(
       .rpc('get_telegram_user', { p_telegram_id: telegramId })
     const regUserId = regUser?.[0]?.user_id
     if (regUserId) {
+      // I4 fix: Verify user still has synthetic email before starting flow
+      const { data: authCheck } = await supabase.auth.admin.getUserById(regUserId)
+      if (!authCheck?.user?.email?.endsWith('@telegram.aica.guru')) {
+        await reply(tg, msg, `📧 Seu email ja esta registrado: <b>${authCheck?.user?.email || 'N/A'}</b>`)
+        return
+      }
       const chatId = Number(msg.chat.chatId)
       await setActiveFlow(supabase, regUserId, chatId, 'email_registration', { step: 'waiting_email' })
       await reply(tg, msg, [
