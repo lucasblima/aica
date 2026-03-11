@@ -412,12 +412,9 @@ serve(async (req) => {
     return jsonResponse({ ok: true, rejected: true, reason: 'no_sender' }, 200, req);
   }
 
-  // Try direct match by email using targeted query (avoids loading all users)
+  // Try direct match by email using SECURITY DEFINER RPC (PostgREST cannot access auth schema)
   const { data: directUser, error: directUserError } = await supabase
-    .from('auth.users')
-    .select('id, email')
-    .eq('email', senderEmail)
-    .limit(1)
+    .rpc('lookup_user_by_email', { p_email: senderEmail })
     .maybeSingle();
 
   if (directUserError) {
