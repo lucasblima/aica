@@ -176,7 +176,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
 export async function getMomentById(userId: string, momentId: string) {
   try {
     const { data, error } = await supabase
-      .from('moment_entries')
+      .from('moments')
       .select('*')
       .eq('id', momentId)
       .eq('user_id', userId)
@@ -210,7 +210,7 @@ export async function getUserMoments(
     const { limit = 50, offset = 0, startDate, endDate, emotions, tags, lifeAreas } = options
 
     let query = supabase
-      .from('moment_entries')
+      .from('moments')
       .select('*', { count: 'exact' })
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
@@ -257,7 +257,7 @@ export async function getUserMoments(
 export async function updateMomentEntry(userId: string, momentId: string, updates: Partial<ProcessedMomentData>) {
   try {
     const { data, error } = await supabase
-      .from('moment_entries')
+      .from('moments')
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
@@ -284,7 +284,7 @@ export async function updateMomentEntry(userId: string, momentId: string, update
 export async function deleteMomentEntry(userId: string, momentId: string) {
   try {
     const { error } = await supabase
-      .from('moment_entries')
+      .from('moments')
       .delete()
       .eq('id', momentId)
       .eq('user_id', userId)
@@ -490,7 +490,7 @@ Máximo 5 tags. Siga o padrão de tags em minúsculas com hífen.`
 async function insertMomentEntry(data: ProcessedMomentData): Promise<string> {
   try {
     const { data: result, error } = await supabase
-      .from('moment_entries')
+      .from('moments')
       .insert(data)
       .select('id')
       .single()
@@ -609,7 +609,7 @@ async function checkUserRateLimit(userId: string): Promise<boolean> {
   try {
     // Get last moment creation time
     const { data, error } = await supabase
-      .from('moment_entries')
+      .from('moments')
       .select('created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })

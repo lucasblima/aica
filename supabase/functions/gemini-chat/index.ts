@@ -465,7 +465,7 @@ async function handleAnalyzeMomentSentiment(genAI: GoogleGenerativeAI, payload: 
   if (!payload.content || typeof payload.content !== 'string') throw new Error('Campo "content" e obrigatorio')
   if (payload.content.trim().length < 3) throw new Error('Conteudo muito curto para analise')
 
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.3, topP: 0.8, topK: 40, maxOutputTokens: 512, responseMimeType: 'application/json' } })
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.3, topP: 0.8, topK: 40, maxOutputTokens: 4096 } })
   const result = await model.generateContent(PROMPTS.analyze_moment_sentiment(payload.content))
   const text = result.response.text()
 
@@ -1662,8 +1662,7 @@ async function handleEvaluateQuality(genAI: GoogleGenerativeAI, payload: Evaluat
       temperature: 0.2,
       topP: 0.8,
       topK: 40,
-      maxOutputTokens: 256,
-      responseMimeType: 'application/json',
+      maxOutputTokens: 4096,
     },
   })
 

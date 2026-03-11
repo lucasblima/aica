@@ -44,17 +44,17 @@ interface ProcessingResult {
 
 const MODEL_CONFIG = {
   premium: {
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.5-pro',
     maxTokens: 8192,
     temperature: 0.7,
   },
   standard: {
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     maxTokens: 4096,
     temperature: 0.7,
   },
   lite: {
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     maxTokens: 1024,
     temperature: 0.5,
   },

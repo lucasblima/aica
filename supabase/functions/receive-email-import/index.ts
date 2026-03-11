@@ -40,15 +40,20 @@ const FROM_EMAIL = 'AICA Import <noreply@aica.guru>';
 // CORS
 // ============================================================================
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, svix-id, svix-timestamp, svix-signature',
-};
+const ALLOWED_ORIGINS = ['https://aica.guru', 'https://dev.aica.guru'];
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
+function buildCorsHeaders(req?: Request) {
+  const origin = req?.headers.get('origin') || '';
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, svix-id, svix-timestamp, svix-signature',
+  };
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' },
   });
 }
 
@@ -63,8 +68,8 @@ async function verifyWebhookSignature(
   svixSignature: string | null,
 ): Promise<boolean> {
   if (!RESEND_WEBHOOK_SECRET) {
-    log.warn('RESEND_WEBHOOK_SECRET not configured — skipping signature verification');
-    return true; // Allow in dev, but log warning
+    log.error('RESEND_WEBHOOK_SECRET not configured — rejecting request');
+    return false; // Deny unauthenticated requests
   }
 
   if (!svixId || !svixTimestamp || !svixSignature) {
@@ -297,12 +302,14 @@ function rejectionEmailHTML(reason: string): string {
 // ============================================================================
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
+    return jsonResponse({ error: 'Method not allowed' }, 405, req);
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -318,14 +325,14 @@ serve(async (req) => {
 
   if (!isValid) {
     log.error('Invalid webhook signature');
-    return jsonResponse({ error: 'Invalid signature' }, 401);
+    return jsonResponse({ error: 'Invalid signature' }, 401, req);
   }
 
   let payload: any;
   try {
     payload = JSON.parse(rawBody);
   } catch {
-    return jsonResponse({ error: 'Invalid JSON' }, 400);
+    return jsonResponse({ error: 'Invalid JSON' }, 400, req);
   }
 
   const eventType = payload.type;
@@ -333,7 +340,7 @@ serve(async (req) => {
   // Only handle email.received events
   if (eventType !== 'email.received') {
     log.info(`Ignoring event type: ${eventType}`);
-    return jsonResponse({ ok: true, skipped: true });
+    return jsonResponse({ ok: true, skipped: true }, 200, req);
   }
 
   const emailData = payload.data;
@@ -402,21 +409,24 @@ serve(async (req) => {
   // 3. Resolve user by sender email (direct match + aliases)
   if (!senderEmail) {
     await updateLog('rejected', 'No sender email');
-    return jsonResponse({ ok: true, rejected: true, reason: 'no_sender' });
+    return jsonResponse({ ok: true, rejected: true, reason: 'no_sender' }, 200, req);
   }
 
-  const { data: users, error: userError } = await supabase.auth.admin.listUsers();
+  // Try direct match by email using targeted query (avoids loading all users)
+  const { data: directUser, error: directUserError } = await supabase
+    .from('auth.users')
+    .select('id, email')
+    .eq('email', senderEmail)
+    .limit(1)
+    .maybeSingle();
 
-  if (userError) {
-    log.error('Failed to list users:', userError.message);
+  if (directUserError) {
+    log.error('Failed to lookup user by email:', directUserError.message);
     await updateLog('failed', 'Internal error resolving user');
-    return jsonResponse({ error: 'Internal error' }, 500);
+    return jsonResponse({ error: 'Internal error' }, 500, req);
   }
 
-  // Try direct match first
-  let matchedUser = users.users.find(
-    (u: any) => u.email?.toLowerCase() === senderEmail,
-  );
+  let matchedUser: { id: string; email: string } | null = directUser;
 
   // If no direct match, check email aliases table
   if (!matchedUser) {
@@ -427,11 +437,12 @@ serve(async (req) => {
       .eq('alias_email', senderEmail)
       .eq('is_verified', true)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (alias?.user_id) {
-      matchedUser = users.users.find((u: any) => u.id === alias.user_id);
-      if (matchedUser) {
+      const { data: aliasUser } = await supabase.auth.admin.getUserById(alias.user_id);
+      if (aliasUser?.user) {
+        matchedUser = { id: aliasUser.user.id, email: aliasUser.user.email || senderEmail };
         log.info(`Resolved ${senderEmail} via alias → user ${matchedUser.id}`);
       }
     }
@@ -452,7 +463,7 @@ serve(async (req) => {
       ),
     );
 
-    return jsonResponse({ ok: true, rejected: true, reason: 'user_not_found' });
+    return jsonResponse({ ok: true, rejected: true, reason: 'user_not_found' }, 200, req);
   }
 
   // Update log with resolved user
@@ -481,7 +492,7 @@ serve(async (req) => {
       ),
     );
 
-    return jsonResponse({ ok: true, rejected: true, reason: 'rate_limited' });
+    return jsonResponse({ ok: true, rejected: true, reason: 'rate_limited' }, 200, req);
   }
 
   // 5. Validate attachments
@@ -498,7 +509,7 @@ serve(async (req) => {
       ),
     );
 
-    return jsonResponse({ ok: true, rejected: true, reason: 'no_attachments' });
+    return jsonResponse({ ok: true, rejected: true, reason: 'no_attachments' }, 200, req);
   }
 
   // 6. Process each valid attachment
@@ -658,5 +669,5 @@ serve(async (req) => {
     processed: processedCount,
     total: attachments.length,
     results,
-  });
+  }, 200, req);
 });
