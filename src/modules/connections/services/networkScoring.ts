@@ -678,7 +678,8 @@ export async function computeConnectionsDomainScore(): Promise<{
       confidence: Math.min(contacts.length / 10, 1),
       trend: 'stable',
     };
-  } catch {
+  } catch (err) {
+    log.warn('computeConnectionScore failed (non-critical):', err);
     return null;
   }
 }
