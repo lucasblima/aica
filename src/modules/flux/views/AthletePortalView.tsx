@@ -10,6 +10,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
+import { useLeaveTraining } from '../hooks/useLeaveTraining';
 import { useParQ } from '../hooks/useParQ';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { WorkoutSlotService } from '../services/workoutSlotService';
@@ -41,6 +42,7 @@ import {
   Heart,
   Lock,
   MoveHorizontal,
+  LogOut,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -80,6 +82,7 @@ export default function AthletePortalView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile, avatarUrl, isLoading, error, isLinked, refetch } = useMyAthleteProfile();
   const { user } = useAuth();
+  const leaveTraining = useLeaveTraining();
 
   const parq = useParQ({ athleteId: profile?.athlete_id || '', filledByRole: 'athlete' });
   const docs = useAthleteDocuments({ athleteId: profile?.athlete_id || '' });
@@ -466,8 +469,69 @@ export default function AthletePortalView() {
             <ArrowLeft className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
           </button>
+          <button
+            onClick={leaveTraining.requestLeave}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-ceramic-error hover:bg-ceramic-error/10 transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sair do treino
+          </button>
         </div>
       </header>
+
+      {/* Leave training confirmation dialog */}
+      <AnimatePresence>
+        {leaveTraining.showConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-ceramic-base rounded-2xl shadow-lg p-6 max-w-sm w-full space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-ceramic-error/10 flex items-center justify-center flex-shrink-0">
+                  <LogOut className="w-5 h-5 text-ceramic-error" />
+                </div>
+                <h2 className="text-lg font-black text-ceramic-text-primary">Sair do treino?</h2>
+              </div>
+              <p className="text-sm text-ceramic-text-secondary leading-relaxed">
+                Voce sera desvinculado da prescricao do seu coach. Os exercicios serao removidos da sua agenda. Essa acao nao pode ser desfeita.
+              </p>
+              {leaveTraining.error && (
+                <div className="px-3 py-2 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
+                  <p className="text-xs text-ceramic-error font-medium">{leaveTraining.error}</p>
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={leaveTraining.cancelLeave}
+                  disabled={leaveTraining.isLeaving}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-ceramic-cool/60 text-sm font-bold text-ceramic-text-primary hover:bg-ceramic-cool transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={leaveTraining.confirmLeave}
+                  disabled={leaveTraining.isLeaving}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-ceramic-error text-sm font-bold text-white hover:bg-ceramic-error/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {leaveTraining.isLeaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Confirmar saida'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Profile Card */}
       <motion.section className="px-5 mb-4" custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
