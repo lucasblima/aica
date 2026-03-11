@@ -9,27 +9,23 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Settings, AlertTriangle, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, Eye, EyeOff, Loader2, Target, BarChart3, List, GitCompare, Settings, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Logo } from '@/components/ui';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
-import { TrendLineChart } from '../components/Charts/TrendLineChart';
 import { BudgetView } from './BudgetView';
-import { FinanceSearchPanel } from '../components/FinanceSearchPanel';
 import { MonthlyDigestCard } from '../components/MonthlyDigestCard';
 import { FinanceEmptyState } from '../components/FinanceEmptyState';
 import { FinanceNotificationCard } from '../components/FinanceNotificationCard';
 import { TransactionListView } from '../components/TransactionListView';
 import { MonthComparisonView } from '../components/MonthComparisonView';
-import { GoalTracker } from '../components/GoalTracker';
+import { LossFramingBanner } from '../components/LossFramingBanner';
 import { AccountManagement } from '../components/AccountManagement';
 import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, getCategorySuggestions, applyCategorySuggestions, recategorizeAllTransactions } from '../services/financeService';
 import type { CategorySuggestion } from '../services/financeService';
 import { RecategorizationReview } from '../components/RecategorizationReview';
-import { statementService } from '../services/statementService';
-import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import { FinanceProvider, useFinanceContext } from '../contexts/FinanceContext';
 import { FinancialHealthCard } from '../components/FinancialHealthCard';
 import { useFinancialHealth } from '../hooks/useFinancialHealth';
@@ -97,9 +93,6 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
-  const [showManagement, setShowManagement] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deletingAll, setDeletingAll] = useState(false);
   const [isValuesVisible, setIsValuesVisible] = useState(() => {
     const saved = localStorage.getItem('finance_values_visible');
     return saved !== null ? JSON.parse(saved) : true;
@@ -113,21 +106,6 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   useEffect(() => {
     localStorage.setItem('finance_values_visible', JSON.stringify(isValuesVisible));
   }, [isValuesVisible]);
-
-  // File Search integration
-  const {
-    searchInStatements,
-    findByCategory,
-    findByMerchant,
-    findAnomalies,
-    findExpensePatterns,
-    searchResults,
-    isSearching,
-    documents,
-    clearSearchResults,
-  } = useFinanceFileSearch({ userId, autoLoad: false });
-
-  const hasIndexedStatements = documents.length > 0;
 
   useEffect(() => {
     loadData();
@@ -168,49 +146,6 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
     loadData(); // Refresh local analytics
   };
 
-  const handleDelete = async (statementId: string) => {
-    if (!confirm('Tem certeza que deseja deletar este extrato? Esta acao nao pode ser desfeita.')) {
-      return;
-    }
-
-    try {
-      setDeletingId(statementId);
-      await statementService.deleteStatement(statementId);
-      await refreshAll(); // Refresh context (statements, categories, accounts)
-      loadData(); // Refresh local analytics
-    } catch (error) {
-      log.error('Error deleting statement:', error);
-      alert('Erro ao deletar extrato. Tente novamente.');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const handleDeleteAll = async () => {
-    if (!confirm(`Tem certeza que deseja deletar TODOS os ${statements.length} extratos? Esta acao nao pode ser desfeita.`)) {
-      return;
-    }
-
-    try {
-      setDeletingAll(true);
-
-      // Delete all statements sequentially
-      for (const statement of statements) {
-        await statementService.deleteStatement(statement.id);
-      }
-
-      await refreshAll(); // Refresh context (statements, categories, accounts)
-      loadData(); // Refresh local analytics
-      setShowManagement(false);
-      alert('Todos os extratos foram deletados com sucesso!');
-    } catch (error) {
-      log.error('Error deleting all statements:', error);
-      alert('Erro ao deletar extratos. Alguns podem nao ter sido deletados.');
-    } finally {
-      setDeletingAll(false);
-    }
-  };
-
   const formatCurrency = (value: number) => {
     if (!isValuesVisible) {
       return 'R$ ••••••';
@@ -223,54 +158,6 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
 
   const toggleVisibility = () => {
     setIsValuesVisible(!isValuesVisible);
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  };
-
-  const formatPeriod = (startDate: string, endDate: string) => {
-    const start = new Date(startDate + 'T00:00:00');
-    const end = new Date(endDate + 'T00:00:00');
-
-    const startMonth = start.toLocaleDateString('pt-BR', { month: 'short' });
-    const endMonth = end.toLocaleDateString('pt-BR', { month: 'short' });
-    const year = start.getFullYear();
-
-    if (startMonth === endMonth) {
-      return `${startMonth.charAt(0).toUpperCase() + startMonth.slice(1)} ${year}`;
-    }
-
-    return `${startMonth.charAt(0).toUpperCase() + startMonth.slice(1)} - ${endMonth.charAt(0).toUpperCase() + endMonth.slice(1)} ${year}`;
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return {
-          text: 'Processado',
-          className: 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/20',
-          icon: <CheckCircle2 className="w-3 h-3" />
-        };
-      case 'processing':
-        return {
-          text: 'Processando',
-          className: 'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/20',
-          icon: <Loader2 className="w-3 h-3 animate-spin" />
-        };
-      case 'failed':
-        return {
-          text: 'Erro',
-          className: 'bg-ceramic-error/10 text-ceramic-error border-ceramic-error/20',
-          icon: null
-        };
-      default:
-        return {
-          text: 'Pendente',
-          className: 'bg-ceramic-base text-ceramic-text-primary border-ceramic-border',
-          icon: null
-        };
-    }
   };
 
   // Build trend data for TrendLineChart from last 6 months of transactions
@@ -788,6 +675,14 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
               />
             )}
 
+            {/* Behavioral Economics — Loss Framing Nudge */}
+            {selectedMonthSummary && selectedMonthSummary.income > 0 && (
+              <LossFramingBanner
+                monthlySavings={selectedMonthSummary.income - selectedMonthSummary.expenses}
+                mode="savings"
+              />
+            )}
+
             {/* Row 1: Alerts — side by side on desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Monthly Digest — AI Insights */}
@@ -861,53 +756,6 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
               <ExpenseChart data={categoryBreakdown} totalExpenses={summary!.totalExpenses} />
             </div>
 
-            {/* Row 3: Trend Line — full width */}
-            {trendData.some(d => d.income > 0 || d.expense > 0) && (
-              <TrendLineChart data={trendData} />
-            )}
-
-            {/* Row 4: Goals + Burn Rate — side by side on desktop */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <GoalTracker userId={userId} />
-
-              {burnRate && burnRate.averageMonthlyExpense > 0 && (
-                <div className="ceramic-card p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-ceramic-text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-ceramic-text-primary">
-                        Burn Rate Mensal
-                      </h3>
-                      <p className="text-xs text-ceramic-text-secondary">
-                        Média dos últimos 3 meses
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="ceramic-tray px-6 py-4 flex items-center justify-between">
-                    <p className="text-3xl font-black text-ceramic-text-primary text-etched">
-                      {formatCurrency(burnRate.averageMonthlyExpense)}
-                    </p>
-                    {isValuesVisible && burnRate.trend !== 'stable' && (
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`ceramic-inset px-3 py-1.5 text-xs font-bold ${
-                            burnRate.trend === 'decreasing'
-                              ? 'text-ceramic-success'
-                              : 'text-ceramic-error'
-                          }`}
-                        >
-                          {burnRate.trend === 'decreasing' ? '\u2193' : '\u2191'}{' '}
-                          {Math.abs(burnRate.percentageChange).toFixed(1)}%
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         )}
 
@@ -952,227 +800,6 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
           </div>
         )}
 
-        {/* Manage Statements */}
-        {statements.length > 0 && (
-          <div className="max-w-7xl mx-auto ceramic-card p-6 space-y-4">
-            <button
-              onClick={() => setShowManagement(!showManagement)}
-              className="w-full flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-ceramic-text-primary" />
-                </div>
-                <div className="text-left">
-                  <h3 className="text-sm font-bold text-ceramic-text-primary">
-                    Gerenciar Extratos
-                  </h3>
-                  <p className="text-xs text-ceramic-text-secondary">
-                    {statements.length} {statements.length === 1 ? 'extrato' : 'extratos'} - Clique para expandir
-                  </p>
-                </div>
-              </div>
-              <div className={`transition-transform ${showManagement ? 'rotate-180' : ''}`}>
-                <svg className="w-5 h-5 text-ceramic-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </button>
-
-            {showManagement && (
-              <div className="space-y-3 pt-2">
-                {/* Delete All Button */}
-                <button
-                  onClick={handleDeleteAll}
-                  disabled={deletingAll}
-                  className="w-full ceramic-tray p-3 flex items-center justify-center gap-2 hover:bg-ceramic-error/10 transition-colors disabled:opacity-50"
-                >
-                  {deletingAll ? (
-                    <Loader2 className="w-4 h-4 text-ceramic-error animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4 text-ceramic-error" />
-                  )}
-                  <span className="text-sm font-bold text-ceramic-error">
-                    {deletingAll ? 'Deletando...' : 'Deletar Todos os Extratos'}
-                  </span>
-                </button>
-
-                {/* Missing Months Alert */}
-                {(() => {
-                  const sorted = [...statements]
-                    .filter(s => s.statement_period_start)
-                    .sort((a, b) => (a.statement_period_start || '').localeCompare(b.statement_period_start || ''));
-                  if (sorted.length < 2) return null;
-
-                  const missingMonths: string[] = [];
-                  const firstDate = new Date(sorted[0].statement_period_start + 'T00:00:00');
-                  const lastDate = new Date(sorted[sorted.length - 1].statement_period_start + 'T00:00:00');
-                  const coveredMonths = new Set(sorted.map(s => s.statement_period_start!.substring(0, 7)));
-
-                  const cursor = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
-                  const end = new Date(lastDate.getFullYear(), lastDate.getMonth(), 1);
-                  while (cursor <= end) {
-                    const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-                    if (!coveredMonths.has(ym)) missingMonths.push(ym);
-                    cursor.setMonth(cursor.getMonth() + 1);
-                  }
-
-                  if (missingMonths.length === 0) return null;
-
-                  const formatMonth = (ym: string) => {
-                    const [y, m] = ym.split('-');
-                    const names = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                    return `${names[parseInt(m) - 1]} ${y}`;
-                  };
-
-                  return (
-                    <div className="ceramic-inset rounded-xl p-4 flex items-start gap-3 border border-amber-200/50">
-                      <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-ceramic-text-primary">
-                          {missingMonths.length === 1 ? '1 mês sem extrato' : `${missingMonths.length} meses sem extrato`}
-                        </p>
-                        <p className="text-xs text-ceramic-text-secondary">
-                          Importe os extratos faltantes para ter uma visão completa das suas finanças.
-                        </p>
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {missingMonths.map(ym => (
-                            <span key={ym} className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[11px] font-semibold">
-                              {formatMonth(ym)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Statements List */}
-                <div className="space-y-3">
-                  {[...statements].sort((a, b) => (b.statement_period_start || '').localeCompare(a.statement_period_start || '')).map((statement) => {
-                    const statusBadge = getStatusBadge(statement.processing_status || 'pending');
-
-                    return (
-                      <div
-                        key={statement.id}
-                        className="ceramic-card p-5 hover:scale-[1.01] transition-all duration-200 group"
-                      >
-                        <div className="flex items-start gap-4">
-                          {/* Bank Icon */}
-                          <div className="ceramic-concave w-12 h-12 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                            <Building2 className="w-6 h-6 text-ceramic-accent" />
-                          </div>
-
-                          {/* Main Info */}
-                          <div className="flex-1 min-w-0 space-y-2">
-                            {/* Header: Bank Name + Status Badge */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="text-base font-black text-ceramic-text-primary text-etched">
-                                {statement.bank_name || 'Banco Desconhecido'}
-                              </h4>
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusBadge.className}`}>
-                                {statusBadge.icon}
-                                {statusBadge.text}
-                              </span>
-                            </div>
-
-                            {/* Period */}
-                            {statement.statement_period_start && statement.statement_period_end && (
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-                                <span className="text-xs font-medium text-ceramic-text-secondary">
-                                  {formatPeriod(statement.statement_period_start, statement.statement_period_end)}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Financial Flow: Inicial → Receita / Despesa → Final */}
-                            <div className="grid grid-cols-4 gap-2">
-                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
-                                <p className="text-[10px] text-ceramic-text-secondary">Inicial</p>
-                                <p className="text-xs font-bold text-ceramic-text-primary">{formatCurrency(statement.opening_balance || 0)}</p>
-                              </div>
-                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
-                                <p className="text-[10px] text-ceramic-text-secondary">Receita</p>
-                                <p className="text-xs font-bold text-ceramic-success">{formatCurrency(statement.total_credits || 0)}</p>
-                              </div>
-                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
-                                <p className="text-[10px] text-ceramic-text-secondary">Despesa</p>
-                                <p className="text-xs font-bold text-ceramic-error">{formatCurrency(statement.total_debits || 0)}</p>
-                              </div>
-                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
-                                <p className="text-[10px] text-ceramic-text-secondary">Final</p>
-                                <p className="text-xs font-bold text-ceramic-success">{formatCurrency(statement.closing_balance || 0)}</p>
-                              </div>
-                            </div>
-
-                            {/* Transaction count + file name */}
-                            <div className="flex items-center gap-3 text-[10px] text-ceramic-text-secondary">
-                              <span className="inline-flex items-center gap-1">
-                                <FileText className="w-3 h-3" />
-                                {statement.transaction_count || 0} {(statement.transaction_count || 0) === 1 ? 'transação' : 'transações'}
-                              </span>
-                              {statement.file_name && (
-                                <span className="truncate max-w-[200px]">
-                                  {statement.file_name}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Delete Button */}
-                          <button
-                            onClick={() => handleDelete(statement.id)}
-                            disabled={deletingId === statement.id || deletingAll}
-                            className="ceramic-inset w-9 h-9 flex items-center justify-center hover:scale-110 hover:bg-ceramic-error/10 transition-all disabled:opacity-50 flex-shrink-0 group"
-                            title="Deletar extrato"
-                          >
-                            {deletingId === statement.id ? (
-                              <Loader2 className="w-4 h-4 text-ceramic-error animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4 text-ceramic-error group-hover:scale-110 transition-transform" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* File Search Integration - Only show if statements are indexed */}
-        {hasIndexedStatements && statements.length > 0 && (
-          <div className="max-w-7xl mx-auto ceramic-card p-6">
-            <FinanceSearchPanel
-              onSearch={async (query) => {
-                const results = await searchInStatements(query, 10);
-                return results;
-              }}
-              onSearchCategory={async (category) => {
-                const results = await findByCategory(category, 10);
-                return results;
-              }}
-              onSearchMerchant={async (merchant) => {
-                const results = await findByMerchant(merchant, 10);
-                return results;
-              }}
-              onSearchAnomalies={async () => {
-                const results = await findAnomalies(10);
-                return results;
-              }}
-              onSearchPatterns={async (pattern) => {
-                const results = await findExpensePatterns(pattern, 10);
-                return results;
-              }}
-              results={searchResults}
-              isSearching={isSearching}
-              hasStatements={hasIndexedStatements}
-            />
-          </div>
-        )}
 
       </main>
 
