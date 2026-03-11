@@ -23,7 +23,6 @@ import { FinanceNotificationCard } from '../components/FinanceNotificationCard';
 import { TransactionListView } from '../components/TransactionListView';
 import { MonthComparisonView } from '../components/MonthComparisonView';
 import { LossFramingBanner } from '../components/LossFramingBanner';
-import { AccountManagement } from '../components/AccountManagement';
 import { SettingsView } from './SettingsView';
 import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, getCategorySuggestions, applyCategorySuggestions, recategorizeAllTransactions } from '../services/financeService';
 import type { CategorySuggestion } from '../services/financeService';

@@ -403,7 +403,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           >
             <option value="">Todas as contas</option>
             {accounts.map(a => (
-              <option key={a.id} value={a.id}>{a.name} ({a.bank_name})</option>
+              <option key={a.id} value={a.id}>{a.account_name} ({a.bank_name})</option>
             ))}
           </select>
         )}
