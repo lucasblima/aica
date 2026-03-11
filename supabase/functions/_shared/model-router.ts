@@ -193,7 +193,6 @@ async function callGeminiModel(
     generationConfig: {
       temperature,
       maxOutputTokens,
-      ...(options.expectJson ? { responseMimeType: 'application/json' } : {}),
     },
     ...(options.systemPrompt ? { systemInstruction: options.systemPrompt } : {}),
   });

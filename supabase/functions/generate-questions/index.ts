@@ -461,7 +461,6 @@ async function generateQuestionsWithGemini(
       temperature: 0.8,  // Higher for creativity
       topP: 0.9,
       maxOutputTokens: 4096,
-      responseMimeType: 'application/json',
     },
   }
 

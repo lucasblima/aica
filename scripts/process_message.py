@@ -42,7 +42,7 @@ class MessageProcessor:
 
         self.supabase: Client = create_client(self.supabase_url, self.supabase_key)
         genai.configure(api_key=self.gemini_api_key)
-        self.model_flash = genai.GenerativeModel('gemini-1.5-flash')
+        self.model_flash = genai.GenerativeModel('gemini-2.5-flash')
         self.embedding_model = 'models/text-embedding-004'
 
     async def analyze_message(self, message_text: str) -> Dict[str, Any]:

@@ -118,6 +118,183 @@ interface FileWithMetadata {
 }
 
 // =====================================================
+// Helper Functions (module-scoped)
+// =====================================================
+
+const getStageColor = (stage: string): string => {
+  switch (stage) {
+    case 'complete':
+    case 'completed':
+    case 'success':
+      return 'text-ceramic-success';
+    case 'error':
+    case 'failed':
+      return 'text-ceramic-error';
+    case 'categorizing':
+    case 'processing':
+      return 'text-ceramic-warning';
+    default:
+      return 'text-ceramic-info';
+  }
+};
+
+const getStatusIcon = (stage?: string) => {
+  const color = getStageColor(stage || '');
+  if (stage === 'complete' || stage === 'completed' || stage === 'success') {
+    return <CheckCircle className={`w-4 h-4 ${color}`} />;
+  }
+  if (stage === 'error' || stage === 'failed') {
+    return <AlertCircle className={`w-4 h-4 ${color}`} />;
+  }
+  return <Loader2 className={`w-4 h-4 ${color} animate-spin`} />;
+};
+
+// =====================================================
+// Sub-Components (module-scoped to avoid remount)
+// =====================================================
+
+interface AnalysisProgressDisplayProps {
+  progress: PDFProgressUpdate;
+}
+
+/**
+ * AnalysisProgressDisplay - Smooth progress during AI analysis with elapsed time
+ */
+const AnalysisProgressDisplay: React.FC<AnalysisProgressDisplayProps> = ({ progress }) => {
+  const [smoothProgress, setSmoothProgress] = useState(0);
+
+  useEffect(() => {
+    const target = progress.progress || 0;
+    if (target <= smoothProgress) return;
+    const timer = setInterval(() => {
+      setSmoothProgress(prev => {
+        const next = prev + 0.3;
+        if (next >= target) { clearInterval(timer); return target; }
+        return next;
+      });
+    }, 50);
+    return () => clearInterval(timer);
+  }, [progress.progress]);
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <Loader2 className="w-4 h-4 text-ceramic-accent animate-spin flex-shrink-0" />
+        <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300">
+          {progress.message}
+        </p>
+      </div>
+      {progress.detail && (
+        <p className="text-[10px] text-ceramic-text-secondary ml-6">
+          {progress.detail}
+        </p>
+      )}
+      <div className="ceramic-trough p-1 rounded-full">
+        <div
+          className="h-1.5 rounded-full bg-ceramic-accent transition-[width] duration-300 ease-out"
+          style={{ width: `${smoothProgress}%` }}
+        />
+      </div>
+    </>
+  );
+};
+
+interface FileProgressDisplayProps {
+  fileWithMeta: FileWithMetadata;
+}
+
+/**
+ * FileProgressDisplay - Shows rotating messages, elapsed time, and step indicator
+ */
+const FileProgressDisplay: React.FC<FileProgressDisplayProps> = ({ fileWithMeta }) => {
+  const rotatingMessage = useRotatingMessage(fileWithMeta.processingStage || null, 2500);
+  const [elapsed, setElapsed] = useState(0);
+  const [smoothProgress, setSmoothProgress] = useState(0);
+
+  // Elapsed time counter
+  useEffect(() => {
+    if (!fileWithMeta.progress || fileWithMeta.progress.stage === 'complete' || fileWithMeta.progress.stage === 'error') {
+      setElapsed(0);
+      return;
+    }
+    const start = Date.now();
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [fileWithMeta.progress?.stage === 'complete', fileWithMeta.progress?.stage === 'error', !fileWithMeta.progress]);
+
+  // Smooth progress interpolation — gradually fills between target stages
+  useEffect(() => {
+    const target = fileWithMeta.progress?.progress || 0;
+    if (target <= smoothProgress) { setSmoothProgress(target); return; }
+    const timer = setInterval(() => {
+      setSmoothProgress(prev => {
+        const next = prev + 0.5;
+        if (next >= target) { clearInterval(timer); return target; }
+        return next;
+      });
+    }, 50);
+    return () => clearInterval(timer);
+  }, [fileWithMeta.progress?.progress]);
+
+  if (!fileWithMeta.progress) return null;
+
+  const displayMessage = rotatingMessage || fileWithMeta.progress.message;
+  const isActive = fileWithMeta.progress.stage !== 'error' && fileWithMeta.progress.stage !== 'complete';
+
+  // Step mapping for user-friendly display
+  const STEP_MAP: Record<string, { step: number; total: number; label: string }> = {
+    uploading: { step: 1, total: 5, label: 'Verificação' },
+    creating: { step: 2, total: 5, label: 'Registro' },
+    storage: { step: 2, total: 5, label: 'Upload' },
+    extracting: { step: 3, total: 5, label: 'Extração' },
+    ai_parsing: { step: 4, total: 5, label: 'Análise IA' },
+    saving: { step: 5, total: 5, label: 'Salvando' },
+  };
+  const stepInfo = STEP_MAP[fileWithMeta.processingStage || ''];
+
+  const formatElapsed = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s / 60)}m${s % 60}s`;
+
+  return (
+    <div className="space-y-2">
+      {/* Step indicator + elapsed time */}
+      {isActive && (
+        <div className="flex items-center justify-between">
+          {stepInfo && (
+            <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
+              Passo {stepInfo.step}/{stepInfo.total} — {stepInfo.label}
+            </span>
+          )}
+          <span className="text-[10px] text-ceramic-text-secondary tabular-nums">
+            {formatElapsed(elapsed)}
+          </span>
+        </div>
+      )}
+
+      {/* Message + icon */}
+      <div className="flex items-center gap-2">
+        {getStatusIcon(fileWithMeta.progress?.stage)}
+        <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300 flex-1">
+          {displayMessage}
+        </p>
+        {fileWithMeta.progress.stage === 'complete' && (
+          <span className="text-[10px] text-ceramic-success">{formatElapsed(elapsed)}</span>
+        )}
+      </div>
+
+      {/* Smooth progress bar */}
+      {isActive && (
+        <div className="ceramic-trough p-1 rounded-full">
+          <div
+            className="h-1.5 rounded-full bg-ceramic-warning transition-[width] duration-300 ease-out"
+            style={{ width: `${smoothProgress}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// =====================================================
 // Component
 // =====================================================
 
@@ -505,167 +682,6 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  };
-
-  const getStageColor = (stage: string): string => {
-    switch (stage) {
-      case 'complete':
-      case 'completed':
-      case 'success':
-        return 'text-ceramic-success';
-      case 'error':
-      case 'failed':
-        return 'text-ceramic-error';
-      case 'categorizing':
-      case 'processing':
-        return 'text-ceramic-warning';
-      default:
-        return 'text-ceramic-info';
-    }
-  };
-
-  const getStatusIcon = (stage?: string) => {
-    const color = getStageColor(stage || '');
-    if (stage === 'complete' || stage === 'completed' || stage === 'success') {
-      return <CheckCircle className={`w-4 h-4 ${color}`} />;
-    }
-    if (stage === 'error' || stage === 'failed') {
-      return <AlertCircle className={`w-4 h-4 ${color}`} />;
-    }
-    return <Loader2 className={`w-4 h-4 ${color} animate-spin`} />;
-  };
-
-  /**
-   * AnalysisProgressDisplay - Smooth progress during AI analysis with elapsed time
-   */
-  const AnalysisProgressDisplay: React.FC<{ progress: PDFProgressUpdate }> = ({ progress }) => {
-    const [smoothProgress, setSmoothProgress] = useState(0);
-
-    useEffect(() => {
-      const target = progress.progress || 0;
-      if (target <= smoothProgress) return;
-      const timer = setInterval(() => {
-        setSmoothProgress(prev => {
-          const next = prev + 0.3;
-          if (next >= target) { clearInterval(timer); return target; }
-          return next;
-        });
-      }, 50);
-      return () => clearInterval(timer);
-    }, [progress.progress]);
-
-    return (
-      <>
-        <div className="flex items-center gap-2">
-          <Loader2 className="w-4 h-4 text-ceramic-accent animate-spin flex-shrink-0" />
-          <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300">
-            {progress.message}
-          </p>
-        </div>
-        {progress.detail && (
-          <p className="text-[10px] text-ceramic-text-secondary ml-6">
-            {progress.detail}
-          </p>
-        )}
-        <div className="ceramic-trough p-1 rounded-full">
-          <div
-            className="h-1.5 rounded-full bg-ceramic-accent transition-[width] duration-300 ease-out"
-            style={{ width: `${smoothProgress}%` }}
-          />
-        </div>
-      </>
-    );
-  };
-
-  /**
-   * FileProgressDisplay - Shows rotating messages, elapsed time, and step indicator
-   */
-  const FileProgressDisplay: React.FC<{ fileWithMeta: FileWithMetadata }> = ({ fileWithMeta }) => {
-    const rotatingMessage = useRotatingMessage(fileWithMeta.processingStage || null, 2500);
-    const [elapsed, setElapsed] = useState(0);
-    const [smoothProgress, setSmoothProgress] = useState(0);
-
-    // Elapsed time counter
-    useEffect(() => {
-      if (!fileWithMeta.progress || fileWithMeta.progress.stage === 'complete' || fileWithMeta.progress.stage === 'error') {
-        setElapsed(0);
-        return;
-      }
-      const start = Date.now();
-      const timer = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
-      return () => clearInterval(timer);
-    }, [fileWithMeta.progress?.stage === 'complete', fileWithMeta.progress?.stage === 'error', !fileWithMeta.progress]);
-
-    // Smooth progress interpolation — gradually fills between target stages
-    useEffect(() => {
-      const target = fileWithMeta.progress?.progress || 0;
-      if (target <= smoothProgress) { setSmoothProgress(target); return; }
-      const timer = setInterval(() => {
-        setSmoothProgress(prev => {
-          const next = prev + 0.5;
-          if (next >= target) { clearInterval(timer); return target; }
-          return next;
-        });
-      }, 50);
-      return () => clearInterval(timer);
-    }, [fileWithMeta.progress?.progress]);
-
-    if (!fileWithMeta.progress) return null;
-
-    const displayMessage = rotatingMessage || fileWithMeta.progress.message;
-    const isActive = fileWithMeta.progress.stage !== 'error' && fileWithMeta.progress.stage !== 'complete';
-
-    // Step mapping for user-friendly display
-    const STEP_MAP: Record<string, { step: number; total: number; label: string }> = {
-      uploading: { step: 1, total: 5, label: 'Verificação' },
-      creating: { step: 2, total: 5, label: 'Registro' },
-      storage: { step: 2, total: 5, label: 'Upload' },
-      extracting: { step: 3, total: 5, label: 'Extração' },
-      ai_parsing: { step: 4, total: 5, label: 'Análise IA' },
-      saving: { step: 5, total: 5, label: 'Salvando' },
-    };
-    const stepInfo = STEP_MAP[fileWithMeta.processingStage || ''];
-
-    const formatElapsed = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s / 60)}m${s % 60}s`;
-
-    return (
-      <div className="space-y-2">
-        {/* Step indicator + elapsed time */}
-        {isActive && (
-          <div className="flex items-center justify-between">
-            {stepInfo && (
-              <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                Passo {stepInfo.step}/{stepInfo.total} — {stepInfo.label}
-              </span>
-            )}
-            <span className="text-[10px] text-ceramic-text-secondary tabular-nums">
-              {formatElapsed(elapsed)}
-            </span>
-          </div>
-        )}
-
-        {/* Message + icon */}
-        <div className="flex items-center gap-2">
-          {getStatusIcon(fileWithMeta.progress?.stage)}
-          <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300 flex-1">
-            {displayMessage}
-          </p>
-          {fileWithMeta.progress.stage === 'complete' && (
-            <span className="text-[10px] text-ceramic-success">{formatElapsed(elapsed)}</span>
-          )}
-        </div>
-
-        {/* Smooth progress bar */}
-        {isActive && (
-          <div className="ceramic-trough p-1 rounded-full">
-            <div
-              className="h-1.5 rounded-full bg-ceramic-warning transition-[width] duration-300 ease-out"
-              style={{ width: `${smoothProgress}%` }}
-            />
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (

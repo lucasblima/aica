@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'git commit' && [ \"$(git rev-parse --abbrev-ref HEAD 2>/dev/null)\" = \"main\" ] && echo '⚠️  COMMIT ON MAIN DETECTED!\n\nStandard/Complex tasks MUST use a git worktree:\n  git worktree add .worktrees/<branch-name> -b <branch-name>\n\nOnly Micro tasks (1-5 lines, 1 file) may commit directly to main.\nIf this is NOT a micro task, create a worktree first.\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'git commit' && [ \"$(git rev-parse --abbrev-ref HEAD 2>/dev/null)\" = \"main\" ] && printf '⚠️  COMMIT ON MAIN DETECTED!\n\nStandard/Complex tasks MUST use a git worktree:\n  git worktree add .worktrees/<branch-name> -b <branch-name>\n\nOnly Micro tasks (1-5 lines, 1 file) may commit directly to main.\nIf this is NOT a micro task, create a worktree first.\n' || true"
           }
         ]
       },
@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'git commit' && STAGED=$(git diff --cached --name-only 2>/dev/null | wc -l) && [ \"$STAGED\" -gt 3 ] && echo '🧠 BRAINSTORM CHECK: '$STAGED' files staged!\n\nFor changes touching >3 files:\n- Was superpowers:brainstorming invoked?\n- Was a plan created in docs/plans/?\n- Is this really a Micro task?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'git commit' && STAGED=$(git diff --cached --name-only 2>/dev/null | wc -l) && [ \"$STAGED\" -gt 3 ] && printf '🧠 BRAINSTORM CHECK: %s files staged!\n\nFor changes touching >3 files:\n- Was superpowers:brainstorming invoked?\n- Was a plan created in docs/plans/?\n- Is this really a Micro task?\n' \"$STAGED\" || true"
           }
         ]
       },
@@ -69,7 +69,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr create' && echo '📋 PR CREATION CHECKLIST:\n\n- npm run build passed? (FRESH output)\n- npm run typecheck passed? (FRESH output)\n- npm run test passed? (FRESH output)\n- superpowers:verification-before-completion invoked?\n- superpowers:requesting-code-review invoked?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr create' && printf '📋 PR CREATION CHECKLIST:\n\n- npm run build passed? (FRESH output)\n- npm run typecheck passed? (FRESH output)\n- npm run test passed? (FRESH output)\n- superpowers:verification-before-completion invoked?\n- superpowers:requesting-code-review invoked?\n' || true"
           }
         ]
       },
@@ -78,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && echo '⚠️  PR MERGE — VERIFY FIRST:\n\n- All PR comments addressed?\n- CI checks passing?\n- User explicitly approved merge?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && printf '⚠️  PR MERGE — VERIFY FIRST:\n\n- All PR comments addressed?\n- CI checks passing?\n- User explicitly approved merge?\n' || true"
           }
         ]
       }

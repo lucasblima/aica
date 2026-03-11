@@ -86,15 +86,15 @@ export const AI_MODELS: Record<string, AIModel> = {
     capabilities: ['chat', 'code', 'analysis', 'creative', 'research'],
     fallbackModel: 'claude-sonnet-4-20250514',
   },
-  'gemini-1.5-pro': {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
+  'gemini-2.5-pro': {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
     provider: 'google',
     tier: 'premium',
     maxTokens: 2000000,
     costPer1kTokens: 0.00375, // $0.00125 input + $0.005 output / 2 avg
     capabilities: ['chat', 'code', 'analysis', 'creative', 'research', 'document_processing'],
-    fallbackModel: 'gemini-1.5-flash',
+    fallbackModel: 'gemini-2.5-flash',
   },
 
   // Standard Tier
@@ -108,25 +108,14 @@ export const AI_MODELS: Record<string, AIModel> = {
     capabilities: ['chat', 'code', 'analysis', 'creative', 'summarization'],
     fallbackModel: 'claude-haiku-4-20250514',
   },
-  'gemini-1.5-flash': {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
     provider: 'google',
     tier: 'standard',
     maxTokens: 1000000,
-    costPer1kTokens: 0.0001875, // $0.000075 input + $0.0003 output / 2 avg
-    capabilities: ['chat', 'code', 'analysis', 'summarization', 'translation'],
-    fallbackModel: 'gemini-2.0-flash-lite',
-  },
-  'gemini-2.0-flash-exp': {
-    id: 'gemini-2.0-flash-exp',
-    name: 'Gemini 2.0 Flash',
-    provider: 'google',
-    tier: 'standard',
-    maxTokens: 1000000,
-    costPer1kTokens: 0.0002, // Estimated
+    costPer1kTokens: 0.0002, // $0.000075 input + $0.0003 output / 2 avg
     capabilities: ['chat', 'code', 'analysis', 'summarization', 'translation', 'document_processing'],
-    fallbackModel: 'gemini-2.0-flash-lite',
   },
 
   // Lite Tier
@@ -139,9 +128,9 @@ export const AI_MODELS: Record<string, AIModel> = {
     costPer1kTokens: 0.005, // $0.25 input + $1.25 output / 2 avg
     capabilities: ['chat', 'summarization', 'translation'],
   },
-  'gemini-2.0-flash-lite': {
-    id: 'gemini-2.0-flash-lite',
-    name: 'Gemini 2.0 Flash Lite',
+  'gemini-2.5-flash-lite': {
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite',
     provider: 'google',
     tier: 'lite',
     maxTokens: 1000000,
@@ -155,14 +144,14 @@ export const AI_MODELS: Record<string, AIModel> = {
 // =============================================================================
 
 const CAPABILITY_PREFERENCES: Record<ModelCapability, string[]> = {
-  chat: ['gemini-2.0-flash-exp', 'claude-sonnet-4-20250514', 'gemini-2.0-flash-lite'],
-  code: ['claude-opus-4-5-20251101', 'claude-sonnet-4-20250514', 'gemini-1.5-pro'],
-  analysis: ['gemini-1.5-pro', 'claude-opus-4-5-20251101', 'claude-sonnet-4-20250514'],
-  creative: ['claude-opus-4-5-20251101', 'gemini-1.5-pro', 'claude-sonnet-4-20250514'],
-  summarization: ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'claude-haiku-4-20250514'],
-  translation: ['gemini-1.5-flash', 'gemini-2.0-flash-lite', 'claude-haiku-4-20250514'],
-  research: ['claude-opus-4-5-20251101', 'gemini-1.5-pro', 'claude-sonnet-4-20250514'],
-  document_processing: ['gemini-1.5-pro', 'gemini-2.0-flash-exp', 'gemini-1.5-flash'],
+  chat: ['gemini-2.5-flash', 'claude-sonnet-4-20250514', 'gemini-2.5-flash-lite'],
+  code: ['claude-opus-4-5-20251101', 'claude-sonnet-4-20250514', 'gemini-2.5-pro'],
+  analysis: ['gemini-2.5-pro', 'claude-opus-4-5-20251101', 'claude-sonnet-4-20250514'],
+  creative: ['claude-opus-4-5-20251101', 'gemini-2.5-pro', 'claude-sonnet-4-20250514'],
+  summarization: ['gemini-2.5-flash', 'claude-haiku-4-20250514', 'gemini-2.5-flash-lite'],
+  translation: ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'claude-haiku-4-20250514'],
+  research: ['claude-opus-4-5-20251101', 'gemini-2.5-pro', 'claude-sonnet-4-20250514'],
+  document_processing: ['gemini-2.5-pro', 'gemini-2.5-flash', 'claude-sonnet-4-20250514'],
 };
 
 // =============================================================================
@@ -330,7 +319,7 @@ class ModelRouterService {
 
     // Default to lite model if nothing found
     if (!selectedModel) {
-      selectedModel = AI_MODELS['gemini-2.0-flash-lite'];
+      selectedModel = AI_MODELS['gemini-2.5-flash-lite'];
     }
 
     // Calculate estimated cost

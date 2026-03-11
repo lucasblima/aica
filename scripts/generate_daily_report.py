@@ -41,7 +41,7 @@ class DailyReportGenerator:
             
         self.supabase: Client = create_client(self.supabase_url, self.supabase_key)
         genai.configure(api_key=self.gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
         
     def get_users_to_process(self) -> List[Dict[str, Any]]:
         """Step 2: Get active users who should receive reports."""

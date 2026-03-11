@@ -212,7 +212,7 @@ export interface SearchDocumentsRequest {
   /** Optional metadata filters */
   filters?: Record<string, any>;
 
-  /** Model to use for generation (default: gemini-2.0-flash-exp) */
+  /** Model to use for generation (default: gemini-2.5-flash) */
   model?: string;
 }
 
