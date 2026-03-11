@@ -653,11 +653,11 @@ export const statementService = {
       // 6. Calculate totals
       const totalCredits = parsed.transactions
         .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + Number(t.amount), 0);
 
       const totalDebits = parsed.transactions
         .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
 
       // 7. Update statement as completed (recalculate closing balance from verified totals)
       const updatedStatement = await this.updateStatement(statement.id, {

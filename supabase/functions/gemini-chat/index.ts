@@ -2257,7 +2257,7 @@ Analise o texto e extraia as informacoes em formato JSON:
       "description": "descricao limpa sem caracteres especiais",
       "amount": numero (positivo=receita, negativo=despesa),
       "type": "income|expense",
-      "category": "food|transport|housing|health|education|entertainment|shopping|bills|salary|investment|transfer|other"
+      "category": "food|transport|housing|health|education|entertainment|shopping|bills|salary|freelance|investment|subscription|pets|personal_care|travel|transfer|other"
     }
   ]
 }
@@ -2269,6 +2269,33 @@ REGRAS:
 - Detecte o banco pelo cabecalho, logo ou formato do extrato
 - PIX recebidos sao "income", PIX enviados sao "expense"
 - Retorne APENAS o JSON, sem explicacao
+
+CATEGORIAS - REGRAS DE CLASSIFICACAO:
+- iFood, restaurante, padaria, supermercado, mercado, cafe = food
+- Uber, 99, combustivel, posto, estacionamento, pedagio = transport
+- Aluguel, condominio, IPTU, imobiliaria = housing
+- Luz, agua, gas, internet, telefone, Vivo, Claro, Tim = bills
+- Farmacia, medico, plano saude, exame = health
+- Netflix, Spotify, Disney+, YouTube Premium, iCloud, Google One = subscription
+- Cinema, show, bar, lazer = entertainment
+- Roupa, eletronico, Mercado Livre, Amazon, Shopee = shopping
+- Pet shop, veterinario, racao = pets
+- Academia, barbearia, estetica = personal_care
+- Hotel, passagem aerea, Booking, Airbnb = travel
+- Escola, faculdade, curso, livro = education
+- Salario, pagamento = salary
+- Freelance, servico prestado = freelance
+- Rendimento, CDB, CDI = investment
+
+PIX - REGRAS CRITICAS:
+- PIX enviado para pessoa ou empresa = CATEGORIZAR pela finalidade, NAO como "transfer"
+- PIX com nome de empresa/loja = categorizar pela empresa (food, shopping, etc)
+- PIX recorrente de valor alto para mesma pessoa = bills ou housing (provavelmente aluguel, servico, pensao)
+- PIX de valor medio (R$100-1000) para pessoa fisica = bills ou shopping
+- PIX de valor baixo (< R$100) = food ou shopping
+- "transfer" usar SOMENTE para transferencia entre contas PROPRIAS (ex: "TED ENTRE CONTAS", "TRANSF CC/POUP")
+- NUNCA categorizar PIX para terceiros como "transfer"
+- EVITE "other" — tente sempre inferir a melhor categoria
 
 TEXTO:
 ${rawText.substring(0, 15000).trim()}`

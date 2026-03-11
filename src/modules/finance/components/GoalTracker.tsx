@@ -203,8 +203,8 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({ userId }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {goals.map((goal) => {
             const pct =
-              goal.target_amount > 0
-                ? (goal.current_amount / goal.target_amount) * 100
+              Number(goal.target_amount) > 0
+                ? (Number(goal.current_amount) / Number(goal.target_amount)) * 100
                 : 0;
             const daysText = getDaysRemaining(goal.deadline);
             const isComplete = pct >= 100;

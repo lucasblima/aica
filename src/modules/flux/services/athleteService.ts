@@ -427,6 +427,35 @@ export class AthleteService {
   }
 
   /**
+   * Unlink the current athlete from their coach's training program.
+   * Sets auth_user_id=NULL, invitation_status='none', status='churned'.
+   * No params — uses the authenticated user's ID (auth.uid()).
+   */
+  static async unlinkSelf(): Promise<{ error: any }> {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        return { error: new Error('User not authenticated') };
+      }
+
+      const { error } = await supabase
+        .from('athletes')
+        .update({
+          auth_user_id: null,
+          invitation_status: 'none',
+          status: 'churned' as AthleteStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('auth_user_id', userData.user.id);
+
+      return { error };
+    } catch (error) {
+      console.error('[AthleteService] Error unlinking self:', error);
+      return { error: error instanceof Error ? error : new Error('Unknown error') };
+    }
+  }
+
+  /**
    * Get all athletes with adherence rates via RPC
    */
   static async getAthletesWithAdherence(): Promise<{

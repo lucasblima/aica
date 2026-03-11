@@ -30,10 +30,10 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
 
 function ScoreBar({ label, score, icon }: { label: string; score: number; icon: React.ReactNode }) {
   const getBarColor = (s: number): string => {
-    if (s >= 80) return 'bg-green-500';
+    if (s >= 80) return 'bg-ceramic-success';
     if (s >= 60) return 'bg-amber-400';
     if (s >= 40) return 'bg-amber-500';
-    return 'bg-red-400';
+    return 'bg-ceramic-error';
   };
 
   return (
@@ -57,9 +57,9 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 
 function TrendBadge({ trend }: { trend: 'improving' | 'stable' | 'declining' }) {
   const config = {
-    improving: { icon: <TrendingUp className="w-3 h-3" />, label: 'Melhorando', color: 'text-green-600' },
+    improving: { icon: <TrendingUp className="w-3 h-3" />, label: 'Melhorando', color: 'text-ceramic-success' },
     stable: { icon: <Minus className="w-3 h-3" />, label: 'Estavel', color: 'text-ceramic-text-secondary' },
-    declining: { icon: <TrendingDown className="w-3 h-3" />, label: 'Em declinio', color: 'text-red-500' },
+    declining: { icon: <TrendingDown className="w-3 h-3" />, label: 'Em declinio', color: 'text-ceramic-error' },
   };
   const { icon, label, color } = config[trend];
 
@@ -169,9 +169,9 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({ result
 
 function StatusDot({ status }: { status: 'ok' | 'warning' | 'critical' }) {
   const colors = {
-    ok: 'bg-green-400',
-    warning: 'bg-amber-400',
-    critical: 'bg-red-400',
+    ok: 'bg-ceramic-success',
+    warning: 'bg-ceramic-warning',
+    critical: 'bg-ceramic-error',
   };
   return (
     <div className="flex justify-center mt-1">

@@ -76,15 +76,15 @@ export const LossFramingBanner: React.FC<LossFramingBannerProps> = ({
 
   const variantStyles: Record<string, string> = {
     warning: 'bg-amber-50 border-amber-200 text-amber-800',
-    success: 'bg-green-50 border-green-200 text-green-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
+    success: 'bg-ceramic-success/10 border-ceramic-success/20 text-ceramic-success',
+    info: 'bg-ceramic-info/10 border-ceramic-info/20 text-ceramic-info',
     neutral: 'bg-ceramic-50 border-ceramic-border text-ceramic-text-primary',
   };
 
   const iconColors: Record<string, string> = {
     warning: 'text-amber-500',
-    success: 'text-green-500',
-    info: 'text-blue-500',
+    success: 'text-ceramic-success',
+    info: 'text-ceramic-info',
     neutral: 'text-ceramic-text-secondary',
   };
 
