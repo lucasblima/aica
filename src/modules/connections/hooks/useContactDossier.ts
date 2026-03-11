@@ -91,7 +91,7 @@ export function useContactDossier(contactId: string | null): UseContactDossierRe
       }
     } catch (err) {
       log.error('Failed to fetch dossier:', err)
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dossie')
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dossiê')
     } finally {
       setIsLoading(false)
     }
@@ -125,7 +125,7 @@ export function useContactDossier(contactId: string | null): UseContactDossierRe
       }
     } catch (err) {
       log.error('Failed to refresh dossier:', err)
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar dossie')
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar dossiê')
     } finally {
       setIsRefreshing(false)
     }
@@ -186,7 +186,7 @@ export function useContactDossierBatch() {
       })
     } catch (err) {
       log.error('Batch dossier build failed:', err)
-      setError(err instanceof Error ? err.message : 'Erro ao processar dossies em lote')
+      setError(err instanceof Error ? err.message : 'Erro ao processar dossiês em lote')
     } finally {
       setIsProcessing(false)
     }

@@ -185,7 +185,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
         <div className="text-center py-6">
           <Brain className="w-10 h-10 text-ceramic-text-secondary/30 mx-auto mb-3" />
           <p className="text-sm text-ceramic-text-secondary mb-3">
-            Nenhum dossie gerado ainda. Sao necessarias pelo menos 3 mensagens com intencao extraida.
+            Nenhum dossiê gerado ainda. São necessárias pelo menos 3 mensagens com intenção extraída.
           </p>
           <button
             onClick={onRefresh}
@@ -197,7 +197,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
-            {isRefreshing ? 'Gerando...' : 'Gerar dossie'}
+            {isRefreshing ? 'Gerando...' : 'Gerar dossiê'}
           </button>
           {error && (
             <p className="mt-3 text-xs text-ceramic-error flex items-center justify-center gap-1">
