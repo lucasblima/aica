@@ -413,7 +413,7 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
       case 'budget':
         return (
           <div className="flex-1 overflow-hidden">
-            <BudgetView userId={userId} onBack={onBack} />
+            <BudgetView userId={userId} />
           </div>
         );
       case 'transactions':
