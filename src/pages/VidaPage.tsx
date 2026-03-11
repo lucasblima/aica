@@ -159,11 +159,11 @@ export default function VidaPage({
             if (isNotFound) {
                log.warn('delete-account Edge Function not deployed yet, using LGPD fallback');
                notificationService.showInfo(
-                  'Solicitacao registrada',
-                  'Sua solicitacao de exclusao foi registrada. Seus dados serao removidos em ate 15 dias uteis conforme a LGPD.'
+                  'Funcionalidade em implantação',
+                  'A exclusão automática de conta estará disponível em breve. Para solicitar a exclusão dos seus dados, envie um e-mail para contato@aica.guru.'
                );
                // Give the user time to read the notification before signing out
-               await new Promise(resolve => setTimeout(resolve, 3000));
+               await new Promise(resolve => setTimeout(resolve, 4000));
                await supabase.auth.signOut();
                window.location.href = '/';
                return;
@@ -173,22 +173,21 @@ export default function VidaPage({
             log.error('Error invoking delete-account:', error);
             notificationService.showError(
                'Erro ao excluir conta',
-               'Nao foi possivel excluir sua conta. Tente novamente ou entre em contato com o suporte.'
+               'Não foi possível excluir sua conta. Tente novamente ou entre em contato com o suporte.'
             );
-            throw error;
+            return;
          }
 
          // Success — account deletion processed
          notificationService.showSuccess(
-            'Conta excluida',
-            'Sua conta e todos os seus dados foram excluidos com sucesso.'
+            'Conta excluída',
+            'Sua conta e todos os seus dados foram excluídos com sucesso.'
          );
          await new Promise(resolve => setTimeout(resolve, 2000));
          await supabase.auth.signOut();
          window.location.href = '/';
       } catch (error) {
          log.error('Error deleting account:', error);
-         throw error;
       }
    };
 

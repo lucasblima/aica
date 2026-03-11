@@ -28,7 +28,7 @@ export function ActivationGuard({ children }: ActivationGuardProps) {
   }, [loading])
 
   if (loading) {
-    return showLoading ? <LoadingScreen message="Verificando acesso..." /> : <div className="min-h-screen" />
+    return showLoading ? <LoadingScreen message="Verificando acesso..." /> : <div className="min-h-screen bg-ceramic-base" />
   }
 
   if (isActivated === false) {
