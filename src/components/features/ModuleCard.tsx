@@ -78,6 +78,9 @@ export function ModuleCard({
       setTasks(data);
       setLoading(false);
       onTasksLoaded?.(moduleId, data.length);
+    }).catch(() => {
+      setLoading(false);
+      onTasksLoaded?.(moduleId, 0);
     });
   }, [moduleId, onTasksLoaded]);
 

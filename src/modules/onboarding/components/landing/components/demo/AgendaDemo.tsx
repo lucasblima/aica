@@ -69,7 +69,7 @@ export function AgendaDemo() {
   return (
     <div className="space-y-3">
       <p className="text-sm font-semibold text-ceramic-text-primary text-center">
-        Marco 2026
+        Março 2026
       </p>
 
       {/* Calendar header */}

@@ -52,10 +52,10 @@ interface ModuleConfig {
 
 const MODULES: ModuleConfig[] = [
   { id: 'atlas', name: 'Atlas', subtitle: 'Priorize o que importa', icon: LayoutGrid, component: AtlasDemo },
-  { id: 'journey', name: 'Journey', subtitle: 'Consciencia diaria', icon: BookOpen, component: JourneyDemo },
+  { id: 'journey', name: 'Journey', subtitle: 'Consciência diária', icon: BookOpen, component: JourneyDemo },
   { id: 'studio', name: 'Studio', subtitle: 'Podcast copilot', icon: Mic, component: StudioDemo },
-  { id: 'grants', name: 'Grants', subtitle: 'Captacao inteligente', icon: FileText, component: GrantsDemo },
-  { id: 'finance', name: 'Finance', subtitle: 'Visao financeira', icon: DollarSign, component: FinanceDemo },
+  { id: 'grants', name: 'Grants', subtitle: 'Captação inteligente', icon: FileText, component: GrantsDemo },
+  { id: 'finance', name: 'Finance', subtitle: 'Visão financeira', icon: DollarSign, component: FinanceDemo },
   { id: 'connections', name: 'Connections', subtitle: 'Rede de contatos', icon: Users, component: ConnectionsDemo },
   { id: 'flux', name: 'Flux', subtitle: 'Treinos personalizados', icon: Activity, component: FluxDemo },
   { id: 'agenda', name: 'Agenda', subtitle: 'Google Calendar sync', icon: Calendar, component: AgendaDemo },
@@ -93,7 +93,7 @@ export function ModuleExplorer() {
       <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <h2 className="text-3xl md:text-5xl font-black text-ceramic-text-primary text-center mb-10 md:mb-14">
-          8 dimensoes da sua vida.{' '}
+          8 dimensões da sua vida.{' '}
           <span className="text-amber-500">Um sistema.</span>
         </h2>
 

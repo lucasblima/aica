@@ -69,7 +69,7 @@ export function LandingPage() {
       { property: 'og:title', content: 'Aica Life OS — Seu sistema operacional de vida pessoal' },
       { property: 'og:description', content: '8 módulos de IA que organizam tarefas, reflexões, finanças, treinos, podcasts e conexões.' },
       { property: 'og:type', content: 'website' },
-      { property: 'og:url', content: 'https://aica.guru/landing' },
+      { property: 'og:url', content: `${window.location.origin}/landing` },
       { property: 'og:image', content: 'https://aica.guru/og-image.png' },
     ];
 
@@ -198,6 +198,7 @@ export function LandingPage() {
           inviteCode={inviteCode}
           onCodeChange={handleCodeInput}
           onCodeSubmit={handleCodeSubmit}
+          onEnterOS={handleOpenLogin}
           codeValid={codeValid}
           codeError={codeError}
         />
