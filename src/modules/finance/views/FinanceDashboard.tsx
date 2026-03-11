@@ -9,7 +9,8 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Trophy, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Trophy, AlertTriangle, RefreshCw, AlertCircle } from 'lucide-react';
+import { Logo } from '@/components/ui';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
@@ -24,7 +25,7 @@ import { TransactionListView } from '../components/TransactionListView';
 import { MonthComparisonView } from '../components/MonthComparisonView';
 import { GoalTracker } from '../components/GoalTracker';
 import { AccountManagement } from '../components/AccountManagement';
-import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, getCategorySuggestions, applyCategorySuggestions } from '../services/financeService';
+import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange, getCategorySuggestions, applyCategorySuggestions, recategorizeAllTransactions } from '../services/financeService';
 import type { CategorySuggestion } from '../services/financeService';
 import { RecategorizationReview } from '../components/RecategorizationReview';
 import { statementService } from '../services/statementService';
@@ -351,15 +352,13 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     });
   }, [allTransactions, selectedYear, selectedMonth]);
 
-  // Summary for selected month — uses statement closing_balance as the real account balance
+  // Summary for selected month — statement metadata is the source of truth (from bank PDF)
+  // Transaction sums are fallback only (can be incomplete due to query limits or dedup)
   const selectedMonthSummary = useMemo(() => {
-    const income = selectedMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expenses = selectedMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-
     // Find statement(s) whose period overlaps the selected month
     const monthPadded = String(selectedMonth).padStart(2, '0');
     const firstOfMonth = `${selectedYear}-${monthPadded}-01`;
-    const lastOfMonth = `${selectedYear}-${monthPadded}-31`; // safe for string comparison
+    const lastOfMonth = `${selectedYear}-${monthPadded}-31`;
 
     const monthStatements = statements
       .filter(s =>
@@ -373,11 +372,14 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
     const monthStatement = monthStatements[0];
 
-    // Account balance = closing_balance from the statement (authoritative)
-    // Falls back to net flow (income - expenses) when no statement exists
-    const balance = monthStatement?.closing_balance != null
-      ? monthStatement.closing_balance
-      : income - expenses;
+    // Prefer statement metadata (authoritative, from bank PDF)
+    // Fall back to transaction sums when no statement exists
+    const txIncome = selectedMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
+    const txExpenses = selectedMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+
+    const income = monthStatement?.total_credits != null ? Number(monthStatement.total_credits) : txIncome;
+    const expenses = monthStatement?.total_debits != null ? Number(monthStatement.total_debits) : txExpenses;
+    const balance = monthStatement?.closing_balance != null ? Number(monthStatement.closing_balance) : income - expenses;
 
     return { income, expenses, balance, count: selectedMonthTransactions.length, hasStatement: !!monthStatement };
   }, [selectedMonthTransactions, statements, selectedYear, selectedMonth]);
@@ -410,6 +412,32 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       log.error('Recategorization failed:', err);
     } finally {
       setIsRecategorizing(false);
+    }
+  };
+
+  const [isBulkRecategorizing, setIsBulkRecategorizing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState('');
+
+  const handleBulkRecategorize = async () => {
+    try {
+      setIsBulkRecategorizing(true);
+      setBulkProgress('Iniciando...');
+      const { updated, total, error } = await recategorizeAllTransactions(
+        userId,
+        (done, totalTx) => setBulkProgress(`${done}/${totalTx} transações processadas`)
+      );
+      if (error) {
+        log.error('Bulk recategorization error:', error);
+        setBulkProgress(`Erro: ${error}`);
+      } else {
+        setBulkProgress(`${updated} de ${total} transações re-categorizadas`);
+        await loadData();
+      }
+    } catch (err) {
+      log.error('Bulk recategorization failed:', err);
+      setBulkProgress('Erro inesperado');
+    } finally {
+      setIsBulkRecategorizing(false);
     }
   };
 
@@ -489,21 +517,29 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     return (
       <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
         {/* Navigation Header */}
-        <div className="pt-8 px-6 pb-4 flex-shrink-0">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-            >
-              <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
-                <ArrowLeft className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
-            </button>
-          )}
+        <div className="pt-6 px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
+          <div className="flex items-center gap-3 mb-4">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="w-8 h-8 ceramic-inset flex items-center justify-center hover:scale-105 transition-transform"
+              >
+                <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
+              </button>
+            )}
+            <Logo variant="default" width={36} className="rounded-lg hidden lg:block" />
+            <div>
+              <h1 className="text-xl lg:text-2xl font-black text-ceramic-text-primary text-etched leading-tight">
+                Finanças
+              </h1>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary hidden lg:block">
+                AICA Life OS
+              </p>
+            </div>
+          </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="flex gap-1 lg:gap-2 overflow-x-auto pb-1 scrollbar-thin">
             {VIEW_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeView === tab.key;
@@ -512,15 +548,15 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                   key={tab.key}
                   onClick={() => setActiveView(tab.key)}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold
+                    flex items-center gap-1.5 lg:gap-2 px-3 lg:px-5 py-2 lg:py-2.5 rounded-full text-xs lg:text-sm font-bold
                     whitespace-nowrap transition-all duration-200 flex-shrink-0
                     ${isActive
-                      ? 'bg-ceramic-accent/10 text-ceramic-accent'
+                      ? 'bg-ceramic-accent/10 text-ceramic-accent shadow-sm'
                       : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-ceramic-cool'
                     }
                   `}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                   {tab.label}
                 </button>
               );
@@ -539,51 +575,38 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="pt-8 px-6 pb-4 flex-shrink-0">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-          >
-            <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
-              <ArrowLeft className="w-4 h-4" />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
-          </button>
-        )}
-
-        {/* Tab Navigation */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-4">
-          {VIEW_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeView === tab.key;
-            return (
+      <div className="pt-6 px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
+        {/* Top Row: Logo + Title + Period Navigator + Actions */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {onBack && (
               <button
-                key={tab.key}
-                onClick={() => setActiveView(tab.key)}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold
-                  whitespace-nowrap transition-all duration-200 flex-shrink-0
-                  ${isActive
-                    ? 'bg-ceramic-accent/10 text-ceramic-accent'
-                    : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-ceramic-cool'
-                  }
-                `}
+                onClick={onBack}
+                className="w-8 h-8 ceramic-inset flex items-center justify-center hover:scale-105 transition-transform"
               >
-                <Icon className="w-3.5 h-3.5" />
-                {tab.label}
+                <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
               </button>
-            );
-          })}
-        </div>
+            )}
+            <Logo variant="default" width={36} className="rounded-lg hidden lg:block" />
+            <div>
+              <h1 className="text-xl lg:text-2xl font-black text-ceramic-text-primary text-etched leading-tight">
+                Finanças
+              </h1>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary hidden lg:block">
+                AICA Life OS
+              </p>
+            </div>
+          </div>
 
-        {/* Compact Header with Period Navigator */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black text-ceramic-text-primary text-etched">
-            Finanças
-          </h1>
           {/* Period Navigator */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setSelectedYear(selectedYear - 1)}
+              className="ceramic-inset w-7 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+              title="Ano anterior"
+            >
+              <span className="text-xs font-black text-ceramic-text-secondary">«</span>
+            </button>
             <button
               onClick={() => {
                 const prev = selectedMonth === 1
@@ -592,9 +615,10 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 setSelectedMonth(prev.month);
                 setSelectedYear(prev.year);
               }}
-              className="ceramic-inset w-8 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+              className="ceramic-inset w-7 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+              title="Mês anterior"
             >
-              <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
+              <ArrowLeft className="w-3.5 h-3.5 text-ceramic-text-secondary" />
             </button>
             <span className="text-sm font-bold text-ceramic-text-primary min-w-[100px] text-center">
               {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][selectedMonth - 1]} {selectedYear}
@@ -607,11 +631,20 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 setSelectedMonth(next.month);
                 setSelectedYear(next.year);
               }}
-              className="ceramic-inset w-8 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+              className="ceramic-inset w-7 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+              title="Próximo mês"
             >
-              <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary rotate-180" />
+              <ArrowLeft className="w-3.5 h-3.5 text-ceramic-text-secondary rotate-180" />
+            </button>
+            <button
+              onClick={() => setSelectedYear(selectedYear + 1)}
+              className="ceramic-inset w-7 h-8 flex items-center justify-center hover:scale-105 transition-transform"
+              title="Próximo ano"
+            >
+              <span className="text-xs font-black text-ceramic-text-secondary">»</span>
             </button>
           </div>
+
           <div className="flex gap-2">
             <button onClick={toggleVisibility} className="ceramic-concave p-2 hover:scale-95 transition-transform" title={isValuesVisible ? 'Ocultar valores' : 'Mostrar valores'}>
               {isValuesVisible ? <EyeOff className="w-4 h-4 text-ceramic-text-secondary" /> : <Eye className="w-4 h-4 text-ceramic-text-secondary" />}
@@ -621,35 +654,60 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-1 lg:gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {VIEW_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeView === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveView(tab.key)}
+                className={`
+                  flex items-center gap-1.5 lg:gap-2 px-3 lg:px-5 py-2 lg:py-2.5 rounded-full text-xs lg:text-sm font-bold
+                  whitespace-nowrap transition-all duration-200 flex-shrink-0
+                  ${isActive
+                    ? 'bg-ceramic-accent/10 text-ceramic-accent shadow-sm'
+                    : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-ceramic-cool'
+                  }
+                `}
+              >
+                <Icon className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Summary Cards */}
       {hasData && (
-        <div className="px-6 pb-2">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="ceramic-tray p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Receita</p>
-              <p className="text-lg font-black text-ceramic-success">{formatCurrency(selectedMonthSummary.income)}</p>
+        <div className="px-6 lg:px-12 py-4">
+          <div className="max-w-7xl mx-auto grid grid-cols-3 gap-3 lg:gap-4">
+            <div className="ceramic-tray p-3 lg:p-4 text-center">
+              <p className="text-[10px] lg:text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">Receita</p>
+              <p className="text-lg lg:text-2xl font-black text-ceramic-success">{formatCurrency(selectedMonthSummary.income)}</p>
             </div>
-            <div className="ceramic-tray p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Despesa</p>
-              <p className="text-lg font-black text-ceramic-error">{formatCurrency(selectedMonthSummary.expenses)}</p>
+            <div className="ceramic-tray p-3 lg:p-4 text-center">
+              <p className="text-[10px] lg:text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">Despesa</p>
+              <p className="text-lg lg:text-2xl font-black text-ceramic-error">{formatCurrency(selectedMonthSummary.expenses)}</p>
             </div>
-            <div className="ceramic-tray p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">
+            <div className="ceramic-tray p-3 lg:p-4 text-center">
+              <p className="text-[10px] lg:text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
                 {selectedMonthSummary.hasStatement ? 'Saldo Final' : 'Resultado'}
               </p>
-              <p className={`text-lg font-black ${selectedMonthSummary.balance >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}>{formatCurrency(selectedMonthSummary.balance)}</p>
+              <p className={`text-lg lg:text-2xl font-black ${selectedMonthSummary.balance >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}>{formatCurrency(selectedMonthSummary.balance)}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-6 pb-40 space-y-6">
+      <main className="flex-1 overflow-y-auto px-6 lg:px-12 pb-40 space-y-6">
         {/* Upload Section (Collapsible) */}
         {showUpload && (
-          <div className="ceramic-card p-6">
+          <div className="max-w-7xl mx-auto ceramic-card p-6">
             <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">
               Upload de Extrato
             </h3>
@@ -681,108 +739,133 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
         {/* Everything below only shows when there's data */}
         {hasData && (
-          <>
-            {/* Monthly Digest — AI Insights */}
-            <MonthlyDigestCard userId={userId} />
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Row 1: Alerts — side by side on desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Monthly Digest — AI Insights */}
+              <MonthlyDigestCard userId={userId} />
 
-            {/* Proactive Categorization Alert */}
-            {poorlyCategorized.length > 0 && (
-              <div className="ceramic-card p-5 border-l-4 border-amber-400">
-                <div className="flex items-start gap-3">
-                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+              {/* Proactive Categorization Alert OR Budget Alerts */}
+              <div className="space-y-6">
+                {poorlyCategorized.length > 0 && (
+                  <div className="ceramic-card p-5 border-l-4 border-amber-400">
+                    <div className="flex items-start gap-3">
+                      <div className="ceramic-concave w-10 h-10 flex items-center justify-center flex-shrink-0">
+                        <AlertTriangle className="w-5 h-5 text-amber-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-ceramic-text-primary">
+                          {poorlyCategorized.length} {poorlyCategorized.length === 1 ? 'transacao precisa' : 'transacoes precisam'} de categorizacao
+                        </h3>
+                        <p className="text-xs text-ceramic-text-secondary mt-1">
+                          Transacoes classificadas como &quot;transfer&quot; ou &quot;other&quot; podem ser re-categorizadas pela IA.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={handleRecategorize}
+                            disabled={isRecategorizing || isBulkRecategorizing}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                          >
+                            {isRecategorizing ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                Re-categorizando...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Este mês
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={handleBulkRecategorize}
+                            disabled={isRecategorizing || isBulkRecategorizing}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-ceramic-accent hover:bg-ceramic-accent/90 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                          >
+                            {isBulkRecategorizing ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                {bulkProgress}
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Todos os meses
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-ceramic-text-primary">
-                      {poorlyCategorized.length} {poorlyCategorized.length === 1 ? 'transacao precisa' : 'transacoes precisam'} de categorizacao
-                    </h3>
-                    <p className="text-xs text-ceramic-text-secondary mt-1">
-                      Transacoes classificadas como "transfer" ou "other" podem ser re-categorizadas pela IA para melhor analise.
-                    </p>
-                    <button
-                      onClick={handleRecategorize}
-                      disabled={isRecategorizing}
-                      className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
-                    >
-                      {isRecategorizing ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Re-categorizando...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          Re-categorizar com IA
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                )}
+
+                {budgetAlerts.length > 0 && (
+                  <FinanceNotificationCard alerts={budgetAlerts} />
+                )}
               </div>
-            )}
+            </div>
 
-            {/* Budget Alerts / Notifications */}
-            {budgetAlerts.length > 0 && (
-              <FinanceNotificationCard alerts={budgetAlerts} />
-            )}
+            {/* Row 2: Main Charts — side by side on desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} monthlyTrend={trendData} />
+              <ExpenseChart data={categoryBreakdown} totalExpenses={summary!.totalExpenses} />
+            </div>
 
-            {/* Charts */}
-            <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} monthlyTrend={trendData} />
-
-            <ExpenseChart data={categoryBreakdown} totalExpenses={summary!.totalExpenses} />
-
-            {/* Trend Line Chart - 6 Months */}
+            {/* Row 3: Trend Line — full width */}
             {trendData.some(d => d.income > 0 || d.expense > 0) && (
               <TrendLineChart data={trendData} />
             )}
 
-            {/* Goals summary in overview */}
-            <GoalTracker userId={userId} />
+            {/* Row 4: Goals + Burn Rate — side by side on desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <GoalTracker userId={userId} />
 
-            {/* Burn Rate */}
-            {burnRate && burnRate.averageMonthlyExpense > 0 && (
-              <div className="ceramic-card p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-ceramic-text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-ceramic-text-primary">
-                      Burn Rate Mensal
-                    </h3>
-                    <p className="text-xs text-ceramic-text-secondary">
-                      Média dos últimos 3 meses
-                    </p>
-                  </div>
-                </div>
-
-                <div className="ceramic-tray px-6 py-4 flex items-center justify-between">
-                  <p className="text-3xl font-black text-ceramic-text-primary text-etched">
-                    {formatCurrency(burnRate.averageMonthlyExpense)}
-                  </p>
-                  {isValuesVisible && burnRate.trend !== 'stable' && (
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`ceramic-inset px-3 py-1.5 text-xs font-bold ${
-                          burnRate.trend === 'decreasing'
-                            ? 'text-ceramic-success'
-                            : 'text-ceramic-error'
-                        }`}
-                      >
-                        {burnRate.trend === 'decreasing' ? '\u2193' : '\u2191'}{' '}
-                        {Math.abs(burnRate.percentageChange).toFixed(1)}%
-                      </div>
+              {burnRate && burnRate.averageMonthlyExpense > 0 && (
+                <div className="ceramic-card p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-ceramic-text-primary" />
                     </div>
-                  )}
+                    <div>
+                      <h3 className="text-sm font-bold text-ceramic-text-primary">
+                        Burn Rate Mensal
+                      </h3>
+                      <p className="text-xs text-ceramic-text-secondary">
+                        Média dos últimos 3 meses
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="ceramic-tray px-6 py-4 flex items-center justify-between">
+                    <p className="text-3xl font-black text-ceramic-text-primary text-etched">
+                      {formatCurrency(burnRate.averageMonthlyExpense)}
+                    </p>
+                    {isValuesVisible && burnRate.trend !== 'stable' && (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`ceramic-inset px-3 py-1.5 text-xs font-bold ${
+                            burnRate.trend === 'decreasing'
+                              ? 'text-ceramic-success'
+                              : 'text-ceramic-error'
+                          }`}
+                        >
+                          {burnRate.trend === 'decreasing' ? '\u2193' : '\u2191'}{' '}
+                          {Math.abs(burnRate.percentageChange).toFixed(1)}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Processing Statements (if any) */}
         {statements.some(s => s.processing_status === 'processing') && (
-          <div className="ceramic-card p-6 space-y-4">
+          <div className="max-w-7xl mx-auto ceramic-card p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 text-ceramic-info animate-spin" />
@@ -823,7 +906,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
         {/* Manage Statements */}
         {statements.length > 0 && (
-          <div className="ceramic-card p-6 space-y-4">
+          <div className="max-w-7xl mx-auto ceramic-card p-6 space-y-4">
             <button
               onClick={() => setShowManagement(!showManagement)}
               className="w-full flex items-center justify-between"
@@ -866,9 +949,59 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                   </span>
                 </button>
 
+                {/* Missing Months Alert */}
+                {(() => {
+                  const sorted = [...statements]
+                    .filter(s => s.statement_period_start)
+                    .sort((a, b) => (a.statement_period_start || '').localeCompare(b.statement_period_start || ''));
+                  if (sorted.length < 2) return null;
+
+                  const missingMonths: string[] = [];
+                  const firstDate = new Date(sorted[0].statement_period_start + 'T00:00:00');
+                  const lastDate = new Date(sorted[sorted.length - 1].statement_period_start + 'T00:00:00');
+                  const coveredMonths = new Set(sorted.map(s => s.statement_period_start!.substring(0, 7)));
+
+                  const cursor = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+                  const end = new Date(lastDate.getFullYear(), lastDate.getMonth(), 1);
+                  while (cursor <= end) {
+                    const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+                    if (!coveredMonths.has(ym)) missingMonths.push(ym);
+                    cursor.setMonth(cursor.getMonth() + 1);
+                  }
+
+                  if (missingMonths.length === 0) return null;
+
+                  const formatMonth = (ym: string) => {
+                    const [y, m] = ym.split('-');
+                    const names = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    return `${names[parseInt(m) - 1]} ${y}`;
+                  };
+
+                  return (
+                    <div className="ceramic-inset rounded-xl p-4 flex items-start gap-3 border border-amber-200/50">
+                      <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-ceramic-text-primary">
+                          {missingMonths.length === 1 ? '1 mês sem extrato' : `${missingMonths.length} meses sem extrato`}
+                        </p>
+                        <p className="text-xs text-ceramic-text-secondary">
+                          Importe os extratos faltantes para ter uma visão completa das suas finanças.
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {missingMonths.map(ym => (
+                            <span key={ym} className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[11px] font-semibold">
+                              {formatMonth(ym)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Statements List */}
                 <div className="space-y-3">
-                  {statements.map((statement) => {
+                  {[...statements].sort((a, b) => (b.statement_period_start || '').localeCompare(a.statement_period_start || '')).map((statement) => {
                     const statusBadge = getStatusBadge(statement.processing_status || 'pending');
 
                     return (
@@ -905,47 +1038,36 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                               </div>
                             )}
 
-                            {/* Metrics Row */}
-                            <div className="flex items-center gap-4 flex-wrap">
-                              {/* Transaction Count */}
-                              <div className="ceramic-inset px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
-                                <FileText className="w-3.5 h-3.5 text-ceramic-accent" />
-                                <span className="text-xs font-bold text-ceramic-text-primary">
-                                  {statement.transaction_count || 0}
-                                </span>
-                                <span className="text-[10px] text-ceramic-text-secondary">
-                                  {statement.transaction_count === 1 ? 'transação' : 'transações'}
-                                </span>
+                            {/* Financial Flow: Inicial → Receita / Despesa → Final */}
+                            <div className="grid grid-cols-4 gap-2">
+                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
+                                <p className="text-[10px] text-ceramic-text-secondary">Inicial</p>
+                                <p className="text-xs font-bold text-ceramic-text-primary">{formatCurrency(statement.opening_balance || 0)}</p>
                               </div>
-
-                              {/* Opening Balance */}
-                              <div className="ceramic-inset px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
-                                <span className="text-[10px] text-ceramic-text-secondary">
-                                  Inicial:
-                                </span>
-                                <span className="text-xs font-bold text-ceramic-text-primary">
-                                  {formatCurrency(statement.opening_balance || 0)}
-                                </span>
+                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
+                                <p className="text-[10px] text-ceramic-text-secondary">Receita</p>
+                                <p className="text-xs font-bold text-ceramic-success">{formatCurrency(statement.total_credits || 0)}</p>
                               </div>
-
-                              {/* Closing Balance */}
-                              <div className="ceramic-inset px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
-                                <span className="text-[10px] text-ceramic-text-secondary">
-                                  Final:
-                                </span>
-                                <span className="text-xs font-bold text-ceramic-success">
-                                  {formatCurrency(statement.closing_balance || 0)}
-                                </span>
+                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
+                                <p className="text-[10px] text-ceramic-text-secondary">Despesa</p>
+                                <p className="text-xs font-bold text-ceramic-error">{formatCurrency(statement.total_debits || 0)}</p>
                               </div>
+                              <div className="ceramic-inset px-2.5 py-2 rounded-lg text-center">
+                                <p className="text-[10px] text-ceramic-text-secondary">Final</p>
+                                <p className="text-xs font-bold text-ceramic-success">{formatCurrency(statement.closing_balance || 0)}</p>
+                              </div>
+                            </div>
 
-                              {/* File Name (truncated) */}
+                            {/* Transaction count + file name */}
+                            <div className="flex items-center gap-3 text-[10px] text-ceramic-text-secondary">
+                              <span className="inline-flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                {statement.transaction_count || 0} {(statement.transaction_count || 0) === 1 ? 'transação' : 'transações'}
+                              </span>
                               {statement.file_name && (
-                                <div className="flex items-center gap-1.5">
-                                  <ChevronRight className="w-3 h-3 text-ceramic-text-secondary opacity-50" />
-                                  <span className="text-[10px] text-ceramic-text-secondary truncate max-w-[200px]">
-                                    {statement.file_name}
-                                  </span>
-                                </div>
+                                <span className="truncate max-w-[200px]">
+                                  {statement.file_name}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -975,7 +1097,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
         {/* File Search Integration - Only show if statements are indexed */}
         {hasIndexedStatements && statements.length > 0 && (
-          <div className="ceramic-card p-6">
+          <div className="max-w-7xl mx-auto ceramic-card p-6">
             <FinanceSearchPanel
               onSearch={async (query) => {
                 const results = await searchInStatements(query, 10);
