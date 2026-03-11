@@ -219,7 +219,8 @@ export class PDFProcessingService {
     }
 
     const result = cleaned.join('\n')
-    log.debug(`[PDFProcessingService] Text preprocessed: ${rawText.length} → ${result.length} chars (${Math.round((1 - result.length / rawText.length) * 100)}% reduction)`)
+    const reductionPct = rawText.length > 0 ? Math.round((1 - result.length / rawText.length) * 100) : 0
+    log.debug(`[PDFProcessingService] Text preprocessed: ${rawText.length} → ${result.length} chars (${reductionPct}% reduction)`)
     return result
   }
 
@@ -352,7 +353,8 @@ export class PDFProcessingService {
               })),
             })
 
-            const categories = (catResult as any)?.categories
+            const catResultRecord = catResult as Record<string, unknown> | undefined
+            const categories = catResultRecord?.categories as string[] | undefined
             if (Array.isArray(categories) && categories.length === poorlyClassified.length) {
               // Build a map of description+amount → new category for lookup
               let improved = 0
