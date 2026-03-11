@@ -21,7 +21,7 @@ import { SubtaskList, Subtask } from '@/components/ui';
 import { RecurrencePicker } from '@/components/ui';
 import { TagInput } from '@/components/ui';
 import { createNamespacedLogger } from '@/lib/logger';
-import { decomposeTask, type TaskDecomposition } from '@/modules/atlas/services/atlasAIService';
+import { decomposeTask, type TaskDecomposition } from '@/services/taskAIService';
 
 const log = createNamespacedLogger('TaskEditDrawer');
 

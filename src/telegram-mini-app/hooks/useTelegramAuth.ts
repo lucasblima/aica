@@ -10,6 +10,19 @@ import {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
+/**
+ * NOTE: This file intentionally uses `createClient` from `@supabase/supabase-js`
+ * instead of the project-standard `@supabase/ssr` client (`src/services/supabaseClient.ts`).
+ *
+ * Reason: The Telegram Mini App authenticates via Telegram initData, NOT browser
+ * cookies or OAuth/PKCE. The Edge Function `telegram-mini-app-auth` validates the
+ * initData and returns a JWT session_token. We inject that token as a static
+ * Authorization header — a pattern supported by `@supabase/supabase-js` but not
+ * by `@supabase/ssr`'s `createBrowserClient`, which manages its own cookie-based
+ * auth state internally. Using the SSR client here would trigger unnecessary cookie
+ * cleanup, PKCE listeners, and auth state conflicts.
+ */
+
 interface UseTelegramAuthReturn {
   isLoading: boolean
   isLinked: boolean

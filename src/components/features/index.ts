@@ -103,3 +103,9 @@ export { UnifiedAgentChat, TrustLevelBadge } from './UnifiedAgentChat';
 
 // Shared Visualizations — Landing-to-App consistent charts
 export * from './visualizations';
+
+// Audio Recording — Generic microphone recorder (re-exported from Journey for cross-module use)
+export { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
+
+// Holiday Badge — Inline holiday indicator (re-exported from Atlas for cross-module use)
+export { HolidayBadge } from '@/modules/atlas/components/HolidayBadge';

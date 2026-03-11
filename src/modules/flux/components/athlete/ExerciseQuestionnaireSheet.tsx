@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   SkipForward,
 } from 'lucide-react';
-import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
+import { AudioRecorder } from '@/components/features';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 

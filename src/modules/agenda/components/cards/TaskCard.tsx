@@ -19,7 +19,7 @@ import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from '
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Calendar, Clock, Check, Repeat, ListChecks, CalendarDays } from 'lucide-react';
-import { HolidayBadge } from '@/modules/atlas/components';
+import { HolidayBadge } from '@/components/features';
 import { getTagColor } from '@/lib/utils/tagColors';
 import type { Task, Quadrant } from '@/types';
 import { QUADRANT_COLORS } from '@/constants/quadrantColors';

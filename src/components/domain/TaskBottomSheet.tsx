@@ -23,7 +23,7 @@ import { notificationService } from '@/services/notificationService';
 import { Accordion, SubtaskList, RecurrencePicker, TagInput } from '@/components/ui';
 import type { Subtask } from '@/components/ui/SubtaskList';
 import { createNamespacedLogger } from '@/lib/logger';
-import { decomposeTask } from '@/modules/atlas/services/atlasAIService';
+import { decomposeTask } from '@/services/taskAIService';
 
 const log = createNamespacedLogger('TaskBottomSheet');
 
