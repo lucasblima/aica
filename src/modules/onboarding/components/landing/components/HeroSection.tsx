@@ -17,7 +17,7 @@ export function HeroSection({ onOpenLogin }: HeroSectionProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
         >
-          Voce nao precisa de mais um app.
+          Você não precisa de mais um app.
         </motion.h1>
 
         <motion.h1
@@ -27,7 +27,7 @@ export function HeroSection({ onOpenLogin }: HeroSectionProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
         >
-          Voce precisa de um sistema que te entenda.
+          Você precisa de um sistema que te entenda.
         </motion.h1>
 
         {/* Sub-headline */}
@@ -38,7 +38,7 @@ export function HeroSection({ onOpenLogin }: HeroSectionProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
         >
-          Seu sistema operacional de vida — tatil, unificado, inteligente.
+          Seu sistema operacional de vida — tátil, unificado, inteligente.
         </motion.p>
 
         {/* Dashboard Demo */}

@@ -18,12 +18,14 @@ export function useWeatherInsight() {
 
   const { data: weather = null, isLoading, error } = useQuery<WeatherData | null>({
     queryKey: ['weather', location?.latitude, location?.longitude],
-    queryFn: () =>
-      getWeatherForecast(
-        location!.latitude,
-        location!.longitude,
-        location!.city
-      ),
+    queryFn: () => {
+      if (!location) throw new Error('Location not available');
+      return getWeatherForecast(
+        location.latitude,
+        location.longitude,
+        location.city
+      );
+    },
     enabled: hasLocation,
     staleTime: THIRTY_MIN_MS,
     gcTime: THREE_HOURS_MS,

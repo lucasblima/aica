@@ -10,7 +10,7 @@
  * Enhanced with comprehensive logging for production debugging
  */
 
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabaseClient'
 import { invalidateAuthCache } from '@/services/authCacheService'
@@ -62,9 +62,6 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
-  // CRITICAL: Use ref to prevent double exchange attempts
-  const codeExchangeAttempted = useRef(false)
 
   useEffect(() => {
     let isMounted = true
@@ -229,7 +226,7 @@ export function useAuth() {
   const sendMagicLink = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: `${window.location.origin}/landing` },
     })
     return { error: error?.message ?? null }
   }, [])

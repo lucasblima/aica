@@ -788,8 +788,8 @@ export function AppRouter() {
                <Route path="/connections" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Connections" />}><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></ErrorBoundary></ProtectedRoute>} />
                <Route path="/connections/:spaceId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Connections" />}><SpaceDetailView /></ErrorBoundary></ProtectedRoute>} />
                {/* Legacy redirects: old /connections/:archetype/:spaceId → new /connections/:spaceId */}
-               <Route path="/connections/:archetype/:spaceId" element={<LegacySpaceRedirect />} />
-               <Route path="/connections/:archetype/:spaceId/:section" element={<LegacySpaceRedirect />} />
+               <Route path="/connections/:archetype/:spaceId" element={<ProtectedRoute><LegacySpaceRedirect /></ProtectedRoute>} />
+               <Route path="/connections/:archetype/:spaceId/:section" element={<ProtectedRoute><LegacySpaceRedirect /></ProtectedRoute>} />
                <Route path="/connections/analytics/whatsapp" element={<Navigate to="/contacts" replace />} />
 
                {/* Studio Module Routes - Protected */}
@@ -973,7 +973,11 @@ export function AppRouter() {
                <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
 
                {/* 404 Not Found - Catch all unknown routes */}
-               <Route path="*" element={<NotFoundPage />} />
+               <Route path="*" element={
+                  <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+                     <NotFoundPage />
+                  </Suspense>
+               } />
             </Routes>
             </Suspense>
          </XPNotificationProvider>

@@ -1,7 +1,7 @@
 /**
  * AdminGuard Component
  *
- * Protects admin-only routes by checking user_metadata.is_admin.
+ * Protects admin-only routes by checking app_metadata.is_admin.
  * Redirects non-admin users to home page.
  *
  * Issue: #129 - WhatsApp Instance Monitoring Dashboard
@@ -32,14 +32,14 @@ export function AdminGuard({ children, fallbackPath = '/' }: AdminGuardProps) {
     return <Navigate to="/landing" replace />
   }
 
-  // Check if user has admin flag in metadata
-  const isAdmin = user.user_metadata?.is_admin === true
+  // Check if user has admin flag in app_metadata (not user_metadata, which is user-writable)
+  const isAdmin = user.app_metadata?.is_admin === true
 
   log.debug('[AdminGuard] Checking admin access:', {
     userId: user.id,
     email: user.email,
     isAdmin,
-    metadata: user.user_metadata,
+    metadata: user.app_metadata,
   })
 
   if (!isAdmin) {

@@ -4,9 +4,9 @@ import type { AtlasTask } from '../../data/demoData';
 
 const QUADRANTS = [
   { key: 'urgent-important' as const, label: 'Urgente + Importante', bg: 'bg-ceramic-error/10', border: 'border-ceramic-error/30' },
-  { key: 'not-urgent-important' as const, label: 'Nao Urgente + Importante', bg: 'bg-ceramic-info/10', border: 'border-ceramic-info/30' },
+  { key: 'not-urgent-important' as const, label: 'Não Urgente + Importante', bg: 'bg-ceramic-info/10', border: 'border-ceramic-info/30' },
   { key: 'urgent-not-important' as const, label: 'Urgente - Importante', bg: 'bg-amber-50', border: 'border-amber-200' },
-  { key: 'not-urgent-not-important' as const, label: 'Nao Urgente - Importante', bg: 'bg-ceramic-cool', border: 'border-ceramic-border' },
+  { key: 'not-urgent-not-important' as const, label: 'Não Urgente - Importante', bg: 'bg-ceramic-cool', border: 'border-ceramic-border' },
 ] as const;
 
 const QUADRANT_ORDER: AtlasTask['quadrant'][] = [

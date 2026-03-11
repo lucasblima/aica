@@ -276,7 +276,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                         </button>
 
                         {/* Admin Portal (only visible to admins) */}
-                        {user?.user_metadata?.is_admin && (
+                        {user?.app_metadata?.is_admin && (
                             <button
                                 onClick={() => {
                                     navigate('/admin');
