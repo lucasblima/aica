@@ -707,6 +707,41 @@ async function handleCallbackQuery(
       p_telegram_id: telegramId,
       p_scope: ['messages', 'notifications', 'ai_processing'],
     })
+
+    // Resolve userId to set up email registration flow
+    const { data: consentUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const consentUserId = consentUser?.[0]?.user_id
+
+    if (consentUserId) {
+      // Check if user still has synthetic email (hasn't registered real email yet)
+      const { data: authData } = await supabase.auth.admin.getUserById(consentUserId)
+      const hasSyntheticEmail = authData?.user?.email?.endsWith('@telegram.aica.guru')
+
+      if (hasSyntheticEmail) {
+        // Start email registration flow
+        const chatId = Number(msg.chat.chatId)
+        await setActiveFlow(supabase, consentUserId, chatId, 'email_registration', { step: 'waiting_email' })
+
+        await reply(tg, msg, [
+          '✅ <b>Consentimento registrado!</b>',
+          '',
+          '📧 Agora, qual e o seu <b>email</b>?',
+          '',
+          'Com o email, voce podera acessar a AICA pelo navegador tambem.',
+          'Envie no formato: <code>seu@email.com</code>',
+        ].join('\n'), {
+          inlineKeyboard: {
+            rows: [[
+              { text: '⏭️ Pular por agora', callbackData: 'email_skip' },
+            ]],
+          },
+        })
+        return
+      }
+    }
+
+    // Fallback: user already has real email or couldn't resolve user
     await reply(tg, msg, [
       '✅ <b>Consentimento registrado!</b>',
       '',
@@ -759,6 +794,48 @@ async function handleCallbackQuery(
 
   } else if (data === 'delete_data_cancel') {
     await reply(tg, msg, '👍 Operacao cancelada. Seus dados permanecem intactos.')
+
+  } else if (data === 'email_skip') {
+    // User chose to skip email registration — clear flow, show normal welcome
+    const { data: skipUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const skipUserId = skipUser?.[0]?.user_id
+    if (skipUserId) {
+      const chatId = Number(msg.chat.chatId)
+      await setActiveFlow(supabase, skipUserId, chatId, null, {})
+    }
+    await reply(tg, msg, [
+      '👍 Sem problema! Voce pode registrar seu email depois com /status.',
+      '',
+      'Agora voce pode conversar comigo naturalmente. Experimente:',
+      '',
+      '• "Adiciona tarefa: revisar proposta"',
+      '• "Gastei R$50 no almoco"',
+      '• "Como ta meu dia?"',
+      '',
+      'Use /help para ver todos os comandos.',
+    ].join('\n'))
+
+  } else if (data === 'email_register_start') {
+    // User wants to register email from /status
+    const { data: regUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const regUserId = regUser?.[0]?.user_id
+    if (regUserId) {
+      const chatId = Number(msg.chat.chatId)
+      await setActiveFlow(supabase, regUserId, chatId, 'email_registration', { step: 'waiting_email' })
+      await reply(tg, msg, [
+        '📧 Qual e o seu <b>email</b>?',
+        '',
+        'Envie no formato: <code>seu@email.com</code>',
+      ].join('\n'), {
+        inlineKeyboard: {
+          rows: [[
+            { text: '❌ Cancelar', callbackData: 'email_skip' },
+          ]],
+        },
+      })
+    }
 
   // Phase 2: Module interaction callbacks
   } else if (data.startsWith('task_priority:')) {
@@ -978,6 +1055,26 @@ serve(async (req) => {
             })
             result.processed = true
           } else {
+            // Check if user is in a multi-step flow (e.g., email registration)
+            const chatId = Number(message.chat.chatId)
+            const { activeFlow, flowState } = await getActiveFlow(supabase, aicaUserId, chatId)
+
+            if (activeFlow === 'email_registration') {
+              await handleEmailRegistration(tg, message, supabase, aicaUserId, flowState)
+              result.processed = true
+
+              // Log without storing raw text (LGPD)
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[email_registration_flow]',
+                action: 'email_registration',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+
             // Process with AI router
             const firstName = message.sender.firstName || 'usuario'
             const aiResult = await processNaturalLanguage(
