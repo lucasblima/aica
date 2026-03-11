@@ -33,6 +33,10 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
 
   const handleEmailLogin = async () => {
     if (!email.trim()) return;
+    if (!password) {
+      setEmailError('Digite sua senha');
+      return;
+    }
     setEmailError(null);
     setSuccessMessage(null);
     setEmailLoading(true);
@@ -40,6 +44,8 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
     setEmailLoading(false);
     if (error) {
       setEmailError(error === 'Invalid login credentials' ? 'Email ou senha incorretos' : error);
+    } else {
+      onLogin();
     }
   };
 
