@@ -99,7 +99,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
       // Show badge unlock modal
       const badge = BADGES_CATALOG.first_whatsapp_connect;
       if (badge) {
-        showBadgeUnlock(badge as any);
+        showBadgeUnlock(badge);
       }
 
       log.debug('[useWhatsAppGamification] Connection tracked:', {
@@ -136,7 +136,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
         // Show badge unlock modal
         const badge = BADGES_CATALOG.consent_champion;
         if (badge) {
-          showBadgeUnlock(badge as any);
+          showBadgeUnlock(badge);
         }
 
         log.debug('[useWhatsAppGamification] Consent Champion badge unlocked!');
@@ -178,7 +178,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
         // Show badge unlock modal
         const badge = BADGES_CATALOG.emotional_awareness_beginner;
         if (badge) {
-          showBadgeUnlock(badge as any);
+          showBadgeUnlock(badge);
         }
 
         log.debug('[useWhatsAppGamification] Emotional Awareness (Beginner) badge unlocked!');
@@ -188,7 +188,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
         // Show badge unlock modal
         const badge = BADGES_CATALOG.emotional_awareness_master;
         if (badge) {
-          showBadgeUnlock(badge as any);
+          showBadgeUnlock(badge);
         }
 
         log.debug('[useWhatsAppGamification] Emotional Awareness (Master) badge unlocked!');
@@ -229,7 +229,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
         // Show badge unlock modal
         const badge = BADGES_CATALOG.sentiment_explorer;
         if (badge) {
-          showBadgeUnlock(badge as any);
+          showBadgeUnlock(badge);
         }
 
         log.debug('[useWhatsAppGamification] Sentiment Explorer badge unlocked!');
