@@ -446,6 +446,16 @@ async function handleStatus(
       ? '⚠️ Conta (status indisponivel)'
       : isSyntheticEmail ? '📱 Conta Telegram (convidado)' : '🌐 Conta AICA completa'
 
+    const statusOptions: Partial<OutboundMessage> = isSyntheticEmail
+      ? {
+          inlineKeyboard: {
+            rows: [[
+              { text: '📧 Registrar email', callbackData: 'email_register_start' },
+            ]],
+          },
+        }
+      : {}
+
     await reply(tg, msg, [
       '✅ <b>Conta ativa</b>',
       '',
@@ -454,10 +464,10 @@ async function handleStatus(
       `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
       '',
       ...(isSyntheticEmail
-        ? ['💡 Acesse <b>aica.guru</b> para configurar email e senha.', '']
-        : []),
+        ? ['💡 Envie seu email aqui para acessar a AICA pelo navegador.', '']
+        : [`📧 Email: <b>${authUser?.user?.email || 'N/A'}</b>`, '']),
       'Use /desvincular para remover a vinculacao.',
-    ].join('\n'))
+    ].join('\n'), statusOptions)
   } else {
     await reply(tg, msg, [
       '❌ <b>Conta nao encontrada</b>',
