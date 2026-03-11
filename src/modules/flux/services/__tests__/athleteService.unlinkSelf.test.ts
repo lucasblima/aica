@@ -6,24 +6,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { supabase } from '@/services/supabaseClient';
 
 // Mock supabase
 vi.mock('@/services/supabaseClient', () => {
-  const mockEq = vi.fn();
-  const mockUpdate = vi.fn(() => ({ eq: mockEq }));
-  const mockGetUser = vi.fn();
+  const mockRpc = vi.fn();
 
   return {
     supabase: {
-      from: vi.fn(() => ({
-        update: mockUpdate,
-      })),
-      auth: {
-        getUser: mockGetUser,
-      },
+      rpc: mockRpc,
+      // Stubs required by athleteService module-level imports
+      from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn() })) })),
+      auth: { getUser: vi.fn() },
     },
-    __mocks: { mockUpdate, mockEq, mockGetUser },
+    __mocks: { mockRpc },
   };
 });
 
@@ -34,7 +29,7 @@ vi.mock('@/services/platformContactService', () => ({
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { __mocks } = await vi.importMock<any>('@/services/supabaseClient');
-const { mockUpdate, mockEq, mockGetUser } = __mocks;
+const { mockRpc } = __mocks;
 
 // Must import AFTER mock setup
 import { AthleteService } from '../athleteService';
@@ -42,49 +37,32 @@ import { AthleteService } from '../athleteService';
 describe('AthleteService.unlinkSelf', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUpdate.mockReturnValue({ eq: mockEq });
-    mockEq.mockResolvedValue({ error: null });
   });
 
-  it('updates athlete with auth_user_id=null, invitation_status=none, status=churned', async () => {
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: 'user-123' } },
-    });
+  it('calls athlete_unlink_self RPC and returns no error on success', async () => {
+    mockRpc.mockResolvedValue({ error: null });
 
     const result = await AthleteService.unlinkSelf();
 
     expect(result.error).toBeNull();
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        auth_user_id: null,
-        invitation_status: 'none',
-        status: 'churned',
-      })
-    );
-    expect(mockEq).toHaveBeenCalledWith('auth_user_id', 'user-123');
+    expect(mockRpc).toHaveBeenCalledWith('athlete_unlink_self');
   });
 
-  it('returns error when user is not authenticated', async () => {
-    mockGetUser.mockResolvedValue({
-      data: { user: null },
-    });
+  it('returns error from RPC on failure', async () => {
+    const rpcError = { message: 'No athlete record found', code: 'P0001' };
+    mockRpc.mockResolvedValue({ error: rpcError });
 
     const result = await AthleteService.unlinkSelf();
 
-    expect(result.error).toBeTruthy();
-    expect(result.error?.message).toMatch(/not authenticated/i);
-    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(result.error).toBe(rpcError);
   });
 
-  it('returns error from supabase on failure', async () => {
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: 'user-123' } },
-    });
-    const dbError = new Error('RLS policy violation');
-    mockEq.mockResolvedValue({ error: dbError });
+  it('catches thrown exceptions and returns error', async () => {
+    mockRpc.mockRejectedValue(new Error('Network error'));
 
     const result = await AthleteService.unlinkSelf();
 
-    expect(result.error).toBe(dbError);
+    expect(result.error).toBeInstanceOf(Error);
+    expect(result.error.message).toBe('Network error');
   });
 });

@@ -72,3 +72,37 @@ EXCEPTION
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =====================
+-- 3. RPC: athlete_unlink_self (SECURITY DEFINER)
+--    Bypasses RLS to perform the unlink. Validates auth.uid() internally.
+-- =====================
+
+CREATE OR REPLACE FUNCTION public.athlete_unlink_self()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid UUID := auth.uid();
+  v_count INT;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  UPDATE athletes
+  SET auth_user_id = NULL,
+      invitation_status = 'none',
+      status = 'churned',
+      updated_at = NOW()
+  WHERE auth_user_id = v_uid;
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  IF v_count = 0 THEN
+    RAISE EXCEPTION 'No athlete record found for this user';
+  END IF;
+END;
+$$;
