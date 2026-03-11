@@ -14,6 +14,8 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { getTransactionsByDateRange, getYearlyAggregates } from '../services/financeService';
 import type { FinanceTransaction, YearSummary } from '../types';
 import { CATEGORY_LABELS, formatCurrency } from '../constants';
+import { TrendLineChart } from './Charts/TrendLineChart';
+import { CategoryTrendChart } from './Charts/CategoryTrendChart';
 
 const log = createNamespacedLogger('MonthComparisonView');
 
@@ -146,6 +148,8 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
 
   const [summaryA, setSummaryA] = useState<MonthSummary | null>(null);
   const [summaryB, setSummaryB] = useState<MonthSummary | null>(null);
+  const [trendData, setTrendData] = useState<Array<{ month: string; income: number; expense: number }>>([]);
+  const [categoryTrendData, setCategoryTrendData] = useState<Array<{ category: string; data: Array<{ month: string; amount: number }>; color: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -164,6 +168,75 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
 
       setSummaryA(summarizeTransactions(txA));
       setSummaryB(summarizeTransactions(txB));
+
+      // Load 6-month trend data for charts
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      const trendStart = sixMonthsAgo.toISOString().split('T')[0];
+      const trendEnd = new Date().toISOString().split('T')[0];
+
+      const trendTx = await getTransactionsByDateRange(userId, trendStart, trendEnd);
+
+      // Build monthly trend data
+      const monthlyMap = new Map<string, { income: number; expense: number }>();
+      for (const tx of trendTx) {
+        const d = new Date(tx.transaction_date);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyMap.has(key)) monthlyMap.set(key, { income: 0, expense: 0 });
+        const entry = monthlyMap.get(key)!;
+        const amount = Math.abs(Number(tx.amount));
+        if (tx.type === 'income') entry.income += amount;
+        else entry.expense += amount;
+      }
+
+      // Sort chronologically and format for TrendLineChart
+      const sortedMonths = Array.from(monthlyMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, vals]) => {
+          const [y, m] = key.split('-');
+          const monthShort = new Date(parseInt(y), parseInt(m) - 1).toLocaleString('pt-BR', { month: 'short' });
+          return { month: monthShort, income: vals.income, expense: vals.expense };
+        });
+
+      setTrendData(sortedMonths);
+
+      // Build category trend data (top 3 expense categories)
+      const catMonthlyMap = new Map<string, Map<string, number>>();
+      for (const tx of trendTx) {
+        if (tx.type !== 'expense') continue;
+        const d = new Date(tx.transaction_date);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!catMonthlyMap.has(tx.category)) catMonthlyMap.set(tx.category, new Map());
+        const catMap = catMonthlyMap.get(tx.category)!;
+        catMap.set(monthKey, (catMap.get(monthKey) || 0) + Math.abs(Number(tx.amount)));
+      }
+
+      // Find top 3 categories by total spend
+      const catTotals = Array.from(catMonthlyMap.entries())
+        .map(([cat, months]) => ({ cat, total: Array.from(months.values()).reduce((s, v) => s + v, 0) }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 3);
+
+      const CATEGORY_COLORS: Record<string, string> = {
+        housing: '#6366f1', food: '#f59e0b', transport: '#10b981',
+        health: '#ef4444', education: '#8b5cf6', entertainment: '#ec4899',
+        shopping: '#14b8a6', salary: '#22c55e', other: '#94a3b8',
+      };
+
+      const catTrends = catTotals.map(({ cat }) => {
+        const months = catMonthlyMap.get(cat)!;
+        const data = Array.from(monthlyMap.keys())
+          .sort()
+          .map(key => {
+            const [y, m] = key.split('-');
+            const monthShort = new Date(parseInt(y), parseInt(m) - 1).toLocaleString('pt-BR', { month: 'short' });
+            return { month: monthShort, amount: months.get(key) || 0 };
+          });
+        return { category: cat, data, color: CATEGORY_COLORS[cat] || '#94a3b8' };
+      });
+
+      setCategoryTrendData(catTrends);
     } catch (err) {
       log.error('Failed to fetch comparison data', err);
       setError('Erro ao carregar dados de comparacao.');
@@ -617,6 +690,32 @@ export const MonthComparisonView: React.FC<MonthComparisonViewProps> = ({
                       {h.value}
                     </span>
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Income vs Expense Trend — 6 months ── */}
+          {trendData.length > 0 && (
+            <div className="overflow-hidden">
+              <TrendLineChart data={trendData} />
+            </div>
+          )}
+
+          {/* ── Category spending trends — top 3 ── */}
+          {categoryTrendData.length > 0 && (
+            <div className="ceramic-card p-6">
+              <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-4">
+                Tendencia por Categoria (6 meses)
+              </h4>
+              <div className="space-y-6">
+                {categoryTrendData.map(ct => (
+                  <CategoryTrendChart
+                    key={ct.category}
+                    data={ct.data}
+                    category={CATEGORY_LABELS[ct.category] || ct.category}
+                    color={ct.color}
+                  />
                 ))}
               </div>
             </div>
