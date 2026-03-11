@@ -87,7 +87,7 @@ export async function getMonthlyDigest(
           detail = body?.error || detail
           log.error('Edge Function error detail:', body)
         }
-      } catch { /* ignore parse errors */ }
+      } catch (parseErr) { log.warn('Failed to parse Edge Function error context:', parseErr) }
       log.error('Edge Function invocation error:', detail)
       return {
         success: false,

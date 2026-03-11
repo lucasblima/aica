@@ -457,8 +457,8 @@ export async function storeFinancialHealth(
         borrow: result.finHealth.borrow,
         plan: result.finHealth.plan,
       },
-    }).catch(() => {
-      // Non-critical
+    }).catch((err) => {
+      log.warn('logAttribution failed (non-critical):', err);
     });
   } catch (err) {
     log.error('storeFinancialHealth failed:', err);

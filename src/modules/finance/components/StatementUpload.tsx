@@ -602,7 +602,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
             );
             continue;
           } catch (err) {
-            console.error('CSV parse error:', err);
+            log.error('CSV parse error:', err);
             onError?.(`${fileWithMeta.file.name}: Erro ao processar CSV`);
             continue;
           }
