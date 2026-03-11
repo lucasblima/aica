@@ -77,6 +77,10 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
 
     // Handle recurrence: create next occurrence if task has recurrence_rule
     if (updatedTask?.recurrence_rule) {
+      if (!updatedTask.user_id) {
+        log.error('Task missing user_id - cannot create recurrence');
+        return true;
+      }
       try {
         const startDate = updatedTask.due_date
           ? new Date(updatedTask.due_date)
