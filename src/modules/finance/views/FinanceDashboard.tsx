@@ -9,7 +9,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Trophy, AlertTriangle, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, TrendingUp, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, BarChart3, List, GitCompare, Settings, AlertTriangle, RefreshCw, AlertCircle } from 'lucide-react';
 import { Logo } from '@/components/ui';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
@@ -42,7 +42,7 @@ interface FinanceDashboardProps {
   onBack?: () => void;
 }
 
-type DashboardView = 'history' | 'budget' | 'transactions' | 'comparison' | 'goals' | 'accounts';
+type DashboardView = 'panorama' | 'transactions' | 'budget' | 'analysis' | 'settings';
 
 interface ViewTab {
   key: DashboardView;
@@ -51,12 +51,11 @@ interface ViewTab {
 }
 
 const VIEW_TABS: ViewTab[] = [
-  { key: 'history', label: 'Visão Geral', icon: BarChart3 },
+  { key: 'panorama', label: 'Panorama', icon: BarChart3 },
   { key: 'transactions', label: 'Transações', icon: List },
   { key: 'budget', label: 'Orçamento', icon: Target },
-  { key: 'comparison', label: 'Comparativo', icon: GitCompare },
-  { key: 'goals', label: 'Metas', icon: Trophy },
-  { key: 'accounts', label: 'Contas', icon: Building2 },
+  { key: 'analysis', label: 'Análise', icon: GitCompare },
+  { key: 'settings', label: 'Configuração', icon: Settings },
 ];
 
 // =====================================================
@@ -103,7 +102,7 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
     const saved = localStorage.getItem('finance_values_visible');
     return saved !== null ? JSON.parse(saved) : true;
   });
-  const [activeView, setActiveView] = useState<DashboardView>('history');
+  const [activeView, setActiveView] = useState<DashboardView>('panorama');
 
   // Persist visibility toggle
   useEffect(() => {
@@ -506,19 +505,13 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
             <TransactionListView userId={userId} />
           </div>
         );
-      case 'comparison':
+      case 'analysis':
         return (
           <div className="flex-1 overflow-y-auto px-6 pb-40">
             <MonthComparisonView userId={userId} />
           </div>
         );
-      case 'goals':
-        return (
-          <div className="flex-1 overflow-y-auto px-6 pb-40">
-            <GoalTracker userId={userId} />
-          </div>
-        );
-      case 'accounts':
+      case 'settings':
         return (
           <div className="flex-1 overflow-y-auto px-6 pb-40">
             <AccountManagement userId={userId} />
@@ -530,7 +523,7 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   };
 
   // ── Non-history views get a shared shell ──
-  if (activeView !== 'history') {
+  if (activeView !== 'panorama') {
     return (
       <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
         {/* Navigation Header */}
