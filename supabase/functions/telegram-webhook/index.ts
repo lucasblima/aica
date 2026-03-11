@@ -123,12 +123,17 @@ async function reply(
 // EMAIL VALIDATION
 // ============================================================================
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL_REGEX = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/
 
 function isValidEmail(email: string): boolean {
   if (!email || email.length > 254) return false
   if (email.endsWith('@telegram.aica.guru')) return false // reject synthetic emails
   return EMAIL_REGEX.test(email)
+}
+
+/** Escape HTML special chars to prevent injection in Telegram HTML messages */
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 // ============================================================================
@@ -140,12 +145,16 @@ async function getActiveFlow(
   userId: string,
   chatId: number,
 ): Promise<{ activeFlow: string | null; flowState: Record<string, unknown> }> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('telegram_conversations')
     .select('active_flow, flow_state')
     .eq('user_id', userId)
     .eq('telegram_chat_id', chatId)
     .single()
+
+  if (error) {
+    console.warn(`[telegram-webhook] getActiveFlow error: ${error.message}`)
+  }
 
   return {
     activeFlow: data?.active_flow || null,
@@ -285,8 +294,13 @@ async function handleEmailRegistration(
 
     // Update guest account: replace synthetic email with real email
     // C1 fix: Merge existing metadata to preserve telegram_id, first_name, source
-    const { data: existingAuth } = await supabase.auth.admin.getUserById(userId)
-    const existingMeta = existingAuth?.user?.user_metadata || {}
+    const { data: existingAuth, error: fetchError } = await supabase.auth.admin.getUserById(userId)
+    if (fetchError || !existingAuth?.user) {
+      console.error(`[telegram-webhook] getUserById failed: ${fetchError?.message || 'no user returned'}`)
+      await reply(tg, msg, '❌ Erro ao acessar sua conta. Tente novamente em alguns instantes.')
+      return
+    }
+    const existingMeta = existingAuth.user.user_metadata || {}
 
     const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
       email: email,
@@ -319,9 +333,11 @@ async function handleEmailRegistration(
       return
     }
 
-    // Send magic link via Supabase OTP
+    // Send magic link via Supabase OTP (uses built-in email delivery)
+    // Note: signInWithOtp on service-role client causes session pollution for the
+    // remainder of this request, but this is safe since setActiveFlow (the only
+    // subsequent DB op) works under the user's own RLS policy.
     const redirectUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
-    // C2 fix: shouldCreateUser: false prevents duplicate user creation
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
@@ -334,7 +350,7 @@ async function handleEmailRegistration(
       console.error(`[telegram-webhook] Magic link send failed: ${otpError.message}`)
       // Email was updated successfully, so the user can still use /status to see their email
       await reply(tg, msg, [
-        '✅ Email registrado: <b>' + email + '</b>',
+        '✅ Email registrado: <b>' + escapeHtml(email) + '</b>',
         '',
         '⚠️ Nao consegui enviar o link magico agora.',
         'Acesse <b>aica.guru</b> e use "Entrar com email" para receber um novo link.',
@@ -343,7 +359,7 @@ async function handleEmailRegistration(
       await reply(tg, msg, [
         '✅ <b>Email registrado!</b>',
         '',
-        `Enviei um link magico para <b>${email}</b>.`,
+        `Enviei um link magico para <b>${escapeHtml(email)}</b>.`,
         'Clique no link do email para acessar a AICA pelo navegador.',
         '',
         '💡 O link expira em 1 hora.',
@@ -353,6 +369,12 @@ async function handleEmailRegistration(
 
     // Clear the flow — back to normal NLP routing
     await setActiveFlow(supabase, userId, chatId, null, {})
+  } else {
+    // Unknown step — clear flow to prevent user from being stuck
+    console.warn(`[telegram-webhook] Unknown email_registration step: ${flowState.step}`)
+    const chatId = Number(msg.chat.chatId)
+    await setActiveFlow(supabase, userId, chatId, null, {})
+    await reply(tg, msg, '⚠️ Fluxo de email reiniciado. Use /status para tentar novamente.')
   }
 }
 
@@ -824,6 +846,8 @@ async function handleCallbackQuery(
     if (skipUserId) {
       const chatId = Number(msg.chat.chatId)
       await setActiveFlow(supabase, skipUserId, chatId, null, {})
+    } else {
+      console.warn(`[telegram-webhook] email_skip: could not resolve user for telegramId ${telegramId}`)
     }
     await reply(tg, msg, [
       '👍 Sem problema! Voce pode registrar seu email depois com /status.',
@@ -846,7 +870,7 @@ async function handleCallbackQuery(
       // I4 fix: Verify user still has synthetic email before starting flow
       const { data: authCheck } = await supabase.auth.admin.getUserById(regUserId)
       if (!authCheck?.user?.email?.endsWith('@telegram.aica.guru')) {
-        await reply(tg, msg, `📧 Seu email ja esta registrado: <b>${authCheck?.user?.email || 'N/A'}</b>`)
+        await reply(tg, msg, `📧 Seu email ja esta registrado: <b>${escapeHtml(authCheck?.user?.email || 'N/A')}</b>`)
         return
       }
       const chatId = Number(msg.chat.chatId)
@@ -862,6 +886,9 @@ async function handleCallbackQuery(
           ]],
         },
       })
+    } else {
+      console.warn(`[telegram-webhook] email_register_start: could not resolve user for telegramId ${telegramId}`)
+      await reply(tg, msg, '❌ Nao consegui acessar sua conta. Tente /start para reiniciar.')
     }
 
   // Phase 2: Module interaction callbacks
