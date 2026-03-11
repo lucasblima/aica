@@ -24,6 +24,7 @@ import { useTransactions } from '../hooks/useTransactions';
 import type { FinanceTransaction, TransactionFilters } from '../types';
 import { TRANSACTION_CATEGORIES } from '../types';
 import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
+import { useFinanceContext } from '../contexts/FinanceContext';
 
 const log = createNamespacedLogger('TransactionListView');
 
@@ -60,6 +61,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -84,6 +86,8 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     return () => clearTimeout(debounceRef.current);
   }, [searchInput]);
 
+  const { accounts } = useFinanceContext();
+
   // All categories that exist in CATEGORY_LABELS (superset of TRANSACTION_CATEGORIES)
   const allCategories = useMemo(() =>
     Object.keys(CATEGORY_LABELS).sort((a, b) =>
@@ -99,8 +103,9 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     if (categoryFilter) f.category = categoryFilter;
     if (startDate) f.startDate = startDate;
     if (endDate) f.endDate = endDate;
+    if (selectedAccountId) f.accountId = selectedAccountId;
     return f;
-  }, [searchTerm, typeFilter, categoryFilter, startDate, endDate]);
+  }, [searchTerm, typeFilter, categoryFilter, startDate, endDate, selectedAccountId]);
 
   const {
     transactions,
@@ -165,7 +170,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   // ── Clear bulk selection when filters change ──
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [typeFilter, categoryFilter, startDate, endDate, searchTerm]);
+  }, [typeFilter, categoryFilter, startDate, endDate, searchTerm, selectedAccountId]);
 
   // ── Bulk selection helpers ──
   const toggleSelect = useCallback((id: string) => {
@@ -389,8 +394,22 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           {startDate || endDate ? 'Período' : 'Período'}
         </button>
 
+        {/* Account filter */}
+        {accounts.length > 0 && (
+          <select
+            value={selectedAccountId || ''}
+            onChange={e => setSelectedAccountId(e.target.value || null)}
+            className="text-xs p-2 rounded-lg border border-ceramic-border bg-ceramic-base text-ceramic-text-primary"
+          >
+            <option value="">Todas as contas</option>
+            {accounts.map(a => (
+              <option key={a.id} value={a.id}>{a.name} ({a.bank_name})</option>
+            ))}
+          </select>
+        )}
+
         {/* Clear filters */}
-        {(typeFilter !== 'all' || categoryFilter || searchInput || startDate || endDate) && (
+        {(typeFilter !== 'all' || categoryFilter || searchInput || startDate || endDate || selectedAccountId) && (
           <button
             onClick={() => {
               setTypeFilter('all');
@@ -399,6 +418,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
               setSearchTerm('');
               setStartDate('');
               setEndDate('');
+              setSelectedAccountId(null);
               setShowDateFilter(false);
             }}
             className="px-3 py-1.5 rounded-full text-xs font-medium text-ceramic-error hover:bg-ceramic-error/10 transition-colors"

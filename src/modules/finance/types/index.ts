@@ -278,6 +278,7 @@ export interface TransactionFilters {
   maxAmount?: number;
   searchTerm?: string;
   statementId?: string;
+  accountId?: string | null;
 }
 
 export interface DateRange {

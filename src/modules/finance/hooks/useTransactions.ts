@@ -76,6 +76,9 @@ export function useTransactions(
         if (filters.statementId) {
           query = query.eq('statement_id', filters.statementId);
         }
+        if (filters.accountId) {
+          query = query.eq('account_id', filters.accountId);
+        }
         if (filters.searchTerm) {
           query = query.ilike('description', `%${filters.searchTerm}%`);
         }
