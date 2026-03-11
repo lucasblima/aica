@@ -65,10 +65,9 @@ const MODEL_TIER_LIMITS: Record<ModelTier, { free: number; pro: number; max: num
 
 const MODEL_TO_TIER: Record<string, ModelTier> = {
   'claude-opus-4-5-20251101': 'premium',
-  'gemini-1.5-pro': 'premium',
+  'gemini-2.5-pro': 'premium',
   'claude-sonnet-4-20250514': 'standard',
-  'gemini-1.5-flash': 'standard',
-  'gemini-2.0-flash-exp': 'standard',
+  'gemini-2.5-flash': 'standard',
   'claude-haiku-4-20250514': 'lite',
   'gemini-2.0-flash-lite': 'lite',
 }

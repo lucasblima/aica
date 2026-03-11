@@ -149,7 +149,7 @@ export async function apiGetMomentsCount() {
 
   try {
     const { count, error } = await supabase
-      .from('moment_entries')
+      .from('moments')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
 
@@ -231,7 +231,7 @@ export async function apiSearchMoments(query: string) {
 
   try {
     const { data, error } = await supabase
-      .from('moment_entries')
+      .from('moments')
       .select('*')
       .eq('user_id', user.id)
       .textSearch('content', query, {

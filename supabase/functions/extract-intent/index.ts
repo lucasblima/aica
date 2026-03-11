@@ -491,8 +491,7 @@ serve(async (req) => {
         contents: [{ parts: [{ text: intentPrompt }] }],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 1024,
-          responseMimeType: 'application/json',
+          maxOutputTokens: 4096,
           thinkingConfig: { thinkingBudget: 0 },
         },
       }
