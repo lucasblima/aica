@@ -587,7 +587,7 @@ export async function cancelInvitation(invitationId: string): Promise<void> {
     }
 
     // Verify user owns the space
-    const space = invitation.connection_spaces as any;
+    const space = invitation.connection_spaces as Record<string, unknown>;
     if (space.owner_id !== user.id) {
       throw new Error('You do not have permission to cancel this invitation');
     }
@@ -641,7 +641,7 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
     }
 
     // Verify user owns the space or is admin
-    const space = originalInvitation.connection_spaces as any;
+    const space = originalInvitation.connection_spaces as Record<string, unknown>;
     const isOwner = space.owner_id === user.id;
 
     const { data: memberData } = await supabase

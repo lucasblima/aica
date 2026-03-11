@@ -49,6 +49,7 @@ import { deleteContacts } from '@/services/contactNetworkService';
 import { useContactDossier } from '../hooks/useContactDossier';
 import { useConversationThreads } from '../hooks/useConversationThreads';
 import { useExtractedEntities } from '../hooks/useExtractedEntities';
+import type { ContactNetwork } from '@/types/memoryTypes';
 import whatsappAnalyticsService, {
   ContactSentimentScore,
   AnomalyAlert,
@@ -719,7 +720,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
 
       {/* Contact Detail Sheet */}
       <ContactDetailSheet
-        contact={detailContact as any}
+        contact={detailContact as unknown as ContactNetwork}
         isOpen={!!detailContact}
         onClose={() => {
           setDetailContact(null);
