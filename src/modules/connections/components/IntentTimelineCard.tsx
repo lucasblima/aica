@@ -123,8 +123,8 @@ function getUrgencyDisplay(urgency: number): {
   }
   if (urgency === 3) {
     return {
-      color: 'text-orange-700',
-      bgColor: 'bg-orange-100',
+      color: 'text-ceramic-warning',
+      bgColor: 'bg-ceramic-warning/10',
       label: 'Média',
       weight: 'medium',
     };

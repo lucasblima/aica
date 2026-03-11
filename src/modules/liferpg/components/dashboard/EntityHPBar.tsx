@@ -43,7 +43,7 @@ export const EntityHPBar: React.FC<EntityHPBarProps> = ({
       {showLabel && (
         <div className="flex justify-between items-center mb-1">
           <span className="text-xs font-medium text-ceramic-text-secondary">HP</span>
-          <span className={`text-xs font-bold ${hp < 30 ? 'text-red-600' : 'text-ceramic-text-primary'}`}>
+          <span className={`text-xs font-bold ${hp < 30 ? 'text-ceramic-error' : 'text-ceramic-text-primary'}`}>
             {hp}/{maxHP}
           </span>
         </div>

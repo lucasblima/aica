@@ -13,7 +13,7 @@ interface ClipSuggestionPanelProps {
 }
 
 const STATUS_CONFIG: Record<StudioClip['status'], { label: string; className: string }> = {
-  suggested: { label: 'Sugerido', className: 'bg-blue-100 text-blue-800' },
+  suggested: { label: 'Sugerido', className: 'bg-ceramic-info/10 text-ceramic-info' },
   draft: { label: 'Rascunho', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
   approved: { label: 'Aprovado', className: 'bg-emerald-100 text-emerald-800' },
   published: { label: 'Publicado', className: 'bg-amber-100 text-amber-800' },

@@ -17,9 +17,9 @@ function getLoadConfig(load: number) {
   if (load < 0.3) {
     return {
       label: 'Baixa',
-      bgClass: 'bg-green-100',
-      textClass: 'text-green-700',
-      dotClass: 'bg-green-500',
+      bgClass: 'bg-ceramic-success/10',
+      textClass: 'text-ceramic-success',
+      dotClass: 'bg-ceramic-success',
     }
   }
   if (load <= 0.7) {
@@ -32,9 +32,9 @@ function getLoadConfig(load: number) {
   }
   return {
     label: 'Alta',
-    bgClass: 'bg-red-100',
-    textClass: 'text-red-700',
-    dotClass: 'bg-red-500',
+    bgClass: 'bg-ceramic-error/10',
+    textClass: 'text-ceramic-error',
+    dotClass: 'bg-ceramic-error',
   }
 }
 

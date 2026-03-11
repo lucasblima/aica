@@ -265,7 +265,7 @@ export function MementoMoriBar({ onSetBirthdate, forecast, weatherInsight }: Mem
             maxLength={10}
             className={`flex-1 bg-ceramic-cool rounded-xl px-3 py-2 text-sm text-ceramic-text-primary outline-none focus:ring-2 transition-all ${
               dateError
-                ? 'ring-2 ring-red-400/50 focus:ring-red-400/50'
+                ? 'ring-2 ring-ceramic-error/50 focus:ring-ceramic-error/50'
                 : 'focus:ring-amber-500/30'
             }`}
           />
@@ -278,7 +278,7 @@ export function MementoMoriBar({ onSetBirthdate, forecast, weatherInsight }: Mem
           </button>
         </div>
         {dateError && (
-          <p className="text-[10px] text-red-400 mt-1">Data invalida. Use o formato DD/MM/AAAA.</p>
+          <p className="text-[10px] text-ceramic-error mt-1">Data invalida. Use o formato DD/MM/AAAA.</p>
         )}
       </div>
     )

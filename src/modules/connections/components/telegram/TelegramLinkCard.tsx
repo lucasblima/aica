@@ -119,7 +119,7 @@ export default function TelegramLinkCard() {
           <div className={cn(
             'w-10 h-10 rounded-full flex items-center justify-center',
             status === 'linked'
-              ? 'bg-blue-100 text-blue-600'
+              ? 'bg-ceramic-info/10 text-ceramic-info'
               : 'bg-ceramic-cool text-ceramic-text-secondary'
           )}>
             <MessageCircle className="w-5 h-5" />
@@ -139,7 +139,7 @@ export default function TelegramLinkCard() {
         {/* Status badge */}
         <div className={cn(
           'px-2 py-1 rounded-full text-xs font-medium',
-          status === 'linked' && 'bg-green-100 text-green-700',
+          status === 'linked' && 'bg-ceramic-success/10 text-ceramic-success',
           status === 'pending' && 'bg-amber-100 text-amber-700',
           status === 'unlinked' && 'bg-ceramic-cool text-ceramic-text-secondary',
         )}>
@@ -154,7 +154,7 @@ export default function TelegramLinkCard() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2"
+            className="mb-4 p-3 bg-ceramic-error/10 text-ceramic-error rounded-lg text-sm flex items-center gap-2"
           >
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
@@ -180,7 +180,7 @@ export default function TelegramLinkCard() {
               disabled={isGenerating}
               className={cn(
                 'w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg',
-                'bg-blue-500 hover:bg-blue-600 text-white font-medium',
+                'bg-ceramic-info hover:bg-ceramic-info/90 text-white font-medium',
                 'transition-colors duration-200',
                 'disabled:opacity-50 disabled:cursor-not-allowed'
               )}
@@ -209,7 +209,7 @@ export default function TelegramLinkCard() {
             className="space-y-4"
           >
             {/* Code display */}
-            <div className="bg-white rounded-lg p-4 border border-ceramic-border">
+            <div className="bg-ceramic-base rounded-lg p-4 border border-ceramic-border">
               <div className="text-center mb-2">
                 <p className="text-sm text-ceramic-text-secondary mb-1">Seu codigo de vinculacao:</p>
                 <div className="flex items-center justify-center gap-2">
@@ -222,7 +222,7 @@ export default function TelegramLinkCard() {
                     title="Copiar codigo"
                   >
                     {copied ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <CheckCircle2 className="w-5 h-5 text-ceramic-success" />
                     ) : (
                       <Copy className="w-5 h-5 text-ceramic-text-secondary" />
                     )}
@@ -234,7 +234,7 @@ export default function TelegramLinkCard() {
               <div className="flex items-center justify-center gap-1 text-xs text-ceramic-text-secondary">
                 <Clock className="w-3 h-3" />
                 {countdown === 'Expirado' ? (
-                  <span className="text-red-500">Codigo expirado</span>
+                  <span className="text-ceramic-error">Codigo expirado</span>
                 ) : (
                   <span>Expira em {countdown}</span>
                 )}
@@ -269,7 +269,7 @@ export default function TelegramLinkCard() {
                 href="https://t.me/AicaLifeBot"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-ceramic-info text-white text-sm font-medium hover:bg-ceramic-info/90 transition-colors"
               >
                 <Send className="w-4 h-4" />
                 Abrir Telegram
@@ -287,14 +287,14 @@ export default function TelegramLinkCard() {
             className="space-y-4"
           >
             {/* Linked info */}
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <div className="bg-ceramic-success/10 rounded-lg p-4 border border-ceramic-success/20">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-8 h-8 text-green-500" />
+                <CheckCircle2 className="w-8 h-8 text-ceramic-success" />
                 <div>
-                  <p className="font-medium text-green-800">
+                  <p className="font-medium text-ceramic-success">
                     @{linkData?.telegram_username || 'Telegram'}
                   </p>
-                  <p className="text-sm text-green-600">
+                  <p className="text-sm text-ceramic-success/80">
                     Vinculado em {linkData?.linked_at
                       ? new Date(linkData.linked_at).toLocaleDateString('pt-BR')
                       : 'N/A'}
@@ -312,7 +312,7 @@ export default function TelegramLinkCard() {
             {!showUnlinkConfirm ? (
               <button
                 onClick={() => setShowUnlinkConfirm(true)}
-                className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 transition-colors"
+                className="flex items-center gap-2 text-sm text-ceramic-error hover:text-ceramic-error/80 transition-colors"
               >
                 <Unlink className="w-4 h-4" />
                 Desvincular conta
@@ -323,10 +323,10 @@ export default function TelegramLinkCard() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex items-center gap-2"
               >
-                <p className="text-sm text-red-600 flex-1">Tem certeza?</p>
+                <p className="text-sm text-ceramic-error flex-1">Tem certeza?</p>
                 <button
                   onClick={handleUnlink}
-                  className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  className="px-3 py-1.5 text-sm bg-ceramic-error text-white rounded-lg hover:bg-ceramic-error/90 transition-colors"
                 >
                   Confirmar
                 </button>

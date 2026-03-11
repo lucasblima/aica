@@ -58,7 +58,7 @@ export function ExchangeRateCard({ data, isLoading, error, onApplyRate, currentS
               R$ {data.usdBrl.toFixed(4)}
             </span>
             <Tooltip text={isPositive ? 'Dolar subiu — seus custos em reais aumentam.' : 'Dolar caiu — seus custos em reais diminuem.'}>
-              <span className={`flex items-center text-xs font-medium cursor-help ${isPositive ? 'text-red-500' : 'text-green-600'}`}>
+              <span className={`flex items-center text-xs font-medium cursor-help ${isPositive ? 'text-ceramic-error' : 'text-ceramic-success'}`}>
                 {isPositive ? (
                   <ArrowUpRight className="w-3 h-3" />
                 ) : (

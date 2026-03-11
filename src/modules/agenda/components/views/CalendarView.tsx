@@ -105,7 +105,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               .map((e) => (
                 <div
                   key={e.id}
-                  className="flex items-center gap-2 p-3 bg-white rounded-lg shadow-sm"
+                  className="flex items-center gap-2 p-3 bg-ceramic-base rounded-lg shadow-sm"
                 >
                   <div
                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"

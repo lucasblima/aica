@@ -127,7 +127,7 @@ function DayFeedbackCard({
   // Future day — locked
   if (isFuture) {
     return (
-      <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3 opacity-40">
+      <div className="bg-ceramic-base rounded-xl shadow-sm px-4 py-3 flex items-center gap-3 opacity-40">
         <Lock className="w-4 h-4 text-ceramic-text-secondary/50 flex-shrink-0" />
         <span className="text-xs font-bold text-ceramic-text-secondary">{dayLabel}</span>
         {dateStr && <span className="text-[10px] text-ceramic-text-secondary/60">{dateStr}</span>}
@@ -141,9 +141,9 @@ function DayFeedbackCard({
     const q = entry.existingQuestionnaire;
     const answered = q ? QUESTIONS.filter((qd) => q[qd.key] !== undefined).length : 0;
     return (
-      <div className="bg-white rounded-xl shadow-sm px-4 py-3">
+      <div className="bg-ceramic-base rounded-xl shadow-sm px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block flex-shrink-0" />
+          <span className="w-2.5 h-2.5 rounded-full bg-ceramic-success inline-block flex-shrink-0" />
           <span className="text-xs font-bold text-ceramic-text-primary">{dayLabel}</span>
           {dateStr && <span className="text-[10px] text-ceramic-text-secondary">{dateStr}</span>}
           <span className="ml-auto text-[10px] text-ceramic-text-secondary">
@@ -161,7 +161,7 @@ function DayFeedbackCard({
 
   // Active / expandable — 8-question questionnaire
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-ceramic-base rounded-xl shadow-sm overflow-hidden">
       <button
         type="button"
         onClick={onToggleExpand}
@@ -248,7 +248,7 @@ function DayFeedbackCard({
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
                                 isSelected
                                   ? 'bg-amber-500 text-white'
-                                  : 'bg-white text-ceramic-text-secondary border border-ceramic-border/60'
+                                  : 'bg-ceramic-base text-ceramic-text-secondary border border-ceramic-border/60'
                               }`}
                             >
                               {idx}
@@ -532,7 +532,7 @@ export function WeeklyFeedbackCard({
   if (isFutureWeek) {
     if (singleDay) return null;
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-3 opacity-50">
+      <div className="bg-ceramic-base rounded-2xl shadow-sm p-5 flex items-center gap-3 opacity-50">
         <Lock className="w-5 h-5 text-ceramic-text-secondary/50 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-ceramic-text-secondary">

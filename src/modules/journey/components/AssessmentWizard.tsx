@@ -165,7 +165,7 @@ export function AssessmentWizard({
                   className={`w-10 h-10 rounded-lg text-sm font-medium transition-all duration-150 ${
                     selectedValue === value
                       ? 'bg-amber-500 text-white shadow-md scale-110'
-                      : 'bg-white text-ceramic-text-secondary hover:bg-amber-50 hover:text-ceramic-text-primary border border-ceramic-border'
+                      : 'bg-ceramic-base text-ceramic-text-secondary hover:bg-amber-50 hover:text-ceramic-text-primary border border-ceramic-border'
                   }`}
                   aria-label={`${value}`}
                   aria-pressed={selectedValue === value}

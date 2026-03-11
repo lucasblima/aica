@@ -35,8 +35,8 @@ const PLATFORM_NAMES: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   draft: { label: 'Rascunho', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
-  scheduled: { label: 'Agendado', className: 'bg-blue-100 text-blue-700' },
-  published: { label: 'Publicado', className: 'bg-green-100 text-green-700' },
+  scheduled: { label: 'Agendado', className: 'bg-ceramic-info/10 text-ceramic-info' },
+  published: { label: 'Publicado', className: 'bg-ceramic-success/10 text-ceramic-success' },
 };
 
 interface PlatformCardProps {

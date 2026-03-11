@@ -38,10 +38,10 @@ const TEMPLATE_OPTIONS: { value: NewsletterTemplate; label: string; description:
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   draft: { label: 'Rascunho', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
-  scheduled: { label: 'Agendado', className: 'bg-blue-100 text-blue-700' },
-  sending: { label: 'Enviando', className: 'bg-amber-100 text-amber-700' },
-  sent: { label: 'Enviado', className: 'bg-green-100 text-green-700' },
-  failed: { label: 'Falhou', className: 'bg-red-100 text-red-700' },
+  scheduled: { label: 'Agendado', className: 'bg-ceramic-info/10 text-ceramic-info' },
+  sending: { label: 'Enviando', className: 'bg-ceramic-warning/10 text-ceramic-warning' },
+  sent: { label: 'Enviado', className: 'bg-ceramic-success/10 text-ceramic-success' },
+  failed: { label: 'Falhou', className: 'bg-ceramic-error/10 text-ceramic-error' },
 };
 
 // =============================================================================
@@ -277,7 +277,7 @@ export default function NewsletterEditor({
           </div>
 
           {generateError && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-ceramic-error/10 text-ceramic-error text-sm">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{generateError}</span>
               <button
@@ -388,7 +388,7 @@ export default function NewsletterEditor({
           {scheduledAt && (
             <button
               onClick={() => setScheduledAt('')}
-              className="text-[10px] text-ceramic-text-secondary hover:text-red-500 mt-1 transition-colors"
+              className="text-[10px] text-ceramic-text-secondary hover:text-ceramic-error mt-1 transition-colors"
             >
               Remover agendamento
             </button>
@@ -398,7 +398,7 @@ export default function NewsletterEditor({
 
       {/* Save Error */}
       {saveError && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-ceramic-error/10 text-ceramic-error text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{saveError}</span>
         </div>

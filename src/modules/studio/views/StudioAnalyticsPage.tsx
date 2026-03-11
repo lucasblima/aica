@@ -134,7 +134,7 @@ export default function StudioAnalyticsPage() {
                 </div>
                 <div className="flex items-end gap-2">
                   <span className="text-2xl font-black text-ceramic-text-primary">{m.value}</span>
-                  <span className={`flex items-center gap-0.5 text-xs font-bold ${m.trend >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  <span className={`flex items-center gap-0.5 text-xs font-bold ${m.trend >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}>
                     {m.trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                     {Math.abs(m.trend)}%
                   </span>
@@ -201,7 +201,7 @@ export default function StudioAnalyticsPage() {
                 return (
                   <div
                     key={i}
-                    className={`ceramic-card rounded-2xl p-4 border-l-4 ${typeColors[insight.type] || 'border-l-gray-300'}`}
+                    className={`ceramic-card rounded-2xl p-4 border-l-4 ${typeColors[insight.type] || 'border-l-ceramic-border'}`}
                   >
                     <span className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">
                       {typeLabels[insight.type] || insight.type}

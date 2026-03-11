@@ -27,7 +27,7 @@ export function DateRenderer({ question, value, onChange }: DateRendererProps) {
         onChange={e => onChange(e.target.value)}
         min={minDate}
         max={maxDate}
-        className="w-full px-4 py-3 rounded-xl border border-ceramic-border bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none text-ceramic-text-primary transition-all"
+        className="w-full px-4 py-3 rounded-xl border border-ceramic-border bg-ceramic-base focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none text-ceramic-text-primary transition-all"
       />
       {formattedDate && (
         <p className="text-sm text-ceramic-text-secondary">

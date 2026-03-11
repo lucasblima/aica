@@ -14,17 +14,17 @@ interface NewsletterPreviewProps {
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   draft: { label: 'Rascunho', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
-  scheduled: { label: 'Agendado', className: 'bg-blue-100 text-blue-700' },
-  sending: { label: 'Enviando', className: 'bg-amber-100 text-amber-700' },
-  sent: { label: 'Enviado', className: 'bg-green-100 text-green-700' },
-  failed: { label: 'Falhou', className: 'bg-red-100 text-red-700' },
+  scheduled: { label: 'Agendado', className: 'bg-ceramic-info/10 text-ceramic-info' },
+  sending: { label: 'Enviando', className: 'bg-ceramic-warning/10 text-ceramic-warning' },
+  sent: { label: 'Enviado', className: 'bg-ceramic-success/10 text-ceramic-success' },
+  failed: { label: 'Falhou', className: 'bg-ceramic-error/10 text-ceramic-error' },
 };
 
 const TEMPLATE_CONFIG: Record<string, { label: string; className: string }> = {
   minimalista: { label: 'Minimalista', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
   editorial: { label: 'Editorial', className: 'bg-violet-100 text-violet-700' },
   destaque: { label: 'Destaque', className: 'bg-amber-100 text-amber-700' },
-  resumo: { label: 'Resumo', className: 'bg-blue-100 text-blue-700' },
+  resumo: { label: 'Resumo', className: 'bg-ceramic-info/10 text-ceramic-info' },
   default: { label: 'Padrao', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
 };
 

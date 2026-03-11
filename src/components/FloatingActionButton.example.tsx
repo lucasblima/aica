@@ -30,10 +30,10 @@ export function FloatingActionButtonExample() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-ceramic-cool p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold mb-2">Conexões - Selecione Arquétipos</h1>
-        <p className="text-gray-600 mb-8">
+        <p className="text-ceramic-text-secondary mb-8">
           Selecione um ou mais arquétipos para criar uma conexão.
           O botão "Criar" acenderá quando houver seleção.
         </p>
@@ -49,7 +49,7 @@ export function FloatingActionButtonExample() {
               className="p-6 rounded-lg"
             >
               <h3 className="font-semibold text-lg mb-2">{archetype.name}</h3>
-              <p className="text-sm text-gray-600">{archetype.description}</p>
+              <p className="text-sm text-ceramic-text-secondary">{archetype.description}</p>
             </motion.div>
           ))}
         </div>
@@ -62,11 +62,11 @@ export function FloatingActionButtonExample() {
         />
 
         {/* Status da seleção (apenas para demonstração) */}
-        <div className="fixed bottom-6 left-6 bg-white p-4 rounded-lg shadow-lg">
+        <div className="fixed bottom-6 left-6 bg-ceramic-base p-4 rounded-lg shadow-lg">
           <p className="text-sm font-semibold">
             Status: {hasSelection ? `${selectedIds.length} selecionado(s)` : 'Nenhuma seleção'}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-ceramic-text-secondary mt-1">
             {hasSelection ? 'FAB está ativo (glow âmbar)' : 'FAB está inativo (cinza)'}
           </p>
         </div>

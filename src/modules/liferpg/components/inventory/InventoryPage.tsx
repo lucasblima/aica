@@ -284,7 +284,7 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({ personaId, persona
                       deleteItem(item.id, item.name);
                     }
                   }}
-                  className="text-ceramic-text-secondary hover:text-red-500 text-xs p-1"
+                  className="text-ceramic-text-secondary hover:text-ceramic-error text-xs p-1"
                   title="Remover"
                 >
                   X

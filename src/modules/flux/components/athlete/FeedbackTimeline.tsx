@@ -129,7 +129,7 @@ export function FeedbackTimeline({
               <div className={`h-px flex-1 ${isCurrent ? 'bg-amber-300' : 'bg-ceramic-border/50'}`} />
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-ceramic-base rounded-2xl shadow-sm overflow-hidden">
               {/* Weekly feedback row */}
               <div className="px-2 pt-2">
                 <FeedbackStatusRow

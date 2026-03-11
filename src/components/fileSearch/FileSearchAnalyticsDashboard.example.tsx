@@ -16,7 +16,7 @@ import { useFileSearchQuickStats } from '../../hooks/useFileSearchAnalytics';
  */
 export const FileSearchAnalyticsPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-ceramic-cool">
       <div className="max-w-7xl mx-auto">
         <FileSearchAnalyticsDashboard />
       </div>
@@ -37,12 +37,12 @@ export const FileSearchAnalyticsModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto m-4">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">File Search Analytics</h2>
+      <div className="bg-ceramic-base rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto m-4">
+        <div className="sticky top-0 bg-ceramic-base border-b border-ceramic-border p-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-ceramic-text-primary">File Search Analytics</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-ceramic-cool rounded-lg transition-colors"
           >
             ✕
           </button>
@@ -67,38 +67,38 @@ export const FileSearchQuickStatsCard: React.FC<{
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+      <div className="bg-ceramic-base rounded-xl shadow-sm p-6 border border-ceramic-border animate-pulse">
+        <div className="h-4 bg-ceramic-border rounded w-1/2 mb-4"></div>
+        <div className="h-8 bg-ceramic-border rounded w-3/4"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div className="bg-ceramic-base rounded-xl shadow-sm p-6 border border-ceramic-border">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">File Search</h3>
+        <h3 className="text-lg font-semibold text-ceramic-text-primary">File Search</h3>
         <span className="text-2xl">📊</span>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Documentos</span>
-          <span className="text-lg font-bold text-blue-600">{totalDocuments}</span>
+          <span className="text-sm text-ceramic-text-secondary">Documentos</span>
+          <span className="text-lg font-bold text-ceramic-info">{totalDocuments}</span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Corpus</span>
-          <span className="text-lg font-bold text-green-600">{totalCorpora}</span>
+          <span className="text-sm text-ceramic-text-secondary">Corpus</span>
+          <span className="text-lg font-bold text-ceramic-success">{totalCorpora}</span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Tamanho</span>
+          <span className="text-sm text-ceramic-text-secondary">Tamanho</span>
           <span className="text-lg font-bold text-purple-600">{totalSize} MB</span>
         </div>
 
-        <div className="pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-500">
+        <div className="pt-3 border-t border-ceramic-border">
+          <p className="text-xs text-ceramic-text-secondary">
             Módulo mais usado: <span className="font-semibold">{mostUsedModule}</span>
           </p>
         </div>
@@ -120,18 +120,18 @@ export const FileSearchAnalyticsMenuItem: React.FC<{
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors text-left"
+      className="w-full flex items-center justify-between p-4 hover:bg-ceramic-cool rounded-lg transition-colors text-left"
     >
       <div className="flex items-center gap-3">
         <span className="text-2xl">📊</span>
         <div>
-          <p className="font-medium text-gray-900">File Search Analytics</p>
-          <p className="text-sm text-gray-500">
+          <p className="font-medium text-ceramic-text-primary">File Search Analytics</p>
+          <p className="text-sm text-ceramic-text-secondary">
             {isLoading ? 'Carregando...' : `${totalDocuments} documentos indexados`}
           </p>
         </div>
       </div>
-      <span className="text-gray-400">→</span>
+      <span className="text-ceramic-text-secondary">→</span>
     </button>
   );
 };
@@ -147,17 +147,17 @@ export const ModuleFileSearchStats: React.FC<{
 }> = ({ moduleType, moduleName }) => {
   // Você pode criar uma variante do hook que filtra por módulo
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div className="bg-ceramic-base rounded-xl shadow-sm p-6 border border-ceramic-border">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-ceramic-text-primary">
           File Search - {moduleName}
         </h3>
-        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+        <span className="text-xs text-ceramic-text-secondary bg-ceramic-cool px-2 py-1 rounded">
           {moduleType}
         </span>
       </div>
 
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-ceramic-text-secondary">
         Estatísticas específicas do módulo {moduleName} serão exibidas aqui.
       </p>
 
@@ -177,22 +177,22 @@ export const SettingsWithFileSearchAnalytics: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Configurações</h1>
+      <h1 className="text-3xl font-bold text-ceramic-text-primary mb-6">Configurações</h1>
 
       {/* Outras seções de settings... */}
 
       {/* Seção de File Search Analytics */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-6">
+      <div className="bg-ceramic-base rounded-xl shadow-sm p-6 border border-ceramic-border mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">File Search</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <h2 className="text-xl font-semibold text-ceramic-text-primary">File Search</h2>
+            <p className="text-sm text-ceramic-text-secondary mt-1">
               Gerencie e visualize estatísticas de busca semântica
             </p>
           </div>
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90 transition-colors"
           >
             {showAnalytics ? 'Ocultar' : 'Ver Analytics'}
           </button>

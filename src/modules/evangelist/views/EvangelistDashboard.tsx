@@ -36,16 +36,16 @@ function truncateId(id: string): string {
 // ---------------------------------------------------------------------------
 
 const CONVERSION_STATUS: Record<ReferralConversion['status'], { label: string; classes: string }> = {
-  pending: { label: 'Pendente', classes: 'bg-yellow-100 text-yellow-800' },
-  confirmed: { label: 'Confirmado', classes: 'bg-green-100 text-green-800' },
-  churned: { label: 'Cancelou', classes: 'bg-red-100 text-red-800' },
+  pending: { label: 'Pendente', classes: 'bg-ceramic-warning/10 text-ceramic-warning' },
+  confirmed: { label: 'Confirmado', classes: 'bg-ceramic-success/10 text-ceramic-success' },
+  churned: { label: 'Cancelou', classes: 'bg-ceramic-error/10 text-ceramic-error' },
 };
 
 const LEDGER_STATUS: Record<CommissionEntry['status'], { label: string; classes: string }> = {
   calculated: { label: 'Calculado', classes: 'bg-ceramic-cool text-ceramic-text-secondary' },
-  pending_payment: { label: 'Aguardando', classes: 'bg-yellow-100 text-yellow-800' },
-  paid: { label: 'Pago', classes: 'bg-green-100 text-green-800' },
-  cancelled: { label: 'Cancelado', classes: 'bg-red-100 text-red-800' },
+  pending_payment: { label: 'Aguardando', classes: 'bg-ceramic-warning/10 text-ceramic-warning' },
+  paid: { label: 'Pago', classes: 'bg-ceramic-success/10 text-ceramic-success' },
+  cancelled: { label: 'Cancelado', classes: 'bg-ceramic-error/10 text-ceramic-error' },
 };
 
 // ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ const STAT_CARDS: StatCardDef[] = [
   {
     label: 'Confirmados',
     getValue: (s) => String(s.confirmed_count),
-    accent: 'text-green-600',
+    accent: 'text-ceramic-success',
     icon: '\u2705',
   },
   {

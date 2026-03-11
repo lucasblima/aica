@@ -18,7 +18,7 @@ interface InventoryAISuggestProps {
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  high: 'bg-red-100 text-red-700',
+  high: 'bg-ceramic-error/10 text-ceramic-error',
   medium: 'bg-amber-100 text-amber-700',
   low: 'bg-emerald-100 text-emerald-700',
 };
@@ -94,9 +94,9 @@ export const InventoryAISuggest: React.FC<InventoryAISuggestProps> = ({
 
   if (error) {
     return (
-      <div className="bg-ceramic-base rounded-2xl p-4 shadow-ceramic-emboss border border-red-200">
+      <div className="bg-ceramic-base rounded-2xl p-4 shadow-ceramic-emboss border border-ceramic-error/20">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-red-600">{error}</span>
+          <span className="text-sm text-ceramic-error">{error}</span>
           <button
             onClick={handleAnalyze}
             className="text-xs py-1 px-3 rounded-lg bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-border transition-colors"
@@ -116,10 +116,10 @@ export const InventoryAISuggest: React.FC<InventoryAISuggestProps> = ({
 
   if (!hasMissing && !hasReplace && !hasOrg) {
     return (
-      <div className="bg-ceramic-base rounded-2xl p-4 shadow-ceramic-emboss border border-emerald-200">
+      <div className="bg-ceramic-base rounded-2xl p-4 shadow-ceramic-emboss border border-ceramic-success/20">
         <div className="flex items-center gap-2">
           <span className="text-lg" role="img" aria-label="check">{'\u2705'}</span>
-          <span className="text-sm text-emerald-700">Inventario em otimo estado! Sem sugestoes no momento.</span>
+          <span className="text-sm text-ceramic-success">Inventario em otimo estado! Sem sugestoes no momento.</span>
         </div>
       </div>
     );

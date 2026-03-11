@@ -148,13 +148,13 @@ export function ConversionSection({
                                         value={inviteCode}
                                         onChange={onCodeChange}
                                         className={`w-full bg-white/50 border-2 rounded-xl px-5 py-4 text-center font-mono text-xl tracking-widest outline-none transition-all placeholder:text-ceramic-text-secondary/50 shadow-inner ${codeError
-                                            ? 'border-red-400 text-red-600'
+                                            ? 'border-ceramic-error/60 text-ceramic-error'
                                             : codeValid
-                                                ? 'border-green-400 text-green-600'
+                                                ? 'border-ceramic-success/60 text-ceramic-success'
                                                 : 'border-white/60 focus:border-amber-400 text-ceramic-text-primary'
                                             }`}
                                     />
-                                    {codeError && <p className="text-red-500 text-sm font-bold mt-2 text-center">{codeError}</p>}
+                                    {codeError && <p className="text-ceramic-error text-sm font-bold mt-2 text-center">{codeError}</p>}
                                 </div>
 
                                 <button
@@ -184,8 +184,8 @@ export function ConversionSection({
                                     animate={{ opacity: 1, scale: 1 }}
                                     className="flex flex-col items-center justify-center h-28 bg-ceramic-base rounded-2xl ceramic-shadow text-center p-6"
                                 >
-                                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                                        <Check className="text-green-600" size={20} />
+                                    <div className="w-10 h-10 bg-ceramic-success/10 rounded-full flex items-center justify-center mb-2">
+                                        <Check className="text-ceramic-success" size={20} />
                                     </div>
                                     <p className="font-bold text-ceramic-text-primary text-sm">Enviado a forja. Te avisaremos.</p>
                                 </motion.div>
@@ -199,7 +199,7 @@ export function ConversionSection({
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full bg-white/40 border border-white/20 rounded-xl px-5 py-3.5 font-medium outline-none focus:bg-white/60 transition-all placeholder:text-ceramic-text-secondary/70 shadow-inner"
                                     />
-                                    {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
+                                    {error && <p className="text-ceramic-error text-sm font-bold">{error}</p>}
 
                                     <button
                                         type="submit"

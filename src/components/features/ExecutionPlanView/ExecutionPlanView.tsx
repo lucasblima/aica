@@ -30,7 +30,7 @@ const MODULE_COLORS: Record<string, { bg: string; text: string; border: string }
   studio:       { bg: 'bg-pink-100',    text: 'text-pink-800',    border: 'border-pink-300' },
   captacao:     { bg: 'bg-amber-100',   text: 'text-amber-800',   border: 'border-amber-300' },
   agenda:       { bg: 'bg-teal-100',    text: 'text-teal-800',    border: 'border-teal-300' },
-  coordinator:  { bg: 'bg-gray-100',    text: 'text-gray-800',    border: 'border-gray-300' },
+  coordinator:  { bg: 'bg-ceramic-cool',    text: 'text-ceramic-text-primary',    border: 'border-ceramic-border' },
 }
 
 function getModuleColor(module: string) {
@@ -44,8 +44,8 @@ function getModuleColor(module: string) {
 const PLAN_STATUS_CONFIG: Record<PlanStatus, { label: string; className: string }> = {
   pending:   { label: 'Pendente',   className: 'bg-ceramic-cool text-ceramic-text-secondary' },
   running:   { label: 'Executando', className: 'bg-amber-100 text-amber-800' },
-  completed: { label: 'Concluido',  className: 'bg-green-100 text-green-800' },
-  failed:    { label: 'Falhou',     className: 'bg-red-100 text-red-800' },
+  completed: { label: 'Concluido',  className: 'bg-ceramic-success/10 text-ceramic-success' },
+  failed:    { label: 'Falhou',     className: 'bg-ceramic-error/10 text-ceramic-error' },
 }
 
 const STEP_STATUS_CONFIG: Record<
@@ -96,7 +96,7 @@ const STEP_STATUS_CONFIG: Record<
     label: 'Concluido',
     icon: (
       <svg
-        className="w-5 h-5 text-green-600"
+        className="w-5 h-5 text-ceramic-success"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -105,13 +105,13 @@ const STEP_STATUS_CONFIG: Record<
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
       </svg>
     ),
-    className: 'border-green-300 bg-green-50/50',
+    className: 'border-ceramic-success/30 bg-ceramic-success/5',
   },
   failed: {
     label: 'Falhou',
     icon: (
       <svg
-        className="w-5 h-5 text-red-500"
+        className="w-5 h-5 text-ceramic-error"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -120,7 +120,7 @@ const STEP_STATUS_CONFIG: Record<
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
       </svg>
     ),
-    className: 'border-red-300 bg-red-50/50',
+    className: 'border-ceramic-error/30 bg-ceramic-error/5',
   },
   skipped: {
     label: 'Pulado',
@@ -226,7 +226,7 @@ function StepCard({ step }: StepCardProps) {
 
         {/* Error message */}
         {hasError && (
-          <p className="mt-2 text-xs text-red-600 bg-red-50 rounded px-2 py-1">
+          <p className="mt-2 text-xs text-ceramic-error bg-ceramic-error/10 rounded px-2 py-1">
             {step.error_message}
           </p>
         )}
@@ -354,7 +354,7 @@ export function ExecutionPlanView({
           {isActive && onCancel && (
             <button
               onClick={onCancel}
-              className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors"
+              className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-ceramic-error bg-ceramic-error/10 hover:bg-ceramic-error/15 border border-ceramic-error/20 rounded-lg transition-colors"
             >
               Cancelar
             </button>
@@ -382,8 +382,8 @@ export function ExecutionPlanView({
 
         {/* Error message for failed plan */}
         {plan.status === 'failed' && plan.error_message && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{plan.error_message}</p>
+          <div className="mt-4 p-3 bg-ceramic-error/10 border border-ceramic-error/20 rounded-lg">
+            <p className="text-sm text-ceramic-error">{plan.error_message}</p>
           </div>
         )}
       </div>

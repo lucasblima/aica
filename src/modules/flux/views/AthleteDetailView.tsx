@@ -545,14 +545,14 @@ export default function AthleteDetailView() {
                   {/* Status Indicators — #389 */}
                   {athlete.financial_status && athlete.financial_status !== 'ok' && (
                     <span
-                      className="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"
+                      className="w-3 h-3 rounded-full bg-ceramic-error animate-pulse flex-shrink-0"
                       title={athlete.financial_status === 'overdue' ? 'Pagamento em atraso' : 'Pagamento pendente'}
                     />
                   )}
                   {athlete.parq_clearance_status &&
                    ['pending', 'blocked', 'expired'].includes(athlete.parq_clearance_status) && (
                     <span
-                      className="w-3 h-3 rounded-full bg-blue-500 animate-pulse flex-shrink-0"
+                      className="w-3 h-3 rounded-full bg-ceramic-info animate-pulse flex-shrink-0"
                       title={
                         athlete.parq_clearance_status === 'blocked' ? 'Liberacao medica necessaria' :
                         athlete.parq_clearance_status === 'expired' ? 'Documentos expirados' :

@@ -101,7 +101,7 @@ export function FeedbackForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="bg-white rounded-2xl shadow-sm overflow-hidden"
+      className="bg-ceramic-base rounded-2xl shadow-sm overflow-hidden"
     >
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <div>

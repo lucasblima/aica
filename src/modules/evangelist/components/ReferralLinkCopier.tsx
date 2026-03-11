@@ -58,7 +58,7 @@ export function ReferralLinkCopier({ referralCode }: ReferralLinkCopierProps) {
           onClick={handleCopy}
           className={`shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
             copied
-              ? 'bg-green-100 text-green-800'
+              ? 'bg-ceramic-success/10 text-ceramic-success'
               : 'bg-amber-500 hover:bg-amber-600 text-white'
           }`}
         >

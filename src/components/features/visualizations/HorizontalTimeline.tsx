@@ -89,7 +89,7 @@ export function HorizontalTimeline({
   if (phases.length === 0) return null;
 
   return (
-    <div className={`px-6 py-4 bg-white border-b border-ceramic-border ${className}`}>
+    <div className={`px-6 py-4 bg-ceramic-base border-b border-ceramic-border ${className}`}>
       {title && (
         <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary mb-3">
           {title}

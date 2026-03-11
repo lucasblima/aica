@@ -485,7 +485,7 @@ export function EF_OnboardingScreen({
 
               {/* Check mark */}
               {isIntroduced && (
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0 animate-[ef-onboard-pop_0.3s_ease-out]">
+                <div className="w-8 h-8 rounded-full bg-ceramic-success/10 flex items-center justify-center text-ceramic-success flex-shrink-0 animate-[ef-onboard-pop_0.3s_ease-out]">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -613,7 +613,7 @@ export function EF_OnboardingScreen({
                   aria-label={isListening ? 'Ouvindo sua resposta' : 'Tocar para falar'}
                   className={`mx-auto w-20 h-20 min-h-[48px] rounded-full flex items-center justify-center text-3xl transition-all duration-300 ${
                     isListening
-                      ? 'bg-red-100 ring-4 ring-red-300 animate-[ef-onboard-pulse_1.5s_ease-in-out_infinite]'
+                      ? 'bg-ceramic-error/10 ring-4 ring-ceramic-error/30 animate-[ef-onboard-pulse_1.5s_ease-in-out_infinite]'
                       : 'bg-amber-100 hover:bg-amber-200 shadow-ceramic-emboss active:scale-95'
                   }`}
                 >
@@ -634,7 +634,7 @@ export function EF_OnboardingScreen({
                   <button
                     onClick={confirmVoiceAnswer}
                     aria-label="Confirmar resposta"
-                    className="w-full py-3 min-h-[48px] bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all active:scale-[0.98]"
+                    className="w-full py-3 min-h-[48px] bg-ceramic-success hover:bg-ceramic-success/90 text-white font-bold rounded-xl transition-all active:scale-[0.98]"
                     style={fredoka}
                   >
                     Isso mesmo!
@@ -828,11 +828,11 @@ export function EF_OnboardingScreen({
       {/* Phase: consequence - show result */}
       {tutorialPhase === 'consequence' && selectedChoice && (
         <div className="space-y-4 animate-[ef-onboard-fade-in_0.5s_ease-out]">
-          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center">
+          <div className="bg-ceramic-success/10 border-2 border-ceramic-success/30 rounded-xl p-5 text-center">
             <div className="text-5xl mb-3 animate-[ef-onboard-bounce_0.5s_ease-out]">
               {'\u{2B50}'}
             </div>
-            <p className="text-green-800 font-bold text-lg leading-relaxed" style={fredoka}>
+            <p className="text-ceramic-success font-bold text-lg leading-relaxed" style={fredoka}>
               {TUTORIAL_SCENARIO.choices.find((c) => c.id === selectedChoice)?.consequence}
             </p>
           </div>

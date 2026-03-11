@@ -71,14 +71,14 @@ function getCategoryBadgeColor(category: string | null): string {
   if (!category) return 'bg-ceramic-cool text-ceramic-text-tertiary'
 
   const map: Record<string, string> = {
-    scheduling: 'bg-blue-100 text-blue-700',
+    scheduling: 'bg-ceramic-info/10 text-ceramic-info',
     request: 'bg-amber-100 text-amber-700',
     question: 'bg-purple-100 text-purple-700',
     response: 'bg-ceramic-cool text-ceramic-text-secondary',
     update: 'bg-emerald-100 text-emerald-700',
     greeting: 'bg-ceramic-cool text-ceramic-text-tertiary',
     farewell: 'bg-ceramic-cool text-ceramic-text-tertiary',
-    decision: 'bg-orange-100 text-orange-700',
+    decision: 'bg-ceramic-warning/10 text-ceramic-warning',
     task: 'bg-rose-100 text-rose-700',
     financial: 'bg-teal-100 text-teal-700',
   }

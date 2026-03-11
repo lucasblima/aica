@@ -152,14 +152,14 @@ describe('ContactAvatar', () => {
       render(<ContactAvatar name="Test" isOnline={true} />);
 
       const indicator = screen.getByLabelText('Online');
-      expect(indicator).toHaveClass('bg-green-500');
+      expect(indicator).toHaveClass('bg-ceramic-success');
     });
 
     it('shows offline indicator when isOnline is false', () => {
       render(<ContactAvatar name="Test" isOnline={false} />);
 
       const indicator = screen.getByLabelText('Offline');
-      expect(indicator).toHaveClass('bg-gray-400');
+      expect(indicator).toHaveClass('bg-ceramic-text-tertiary');
     });
 
     it('does not show indicator when isOnline is undefined', () => {

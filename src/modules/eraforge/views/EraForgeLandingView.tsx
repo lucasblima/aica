@@ -96,7 +96,7 @@ export function EraForgeLandingView({
 
           {status === 'pending' && (
             <div>
-              <div className="bg-green-100 text-green-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+              <div className="bg-ceramic-success/10 text-ceramic-success rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                 <svg
                   className="w-6 h-6"
                   fill="none"

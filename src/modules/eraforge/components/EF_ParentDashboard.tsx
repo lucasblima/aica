@@ -275,8 +275,8 @@ function DeltaBadge({ value }: { value: number }) {
     <span
       className={`inline-flex items-center text-xs font-bold px-1.5 py-0.5 rounded ${
         positive
-          ? 'bg-green-100 text-green-700'
-          : 'bg-red-100 text-red-700'
+          ? 'bg-ceramic-success/10 text-ceramic-success'
+          : 'bg-ceramic-error/10 text-ceramic-error'
       }`}
       style={nunitoFont}
     >

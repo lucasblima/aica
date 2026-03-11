@@ -44,7 +44,7 @@ interface VideoClipPanelProps {
 type ClipStatus = StudioClip['status'];
 
 const STATUS_CONFIG: Record<ClipStatus, { label: string; className: string }> = {
-  suggested: { label: 'Sugerido', className: 'bg-blue-100 text-blue-800' },
+  suggested: { label: 'Sugerido', className: 'bg-ceramic-info/10 text-ceramic-info' },
   draft: { label: 'Descartado', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
   approved: { label: 'Aprovado', className: 'bg-emerald-100 text-emerald-800' },
   published: { label: 'Publicado', className: 'bg-amber-100 text-amber-800' },
@@ -136,8 +136,8 @@ export default function VideoClipPanel({
   if (!hasTranscription) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
-          <Scissors className="w-8 h-8 text-blue-500/40" />
+        <div className="w-16 h-16 rounded-2xl bg-ceramic-info/10 flex items-center justify-center mb-4">
+          <Scissors className="w-8 h-8 text-ceramic-info/40" />
         </div>
         <p className="text-sm text-ceramic-text-secondary">
           Gere a transcricao primeiro para obter sugestoes de clips.
@@ -168,8 +168,8 @@ export default function VideoClipPanel({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-16 px-4"
       >
-        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
-          <Scissors className="w-8 h-8 text-blue-500" />
+        <div className="w-16 h-16 rounded-2xl bg-ceramic-info/10 flex items-center justify-center mb-4">
+          <Scissors className="w-8 h-8 text-ceramic-info" />
         </div>
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
           Sugerir Clips do Video
@@ -198,7 +198,7 @@ export default function VideoClipPanel({
         {!error && (
           <button
             onClick={handleDetect}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90 transition-colors"
           >
             <Sparkles className="w-4 h-4" />
             Sugerir Clips
@@ -230,14 +230,14 @@ export default function VideoClipPanel({
             </span>
           )}
           {suggestedCount > 0 && (
-            <span className="text-xs text-blue-600 font-medium">
+            <span className="text-xs text-ceramic-info font-medium">
               {suggestedCount} pendentes
             </span>
           )}
         </div>
         <button
           onClick={handleDetect}
-          className="text-sm text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+          className="text-sm text-ceramic-info hover:text-ceramic-info/80 transition-colors flex items-center gap-1"
         >
           <RefreshCw className="w-3 h-3" />
           Sugerir novamente

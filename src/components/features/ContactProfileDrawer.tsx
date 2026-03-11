@@ -233,7 +233,7 @@ export function ContactProfileDrawer({
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-ceramic-border bg-white">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-ceramic-border bg-ceramic-base">
               <div className="flex items-center gap-3 min-w-0">
                 {/* Avatar */}
                 {contact?.avatar_url ? (
@@ -384,8 +384,8 @@ export function ContactProfileDrawer({
               )}
 
               {inviteError && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                  <p className="text-xs text-red-600">{inviteError}</p>
+                <div className="p-3 rounded-lg bg-ceramic-error/10 border border-ceramic-error/30">
+                  <p className="text-xs text-ceramic-error">{inviteError}</p>
                 </div>
               )}
 
@@ -404,7 +404,7 @@ export function ContactProfileDrawer({
                         {appearances.episodes.map((ep) => (
                           <div
                             key={ep.id}
-                            className="p-3 rounded-lg bg-white border border-ceramic-border shadow-sm"
+                            className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border shadow-sm"
                           >
                             <p className="text-sm font-medium text-ceramic-text-primary">
                               {ep.title}
@@ -436,7 +436,7 @@ export function ContactProfileDrawer({
                         {appearances.athletes.map((ath) => (
                           <div
                             key={ath.id}
-                            className="p-3 rounded-lg bg-white border border-ceramic-border shadow-sm"
+                            className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border shadow-sm"
                           >
                             <p className="text-sm font-medium text-ceramic-text-primary">
                               {ath.name}
@@ -468,7 +468,7 @@ export function ContactProfileDrawer({
                         {appearances.connections.map((conn) => (
                           <div
                             key={conn.id}
-                            className="p-3 rounded-lg bg-white border border-ceramic-border shadow-sm"
+                            className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border shadow-sm"
                           >
                             <p className="text-sm font-medium text-ceramic-text-primary">
                               {conn.space_name}
@@ -497,7 +497,7 @@ export function ContactProfileDrawer({
                         {appearances.grants.map((grant) => (
                           <div
                             key={grant.id}
-                            className="p-3 rounded-lg bg-white border border-ceramic-border shadow-sm"
+                            className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border shadow-sm"
                           >
                             <p className="text-sm font-medium text-ceramic-text-primary">
                               {grant.project_name}
@@ -534,7 +534,7 @@ export function ContactProfileDrawer({
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-3 border-t border-ceramic-border bg-white">
+            <div className="px-5 py-3 border-t border-ceramic-border bg-ceramic-base">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-ceramic-text-secondary">
                   {contact ? `Criado em ${formatDate(contact.created_at)}` : ''}

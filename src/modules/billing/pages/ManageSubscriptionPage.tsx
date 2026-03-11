@@ -293,7 +293,7 @@ export function ManageSubscriptionPage() {
               <button
                 onClick={handleCancel}
                 disabled={cancelLoading}
-                className="flex-1 bg-ceramic-error hover:bg-red-600 text-white rounded-xl font-bold text-sm px-4 py-3 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 bg-ceramic-error hover:bg-ceramic-error/90 text-white rounded-xl font-bold text-sm px-4 py-3 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {cancelLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

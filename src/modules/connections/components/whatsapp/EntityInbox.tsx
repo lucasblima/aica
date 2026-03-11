@@ -36,13 +36,13 @@ const ENTITY_TYPE_CONFIG: Record<string, {
   color: string
   bgColor: string
 }> = {
-  task: { icon: ListTodo, label: 'Tarefa', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  task: { icon: ListTodo, label: 'Tarefa', color: 'text-ceramic-info', bgColor: 'bg-ceramic-info/10' },
   event: { icon: Calendar, label: 'Evento', color: 'text-purple-600', bgColor: 'bg-purple-50' },
   monetary: { icon: DollarSign, label: 'Financeiro', color: 'text-ceramic-success', bgColor: 'bg-ceramic-success-bg' },
   person: { icon: User, label: 'Pessoa', color: 'text-amber-600', bgColor: 'bg-amber-50' },
   project: { icon: FolderKanban, label: 'Projeto', color: 'text-ceramic-info', bgColor: 'bg-ceramic-info/10' },
   deadline: { icon: Clock, label: 'Prazo', color: 'text-ceramic-error', bgColor: 'bg-ceramic-error/10' },
-  reminder: { icon: Bell, label: 'Lembrete', color: 'text-orange-500', bgColor: 'bg-orange-50' },
+  reminder: { icon: Bell, label: 'Lembrete', color: 'text-ceramic-warning', bgColor: 'bg-ceramic-warning/10' },
 }
 
 const MODULE_LABELS: Record<string, string> = {

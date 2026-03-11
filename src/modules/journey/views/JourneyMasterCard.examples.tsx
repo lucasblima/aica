@@ -38,7 +38,7 @@ export function NotificationExample() {
         showNotification={hasNotification}
         onNotificationClick={handleNotificationClick}
       />
-      <p className="mt-4 text-sm text-gray-600">
+      <p className="mt-4 text-sm text-ceramic-text-secondary">
         Click the amber dot to dismiss notification
       </p>
     </div>
@@ -102,7 +102,7 @@ export function RouterIntegrationExample() {
       <JourneyMasterCard
         showNotification={false}
       />
-      <p className="mt-4 text-sm text-blue-600 font-medium">
+      <p className="mt-4 text-sm text-ceramic-info font-medium">
         Clique para expandir
       </p>
     </div>

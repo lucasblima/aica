@@ -142,7 +142,7 @@ export const IntegratedExample: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-pulse text-gray-500">
+        <div className="animate-pulse text-ceramic-text-secondary">
           Carregando dados...
         </div>
       </div>
@@ -179,7 +179,7 @@ export const EfficiencyTrendChartExample: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="animate-pulse h-64 bg-gray-100 rounded"></div>;
+    return <div className="animate-pulse h-64 bg-ceramic-cool rounded"></div>;
   }
 
   if (trends.length === 0) {
@@ -262,8 +262,8 @@ export const EmptyStateDemoPage: React.FC = () => {
             onClick={() => setCurrentState(type)}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
               currentState === type
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-ceramic-info text-white'
+                : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-border'
             }`}
           >
             {label}

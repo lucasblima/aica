@@ -15,8 +15,8 @@ interface QuestCardProps {
 }
 
 const priorityConfig: Record<QuestPriority, { label: string; color: string; bgColor: string }> = {
-  critical: { label: 'Critico', color: 'text-red-700', bgColor: 'bg-red-100' },
-  high: { label: 'Alto', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+  critical: { label: 'Critico', color: 'text-ceramic-error', bgColor: 'bg-ceramic-error/10' },
+  high: { label: 'Alto', color: 'text-ceramic-warning', bgColor: 'bg-ceramic-warning/10' },
   medium: { label: 'Medio', color: 'text-amber-700', bgColor: 'bg-amber-100' },
   low: { label: 'Baixo', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
 };
@@ -148,7 +148,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({
               <span>~{quest.estimated_minutes}min</span>
             )}
             {dueLabel && (
-              <span className={isOverdue ? 'text-red-600 font-semibold' : ''}>
+              <span className={isOverdue ? 'text-ceramic-error font-semibold' : ''}>
                 {isOverdue ? 'Atrasada: ' : ''}{dueLabel}
               </span>
             )}
@@ -218,7 +218,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({
                               onClick={() =>
                                 setCompletionPhotos((prev) => prev.filter((_, pi) => pi !== idx))
                               }
-                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[8px] flex items-center justify-center leading-none"
+                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-ceramic-error text-white text-[8px] flex items-center justify-center leading-none"
                             >
                               X
                             </button>

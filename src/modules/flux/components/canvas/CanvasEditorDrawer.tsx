@@ -282,7 +282,7 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
               </button>
             )}
             {microcycleStatus === 'active' && (
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-green-500/15 text-green-600 rounded-full text-xs font-bold uppercase tracking-wider">
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-ceramic-success/15 text-ceramic-success rounded-full text-xs font-bold uppercase tracking-wider">
                 <CheckCircle className="w-3.5 h-3.5" />
                 Liberado
               </span>

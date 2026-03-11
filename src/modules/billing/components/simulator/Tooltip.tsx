@@ -20,7 +20,7 @@ export function Tooltip({ text, children, position = 'top', maxWidth = 280 }: To
     <span className="relative inline-flex group/tip">
       {children}
       <span
-        className={`absolute ${posClass} z-[9999] px-3 py-2 text-xs leading-relaxed text-white bg-gray-800 rounded-lg shadow-lg pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 whitespace-normal text-left`}
+        className={`absolute ${posClass} z-[9999] px-3 py-2 text-xs leading-relaxed text-white bg-ceramic-text-primary rounded-lg shadow-lg pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 whitespace-normal text-left`}
         style={{ maxWidth, width: 'max-content' }}
         role="tooltip"
       >

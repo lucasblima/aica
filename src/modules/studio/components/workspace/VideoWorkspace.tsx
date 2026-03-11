@@ -189,16 +189,16 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
             <React.Fragment key={stage.key}>
               {index > 0 && (
                 <div className={`flex-shrink-0 w-8 h-px mx-1 ${
-                  isPast ? 'bg-blue-400' : 'bg-ceramic-border'
+                  isPast ? 'bg-ceramic-info' : 'bg-ceramic-border'
                 }`} />
               )}
               <button
                 onClick={() => setCurrentStage(stage.key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                   isActive
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-ceramic-info text-white'
                     : isPast
-                      ? 'text-blue-600 hover:bg-blue-50'
+                      ? 'text-ceramic-info hover:bg-ceramic-info/5'
                       : 'text-ceramic-text-secondary hover:bg-ceramic-cool'
                 }`}
               >
@@ -254,8 +254,8 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
 
             {currentStage === 'review' && (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-blue-100 flex items-center justify-center mb-6">
-                  <Film className="w-10 h-10 text-blue-500" />
+                <div className="w-20 h-20 rounded-2xl bg-ceramic-info/10 flex items-center justify-center mb-6">
+                  <Film className="w-10 h-10 text-ceramic-info" />
                 </div>
                 <h2 className="text-lg font-bold text-ceramic-text-primary mb-2">
                   Revisao do Video
@@ -290,7 +290,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
                     <div className="p-4 rounded-xl border border-ceramic-border bg-ceramic-cool text-left">
                       <p className="text-xs text-ceramic-text-secondary mb-1">Clips</p>
                       <div className="flex items-center gap-2">
-                        <Scissors className="w-4 h-4 text-blue-500" />
+                        <Scissors className="w-4 h-4 text-ceramic-info" />
                         <p className="text-sm font-medium text-ceramic-text-primary">
                           {clips.length} clips &middot; {approvedClips.length} aprovados
                         </p>

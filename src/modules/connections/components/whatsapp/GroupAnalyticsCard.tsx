@@ -72,7 +72,7 @@ const ROLE_CONFIG: Record<string, {
   color: string
 }> = {
   admin: { icon: Crown, label: 'Admin', color: 'text-amber-600' },
-  moderator: { icon: Shield, label: 'Moderador', color: 'text-blue-600' },
+  moderator: { icon: Shield, label: 'Moderador', color: 'text-ceramic-info' },
   active: { icon: Zap, label: 'Ativo', color: 'text-ceramic-success' },
   member: { icon: User, label: 'Membro', color: 'text-ceramic-text-secondary' },
   lurker: { icon: Eye, label: 'Observador', color: 'text-ceramic-text-tertiary' },
@@ -183,7 +183,7 @@ export const GroupAnalyticsCard: React.FC<GroupAnalyticsCardProps> = ({
           icon={GitBranch}
           label="Threads"
           value={analytics.total_threads}
-          color="text-blue-600"
+          color="text-ceramic-info"
         />
         <StatCard
           icon={CheckCircle2}

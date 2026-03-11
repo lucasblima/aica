@@ -110,7 +110,7 @@ export function AdminCouponsPage() {
               value={topUpUserId}
               onChange={(e) => setTopUpUserId(e.target.value)}
               placeholder="User ID (UUID)"
-              className="border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              className="border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
             />
             <input
               type="number"
@@ -118,14 +118,14 @@ export function AdminCouponsPage() {
               onChange={(e) => setTopUpAmount(e.target.value)}
               placeholder="Creditos"
               min="1"
-              className="border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              className="border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
             />
             <input
               type="text"
               value={topUpReason}
               onChange={(e) => setTopUpReason(e.target.value)}
               placeholder="Motivo (opcional)"
-              className="border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              className="border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
             />
           </div>
 
@@ -162,7 +162,7 @@ export function AdminCouponsPage() {
                 value={newCode}
                 onChange={(e) => setNewCode(e.target.value.toUpperCase())}
                 placeholder="AICA50"
-                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm uppercase bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm uppercase bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
             </div>
             <div>
@@ -173,7 +173,7 @@ export function AdminCouponsPage() {
                 onChange={(e) => setNewCredits(e.target.value)}
                 placeholder="50"
                 min="1"
-                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
             </div>
             <div>
@@ -184,7 +184,7 @@ export function AdminCouponsPage() {
                 onChange={(e) => setNewMaxRedemptions(e.target.value)}
                 placeholder="Ilimitado"
                 min="1"
-                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
             </div>
             <div>
@@ -195,7 +195,7 @@ export function AdminCouponsPage() {
                 onChange={(e) => setNewMaxPerUser(e.target.value)}
                 placeholder="1"
                 min="1"
-                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
             </div>
             <div>
@@ -205,7 +205,7 @@ export function AdminCouponsPage() {
                 value={newCampaign}
                 onChange={(e) => setNewCampaign(e.target.value)}
                 placeholder="launch, onboarding, partner..."
-                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
             </div>
             <div>
@@ -214,7 +214,7 @@ export function AdminCouponsPage() {
                 type="date"
                 value={newExpiresAt}
                 onChange={(e) => setNewExpiresAt(e.target.value)}
-                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-white text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                className="w-full border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
             </div>
           </div>
