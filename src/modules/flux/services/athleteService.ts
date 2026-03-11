@@ -431,7 +431,7 @@ export class AthleteService {
    * Sets auth_user_id=NULL, invitation_status='none', status='churned'.
    * No params — uses the authenticated user's ID (auth.uid()).
    */
-  static async unlinkSelf(): Promise<{ error: Error | null }> {
+  static async unlinkSelf(): Promise<{ error: any }> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {

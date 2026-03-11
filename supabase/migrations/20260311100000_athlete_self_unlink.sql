@@ -20,7 +20,11 @@ WITH CHECK (
 );
 
 -- =====================
--- 2. TRIGGER GUARD: skip churned athletes in athlete_email_status_sync
+-- 2. TRIGGER GUARD: prevent re-link of churned athletes
+--    This trigger fires on INSERT OR UPDATE OF email. When a coach later
+--    updates the email on a churned athlete record, the trigger would
+--    normally auto-link a matching auth user — silently re-enrolling them.
+--    The guard below short-circuits for status='churned' to prevent that.
 -- =====================
 
 CREATE OR REPLACE FUNCTION public.athlete_email_status_sync()

@@ -487,18 +487,24 @@ export default function AthletePortalView() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="leave-training-title"
+            onKeyDown={(e) => { if (e.key === 'Escape' && !leaveTraining.isLeaving) leaveTraining.cancelLeave(); }}
           >
             <motion.div
+              ref={(el) => el?.focus()}
+              tabIndex={-1}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-ceramic-base rounded-2xl shadow-lg p-6 max-w-sm w-full space-y-4"
+              className="bg-ceramic-base rounded-2xl shadow-lg p-6 max-w-sm w-full space-y-4 outline-none"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-ceramic-error/10 flex items-center justify-center flex-shrink-0">
                   <LogOut className="w-5 h-5 text-ceramic-error" />
                 </div>
-                <h2 className="text-lg font-black text-ceramic-text-primary">Sair do treino?</h2>
+                <h2 id="leave-training-title" className="text-lg font-black text-ceramic-text-primary">Sair do treino?</h2>
               </div>
               <p className="text-sm text-ceramic-text-secondary leading-relaxed">
                 Voce sera desvinculado da prescricao do seu coach. Os exercicios serao removidos da sua agenda. Essa acao nao pode ser desfeita.
