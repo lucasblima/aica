@@ -92,6 +92,9 @@ const LandingPage = lazy(() => import('../modules/onboarding/components/landing'
 const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
 const WelcomePage = lazy(() => import('../pages/WelcomePage'));
 
+// Auth - Password reset via email recovery link
+const ResetPasswordPage = lazy(() => import('../pages/ResetPasswordPage'));
+
 // Invite System - Public page for invite acceptance
 const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m => ({ default: m.InviteAcceptPage })));
 
@@ -763,6 +766,16 @@ export function AppRouter() {
                <Route
                   path="/welcome"
                   element={<AuthGuard><WelcomePage /></AuthGuard>}
+               />
+
+               {/* Reset Password - Public route for password recovery via email link */}
+               <Route
+                  path="/reset-password"
+                  element={
+                    <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+                      <ResetPasswordPage />
+                    </Suspense>
+                  }
                />
 
                {/* Onboarding Flow - Protected, for new users */}
