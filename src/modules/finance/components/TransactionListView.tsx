@@ -16,8 +16,10 @@ import {
   ChevronsRight,
   Receipt,
   Calendar,
+  Tags,
 } from 'lucide-react';
 import { createNamespacedLogger } from '@/lib/logger';
+import { supabase } from '@/services/supabaseClient';
 import { useTransactions } from '../hooks/useTransactions';
 import type { FinanceTransaction, TransactionFilters } from '../types';
 import { TRANSACTION_CATEGORIES } from '../types';
@@ -68,6 +70,12 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   }>({ category: '', description: '', notes: '' });
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'recategorize' | 'delete' | null>(null);
+  const [bulkCategory, setBulkCategory] = useState<string>('');
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   // Debounce search input (400ms)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -153,6 +161,76 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     },
     [deleteTransaction]
   );
+
+  // ── Clear bulk selection when filters change ──
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [typeFilter, categoryFilter, startDate, endDate, searchTerm]);
+
+  // ── Bulk selection helpers ──
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === transactions.length && transactions.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map((tx) => tx.id)));
+    }
+  }, [selectedIds.size, transactions]);
+
+  // ── Bulk recategorize ──
+  const handleBulkRecategorize = useCallback(async () => {
+    if (!bulkCategory || selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error: updateError } = await supabase
+        .from('finance_transactions')
+        .update({ category: bulkCategory })
+        .in('id', ids);
+      if (updateError) throw updateError;
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      setBulkCategory('');
+      refresh();
+    } catch (err) {
+      log.error('Bulk recategorize failed', err);
+    } finally {
+      setBulkLoading(false);
+    }
+  }, [bulkCategory, selectedIds, refresh]);
+
+  // ── Bulk delete ──
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Deletar ${selectedIds.size} transação${selectedIds.size !== 1 ? 'ões' : ''}? Esta ação não pode ser desfeita.`)) return;
+    setBulkLoading(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error: deleteError } = await supabase
+        .from('finance_transactions')
+        .delete()
+        .in('id', ids);
+      if (deleteError) throw deleteError;
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      refresh();
+    } catch (err) {
+      log.error('Bulk delete failed', err);
+    } finally {
+      setBulkLoading(false);
+    }
+  }, [selectedIds, refresh]);
 
   // ── Loading skeleton ──
   const renderSkeleton = () => (
@@ -350,6 +428,52 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         </div>
       )}
 
+      {/* ── Bulk selection header ── */}
+      {transactions.length > 0 && (
+        <div className="flex items-center justify-between ceramic-card p-2.5 mb-3 rounded-lg">
+          <div className="flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              checked={selectedIds.size === transactions.length && transactions.length > 0}
+              ref={(el) => {
+                if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < transactions.length;
+              }}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-ceramic-border text-amber-500 focus:ring-amber-500/30 cursor-pointer"
+            />
+            <span className="text-xs text-ceramic-text-secondary">
+              {selectedIds.size > 0
+                ? `${selectedIds.size} selecionada${selectedIds.size !== 1 ? 's' : ''}`
+                : 'Selecionar todas'}
+            </span>
+          </div>
+
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setBulkCategory('');
+                  setBulkAction('recategorize');
+                }}
+                disabled={bulkLoading}
+                className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                <Tags className="w-3.5 h-3.5" />
+                Re-categorizar
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
+                className="flex items-center gap-1.5 text-xs bg-ceramic-error hover:bg-ceramic-error/90 text-white px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Deletar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Transaction list ── */}
       <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
         {loading && transactions.length === 0 ? (
@@ -381,10 +505,21 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                   className="ceramic-card overflow-hidden transition-all duration-200"
                 >
                   {/* ── Row ── */}
-                  <button
-                    onClick={() => handleExpand(tx)}
-                    className="w-full flex items-center justify-between p-3 hover:bg-ceramic-cool/50 transition-colors text-left"
-                  >
+                  <div className="w-full flex items-center p-3 hover:bg-ceramic-cool/50 transition-colors text-left">
+                    {/* Bulk checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(tx.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(tx.id);
+                      }}
+                      className="w-4 h-4 mr-3 shrink-0 rounded border-ceramic-border text-amber-500 focus:ring-amber-500/30 cursor-pointer"
+                    />
+                    <button
+                      onClick={() => handleExpand(tx)}
+                      className="flex items-center justify-between flex-1 min-w-0"
+                    >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
                         className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -430,7 +565,8 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                         <ChevronDown className="w-4 h-4 text-ceramic-text-secondary" />
                       )}
                     </div>
-                  </button>
+                    </button>
+                  </div>
 
                   {/* ── Expanded edit panel ── */}
                   {isExpanded && (
@@ -576,6 +712,60 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           </>
         )}
       </div>
+
+      {/* ── Bulk recategorize modal ── */}
+      {bulkAction === 'recategorize' && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="ceramic-card p-6 rounded-xl w-full max-w-sm shadow-lg space-y-4">
+            <h3 className="text-base font-bold text-ceramic-text-primary">
+              Re-categorizar {selectedIds.size} transação{selectedIds.size !== 1 ? 'ões' : ''}
+            </h3>
+
+            <div>
+              <label className="text-xs text-ceramic-text-secondary block mb-1.5">
+                Nova categoria
+              </label>
+              <select
+                value={bulkCategory}
+                onChange={(e) => setBulkCategory(e.target.value)}
+                className="w-full text-sm ceramic-inset px-3 py-2.5 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-transparent"
+              >
+                <option value="">Selecione uma categoria...</option>
+                {TRANSACTION_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {CATEGORY_LABELS[cat] || cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setBulkAction(null);
+                  setBulkCategory('');
+                }}
+                disabled={bulkLoading}
+                className="flex items-center gap-1.5 text-xs ceramic-inset px-4 py-2 rounded-lg text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleBulkRecategorize}
+                disabled={!bulkCategory || bulkLoading}
+                className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {bulkLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Tags className="w-3.5 h-3.5" />
+                )}
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
