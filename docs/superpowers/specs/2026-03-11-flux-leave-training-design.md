@@ -39,9 +39,9 @@ The coach retains the athlete record (for history) but the athlete loses portal 
 |-------|------|--------|
 | **UI** | `src/modules/flux/views/AthletePortalView.tsx` | Add "Sair do treino" button + confirmation dialog |
 | **Hook** | `src/modules/flux/hooks/useLeaveTraining.ts` (new) | Orchestrates unsync + unlink flow |
-| **Service** | `src/modules/flux/services/athleteService.ts` | New `unlinkFromCoach(athleteId)` method |
-| **Calendar** | `src/modules/agenda/services/calendarSyncService.ts` | New `unsyncAllFluxEvents(userId)` method |
-| **Migration** | `supabase/migrations/NNNN_athlete_self_unlink_policy.sql` | RLS policy for athlete to update own record |
+| **Service** | `src/modules/flux/services/athleteService.ts` | New `unlinkSelf()` method (no params, uses auth.uid()) |
+| **Calendar** | `src/modules/agenda/services/calendarSyncService.ts` | New `unsyncAllFluxEvents(userId)` method (pre-existing cross-module pattern) |
+| **Migration** | `supabase/migrations/NNNN_athlete_self_unlink.sql` | RLS policy + update `link_athlete_on_signup` trigger |
 
 ### Data Changes
 
@@ -71,16 +71,40 @@ WHERE auth_user_id = $1;
 The athlete needs permission to UPDATE their own `athletes` record (currently only coaches can update). A scoped policy:
 
 ```sql
+-- RLS: athlete can unlink themselves (USING checks pre-update row, WITH CHECK checks post-update row)
 CREATE POLICY "Athletes can unlink themselves"
 ON athletes FOR UPDATE
 USING (auth.uid() = auth_user_id)
 WITH CHECK (
   auth_user_id IS NULL
   AND invitation_status = 'none'
+  AND status = 'churned'
 );
 ```
 
-This policy only allows the athlete to set `auth_user_id = NULL` and `invitation_status = 'none'` — they cannot modify other fields.
+This policy scopes the athlete's UPDATE to exactly the unlink operation: `auth_user_id = NULL`, `invitation_status = 'none'`, `status = 'churned'`. PostgreSQL evaluates `USING` against the pre-update row (where `auth_user_id` still matches `auth.uid()`) and `WITH CHECK` against the post-update row. No conflict.
+
+**Note:** This coexists with the existing coach UPDATE policy (`user_id = auth.uid()`), which uses the coach's `user_id` column. The two policies target different principals and do not conflict.
+
+### Trigger Guard: Prevent Re-Link After Leave
+
+The existing `link_athlete_on_signup` trigger auto-links athletes by email on signup. Without a guard, a churned athlete could be silently re-linked if the coach updates the athlete record. The migration adds a guard:
+
+```sql
+-- Update trigger to skip churned athletes
+CREATE OR REPLACE FUNCTION public.link_athlete_on_signup()
+RETURNS trigger AS $$
+BEGIN
+  -- Skip athletes that explicitly left (churned)
+  IF NEW.status = 'churned' THEN
+    RETURN NEW;
+  END IF;
+  -- ... existing linking logic ...
+END;
+$$ LANGUAGE plpgsql;
+```
+
+This ensures leaving is durable — the athlete won't be re-linked until the coach explicitly changes their status back to `active`/`trial`.
 
 ### Timeline Provider
 
@@ -92,8 +116,10 @@ The `unsyncAllFluxEvents()` method:
 1. Queries `calendar_sync_map` for all entries where `module = 'flux'` and `user_id = auth.uid()`
 2. Collects all `google_event_id` values
 3. Deletes the `calendar_sync_map` rows
-4. For each `google_event_id`, calls `googleCalendarService.deleteEvent()` (fire-and-forget, non-blocking)
+4. For each `google_event_id`, calls `googleCalendarService.deleteEvent()` **sequentially** (matching existing `bulkSyncFluxSlots` pattern to respect Google API rate limits)
 5. If Google API fails for individual events, logs warning but continues
+
+**Cross-module note:** `calendarSyncService.ts` is in the `agenda` module but is already imported by flux hooks (`useCanvasCalendar`, `useFluxAgendaEvents`). This is a pre-existing cross-module pattern — `calendarSyncService` acts as a shared calendar sync service. Adding `unsyncAllFluxEvents` follows this established pattern.
 
 ### Error Handling
 
@@ -104,7 +130,8 @@ The `unsyncAllFluxEvents()` method:
 ## Security
 
 - Athlete can only unlink themselves (`auth.uid() = auth_user_id`)
-- RLS policy is scoped: only allows setting `auth_user_id = NULL` + `invitation_status = 'none'`
+- RLS policy is scoped: only allows setting `auth_user_id = NULL` + `invitation_status = 'none'` + `status = 'churned'`
+- Trigger guard prevents silent re-link of churned athletes
 - Coach retains athlete record (no data loss for coach)
 - No API keys exposed (Google Calendar uses athlete's OAuth token via frontend)
 
@@ -119,5 +146,5 @@ The `unsyncAllFluxEvents()` method:
 
 - Coach-initiated removal (already exists via `deleteAthlete`)
 - "Pause" functionality (different from leaving)
-- Re-joining after leaving (would require new invitation flow)
+- Re-joining after leaving (coach would need to change status from `churned` back to `active` and re-invite)
 - Notification to coach when athlete leaves (future enhancement)
