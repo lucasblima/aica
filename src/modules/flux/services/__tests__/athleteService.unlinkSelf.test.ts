@@ -39,22 +39,36 @@ describe('AthleteService.unlinkSelf', () => {
     vi.clearAllMocks();
   });
 
-  it('calls athlete_unlink_self RPC and returns no error on success', async () => {
-    mockRpc.mockResolvedValue({ error: null });
+  it('calls athlete_unlink_self RPC and returns google event IDs on success', async () => {
+    mockRpc.mockResolvedValue({
+      data: [{ google_event_id: 'evt_1' }, { google_event_id: 'evt_2' }],
+      error: null,
+    });
 
     const result = await AthleteService.unlinkSelf();
 
     expect(result.error).toBeNull();
+    expect(result.googleEventIds).toEqual(['evt_1', 'evt_2']);
     expect(mockRpc).toHaveBeenCalledWith('athlete_unlink_self');
+  });
+
+  it('returns empty googleEventIds when RPC returns no data', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const result = await AthleteService.unlinkSelf();
+
+    expect(result.error).toBeNull();
+    expect(result.googleEventIds).toEqual([]);
   });
 
   it('returns error from RPC on failure', async () => {
     const rpcError = { message: 'No athlete record found', code: 'P0001' };
-    mockRpc.mockResolvedValue({ error: rpcError });
+    mockRpc.mockResolvedValue({ data: null, error: rpcError });
 
     const result = await AthleteService.unlinkSelf();
 
     expect(result.error).toBe(rpcError);
+    expect(result.googleEventIds).toEqual([]);
   });
 
   it('catches thrown exceptions and returns error', async () => {
@@ -64,5 +78,6 @@ describe('AthleteService.unlinkSelf', () => {
 
     expect(result.error).toBeInstanceOf(Error);
     expect(result.error.message).toBe('Network error');
+    expect(result.googleEventIds).toEqual([]);
   });
 });

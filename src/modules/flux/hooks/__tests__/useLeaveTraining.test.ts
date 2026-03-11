@@ -22,6 +22,11 @@ vi.mock('../../services/athleteService', () => ({
   },
 }));
 
+const mockDeleteCalendarEvent = vi.fn();
+vi.mock('@/services/googleCalendarWriteService', () => ({
+  deleteCalendarEvent: (...args: unknown[]) => mockDeleteCalendarEvent(...args),
+}));
+
 describe('useLeaveTraining', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,8 +58,9 @@ describe('useLeaveTraining', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('confirmLeave calls unlinkSelf and navigates to / on success', async () => {
-    mockUnlinkSelf.mockResolvedValue({ error: null });
+  it('confirmLeave calls unlinkSelf, deletes Google events, and navigates', async () => {
+    mockUnlinkSelf.mockResolvedValue({ googleEventIds: ['evt_1', 'evt_2'], error: null });
+    mockDeleteCalendarEvent.mockResolvedValue(undefined);
     const { result } = renderHook(() => useLeaveTraining());
 
     await act(async () => {
@@ -62,13 +68,28 @@ describe('useLeaveTraining', () => {
     });
 
     expect(mockUnlinkSelf).toHaveBeenCalled();
+    expect(mockDeleteCalendarEvent).toHaveBeenCalledWith('evt_1');
+    expect(mockDeleteCalendarEvent).toHaveBeenCalledWith('evt_2');
     expect(mockNavigate).toHaveBeenCalledWith('/');
     expect(result.current.isLeaving).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
+  it('confirmLeave navigates even if Google Calendar delete fails', async () => {
+    mockUnlinkSelf.mockResolvedValue({ googleEventIds: ['evt_1'], error: null });
+    mockDeleteCalendarEvent.mockRejectedValue(new Error('No access'));
+    const { result } = renderHook(() => useLeaveTraining());
+
+    await act(async () => {
+      await result.current.confirmLeave();
+    });
+
+    expect(mockDeleteCalendarEvent).toHaveBeenCalledWith('evt_1');
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
+
   it('confirmLeave sets error on failure and does NOT navigate', async () => {
-    mockUnlinkSelf.mockResolvedValue({ error: new Error('fail') });
+    mockUnlinkSelf.mockResolvedValue({ googleEventIds: [], error: new Error('fail') });
     const { result } = renderHook(() => useLeaveTraining());
 
     await act(async () => {
