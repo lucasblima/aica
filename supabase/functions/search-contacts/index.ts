@@ -192,15 +192,15 @@ serve(async (req: Request) => {
     }
 
     // Map semantic results
-    const results: SearchResult[] = (semanticResults || []).map((r: any) => ({
-      contact_phone: r.contact_phone,
-      contact_name: r.contact_name || r.contact_phone,
-      similarity: Math.round(r.similarity * 100) / 100,
-      embedding_type: r.embedding_type,
-      relationship_score: r.relationship_score,
-      last_message_at: r.last_message_at,
-      detected_topics: r.detected_topics,
-      conversation_summary: r.conversation_summary,
+    const results: SearchResult[] = (semanticResults || []).map((r: Record<string, unknown>) => ({
+      contact_phone: r.contact_phone as string,
+      contact_name: (r.contact_name as string) || (r.contact_phone as string),
+      similarity: Math.round((r.similarity as number) * 100) / 100,
+      embedding_type: r.embedding_type as string,
+      relationship_score: (r.relationship_score as number | null),
+      last_message_at: (r.last_message_at as string | null),
+      detected_topics: (r.detected_topics as string[] | null),
+      conversation_summary: (r.conversation_summary as string | null),
       match_source: 'semantic' as const,
     }))
 

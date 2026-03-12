@@ -131,8 +131,7 @@ export type ArchetypeSettings =
   | HabitatSettings
   | VenturesSettings
   | AcademiaSettings
-  | TriboSettings
-  | Record<string, unknown>;
+  | TriboSettings;
 
 // Input types for creation/updates
 export interface CreateConnectionSpaceInput {

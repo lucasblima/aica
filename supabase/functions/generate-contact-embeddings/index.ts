@@ -366,17 +366,17 @@ serve(async (req: Request) => {
           p_model: 'text-embedding-004',
           p_tokens_in: Math.ceil(totalCharsEmbedded / 4),
           p_tokens_out: 0,
-        }).catch((err: Error) => {
-          console.warn('[generate-contact-embeddings] Failed to log interaction:', err.message)
+        }).catch((err: unknown) => {
+          console.warn('[generate-contact-embeddings] Failed to log interaction:', err instanceof Error ? err.message : String(err))
         })
 
         // Rate limiting: delay between API calls
         await new Promise(resolve => setTimeout(resolve, 200))
 
       } catch (contactError) {
-        const err = contactError as Error
-        result.errors.push(`Contact ${insight.contact_phone}: ${err.message}`)
-        console.error(`[generate-contact-embeddings] Error processing ${insight.contact_phone}:`, err)
+        const msg = contactError instanceof Error ? contactError.message : String(contactError)
+        result.errors.push(`Contact ${insight.contact_phone}: ${msg}`)
+        console.error(`[generate-contact-embeddings] Error processing ${insight.contact_phone}:`, contactError)
       }
     }
 
