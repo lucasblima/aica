@@ -75,14 +75,14 @@ function buildSystemPrompt(persona: Record<string, unknown>, context: {
   inventory: Record<string, unknown>;
   feedback: unknown[];
 }): string {
-  const name = persona.persona_name as string;
-  const entityType = persona.entity_type as string;
-  const voice = persona.persona_voice as string || "neutral";
-  const traits = (persona.personality_traits as string[]) || [];
-  const stats = persona.stats as Record<string, number> || {};
-  const hp = persona.hp as number;
-  const level = persona.level as number;
-  const knowledge = persona.knowledge_summary as string || "Ainda nao tenho muitas informacoes.";
+  const name = (persona.persona_name as string | undefined) ?? 'Entidade';
+  const entityType = (persona.entity_type as string | undefined) ?? 'unknown';
+  const voice = (persona.persona_voice as string | undefined) ?? 'neutral';
+  const traits = Array.isArray(persona.personality_traits) ? persona.personality_traits as string[] : [];
+  const stats = (persona.stats && typeof persona.stats === 'object') ? persona.stats as Record<string, number> : {};
+  const hp = typeof persona.hp === 'number' ? persona.hp : 0;
+  const level = typeof persona.level === 'number' ? persona.level : 1;
+  const knowledge = (persona.knowledge_summary as string | undefined) ?? 'Ainda nao tenho muitas informacoes.';
 
   const voiceInstructions: Record<string, string> = {
     neutral: "Tom equilibrado e informativo.",

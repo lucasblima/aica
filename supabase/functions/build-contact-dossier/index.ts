@@ -178,8 +178,8 @@ function extractJSON(text: string): unknown {
   // Try direct parse first
   try {
     return JSON.parse(text)
-  } catch {
-    // ignore
+  } catch (e) {
+    console.warn('[extractJSON] Direct parse failed:', (e as Error).message)
   }
 
   // Try extracting from code fences
@@ -187,8 +187,8 @@ function extractJSON(text: string): unknown {
   if (fenceMatch) {
     try {
       return JSON.parse(fenceMatch[1].trim())
-    } catch {
-      // ignore
+    } catch (e) {
+      console.warn('[extractJSON] Fence parse failed:', (e as Error).message)
     }
   }
 
@@ -198,8 +198,8 @@ function extractJSON(text: string): unknown {
   if (braceStart !== -1 && braceEnd > braceStart) {
     try {
       return JSON.parse(text.substring(braceStart, braceEnd + 1))
-    } catch {
-      // ignore
+    } catch (e) {
+      console.warn('[extractJSON] Brace parse failed:', (e as Error).message)
     }
   }
 
@@ -242,6 +242,10 @@ async function callGemini(prompt: string, apiKey: string): Promise<GeminiCallRes
   }
 
   const parsed = extractJSON(text) as DossierResult
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid Gemini response: not a valid JSON object')
+  }
 
   return {
     dossier: {
@@ -313,8 +317,8 @@ async function buildDossierForContact(
         p_tokens_out: usageMetadata.candidatesTokenCount || 0,
       }).then(() => {
         console.log('[build-contact-dossier] Logged interaction')
-      }).catch((err: any) => {
-        console.warn('[build-contact-dossier] Failed to log interaction:', err.message)
+      }).catch((err: unknown) => {
+        console.warn('[build-contact-dossier] Failed to log interaction:', err instanceof Error ? err.message : String(err))
       })
     }
 
@@ -389,6 +393,15 @@ serve(async (req) => {
   }
 
   try {
+    // Validate JWT authentication
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const apiKey = Deno.env.get('GEMINI_API_KEY')
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY not configured')
