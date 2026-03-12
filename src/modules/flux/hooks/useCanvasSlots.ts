@@ -8,9 +8,8 @@
 import { useCallback } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { MicrocycleService } from '../services/microcycleService';
-import { syncEntityToGoogle, unsyncEntityFromGoogle } from '@/services/calendarSyncService';
 import { fluxSlotToGoogleEvent } from '@/services/calendarSyncTransforms';
-import { isGoogleCalendarConnected } from '@/services/googleAuthService';
+import { syncSlotsToAthleteCalendar } from '../services/athleteCalendarSyncService';
 import { addXP, FLUX_XP_REWARDS } from '@/services/gamificationService';
 import { supabase } from '@/services/supabaseClient';
 import { createTrainingMoment } from '../services/fluxJourneyBridge';
@@ -127,15 +126,21 @@ export function useCanvasSlots({
           return [...filtered, data].sort(sortSlots);
         });
 
-        // Sync to Google Calendar (non-blocking)
-        if (activeMicrocycle?.start_date) {
-          isGoogleCalendarConnected().then((connected) => {
-            if (!connected) return;
-            const eventData = fluxSlotToGoogleEvent(data, activeMicrocycle.start_date);
-            syncEntityToGoogle('flux', data.id, eventData).catch((err) =>
-              log.warn('Calendar sync failed for new slot:', err)
-            );
-          });
+        // Sync to athlete's Google Calendar (non-blocking)
+        if (activeMicrocycle?.start_date && athleteId) {
+          const eventData = fluxSlotToGoogleEvent(data, activeMicrocycle.start_date);
+          if (eventData) {
+            syncSlotsToAthleteCalendar(athleteId, [{
+              slotId: data.id,
+              action: 'sync',
+              eventData: {
+                summary: eventData.summary,
+                description: eventData.description || '',
+                start: eventData.start,
+                end: eventData.end,
+              },
+            }]).catch((err) => log.warn('Athlete calendar sync failed for new slot:', err));
+          }
         }
       }
 
@@ -186,21 +191,27 @@ export function useCanvasSlots({
           prev.map((s) => (s.id === data.id ? data : s)).sort(sortSlots)
         );
 
-        // Sync update to Google Calendar (non-blocking)
-        if (activeMicrocycle?.start_date) {
-          isGoogleCalendarConnected().then((connected) => {
-            if (!connected) return;
-            const eventData = fluxSlotToGoogleEvent(data, activeMicrocycle.start_date);
-            syncEntityToGoogle('flux', data.id, eventData).catch((err) =>
-              log.warn('Calendar sync failed for updated slot:', err)
-            );
-          });
+        // Sync update to athlete's Google Calendar (non-blocking)
+        if (activeMicrocycle?.start_date && athleteId) {
+          const eventData = fluxSlotToGoogleEvent(data, activeMicrocycle.start_date);
+          if (eventData) {
+            syncSlotsToAthleteCalendar(athleteId, [{
+              slotId: data.id,
+              action: 'sync',
+              eventData: {
+                summary: eventData.summary,
+                description: eventData.description || '',
+                start: eventData.start,
+                end: eventData.end,
+              },
+            }]).catch((err) => log.warn('Athlete calendar sync failed for updated slot:', err));
+          }
         }
       }
 
       return data;
     },
-    [activeMicrocycle, setSlots, setError]
+    [activeMicrocycle, athleteId, setSlots, setError]
   );
 
   const deleteSlot = useCallback(
@@ -216,17 +227,17 @@ export function useCanvasSlots({
 
       setSlots((prev) => prev.filter((s) => s.id !== slotId));
 
-      // Unsync from Google Calendar (non-blocking)
-      isGoogleCalendarConnected().then((connected) => {
-        if (!connected) return;
-        unsyncEntityFromGoogle('flux', slotId).catch((err) =>
-          log.warn('Calendar unsync failed for deleted slot:', err)
-        );
-      });
+      // Unsync from athlete's Google Calendar (non-blocking)
+      if (athleteId) {
+        syncSlotsToAthleteCalendar(athleteId, [{
+          slotId,
+          action: 'delete',
+        }]).catch((err) => log.warn('Athlete calendar unsync failed:', err));
+      }
 
       return true;
     },
-    [setSlots, setError]
+    [athleteId, setSlots, setError]
   );
 
   const markComplete = useCallback(
