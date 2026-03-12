@@ -65,23 +65,27 @@ async function calculateHabitatDecay(
   supabase: ReturnType<typeof createClient>,
   persona: Record<string, unknown>
 ): Promise<DecayResult> {
+  const personaId = typeof persona.id === 'string' ? persona.id : String(persona.id ?? '');
+  const personaName = typeof persona.persona_name === 'string' ? persona.persona_name : 'Unknown';
+  const personaHp = typeof persona.hp === 'number' ? persona.hp : 100;
+
   const result: DecayResult = {
-    persona_id: persona.id as string,
-    persona_name: persona.persona_name as string,
-    old_hp: persona.hp as number,
-    new_hp: persona.hp as number,
+    persona_id: personaId,
+    persona_name: personaName,
+    old_hp: personaHp,
+    new_hp: personaHp,
     stat_changes: {},
     reasons: [],
     notifications: [],
   };
 
-  const stats = { ...(persona.stats as Record<string, number> || {}) };
+  const stats = { ...((persona.stats && typeof persona.stats === 'object') ? persona.stats as Record<string, number> : {}) };
 
   // Check overdue quests (30+ days)
   const { data: overdueQuests } = await supabase
     .from("entity_quests")
     .select("id, title, priority, created_at")
-    .eq("persona_id", persona.id as string)
+    .eq("persona_id", personaId)
     .in("status", ["pending", "accepted"])
     .lt("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -101,7 +105,7 @@ async function calculateHabitatDecay(
   const { data: expiredFood } = await supabase
     .from("entity_inventory")
     .select("id, name, attributes")
-    .eq("persona_id", persona.id as string)
+    .eq("persona_id", personaId)
     .eq("category", "food");
 
   if (expiredFood) {
@@ -122,7 +126,7 @@ async function calculateHabitatDecay(
   const { count: recentCleaningQuests } = await supabase
     .from("entity_quests")
     .select("id", { count: "exact", head: true })
-    .eq("persona_id", persona.id as string)
+    .eq("persona_id", personaId)
     .eq("status", "completed")
     .eq("quest_type", "maintenance")
     .gte("completed_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
@@ -152,7 +156,7 @@ async function calculateHabitatDecay(
     await supabase
       .from("entity_personas")
       .update({ hp: result.new_hp, stats })
-      .eq("id", persona.id as string);
+      .eq("id", personaId);
   }
 
   return result;
@@ -162,17 +166,21 @@ async function calculatePersonDecay(
   supabase: ReturnType<typeof createClient>,
   persona: Record<string, unknown>
 ): Promise<DecayResult> {
+  const personaId = typeof persona.id === 'string' ? persona.id : String(persona.id ?? '');
+  const personaName = typeof persona.persona_name === 'string' ? persona.persona_name : 'Unknown';
+  const personaHp = typeof persona.hp === 'number' ? persona.hp : 100;
+
   const result: DecayResult = {
-    persona_id: persona.id as string,
-    persona_name: persona.persona_name as string,
-    old_hp: persona.hp as number,
-    new_hp: persona.hp as number,
+    persona_id: personaId,
+    persona_name: personaName,
+    old_hp: personaHp,
+    new_hp: personaHp,
     stat_changes: {},
     reasons: [],
     notifications: [],
   };
 
-  const stats = { ...(persona.stats as Record<string, number> || {}) };
+  const stats = { ...((persona.stats && typeof persona.stats === 'object') ? persona.stats as Record<string, number> : {}) };
   const lastInteraction = persona.last_interaction as string | null;
 
   if (lastInteraction) {
@@ -202,7 +210,7 @@ async function calculatePersonDecay(
     await supabase
       .from("entity_personas")
       .update({ hp: result.new_hp, stats })
-      .eq("id", persona.id as string);
+      .eq("id", personaId);
   }
 
   return result;
@@ -212,23 +220,27 @@ async function calculateOrganizationDecay(
   supabase: ReturnType<typeof createClient>,
   persona: Record<string, unknown>
 ): Promise<DecayResult> {
+  const personaId = typeof persona.id === 'string' ? persona.id : String(persona.id ?? '');
+  const personaName = typeof persona.persona_name === 'string' ? persona.persona_name : 'Unknown';
+  const personaHp = typeof persona.hp === 'number' ? persona.hp : 100;
+
   const result: DecayResult = {
-    persona_id: persona.id as string,
-    persona_name: persona.persona_name as string,
-    old_hp: persona.hp as number,
-    new_hp: persona.hp as number,
+    persona_id: personaId,
+    persona_name: personaName,
+    old_hp: personaHp,
+    new_hp: personaHp,
     stat_changes: {},
     reasons: [],
     notifications: [],
   };
 
-  const stats = { ...(persona.stats as Record<string, number> || {}) };
+  const stats = { ...((persona.stats && typeof persona.stats === 'object') ? persona.stats as Record<string, number> : {}) };
 
   // Check overdue financial quests
   const { count: overdueFinancial } = await supabase
     .from("entity_quests")
     .select("id", { count: "exact", head: true })
-    .eq("persona_id", persona.id as string)
+    .eq("persona_id", personaId)
     .eq("quest_type", "financial")
     .in("status", ["pending", "accepted"])
     .lt("due_date", new Date().toISOString().split("T")[0]);
@@ -247,7 +259,7 @@ async function calculateOrganizationDecay(
   const { count: overdueProjects } = await supabase
     .from("entity_quests")
     .select("id", { count: "exact", head: true })
-    .eq("persona_id", persona.id as string)
+    .eq("persona_id", personaId)
     .not("quest_type", "eq", "financial")
     .in("status", ["pending", "accepted"])
     .lt("due_date", new Date().toISOString().split("T")[0]);
@@ -268,7 +280,7 @@ async function calculateOrganizationDecay(
     await supabase
       .from("entity_personas")
       .update({ hp: result.new_hp, stats })
-      .eq("id", persona.id as string);
+      .eq("id", personaId);
   }
 
   return result;
