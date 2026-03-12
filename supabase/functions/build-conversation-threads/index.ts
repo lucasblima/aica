@@ -71,17 +71,17 @@ const MAX_MESSAGES_PER_BATCH = 500
  * Extract JSON from Gemini response
  */
 function extractJSON(text: string): unknown {
-  try { return JSON.parse(text) } catch { /* ignore */ }
+  try { return JSON.parse(text) } catch (e) { console.warn('[extractJSON] Direct parse failed:', (e as Error).message) }
 
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
   if (fenceMatch) {
-    try { return JSON.parse(fenceMatch[1].trim()) } catch { /* ignore */ }
+    try { return JSON.parse(fenceMatch[1].trim()) } catch (e) { console.warn('[extractJSON] Fence parse failed:', (e as Error).message) }
   }
 
   const braceStart = text.indexOf('{')
   const braceEnd = text.lastIndexOf('}')
   if (braceStart !== -1 && braceEnd > braceStart) {
-    try { return JSON.parse(text.substring(braceStart, braceEnd + 1)) } catch { /* ignore */ }
+    try { return JSON.parse(text.substring(braceStart, braceEnd + 1)) } catch (e) { console.warn('[extractJSON] Brace parse failed:', (e as Error).message) }
   }
 
   throw new Error(`Failed to extract JSON: ${text.substring(0, 200)}`)
@@ -211,6 +211,10 @@ async function callGemini(prompt: string, apiKey: string): Promise<GeminiCallRes
 
   const parsed = extractJSON(text) as ThreadSummary
 
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid Gemini response: not a valid JSON object')
+  }
+
   return {
     thread: {
       summary: (parsed.summary || '').substring(0, 300),
@@ -243,6 +247,15 @@ serve(async (req) => {
   }
 
   try {
+    // Validate JWT authentication
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const apiKey = Deno.env.get('GEMINI_API_KEY')
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
@@ -350,8 +363,8 @@ serve(async (req) => {
               p_tokens_out: usageMetadata.candidatesTokenCount || 0,
             }).then(() => {
               console.log('[build-conversation-threads] Logged interaction')
-            }).catch((err: any) => {
-              console.warn('[build-conversation-threads] Failed to log interaction:', err.message)
+            }).catch((err: unknown) => {
+              console.warn('[build-conversation-threads] Failed to log interaction:', err instanceof Error ? err.message : String(err))
             })
           }
 
