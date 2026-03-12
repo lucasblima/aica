@@ -37,7 +37,7 @@ export interface MessageIntent {
   /** Human-readable summary in Portuguese (max 100 chars) */
   summary: string;
   /** Primary classification category */
-  category: IntentCategory;
+  category: IntentCategory | null;
   /** Emotional tone of the message */
   sentiment: IntentSentiment;
   /** Urgency level 1-5 (1=low, 5=critical) */
@@ -169,10 +169,10 @@ export const INTENT_CATEGORY_ICONS: Record<IntentCategory, string> = {
  * Color mapping for sentiment
  */
 export const INTENT_SENTIMENT_COLORS: Record<IntentSentiment, string> = {
-  positive: 'text-green-600',
-  neutral: 'text-gray-600',
-  negative: 'text-red-600',
-  urgent: 'text-orange-600',
+  positive: 'text-ceramic-success',
+  neutral: 'text-ceramic-text-secondary',
+  negative: 'text-ceramic-error',
+  urgent: 'text-ceramic-warning',
 };
 
 /**
