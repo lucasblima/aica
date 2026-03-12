@@ -136,8 +136,8 @@ export function useCanvasSlots({
               eventData: {
                 summary: eventData.summary,
                 description: eventData.description || '',
-                start: eventData.start,
-                end: eventData.end,
+                start: { dateTime: eventData.start.dateTime!, timeZone: eventData.start.timeZone! },
+                end: { dateTime: eventData.end.dateTime!, timeZone: eventData.end.timeZone! },
               },
             }]).catch((err) => log.warn('Athlete calendar sync failed for new slot:', err));
           }
@@ -201,8 +201,8 @@ export function useCanvasSlots({
               eventData: {
                 summary: eventData.summary,
                 description: eventData.description || '',
-                start: eventData.start,
-                end: eventData.end,
+                start: { dateTime: eventData.start.dateTime!, timeZone: eventData.start.timeZone! },
+                end: { dateTime: eventData.end.dateTime!, timeZone: eventData.end.timeZone! },
               },
             }]).catch((err) => log.warn('Athlete calendar sync failed for updated slot:', err));
           }
