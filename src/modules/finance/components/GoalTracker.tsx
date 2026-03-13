@@ -95,15 +95,22 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({ userId }) => {
 
   const loadGoals = useCallback(async () => {
     setLoading(true);
+    // Use RPC to get auto-computed progress from transactions
     const { data, error } = await supabase
-      .from('finance_goals')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+      .rpc('get_goal_progress', { p_user_id: userId });
 
     if (!error && data) {
+      // RPC returns rows that match FinanceGoal shape (with auto-computed current_amount)
       setGoals(data as FinanceGoal[]);
+    } else {
+      // Fallback to direct table query if RPC fails
+      const { data: fallbackData } = await supabase
+        .from('finance_goals')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (fallbackData) setGoals(fallbackData as FinanceGoal[]);
     }
     setLoading(false);
   }, [userId]);
