@@ -330,13 +330,6 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         updateFileProgress(i, { stage: 'uploading', progress: 10, message: 'Verificando...' }, 'uploading');
         const fileHash = await pdfProcessingService.calculateFileHash(fileWithMeta.file);
 
-        // Check duplicates
-        const isDuplicate = await statementService.checkDuplicate(userId, fileHash);
-        if (isDuplicate) {
-          updateFileProgress(i, { stage: 'error', progress: 0, message: 'Já enviado' });
-          continue;
-        }
-
         // CSV processing path — bypass PDF pipeline entirely
         const isCSV = fileWithMeta.file.name.endsWith('.csv') || fileWithMeta.file.type === 'text/csv';
 
@@ -346,12 +339,12 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           const lastDay = new Date(parseInt(fileWithMeta.year!), parseInt(fileWithMeta.month!), 0).getDate();
           const periodEnd = `${fileWithMeta.year}-${fileWithMeta.month}-${String(lastDay).padStart(2, '0')}`;
 
-          // Check period overlap
+          // Check period overlap — info only, continue with dedup
           const { hasOverlap, overlapping } = await statementService.checkPeriodOverlap(userId, periodStart, periodEnd);
           if (hasOverlap) {
             const names = overlapping.map(s => s.file_name).join(', ');
-            updateFileProgress(i, { stage: 'error', progress: 0, message: `Período já importado: ${names}` });
-            continue;
+            log.info(`[Upload] Período sobreposto com: ${names} — continuando com dedup`);
+            updateFileProgress(i, { stage: 'uploading', progress: 15, message: `Adicionando transações novas (${names} já existe)` }, 'uploading');
           }
 
           // Create statement record
@@ -379,7 +372,15 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           const markdown = `# Extrato CSV — ${fileWithMeta.bankName} ${fileWithMeta.month}/${fileWithMeta.year}\n\n${csvParsed.transactions.length} transações importadas`;
           await statementService.saveParsedData(statement.id, userId, enhancedParsed, markdown);
 
-          updateFileProgress(i, { stage: 'complete', progress: 100, message: 'Concluído!' });
+          // Show inserted vs skipped count
+          const csvStmtTransactions = await statementService.getStatementTransactions(statement.id);
+          const csvInsertedCount = csvStmtTransactions.length;
+          const csvTotalParsed = enhancedParsed.transactions.length;
+          const csvSkippedCount = csvTotalParsed - csvInsertedCount;
+          const csvCompleteMsg = csvSkippedCount > 0
+            ? `${csvInsertedCount} novas transações (${csvSkippedCount} já existiam)`
+            : `${csvInsertedCount} transações importadas`;
+          updateFileProgress(i, { stage: 'complete', progress: 100, message: csvCompleteMsg });
           await addXP(userId, 25);
 
           const updatedStatement = await statementService.getStatement(statement.id);
@@ -443,8 +444,15 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         const markdown = pdfProcessingService.generateMarkdown(enhancedParsed);
         await statementService.saveParsedData(statement.id, userId, enhancedParsed, markdown);
 
-        // Complete
-        updateFileProgress(i, { stage: 'complete', progress: 100, message: 'Concluído!' });
+        // Show inserted vs skipped count
+        const pdfStmtTransactions = await statementService.getStatementTransactions(statement.id);
+        const pdfInsertedCount = pdfStmtTransactions.length;
+        const pdfTotalParsed = enhancedParsed.transactions?.length || 0;
+        const pdfSkippedCount = pdfTotalParsed - pdfInsertedCount;
+        const pdfCompleteMsg = pdfSkippedCount > 0
+          ? `${pdfInsertedCount} novas transações (${pdfSkippedCount} já existiam)`
+          : `${pdfInsertedCount} transações importadas`;
+        updateFileProgress(i, { stage: 'complete', progress: 100, message: pdfCompleteMsg });
 
         // Award XP
         await addXP(userId, 25);
