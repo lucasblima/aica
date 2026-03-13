@@ -12,7 +12,6 @@ const log = createNamespacedLogger('FinanceDashboard');
 import { ArrowLeft, Upload, Eye, EyeOff, Loader2, Target, BarChart3, List, GitCompare, Settings, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Logo } from '@/components/ui';
 import { StatementUpload } from '../components/StatementUpload';
-import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
 import { BudgetView } from './BudgetView';
@@ -93,7 +92,6 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   const [allTransactions, setAllTransactions] = useState<FinanceTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [showCSVUpload, setShowCSVUpload] = useState(false);
   const [isValuesVisible, setIsValuesVisible] = useState(() => {
     const saved = localStorage.getItem('finance_values_visible');
     return saved !== null ? JSON.parse(saved) : true;
@@ -651,20 +649,11 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
           </div>
         )}
 
-        {/* CSV Upload Modal */}
-        {showCSVUpload && (
-          <CSVUpload
-            userId={userId}
-            onSuccess={() => { refreshAll(); loadData(); setShowCSVUpload(false); }}
-            onClose={() => setShowCSVUpload(false)}
-          />
-        )}
-
         {/* Empty State - when no transactions */}
         {!hasData && (
           <FinanceEmptyState
             onUploadPDF={() => setShowUpload(true)}
-            onUploadCSV={() => setShowCSVUpload(true)}
+            onUploadCSV={() => setShowUpload(true)}
             onNavigateBudget={() => setActiveView('budget')}
           />
         )}

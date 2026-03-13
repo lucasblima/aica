@@ -5,10 +5,9 @@
  */
 
 import React, { useState } from 'react';
-import { Building2, Tag, FileText, Settings, Upload, Trash2, FileSpreadsheet } from 'lucide-react';
+import { Building2, Tag, FileText, Settings, Upload, Trash2 } from 'lucide-react';
 import { AccountManagement } from '../components/AccountManagement';
 import { StatementUpload } from '../components/StatementUpload';
-import { CSVUpload } from '../components/CSVUpload';
 import { useFinanceContext } from '../contexts/FinanceContext';
 import { statementService } from '../services/statementService';
 import { createCategory, updateCategory, deleteCategoryWithMigration } from '../services/categoryService';
@@ -190,12 +189,10 @@ const CategoryManager: React.FC<{ userId: string }> = ({ userId }) => {
 const StatementManager: React.FC<{ userId: string }> = ({ userId }) => {
   const { statements, refreshAll } = useFinanceContext();
   const [showUpload, setShowUpload] = useState(false);
-  const [showCSVUpload, setShowCSVUpload] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const handleUploadComplete = () => {
     setShowUpload(false);
-    setShowCSVUpload(false);
     refreshAll();
   };
 
@@ -221,13 +218,7 @@ const StatementManager: React.FC<{ userId: string }> = ({ userId }) => {
             onClick={() => setShowUpload(true)}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
           >
-            <Upload className="w-3 h-3" /> PDF
-          </button>
-          <button
-            onClick={() => setShowCSVUpload(true)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-ceramic-info text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-          >
-            <FileSpreadsheet className="w-3 h-3" /> CSV
+            <Upload className="w-3 h-3" /> Upload
           </button>
         </div>
       </div>
@@ -236,14 +227,6 @@ const StatementManager: React.FC<{ userId: string }> = ({ userId }) => {
         <StatementUpload
           userId={userId}
           onUploadComplete={() => handleUploadComplete()}
-        />
-      )}
-
-      {showCSVUpload && (
-        <CSVUpload
-          userId={userId}
-          onSuccess={() => handleUploadComplete()}
-          onClose={() => setShowCSVUpload(false)}
         />
       )}
 
