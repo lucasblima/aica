@@ -423,9 +423,16 @@ export async function storeFinancialHealth(
   result: FinancialHealthResult
 ): Promise<void> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      log.error('Cannot store financial health: no authenticated user');
+      return;
+    }
+
     const { error } = await supabase
       .from('financial_health_scores')
       .insert({
+        user_id: user.id,
         spend_score: result.finHealth.spend,
         save_score: result.finHealth.save,
         borrow_score: result.finHealth.borrow,
@@ -475,7 +482,7 @@ export async function getLatestFinancialHealth(): Promise<FinancialHealthResult 
       .select('*')
       .order('computed_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
 
