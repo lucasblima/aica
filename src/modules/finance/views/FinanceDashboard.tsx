@@ -308,17 +308,24 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
       ? Math.max(0, (monthlyIncome - monthlyExpenses) / monthlyIncome)
       : 0;
 
+    // Auto-derive emergency fund metrics from balance data
+    const currentBalance = summary.currentBalance || 0;
+    const emergencyFundMonths = monthlyExpenses > 0
+      ? currentBalance / monthlyExpenses
+      : 0;
+    const hasEmergencyFund = emergencyFundMonths >= 3;
+
     computeHealth({
       monthlyIncome,
       monthlyExpenses,
-      billsOnTimeRate: 1.0, // Not tracked yet — assume on-time
-      emergencyFundMonths: 0, // Not tracked yet
+      billsOnTimeRate: 1.0, // TODO: track bill payment timing
+      emergencyFundMonths,
       savingsRate,
-      debtToIncomeRatio: 0, // Not tracked yet
-      creditUtilization: 0, // Not tracked yet
-      hasInsurance: false, // Not tracked yet
-      retirementSaving: false, // Not tracked yet
-      hasEmergencyFund: false, // Not tracked yet
+      debtToIncomeRatio: 0, // Not trackable from transaction data — needs user preferences form
+      creditUtilization: 0, // Not trackable from transaction data
+      hasInsurance: false, // Not trackable from transaction data
+      retirementSaving: false, // Not trackable from transaction data
+      hasEmergencyFund,
     });
   }, [summary, selectedMonthSummary, computeHealth]);
 
