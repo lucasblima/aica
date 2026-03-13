@@ -85,20 +85,52 @@ export function useMonthlyDigest(
     const currentMonth = isCurrentMonth(selectedYear, selectedMonth);
     const monthName = `${MONTH_NAMES[selectedMonth - 1]} ${selectedYear}`;
 
-    // Load or generate digest when month changes
-    useEffect(() => {
-        if (!userId || currentMonth) {
-            // Clear state for current month
-            setDigest(null);
-            setStats(null);
-            setDigestText(null);
-            setError(null);
-            setIsCached(false);
-            return;
-        }
+    // Define callbacks BEFORE useEffect to avoid temporal dead zone in bundled code
 
-        loadDigest();
-    }, [userId, currentMonth, loadDigest]);
+    const generateAndPersist = useCallback(async () => {
+        setIsGenerating(true);
+        setError(null);
+
+        try {
+            const response = await getMonthlyDigest(selectedMonth, selectedYear);
+
+            if (!response.success || !response.digest) {
+                setError(response.error || 'Erro ao gerar resumo');
+                return;
+            }
+
+            setDigest(response.digest);
+            setStats(response.stats || null);
+
+            // Persist to DB for future loads
+            const digestJson = JSON.stringify(response.digest);
+            setDigestText(digestJson);
+
+            const saved = await savePersistedDigest(
+                userId,
+                selectedYear,
+                selectedMonth,
+                digestJson,
+                {
+                    transactionCount: response.stats?.transactionCount || 0,
+                    totalIncome: response.stats?.totalIncome || 0,
+                    totalExpenses: response.stats?.totalExpenses || 0,
+                }
+            );
+
+            if (saved) {
+                log.info('Persisted digest for', selectedYear, selectedMonth);
+                setIsCached(true);
+            } else {
+                log.warn('Failed to persist digest (will regenerate next time)');
+            }
+        } catch (err) {
+            log.error('Error generating digest:', err);
+            setError('Erro ao gerar resumo via IA.');
+        } finally {
+            setIsGenerating(false);
+        }
+    }, [userId, selectedYear, selectedMonth]);
 
     const loadDigest = useCallback(async () => {
         if (!userId || currentMonth) return;
@@ -153,52 +185,22 @@ export function useMonthlyDigest(
         } finally {
             setIsLoading(false);
         }
-    }, [userId, selectedYear, selectedMonth, currentMonth]);
+    }, [userId, selectedYear, selectedMonth, currentMonth, generateAndPersist]);
 
-    const generateAndPersist = useCallback(async () => {
-        setIsGenerating(true);
-        setError(null);
-
-        try {
-            const response = await getMonthlyDigest(selectedMonth, selectedYear);
-
-            if (!response.success || !response.digest) {
-                setError(response.error || 'Erro ao gerar resumo');
-                return;
-            }
-
-            setDigest(response.digest);
-            setStats(response.stats || null);
-
-            // Persist to DB for future loads
-            const digestJson = JSON.stringify(response.digest);
-            setDigestText(digestJson);
-
-            const saved = await savePersistedDigest(
-                userId,
-                selectedYear,
-                selectedMonth,
-                digestJson,
-                {
-                    transactionCount: response.stats?.transactionCount || 0,
-                    totalIncome: response.stats?.totalIncome || 0,
-                    totalExpenses: response.stats?.totalExpenses || 0,
-                }
-            );
-
-            if (saved) {
-                log.info('Persisted digest for', selectedYear, selectedMonth);
-                setIsCached(true);
-            } else {
-                log.warn('Failed to persist digest (will regenerate next time)');
-            }
-        } catch (err) {
-            log.error('Error generating digest:', err);
-            setError('Erro ao gerar resumo via IA.');
-        } finally {
-            setIsGenerating(false);
+    // Load or generate digest when month changes
+    useEffect(() => {
+        if (!userId || currentMonth) {
+            // Clear state for current month
+            setDigest(null);
+            setStats(null);
+            setDigestText(null);
+            setError(null);
+            setIsCached(false);
+            return;
         }
-    }, [userId, selectedYear, selectedMonth]);
+
+        loadDigest();
+    }, [userId, currentMonth, loadDigest]);
 
     const regenerate = useCallback(async () => {
         if (currentMonth) return;
