@@ -391,12 +391,11 @@ export const statementService = {
   },
 
   /**
-   * Check if statement already exists (by file hash)
-   * Only considers completed statements as duplicates (allows retry on failures)
+   * Check if statement already exists (by file hash).
+   * Relaxed for incremental import — always returns false.
+   * Transaction-level SHA-256 hash dedup prevents actual duplicate transactions.
    */
   async checkDuplicate(_userId: string, _fileHash: string): Promise<boolean> {
-    // Relaxed for incremental import: file hash no longer blocks re-imports.
-    // Transaction-level SHA-256 hash dedup prevents actual duplicate transactions.
     return false;
   },
 
@@ -511,20 +510,8 @@ export const statementService = {
         log.info(`[CSV] Período sobreposto com: ${names} — continuando com dedup por hash`);
       }
 
-      // 3. Calculate file hash for deduplication
+      // 3. Calculate file hash (stored for reference, no longer blocks re-imports)
       const fileHash = await this.calculateFileHash(file);
-
-      // 4. Check if exact same file already exists
-      const { data: existing } = await supabase
-        .from('finance_statements')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('file_hash', fileHash)
-        .maybeSingle();
-
-      if (existing) {
-        log.info('[CSV] Arquivo já importado anteriormente — continuando, hash dedup previne duplicatas');
-      }
 
       // 3b. AI categorize transactions that have no category
       const uncategorized = parsed.transactions.filter(t => !t.category || t.category === 'other');

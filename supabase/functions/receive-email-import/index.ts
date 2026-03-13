@@ -386,6 +386,8 @@ async function processFinanceCSV(
   if (stmtError) throw new Error(`Erro ao criar registro: ${stmtError.message}`);
 
   // Generate hash and upsert transactions
+  // Hash format must match statementService.ts generateTransactionHash():
+  //   `${userId}|${date}|${description}|${Math.abs(amount).toFixed(2)}`
   const txRecords = await Promise.all(
     parsed.transactions.map(async (tx) => {
       const hashData = `${userId}|${tx.date}|${tx.description}|${Math.abs(tx.amount).toFixed(2)}`;
@@ -457,23 +459,13 @@ async function processFinancePDF(
 
   if (stmtError) throw new Error(`Erro ao criar registro: ${stmtError.message}`);
 
-  // Call gemini-chat to parse the PDF statement
-  const { data: parseResult, error: parseError } = await supabaseAdmin.functions.invoke('gemini-chat', {
-    body: {
-      action: 'parse_statement_from_storage',
-      payload: {
-        statementId: statement.id,
-        storagePath,
-        userId,
-      },
-    },
-  });
-
-  if (parseError || !parseResult?.success) {
-    throw new Error(parseResult?.error || parseError?.message || 'Erro ao processar PDF');
-  }
-
-  log.info(`[Finance-PDF] Statement ${statement.id} processed via gemini-chat for ${filename}`);
+  // TODO: PDF email import requires a `parse_statement_from_storage` action in gemini-chat
+  // that downloads PDF from storage, extracts text, and parses transactions.
+  // This action does not exist yet — gemini-chat only has `parse_statement` which expects `rawText`.
+  // For now, PDF email imports create the statement record with 'pending' status.
+  // Users can process the PDF via the web UI at https://aica.guru/finance.
+  // CSV email imports work fully end-to-end.
+  log.info(`[Finance-PDF] Statement ${statement.id} created as pending — PDF email parsing not yet implemented. User can process via web UI.`);
 }
 
 // ============================================================================
