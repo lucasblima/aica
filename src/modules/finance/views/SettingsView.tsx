@@ -11,6 +11,7 @@ import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
 import { useFinanceContext } from '../contexts/FinanceContext';
 import { statementService } from '../services/statementService';
+import { createCategory, updateCategory, deleteCategoryWithMigration } from '../services/categoryService';
 import type { FinanceCategoryRow } from '../services/categoryService';
 
 // =====================================================
@@ -34,44 +35,150 @@ const SETTINGS_TABS = [
 // CategoryManager (inline sub-component)
 // =====================================================
 
-const CategoryManager: React.FC<{ userId: string }> = () => {
-  const { categories } = useFinanceContext();
+const CategoryManager: React.FC<{ userId: string }> = ({ userId }) => {
+  const { categories, refreshCategories } = useFinanceContext();
+  const [showAdd, setShowAdd] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const [newIsExpense, setNewIsExpense] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  if (!categories || categories.length === 0) {
-    return (
-      <div className="ceramic-card p-6 text-center">
-        <p className="text-sm text-ceramic-text-secondary">Nenhuma categoria encontrada.</p>
-        <p className="text-xs text-ceramic-text-secondary mt-1">
-          As categorias sao criadas automaticamente ao importar extratos.
-        </p>
-      </div>
-    );
-  }
+  const handleCreate = async () => {
+    if (!newLabel.trim()) return;
+    try {
+      setSaving(true);
+      await createCategory(userId, { label: newLabel.trim(), is_expense: newIsExpense });
+      await refreshCategories();
+      setNewLabel('');
+      setShowAdd(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdate = async (id: string) => {
+    if (!editLabel.trim()) return;
+    try {
+      setSaving(true);
+      await updateCategory(id, { label: editLabel.trim() });
+      await refreshCategories();
+      setEditingId(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (catId: string) => {
+    if (!confirm(`Deletar categoria "${categories.find(c => c.id === catId)?.label}"? Transacoes serao movidas para "Outros".`)) return;
+    try {
+      setSaving(true);
+      await deleteCategoryWithMigration(catId, 'other');
+      await refreshCategories();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-bold text-ceramic-text-primary">
-        Categorias ({categories.length})
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {categories.map((cat: FinanceCategoryRow) => (
-          <div key={cat.id} className="ceramic-card p-4 flex items-center gap-3">
-            <span className="text-2xl">{cat.icon || '📦'}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ceramic-text-primary truncate">
-                {cat.label}
-              </p>
-              <p className="text-xs text-ceramic-text-secondary">
-                {cat.is_expense ? 'Despesa' : 'Receita'}
-              </p>
-            </div>
-            <div
-              className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{ backgroundColor: cat.color }}
-            />
-          </div>
-        ))}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-ceramic-text-primary">
+          Categorias ({categories.length})
+        </h3>
+        <button
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+        >
+          + Nova
+        </button>
       </div>
+
+      {showAdd && (
+        <div className="ceramic-card p-4 space-y-3">
+          <input
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="Nome da categoria"
+            className="w-full text-sm ceramic-inset px-3 py-2 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+          />
+          <label className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
+            <input
+              type="checkbox"
+              checked={newIsExpense}
+              onChange={(e) => setNewIsExpense(e.target.checked)}
+              className="rounded border-ceramic-border"
+            />
+            Categoria de despesa
+          </label>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setShowAdd(false)}
+              className="text-xs px-3 py-1.5 text-ceramic-text-secondary hover:text-ceramic-text-primary"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={saving || !newLabel.trim()}
+              className="text-xs px-3 py-1.5 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 disabled:opacity-50"
+            >
+              {saving ? 'Salvando...' : 'Criar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {categories.length === 0 ? (
+        <div className="ceramic-card p-6 text-center">
+          <p className="text-sm text-ceramic-text-secondary">Nenhuma categoria encontrada.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {categories.map((cat: FinanceCategoryRow) => (
+            <div key={cat.id} className="ceramic-card p-4 flex items-center gap-3">
+              <span className="text-2xl">{cat.icon || '📦'}</span>
+              <div className="flex-1 min-w-0">
+                {editingId === cat.id ? (
+                  <div className="flex gap-2">
+                    <input
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      className="flex-1 text-sm ceramic-inset px-2 py-1 rounded text-ceramic-text-primary focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                      onKeyDown={(e) => e.key === 'Enter' && handleUpdate(cat.id)}
+                    />
+                    <button onClick={() => handleUpdate(cat.id)} disabled={saving} className="text-xs text-ceramic-success">✓</button>
+                    <button onClick={() => setEditingId(null)} className="text-xs text-ceramic-text-secondary">✗</button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-ceramic-text-primary truncate">{cat.label}</p>
+                    <p className="text-xs text-ceramic-text-secondary">{cat.is_expense ? 'Despesa' : 'Receita'}</p>
+                  </>
+                )}
+              </div>
+              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+              {editingId !== cat.id && (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => { setEditingId(cat.id); setEditLabel(cat.label); }}
+                    className="text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary p-1"
+                    title="Editar"
+                  >✎</button>
+                  <button
+                    onClick={() => handleDelete(cat.id)}
+                    disabled={saving}
+                    className="text-xs text-ceramic-text-secondary hover:text-ceramic-error p-1"
+                    title="Deletar"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
