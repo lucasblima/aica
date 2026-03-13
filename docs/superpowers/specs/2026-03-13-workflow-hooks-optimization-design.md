@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-13
 **Session:** workflow-hooks-optimization
-**Status:** Draft
+**Status:** Approved (post-review v2)
 **Inspired by:** [everything-claude-code](https://github.com/affaan-m/everything-claude-code) (74k+ stars)
 
 ## Problem Statement
@@ -33,7 +33,6 @@ AICA's Claude Code setup has 10 hooks focused on **safety warnings** (deploy blo
 │   ├── pre-compact.js              # Wave 2.1 — Save state before compaction
 │   ├── session-end.js              # Wave 2.2 — Session summary on Stop
 │   ├── session-start.js            # Wave 2.3 — Restore context on start
-│   ├── evaluate-session.js         # Wave 2.4 — Continuous learning signal
 │   ├── cost-tracker.js             # Wave 3.1 — Token/cost metrics
 │   └── suggest-compact.js          # Wave 3.2 — Strategic compaction
 ├── contexts/                       # NEW — Dynamic system prompts
@@ -49,23 +48,29 @@ All new hooks are added to `.claude/settings.json`. Existing PreToolUse hooks (9
 
 **New PostToolUse hooks:**
 - `post-edit-format.js` — matcher: `Edit`, sync
-- `post-edit-typecheck.js` — matcher: `Edit`, sync, timeout 30s
+- `post-edit-typecheck.js` — matcher: `Edit`, async (non-blocking), timeout 30s
 - `post-edit-console-warn.js` — matcher: `Edit`, sync
-- `quality-gate.js` — matcher: `Edit|Write`, async, timeout 15s
+- `quality-gate.js` — matcher: `Write`, async, timeout 15s (only Write — Edit is covered by format hook)
+
+**New PreToolUse hook:**
+- `suggest-compact.js` — matcher: `Edit|Write`, sync (instant counter increment)
 
 **New PreCompact hook:**
-- `pre-compact.js` — matcher: `*`, sync
+- `pre-compact.js` — no matcher (PreCompact doesn't support matchers), sync
 
 **New SessionStart hook:**
-- `session-start.js` — matcher: `*`, sync
+- `session-start.js` — no matcher needed (fires on all start modes), sync
 
 **New Stop hooks:**
-- `session-end.js` — matcher: `*`, async, timeout 10s
-- `evaluate-session.js` — matcher: `*`, async, timeout 10s
-- `cost-tracker.js` — matcher: `*`, async, timeout 10s
-- `suggest-compact.js` — matcher: `*`, async, timeout 5s (actually on PreToolUse Edit|Write)
+- `session-end.js` — no matcher (Stop doesn't support matchers), async, timeout 10s
+- `cost-tracker.js` — no matcher, async, timeout 10s
 
-**Correction:** `suggest-compact.js` goes in PreToolUse (Edit|Write) not Stop, as it counts tool calls.
+**Environment requirement:**
+- `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=15000` must be set if SessionEnd hooks are used in the future (Stop hooks have default 120s timeout, so no issue there)
+
+**Dropped:** `evaluate-session.js` — removed because Stop hooks cannot trigger Claude to act on signals; the hook would produce files that are never read. Continuous learning will be addressed via manual `/learn` commands instead.
+
+**Note on hook paths:** All hook commands MUST use the project root path prefix to work in worktrees. Format: `node "$CLAUDE_PROJECT_DIR/.claude/hooks/<script>.js"`
 
 ---
 
@@ -75,28 +80,33 @@ All new hooks are added to `.claude/settings.json`. Existing PreToolUse hooks (9
 
 **Trigger:** PostToolUse → Edit
 **Condition:** file_path ends in `.ts`, `.tsx`, `.js`, `.jsx`
-**Action:** Run `npx prettier --write <file>` (or local `node_modules/.bin/prettier`)
+**Action:** Run `npx eslint --fix <file>` (using project's existing ESLint config)
 **Timeout:** 15s
 **Mode:** Sync (blocks until formatted)
-**Fallback:** Silent pass-through if Prettier not found
+**Fallback:** Silent pass-through if ESLint not found or fix fails
+
+**Prerequisite decision (M1 fix):** AICA does not have Prettier installed. Instead of adding a new dependency pre-launch, we use ESLint which is already configured (`npm run lint`). ESLint with the existing config handles formatting via its rules. If Prettier is added post-launch, this hook can be updated.
 
 **Implementation notes:**
-- Detect Prettier via `node_modules/.bin/prettier` existence (faster than npx)
+- Detect ESLint via `node_modules/.bin/eslint` existence (faster than npx)
 - Find project root by walking up from file to find `package.json`
-- On Windows, use `prettier.cmd` with `spawnSync({ shell: true })` but reject paths with shell metacharacters (`&|<>^%!`)
+- On Windows, use `eslint.cmd` with `spawnSync({ shell: true })` but reject paths with shell metacharacters (`&|<>^%!`)
 - Pass stdin through to stdout unchanged (hook contract)
 
 ### 1.2 TypeScript check (post-edit-typecheck.js)
 
 **Trigger:** PostToolUse → Edit
 **Condition:** file_path ends in `.ts`, `.tsx`
-**Action:** Run `npx tsc --noEmit --pretty false`, filter errors to edited file only
+**Action:** Run `npx tsc --noEmit --incremental --pretty false`, filter errors to edited file only
 **Timeout:** 30s
-**Mode:** Sync
-**Output:** Relevant errors on stderr (Claude sees and can self-correct)
+**Mode:** Async (non-blocking — M2 fix)
+**Output:** Relevant errors on stderr (Claude sees on next turn and can self-correct)
+
+**Performance note (M2 fix):** Full `tsc --noEmit` takes 5-30s on AICA's codebase. Running synchronously on every edit would create 10+ minutes of accumulated wait in multi-edit sessions. Solution: run async + use `--incremental` flag to write `.tsbuildinfo` and amortize cost. First run is slow; subsequent runs are fast (~1-3s). Trade-off: errors appear after the next edit rather than immediately, but Claude still sees and corrects them.
 
 **Implementation notes:**
 - Walk up from file directory to find nearest `tsconfig.json` (max 20 levels)
+- Use `--incremental` to generate `.tsbuildinfo` cache (add to `.gitignore`)
 - Filter tsc output lines that contain the edited file path (relative, absolute, or original)
 - Show max 10 error lines to avoid noise
 - On Windows, use `npx.cmd` via `execFileSync` (no shell needed)
@@ -117,16 +127,16 @@ All new hooks are added to `.claude/settings.json`. Existing PreToolUse hooks (9
 
 ### 1.4 Quality gate (quality-gate.js)
 
-**Trigger:** PostToolUse → Edit|Write
+**Trigger:** PostToolUse → Write (only Write — Edit is covered by format hook, Mi1 fix)
 **Condition:** file_path ends in `.ts`, `.tsx`, `.js`, `.jsx`, `.json`
-**Action:** Run `prettier --check <file>` (validate, don't fix)
+**Action:** Run `eslint --fix <file>` for JS/TS files written via Write tool
 **Timeout:** 15s
 **Mode:** Async (non-blocking)
 **Output:** Warning on stderr if check fails
 
 **Implementation notes:**
-- Skips `.ts/.tsx/.js/.jsx` if post-edit-format already ran (avoid double work)
-- Primarily useful for `.json` files and Write tool (which doesn't trigger format hook)
+- Only triggers on Write tool (Edit already triggers post-edit-format, eliminating deduplication issue)
+- For `.json` files: validates JSON syntax only (no eslint)
 - Non-blocking — runs in background, doesn't slow Claude down
 
 ---
@@ -147,9 +157,13 @@ All new hooks are added to `.claude/settings.json`. Existing PreToolUse hooks (9
 ~/.claude/sessions/YYYY-MM-DD-<shortId>-session.tmp
 ```
 
+### 2.1b Recovery when no session file exists (Mi3 fix)
+
+When `pre-compact.js` runs and no session file exists (first use or after `/clear`), it creates a minimal session file with just the compaction marker. This ensures compaction events are always recorded.
+
 ### 2.2 Session end (session-end.js)
 
-**Trigger:** Stop → *
+**Trigger:** Stop (no matcher — Stop doesn't support matchers per C2 fix)
 **Action:**
 1. Parse stdin JSON for `transcript_path`
 2. Read JSONL transcript, extract:
@@ -205,7 +219,7 @@ Edit, Write, Bash, Grep
 
 ### 2.3 Session start (session-start.js)
 
-**Trigger:** SessionStart → *
+**Trigger:** SessionStart (no matcher needed — fires on all start modes)
 **Action:**
 1. Ensure `~/.claude/sessions/` directory exists
 2. Find session files from last 7 days, sorted by modification time
@@ -226,17 +240,9 @@ Previous session summary:
 - No project type detection (AICA is always TypeScript/React)
 - No session aliases (AICA uses worktree naming convention)
 
-### 2.4 Continuous learning evaluator (evaluate-session.js)
+### ~~2.4 Continuous learning evaluator~~ — REMOVED
 
-**Trigger:** Stop → *
-**Action:**
-1. Parse stdin JSON for `transcript_path`
-2. Count user messages in transcript
-3. If >= 10 messages, log signal for pattern extraction
-4. Point to `~/.claude/skills/learned/` for saving
-**Mode:** Async, timeout 10s
-
-**Note:** This is a signal-only hook. The actual pattern extraction happens when Claude decides to save a skill based on the signal. ECC's full continuous-learning-v2 system is more complex (observe hooks on every tool use) — we skip that complexity.
+**Reason (Mi5 fix):** Stop hooks cannot trigger Claude to act on signals. The hook would produce log messages that Claude doesn't see or act on. Continuous learning will be addressed via manual `/learn` command invocation when the user wants to extract patterns from a session.
 
 ---
 
@@ -244,13 +250,14 @@ Previous session summary:
 
 ### 3.1 Cost tracker (cost-tracker.js)
 
-**Trigger:** Stop → *
+**Trigger:** Stop (no matcher)
 **Action:**
 1. Parse stdin for usage/token data
-2. Estimate cost using model-specific rates:
-   - Haiku: $0.80/$4.00 per 1M tokens (in/out)
-   - Sonnet: $3.00/$15.00
-   - Opus: $15.00/$75.00
+2. Estimate cost using model-specific rates (Mi4 fix — updated for Claude 4-series):
+   - Haiku 4.5: $0.80/$4.00 per 1M tokens (in/out)
+   - Sonnet 4.6: $3.00/$15.00
+   - Opus 4.6: $15.00/$75.00
+   - Model matching: regex `/haiku/i`, `/sonnet/i`, `/opus/i` on model string (covers `claude-opus-4-6`, `claude-sonnet-4-6`, etc.); default to Sonnet rates if no match
 3. Append JSONL row to `~/.claude/metrics/costs.jsonl`
 **Mode:** Async, timeout 10s
 
@@ -274,11 +281,13 @@ Previous session summary:
 ### 3.3 Context aliases
 
 **Type:** Manual shell aliases (not a hook)
-**Files:**
+**Files (user-level, NOT project-level — Mi2 fix):**
 - `~/.claude/contexts/dev.md` — Default dev context (module structure, Ceramic tokens, common patterns)
 - `~/.claude/contexts/review.md` — PR review context (checklist, security focus, quality criteria)
 
-**Aliases:**
+These are user-level files at `~/.claude/contexts/` (not committed to repo). The aliases also reference user-level paths, so there is no path mismatch.
+
+**Aliases (add to `~/.bashrc` or `~/.zshrc`):**
 ```bash
 alias claude-dev='claude --system-prompt "$(cat ~/.claude/contexts/dev.md)"'
 alias claude-review='claude --system-prompt "$(cat ~/.claude/contexts/review.md)"'
@@ -324,12 +333,12 @@ Cross-platform helpers used by all hooks:
 The 10 existing hooks in `settings.json` remain **unchanged**. New hooks are **additive only**.
 
 **Hook execution order per event:**
-- **PreToolUse (Edit):** existing safety hooks → `suggest-compact.js` (new)
-- **PostToolUse (Edit):** existing branch-switch reminder → `post-edit-format.js` → `post-edit-typecheck.js` → `post-edit-console-warn.js` (new)
-- **PostToolUse (Edit|Write):** `quality-gate.js` (new, async)
-- **PreCompact:** `pre-compact.js` (new)
-- **SessionStart:** `session-start.js` (new)
-- **Stop:** `session-end.js` → `evaluate-session.js` → `cost-tracker.js` (all new, async)
+- **PreToolUse (Edit|Write):** existing safety hooks → `suggest-compact.js` (new)
+- **PostToolUse (Edit):** existing branch-switch reminder → `post-edit-format.js` (sync) → `post-edit-typecheck.js` (async) → `post-edit-console-warn.js` (sync)
+- **PostToolUse (Write):** `quality-gate.js` (async)
+- **PreCompact:** `pre-compact.js` (sync)
+- **SessionStart:** `session-start.js` (sync)
+- **Stop:** `session-end.js` (async) → `cost-tracker.js` (async)
 
 **No conflicts:** Existing hooks use inline bash commands; new hooks use Node.js scripts. They operate on different events or different matchers.
 
@@ -343,15 +352,17 @@ All hooks follow the same contract:
 3. Write original stdin to stdout (pass-through)
 4. Exit 0 (never block Claude)
 
-**Exceptions:** Only existing safety hooks (deploy, force-push, backup files) exit 1 to block. None of the new hooks block.
+**Exceptions:** Only existing safety hooks (deploy, force-push, backup files) use exit codes to block.
+
+**Prerequisite (C3 fix):** Verify that existing blocking hooks use the correct exit code for the current Claude Code version. The current hooks use `exit 1` — if Claude Code requires `exit 2` for blocking, update them as a prerequisite before adding new hooks. Test by triggering a deploy hook and confirming it actually blocks.
 
 ---
 
 ## Testing Strategy
 
-Each hook script can be tested standalone:
+Each hook script can be tested standalone (Mi6 fix — use absolute project path):
 ```bash
-echo '{"tool_input":{"file_path":"src/test.ts"}}' | node .claude/hooks/post-edit-typecheck.js
+echo '{"tool_input":{"file_path":"src/test.ts"}}' | node "$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-typecheck.js"
 ```
 
 Verification:
@@ -374,10 +385,28 @@ Verification:
 
 ---
 
+## Review Fixes Applied
+
+| Issue | Severity | Fix |
+|-------|----------|-----|
+| C1 — Stop vs SessionEnd | Critical | Kept Stop (fires every turn — fine for session-end.js idempotent updates and cost-tracker append). Documented that SessionEnd has 1.5s timeout cap. |
+| C2 — Matchers on Stop | Critical | Removed all matchers from Stop, PreCompact, SessionStart entries |
+| C3 — Exit code 1 vs 2 | Critical | Added prerequisite verification task for existing blocking hooks |
+| M1 — No Prettier | Major | Replaced Prettier with ESLint (already installed) |
+| M2 — Sync tsc on every edit | Major | Changed to async + `--incremental` flag |
+| M3 — SessionStart stdout | Major | Acknowledged; plain stdout approach kept for simplicity (visible but functional) |
+| M4 — CLAUDE_SESSION_ID | Major | Noted; suggest-compact.js will fall back to stdin `session_id` field |
+| Mi1 — quality-gate redundancy | Minor | Restricted quality-gate to Write matcher only |
+| Mi2 — contexts/ path mismatch | Minor | Clarified user-level (`~/.claude/contexts/`) for both files and aliases |
+| Mi3 — pre-compact no session | Minor | Added recovery: creates minimal session file if none exists |
+| Mi4 — Model pricing | Minor | Updated with Claude 4-series model matching regex |
+| Mi5 — evaluate-session useless | Minor | Removed entirely |
+| Mi6 — Hook script paths | Minor | All commands use `$CLAUDE_PROJECT_DIR` prefix |
+
 ## Success Criteria
 
-1. **Wave 1:** Every `.ts/.tsx` edit auto-formats, shows type errors, warns on console.log — without manual intervention
+1. **Wave 1:** Every `.ts/.tsx` edit runs ESLint --fix, shows type errors (async), warns on console.log — without manual intervention
 2. **Wave 2:** Starting a new session automatically loads context from the previous session; session files are created/updated on every Stop
 3. **Wave 3:** Cost per session is tracked; compaction is suggested at logical intervals; context aliases work
-4. **Zero regressions:** All 10 existing hooks continue to work unchanged
+4. **Zero regressions:** All 10 existing hooks continue to work unchanged (prerequisite: verify exit codes)
 5. **Cross-platform:** All scripts work on Windows/MSYS (AICA's dev environment)
