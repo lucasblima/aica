@@ -114,8 +114,8 @@ export function useCalendarSync(): UseCalendarSyncReturn {
             eventData: {
               summary: eventData.summary,
               description: eventData.description || '',
-              start: eventData.start,
-              end: eventData.end,
+              start: { dateTime: eventData.start.dateTime!, timeZone: eventData.start.timeZone! },
+              end: { dateTime: eventData.end.dateTime!, timeZone: eventData.end.timeZone! },
             },
           };
         })
