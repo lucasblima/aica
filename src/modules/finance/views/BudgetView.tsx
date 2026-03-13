@@ -63,14 +63,12 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [dbBudgetSummary, setDbBudgetSummary] = useState<BudgetSummaryRow[]>([]);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
   const [currentBalance, setCurrentBalance] = useState<number | undefined>(undefined);
   const [goals, setGoals] = useState<FinanceGoal[]>([]);
 
-  const { categories: dbCategories } = useFinanceContext();
+  const { categories: dbCategories, selectedYear, selectedMonth, setSelectedYear, setSelectedMonth } = useFinanceContext();
 
   // Inline budget editing state
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
