@@ -8,7 +8,9 @@ import React, { useState } from 'react';
 import { Building2, Tag, FileText, Settings, Upload, Trash2 } from 'lucide-react';
 import { AccountManagement } from '../components/AccountManagement';
 import { StatementUpload } from '../components/StatementUpload';
+import { FinanceSearchPanel } from '../components/FinanceSearchPanel';
 import { useFinanceContext } from '../contexts/FinanceContext';
+import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import { statementService } from '../services/statementService';
 import { createCategory, updateCategory, deleteCategoryWithMigration } from '../services/categoryService';
 import type { FinanceCategoryRow } from '../services/categoryService';
@@ -190,6 +192,7 @@ const StatementManager: React.FC<{ userId: string }> = ({ userId }) => {
   const { statements, refreshAll } = useFinanceContext();
   const [showUpload, setShowUpload] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { searchInStatements, findByCategory, findByMerchant, findAnomalies, findExpensePatterns, searchResults, isSearching, clearSearchResults } = useFinanceFileSearch({ userId, autoLoad: false });
 
   const handleUploadComplete = () => {
     setShowUpload(false);
@@ -273,6 +276,24 @@ const StatementManager: React.FC<{ userId: string }> = ({ userId }) => {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Semantic Search */}
+      {statements.length > 0 && (
+        <div className="ceramic-card p-6 space-y-4">
+          <h3 className="text-sm font-bold text-ceramic-text-primary">Busca Semantica</h3>
+          <FinanceSearchPanel
+            onSearch={searchInStatements}
+            onSearchCategory={findByCategory}
+            onSearchMerchant={findByMerchant}
+            onSearchAnomalies={findAnomalies}
+            onSearchPatterns={findExpensePatterns}
+            results={searchResults}
+            isSearching={isSearching}
+            hasStatements={statements.length > 0}
+            onClear={clearSearchResults}
+          />
         </div>
       )}
     </div>
