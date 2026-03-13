@@ -98,7 +98,7 @@ export function useMonthlyDigest(
         }
 
         loadDigest();
-    }, [userId, selectedYear, selectedMonth]);
+    }, [userId, currentMonth, loadDigest]);
 
     const loadDigest = useCallback(async () => {
         if (!userId || currentMonth) return;

@@ -687,7 +687,7 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
             {/* Row 1: Alerts — side by side on desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Monthly Digest — AI Insights */}
-              <MonthlyDigestCard userId={userId} />
+              <MonthlyDigestCard userId={userId} selectedYear={selectedYear} selectedMonth={selectedMonth} />
 
               {/* Proactive Categorization Alert OR Budget Alerts */}
               <div className="space-y-6">

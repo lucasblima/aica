@@ -4,7 +4,7 @@
  * Manages finance transactions with filtering and pagination.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '../../../services/supabaseClient';
 
@@ -45,12 +45,14 @@ export function useTransactions(
   // Stable serialized key so fetchTransactions reacts to filter changes
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
+  // Race condition protection: discard stale responses when filters change rapidly
+  const requestIdRef = useRef(0);
+
   const fetchTransactions = useCallback(
     async (pageNum: number, reset: boolean = false) => {
       if (!userId) return;
 
-      // Parse the stable filters from the serialized key
-      const currentFilters: TransactionFilters = JSON.parse(filtersKey);
+      const currentRequestId = ++requestIdRef.current;
 
       try {
         setLoading(true);
@@ -63,36 +65,39 @@ export function useTransactions(
           .order('transaction_date', { ascending: false })
           .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
-        // Apply filters
-        if (currentFilters.startDate) {
-          query = query.gte('transaction_date', currentFilters.startDate);
+        // Apply filters (captured from outer scope; filtersKey in deps ensures freshness)
+        if (filters.startDate) {
+          query = query.gte('transaction_date', filters.startDate);
         }
-        if (currentFilters.endDate) {
-          query = query.lte('transaction_date', currentFilters.endDate);
+        if (filters.endDate) {
+          query = query.lte('transaction_date', filters.endDate);
         }
-        if (currentFilters.category) {
-          query = query.eq('category', currentFilters.category);
+        if (filters.category) {
+          query = query.eq('category', filters.category);
         }
-        if (currentFilters.type) {
-          query = query.eq('type', currentFilters.type);
+        if (filters.type) {
+          query = query.eq('type', filters.type);
         }
-        if (currentFilters.minAmount !== undefined) {
-          query = query.gte('amount', currentFilters.minAmount);
+        if (filters.minAmount !== undefined) {
+          query = query.gte('amount', filters.minAmount);
         }
-        if (currentFilters.maxAmount !== undefined) {
-          query = query.lte('amount', currentFilters.maxAmount);
+        if (filters.maxAmount !== undefined) {
+          query = query.lte('amount', filters.maxAmount);
         }
-        if (currentFilters.statementId) {
-          query = query.eq('statement_id', currentFilters.statementId);
+        if (filters.statementId) {
+          query = query.eq('statement_id', filters.statementId);
         }
-        if (currentFilters.accountId) {
-          query = query.eq('account_id', currentFilters.accountId);
+        if (filters.accountId) {
+          query = query.eq('account_id', filters.accountId);
         }
-        if (currentFilters.searchTerm) {
-          query = query.ilike('description', `%${currentFilters.searchTerm}%`);
+        if (filters.searchTerm) {
+          query = query.ilike('description', `%${filters.searchTerm}%`);
         }
 
         const { data, error: queryError, count } = await query;
+
+        // Discard stale response if a newer request has been fired
+        if (currentRequestId !== requestIdRef.current) return;
 
         if (queryError) throw queryError;
 
@@ -108,13 +113,18 @@ export function useTransactions(
         setHasMore(newTransactions.length === PAGE_SIZE);
         setPage(pageNum);
       } catch (err) {
+        // Discard errors from stale requests
+        if (currentRequestId !== requestIdRef.current) return;
         log.error('Error fetching transactions:', err);
         setError('Erro ao carregar transacoes');
       } finally {
-        setLoading(false);
+        // Only clear loading if this is still the current request
+        if (currentRequestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     },
-    [userId, filtersKey]
+    [userId, filters, filtersKey]
   );
 
   // Initial fetch and refetch on filter change

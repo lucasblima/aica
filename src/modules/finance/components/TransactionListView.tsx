@@ -85,13 +85,27 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   const [bulkLoading, setBulkLoading] = useState(false);
 
   // Debounce search input (400ms)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     debounceRef.current = setTimeout(() => setSearchTerm(searchInput.trim()), 400);
     return () => clearTimeout(debounceRef.current);
   }, [searchInput]);
 
-  const { accounts } = useFinanceContext();
+  const { accounts, selectedMonth, selectedYear } = useFinanceContext();
+
+  // Compute the default date range for the selected month (stable reference via useMemo)
+  const defaultMonthRange = useMemo(() => {
+    const firstDay = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
+    const lastDayDate = new Date(selectedYear, selectedMonth, 0);
+    const lastDay = `${lastDayDate.getFullYear()}-${String(lastDayDate.getMonth() + 1).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
+    return { firstDay, lastDay };
+  }, [selectedMonth, selectedYear]);
+
+  // Auto-set date filters to the selected month from FinanceContext
+  useEffect(() => {
+    setStartDate(defaultMonthRange.firstDay);
+    setEndDate(defaultMonthRange.lastDay);
+  }, [defaultMonthRange]);
 
   // All categories that exist in CATEGORY_LABELS (superset of TRANSACTION_CATEGORIES)
   const allCategories = useMemo(() =>
@@ -456,7 +470,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         <button
           onClick={() => setShowDateFilter(!showDateFilter)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-            startDate || endDate
+            startDate !== defaultMonthRange.firstDay || endDate !== defaultMonthRange.lastDay
               ? 'bg-amber-500 text-white'
               : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
           }`}
@@ -506,15 +520,15 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         )}
 
         {/* Clear filters */}
-        {(typeFilter !== 'all' || categoryFilter || searchInput || startDate || endDate || selectedAccountId) && (
+        {(typeFilter !== 'all' || categoryFilter || searchInput || startDate !== defaultMonthRange.firstDay || endDate !== defaultMonthRange.lastDay || selectedAccountId) && (
           <button
             onClick={() => {
               setTypeFilter('all');
               setCategoryFilter('');
               setSearchInput('');
               setSearchTerm('');
-              setStartDate('');
-              setEndDate('');
+              setStartDate(defaultMonthRange.firstDay);
+              setEndDate(defaultMonthRange.lastDay);
               setSelectedAccountId(null);
               setShowDateFilter(false);
             }}
