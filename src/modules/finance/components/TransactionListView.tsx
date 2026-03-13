@@ -17,6 +17,7 @@ import {
   Receipt,
   Calendar,
   Tags,
+  Download,
 } from 'lucide-react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '@/services/supabaseClient';
@@ -24,6 +25,7 @@ import { useTransactions } from '../hooks/useTransactions';
 import type { FinanceTransaction, TransactionFilters } from '../types';
 import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
 import { useFinanceContext } from '../contexts/FinanceContext';
+import { exportToCSV, exportToPDF } from '../services/exportService';
 
 const log = createNamespacedLogger('TransactionListView');
 
@@ -236,6 +238,16 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     }
   }, [selectedIds, refresh]);
 
+  const handleExportCSV = useCallback(() => {
+    exportToCSV(transactions, `transacoes-aica-${new Date().toISOString().slice(0, 10)}.csv`);
+  }, [transactions]);
+
+  const handleExportPDF = useCallback(() => {
+    const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+    const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+    exportToPDF(transactions, { totalIncome: income, totalExpenses: expenses, balance: income - expenses });
+  }, [transactions]);
+
   // ── Loading skeleton ──
   const renderSkeleton = () => (
     <div className="space-y-3">
@@ -405,6 +417,32 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
               <option key={a.id} value={a.id}>{a.account_name} ({a.bank_name})</option>
             ))}
           </select>
+        )}
+
+        {/* Export */}
+        {transactions.length > 0 && (
+          <div className="relative group">
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+            >
+              <Download className="w-3 h-3" />
+              Exportar
+            </button>
+            <div className="absolute right-0 top-full mt-1 bg-ceramic-base border border-ceramic-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-30 min-w-[120px]">
+              <button
+                onClick={handleExportCSV}
+                className="w-full text-left px-3 py-2 text-xs text-ceramic-text-primary hover:bg-ceramic-cool rounded-t-lg"
+              >
+                CSV
+              </button>
+              <button
+                onClick={handleExportPDF}
+                className="w-full text-left px-3 py-2 text-xs text-ceramic-text-primary hover:bg-ceramic-cool rounded-b-lg"
+              >
+                PDF (imprimir)
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Clear filters */}
