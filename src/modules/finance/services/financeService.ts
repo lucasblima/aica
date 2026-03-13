@@ -659,6 +659,122 @@ export async function recategorizeTransactions(
     return { updated, total: suggestions.length };
 }
 
+// =====================================================
+// Monthly Digest Persistence
+// =====================================================
+
+export interface PersistedDigest {
+    id: string;
+    user_id: string;
+    year: number;
+    month: number;
+    digest_text: string;
+    generated_at: string;
+    transaction_count: number;
+    total_income: number;
+    total_expenses: number;
+}
+
+/**
+ * Fetch a cached monthly digest from the database.
+ * Returns null if no digest exists for the given month.
+ */
+export async function getPersistedDigest(
+    userId: string,
+    year: number,
+    month: number
+): Promise<PersistedDigest | null> {
+    try {
+        const { data, error } = await supabase
+            .from('finance_monthly_digests')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('year', year)
+            .eq('month', month)
+            .maybeSingle();
+
+        if (error) {
+            log.error('Error fetching persisted digest:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        log.error('Error fetching persisted digest:', error);
+        return null;
+    }
+}
+
+/**
+ * Save (upsert) a monthly digest to the database.
+ * Uses ON CONFLICT to update if one already exists for the same user/year/month.
+ */
+export async function savePersistedDigest(
+    userId: string,
+    year: number,
+    month: number,
+    digestText: string,
+    stats: { transactionCount: number; totalIncome: number; totalExpenses: number }
+): Promise<PersistedDigest | null> {
+    try {
+        const { data, error } = await supabase
+            .from('finance_monthly_digests')
+            .upsert(
+                {
+                    user_id: userId,
+                    year,
+                    month,
+                    digest_text: digestText,
+                    generated_at: new Date().toISOString(),
+                    transaction_count: stats.transactionCount,
+                    total_income: stats.totalIncome,
+                    total_expenses: stats.totalExpenses,
+                },
+                { onConflict: 'user_id,year,month' }
+            )
+            .select('*')
+            .single();
+
+        if (error) {
+            log.error('Error saving persisted digest:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        log.error('Error saving persisted digest:', error);
+        return null;
+    }
+}
+
+/**
+ * Delete a persisted digest (e.g., when user wants to force regeneration).
+ */
+export async function deletePersistedDigest(
+    userId: string,
+    year: number,
+    month: number
+): Promise<boolean> {
+    try {
+        const { error } = await supabase
+            .from('finance_monthly_digests')
+            .delete()
+            .eq('user_id', userId)
+            .eq('year', year)
+            .eq('month', month);
+
+        if (error) {
+            log.error('Error deleting persisted digest:', error);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        log.error('Error deleting persisted digest:', error);
+        return false;
+    }
+}
+
 /**
  * Bulk re-categorize ALL poorly categorized transactions across all months.
  * Fetches all transfer/other/null category transactions and sends them
