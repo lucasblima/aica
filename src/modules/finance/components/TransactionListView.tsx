@@ -830,13 +830,62 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         )}
       </div>
 
-      {/* ── Bulk recategorize modal ── */}
-      {bulkAction === 'recategorize' && (
+      {/* ── Bulk recategorize modal (smart — grouped by description) ── */}
+      {bulkAction === 'recategorize' && (() => {
+        // Group selected transactions by normalized description
+        const selectedTxs = transactions.filter((tx) => selectedIds.has(tx.id));
+        const descGroups: { description: string; count: number; totalAmount: number; currentCategory: string }[] = [];
+        const seen = new Map<string, number>();
+        for (const tx of selectedTxs) {
+          const key = tx.description.toLowerCase().trim().replace(/\s+/g, ' ');
+          const idx = seen.get(key);
+          if (idx !== undefined) {
+            descGroups[idx].count++;
+            descGroups[idx].totalAmount += Math.abs(Number(tx.amount));
+          } else {
+            seen.set(key, descGroups.length);
+            descGroups.push({
+              description: tx.description,
+              count: 1,
+              totalAmount: Math.abs(Number(tx.amount)),
+              currentCategory: tx.category,
+            });
+          }
+        }
+        descGroups.sort((a, b) => b.count - a.count);
+
+        return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="ceramic-card p-6 rounded-xl w-full max-w-sm shadow-lg space-y-4">
+          <div className="ceramic-card p-6 rounded-xl w-full max-w-md shadow-lg space-y-4">
             <h3 className="text-base font-bold text-ceramic-text-primary">
               Re-categorizar {selectedIds.size} transação{selectedIds.size !== 1 ? 'ões' : ''}
             </h3>
+
+            {/* Smart grouping summary */}
+            {descGroups.length > 0 && (
+              <div className="max-h-40 overflow-y-auto space-y-1.5 ceramic-inset p-3 rounded-lg">
+                <p className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mb-1">
+                  {descGroups.length} descrição{descGroups.length !== 1 ? 'ões' : ''} única{descGroups.length !== 1 ? 's' : ''}
+                </p>
+                {descGroups.map((g, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-medium text-ceramic-text-primary truncate">
+                        {g.description}
+                      </span>
+                      {g.count > 1 && (
+                        <span className="shrink-0 bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          ×{g.count}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-ceramic-text-secondary tabular-nums whitespace-nowrap">
+                      {formatCurrency(g.totalAmount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div>
               <label className="text-xs text-ceramic-text-secondary block mb-1.5">
@@ -855,6 +904,10 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                 ))}
               </select>
             </div>
+
+            <p className="text-[10px] text-ceramic-text-secondary">
+              A categoria também será aplicada a lançamentos futuros com a mesma descrição.
+            </p>
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
@@ -882,7 +935,8 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
