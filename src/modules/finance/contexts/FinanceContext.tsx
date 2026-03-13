@@ -38,6 +38,7 @@ interface FinanceContextValue {
   accounts: FinanceAccount[];
   accountsLoading: boolean;
   refreshAccounts: () => Promise<void>;
+  refreshCategories: () => Promise<void>;
 
   // Refresh all data
   refreshAll: () => Promise<void>;
@@ -107,6 +108,10 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ userId, childr
     await loadAccounts();
   }, [loadAccounts]);
 
+  const refreshCategories = useCallback(async () => {
+    await loadCategories();
+  }, [loadCategories]);
+
   const refreshAll = useCallback(async () => {
     await Promise.all([loadStatements(), loadCategories(), loadAccounts()]);
   }, [loadStatements, loadCategories, loadAccounts]);
@@ -128,6 +133,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ userId, childr
     accounts,
     accountsLoading,
     refreshAccounts,
+    refreshCategories,
     refreshAll,
   };
 
