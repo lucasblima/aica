@@ -159,13 +159,13 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
     setIsValuesVisible(!isValuesVisible);
   };
 
-  // Build trend data for TrendLineChart from last 6 months of transactions
+  // Build trend data for TrendLineChart from last 4 months of transactions
   const trendData = useMemo(() => {
     const now = new Date();
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const points: { month: string; income: number; expense: number }[] = [];
 
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 3; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const year = d.getFullYear();
       const month = d.getMonth();
@@ -426,7 +426,7 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
     switch (activeView) {
       case 'budget':
         return (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 pb-40">
             <BudgetView userId={userId} />
           </div>
         );

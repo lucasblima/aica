@@ -29,7 +29,7 @@ interface UseTransactionsReturn {
 
 export function useTransactions(
   userId: string,
-  initialFilters?: TransactionFilters
+  externalFilters?: TransactionFilters
 ): UseTransactionsReturn {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,11 +37,20 @@ export function useTransactions(
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [filters, setFilters] = useState<TransactionFilters>(initialFilters || {});
+  const [internalFilters, setInternalFilters] = useState<TransactionFilters>(externalFilters || {});
+
+  // Use external filters when provided, otherwise use internal state
+  const filters = externalFilters ?? internalFilters;
+
+  // Stable serialized key so fetchTransactions reacts to filter changes
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const fetchTransactions = useCallback(
     async (pageNum: number, reset: boolean = false) => {
       if (!userId) return;
+
+      // Parse the stable filters from the serialized key
+      const currentFilters: TransactionFilters = JSON.parse(filtersKey);
 
       try {
         setLoading(true);
@@ -55,32 +64,32 @@ export function useTransactions(
           .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
         // Apply filters
-        if (filters.startDate) {
-          query = query.gte('transaction_date', filters.startDate);
+        if (currentFilters.startDate) {
+          query = query.gte('transaction_date', currentFilters.startDate);
         }
-        if (filters.endDate) {
-          query = query.lte('transaction_date', filters.endDate);
+        if (currentFilters.endDate) {
+          query = query.lte('transaction_date', currentFilters.endDate);
         }
-        if (filters.category) {
-          query = query.eq('category', filters.category);
+        if (currentFilters.category) {
+          query = query.eq('category', currentFilters.category);
         }
-        if (filters.type) {
-          query = query.eq('type', filters.type);
+        if (currentFilters.type) {
+          query = query.eq('type', currentFilters.type);
         }
-        if (filters.minAmount !== undefined) {
-          query = query.gte('amount', filters.minAmount);
+        if (currentFilters.minAmount !== undefined) {
+          query = query.gte('amount', currentFilters.minAmount);
         }
-        if (filters.maxAmount !== undefined) {
-          query = query.lte('amount', filters.maxAmount);
+        if (currentFilters.maxAmount !== undefined) {
+          query = query.lte('amount', currentFilters.maxAmount);
         }
-        if (filters.statementId) {
-          query = query.eq('statement_id', filters.statementId);
+        if (currentFilters.statementId) {
+          query = query.eq('statement_id', currentFilters.statementId);
         }
-        if (filters.accountId) {
-          query = query.eq('account_id', filters.accountId);
+        if (currentFilters.accountId) {
+          query = query.eq('account_id', currentFilters.accountId);
         }
-        if (filters.searchTerm) {
-          query = query.ilike('description', `%${filters.searchTerm}%`);
+        if (currentFilters.searchTerm) {
+          query = query.ilike('description', `%${currentFilters.searchTerm}%`);
         }
 
         const { data, error: queryError, count } = await query;
@@ -105,7 +114,7 @@ export function useTransactions(
         setLoading(false);
       }
     },
-    [userId, filters]
+    [userId, filtersKey]
   );
 
   // Initial fetch and refetch on filter change
@@ -162,9 +171,9 @@ export function useTransactions(
     }
   }, []);
 
-  // Update filters handler
+  // Update filters handler (for callers that use setFilters directly)
   const handleSetFilters = useCallback((newFilters: TransactionFilters) => {
-    setFilters(newFilters);
+    setInternalFilters(newFilters);
   }, []);
 
   return {
