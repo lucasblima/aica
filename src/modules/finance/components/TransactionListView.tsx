@@ -26,6 +26,7 @@ import type { FinanceTransaction, TransactionFilters } from '../types';
 import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
 import { useFinanceContext } from '../contexts/FinanceContext';
 import { exportToCSV, exportToPDF } from '../services/exportService';
+import { propagateCategory } from '../services/financeService';
 
 const log = createNamespacedLogger('TransactionListView');
 
@@ -73,6 +74,9 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   }>({ category: '', description: '', notes: '' });
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Propagation notice state
+  const [propagationNotice, setPropagationNotice] = useState<string | null>(null);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -140,11 +144,34 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     async (id: string) => {
       try {
         setSaving(true);
+        const originalTx = transactions.find((t) => t.id === id);
+        const categoryChanged = originalTx && originalTx.category !== editData.category;
+
         await updateTransaction(id, {
           category: editData.category,
           description: editData.description,
           notes: editData.notes || undefined,
         });
+
+        // Propagate category to matching transactions when category changed
+        if (categoryChanged && originalTx) {
+          const { propagatedCount } = await propagateCategory(
+            userId,
+            originalTx.description,
+            editData.category
+          );
+          if (propagatedCount > 0) {
+            const label = CATEGORY_LABELS[editData.category] || editData.category;
+            setPropagationNotice(
+              `Categoria "${label}" aplicada a ${propagatedCount} lancamento${propagatedCount !== 1 ? 's' : ''} similar${propagatedCount !== 1 ? 'es' : ''}`
+            );
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => setPropagationNotice(null), 5000);
+            // Refresh list to reflect propagated changes
+            refresh();
+          }
+        }
+
         setExpandedId(null);
       } catch (err) {
         log.error('Failed to save transaction', err);
@@ -152,7 +179,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         setSaving(false);
       }
     },
-    [editData, updateTransaction]
+    [editData, updateTransaction, transactions, userId, refresh]
   );
 
   const handleDelete = useCallback(
@@ -205,6 +232,24 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         .update({ category: bulkCategory })
         .in('id', ids);
       if (updateError) throw updateError;
+
+      // Propagate category to matching descriptions for each selected transaction
+      const selectedTxs = transactions.filter((tx) => selectedIds.has(tx.id));
+      const uniqueDescriptions = new Set(selectedTxs.map((tx) => tx.description));
+      let totalPropagated = 0;
+      for (const desc of uniqueDescriptions) {
+        const { propagatedCount } = await propagateCategory(userId, desc, bulkCategory);
+        totalPropagated += propagatedCount;
+      }
+
+      if (totalPropagated > 0) {
+        const label = CATEGORY_LABELS[bulkCategory] || bulkCategory;
+        setPropagationNotice(
+          `Categoria "${label}" propagada para ${totalPropagated} lancamento${totalPropagated !== 1 ? 's' : ''} similar${totalPropagated !== 1 ? 'es' : ''}`
+        );
+        setTimeout(() => setPropagationNotice(null), 5000);
+      }
+
       setSelectedIds(new Set());
       setBulkAction(null);
       setBulkCategory('');
@@ -214,7 +259,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     } finally {
       setBulkLoading(false);
     }
-  }, [bulkCategory, selectedIds, refresh]);
+  }, [bulkCategory, selectedIds, transactions, userId, refresh]);
 
   // ── Bulk delete ──
   const handleBulkDelete = useCallback(async () => {
@@ -312,6 +357,21 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           </button>
         )}
       </div>
+
+      {/* ── Propagation notice ── */}
+      {propagationNotice && (
+        <div className="flex items-center justify-between mb-3 px-3 py-2.5 rounded-lg bg-ceramic-success/10 border border-ceramic-success/20">
+          <span className="text-xs font-medium text-ceramic-success">
+            {propagationNotice}
+          </span>
+          <button
+            onClick={() => setPropagationNotice(null)}
+            className="text-ceramic-success/60 hover:text-ceramic-success transition-colors ml-2"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ── Search bar ── */}
       <div className="relative mb-3">

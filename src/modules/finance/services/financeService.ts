@@ -450,6 +450,76 @@ export async function getYearlyAggregates(
 }
 
 /**
+ * Normalize a transaction description for matching purposes.
+ * Lowercases, trims whitespace, and collapses multiple spaces.
+ */
+function normalizeDescription(description: string): string {
+    return description.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * Propagate a category change to all transactions with a matching
+ * normalized description for the given user. This "trains" the system
+ * so future imports with the same description get the correct category.
+ *
+ * Returns the count of additional rows updated (excluding the original).
+ */
+export async function propagateCategory(
+    userId: string,
+    description: string,
+    newCategory: string
+): Promise<{ propagatedCount: number; error?: string }> {
+    try {
+        const normalized = normalizeDescription(description);
+
+        if (!normalized) {
+            return { propagatedCount: 0 };
+        }
+
+        // Fetch IDs of all transactions with matching description for this user
+        // We use ilike for case-insensitive matching since Supabase doesn't have
+        // a built-in normalized description filter
+        const { data: matching, error: fetchErr } = await supabase
+            .from('finance_transactions')
+            .select('id, description')
+            .eq('user_id', userId)
+            .neq('category', newCategory);
+
+        if (fetchErr) throw fetchErr;
+
+        if (!matching || matching.length === 0) {
+            return { propagatedCount: 0 };
+        }
+
+        // Filter client-side by normalized description for exact matching
+        const matchingIds = matching
+            .filter(tx => normalizeDescription(tx.description) === normalized)
+            .map(tx => tx.id);
+
+        if (matchingIds.length === 0) {
+            return { propagatedCount: 0 };
+        }
+
+        // Update all matching transactions in one batch
+        const { error: updateErr } = await supabase
+            .from('finance_transactions')
+            .update({ category: newCategory })
+            .in('id', matchingIds);
+
+        if (updateErr) throw updateErr;
+
+        log.info(`[PropagateCategory] Updated ${matchingIds.length} transactions matching "${normalized}" to category "${newCategory}"`);
+        return { propagatedCount: matchingIds.length };
+    } catch (err) {
+        log.error('[PropagateCategory] Error:', err);
+        return {
+            propagatedCount: 0,
+            error: err instanceof Error ? err.message : 'Erro ao propagar categoria',
+        };
+    }
+}
+
+/**
  * Suggestion returned by AI for a single transaction re-categorization.
  */
 export interface CategorySuggestion {
