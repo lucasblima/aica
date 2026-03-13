@@ -331,6 +331,7 @@ export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 export const ALLOWED_MIME_TYPES = ['application/pdf'];
 export const DEFAULT_CURRENCY = 'BRL';
 
+/** @deprecated Use CATEGORY_LABELS keys from constants.ts or categories from FinanceContext instead */
 export const TRANSACTION_CATEGORIES = [
   'housing',
   'food',

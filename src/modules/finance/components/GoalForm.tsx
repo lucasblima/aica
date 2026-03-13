@@ -8,28 +8,14 @@
 import React, { useState } from 'react';
 import { X, Target, Zap } from 'lucide-react';
 import type { FinanceGoal } from '../types';
-import { GOAL_TYPE_LABELS, TRANSACTION_CATEGORIES } from '../types';
+import { GOAL_TYPE_LABELS } from '../types';
+import { CATEGORY_LABELS } from '../constants';
 
 interface GoalFormProps {
   goal?: FinanceGoal;
   onSave: (data: Partial<FinanceGoal>) => Promise<void>;
   onClose: () => void;
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  housing: 'Moradia',
-  food: 'Alimentacao',
-  transport: 'Transporte',
-  health: 'Saude',
-  education: 'Educacao',
-  entertainment: 'Lazer',
-  shopping: 'Compras',
-  salary: 'Salario',
-  freelance: 'Freelance',
-  investment: 'Investimentos',
-  transfer: 'Transferencias',
-  other: 'Outros',
-};
 
 interface GoalTemplate {
   title: string;
@@ -246,9 +232,9 @@ export const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onClose }) => 
               className="mt-1 w-full px-3 py-2 text-sm bg-ceramic-base border border-ceramic-border rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-1 focus:ring-ceramic-accent"
             >
               <option value="">Nenhuma</option>
-              {TRANSACTION_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat] || cat}
+              {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
                 </option>
               ))}
             </select>

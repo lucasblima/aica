@@ -22,7 +22,6 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '@/services/supabaseClient';
 import { useTransactions } from '../hooks/useTransactions';
 import type { FinanceTransaction, TransactionFilters } from '../types';
-import { TRANSACTION_CATEGORIES } from '../types';
 import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
 import { useFinanceContext } from '../contexts/FinanceContext';
 
@@ -614,7 +613,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                             }
                             className="w-full text-sm ceramic-inset px-3 py-2 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-transparent"
                           >
-                            {TRANSACTION_CATEGORIES.map((cat) => (
+                            {allCategories.map((cat) => (
                               <option key={cat} value={cat}>
                                 {CATEGORY_LABELS[cat] || cat}
                               </option>
@@ -751,7 +750,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                 className="w-full text-sm ceramic-inset px-3 py-2.5 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-transparent"
               >
                 <option value="">Selecione uma categoria...</option>
-                {TRANSACTION_CATEGORIES.map((cat) => (
+                {allCategories.map((cat) => (
                   <option key={cat} value={cat}>
                     {CATEGORY_LABELS[cat] || cat}
                   </option>
