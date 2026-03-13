@@ -20,6 +20,8 @@ import { BurnRateCard } from '../components/BurnRateCard';
 import { GoalTracker } from '../components/GoalTracker';
 import { SavingsGoalProjection } from '../components/SavingsGoalProjection';
 import type { FinanceTransaction, BudgetSummaryRow, BurnRateData, FinanceGoal } from '../types';
+import { useFinanceContext } from '../contexts/FinanceContext';
+import { CATEGORY_LABELS } from '../constants';
 
 // =====================================================
 // Types
@@ -38,21 +40,6 @@ interface CategoryBudget {
   color: string;
   fromDb: boolean;
 }
-
-// =====================================================
-// Constants - Categorias com Orcamentos Default
-// =====================================================
-
-const CATEGORY_CONFIG: Record<string, { icon: string; label: string; defaultBudget: number; color: string }> = {
-  housing: { icon: '\uD83C\uDFE0', label: 'Moradia', defaultBudget: 1500, color: '#6366f1' },
-  food: { icon: '\uD83C\uDF7D\uFE0F', label: 'Alimentacao', defaultBudget: 800, color: '#f59e0b' },
-  transport: { icon: '\uD83D\uDE97', label: 'Transporte', defaultBudget: 400, color: '#10b981' },
-  health: { icon: '\uD83D\uDC8A', label: 'Saude', defaultBudget: 300, color: '#ec4899' },
-  education: { icon: '\uD83D\uDCDA', label: 'Educacao', defaultBudget: 200, color: '#3b82f6' },
-  entertainment: { icon: '\uD83C\uDFAC', label: 'Lazer', defaultBudget: 200, color: '#8b5cf6' },
-  shopping: { icon: '\uD83D\uDECD\uFE0F', label: 'Compras', defaultBudget: 300, color: '#f97316' },
-  other: { icon: '\uD83D\uDCE6', label: 'Outros', defaultBudget: 150, color: '#6b7280' },
-};
 
 // =====================================================
 // Helpers
@@ -82,6 +69,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
   const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
   const [currentBalance, setCurrentBalance] = useState<number | undefined>(undefined);
   const [goals, setGoals] = useState<FinanceGoal[]>([]);
+
+  const { categories: dbCategories } = useFinanceContext();
 
   // Inline budget editing state
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
@@ -184,36 +173,38 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
     setEditAmount('');
   };
 
-  // Calculate category spending for selected month, merging DB budgets with defaults
+  // Calculate category spending for selected month, using dynamic categories from DB
   const budgetCategories: CategoryBudget[] = useMemo(() => {
-    // Build a map of DB budget data keyed by category
     const dbMap = new Map<string, BudgetSummaryRow>();
     dbBudgetSummary.forEach((row) => {
       dbMap.set(row.category, row);
     });
 
-    return Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-      const dbRow = dbMap.get(key);
+    // Use expense categories from DB (auto-seeded if empty by categoryService)
+    const expenseCategories = dbCategories.filter(c => c.is_expense);
+
+    return expenseCategories.map((cat) => {
+      const dbRow = dbMap.get(cat.key);
 
       const spent = dbRow
         ? dbRow.spent
         : transactions
-            .filter(t => t.type === 'expense' && t.category === key)
+            .filter(t => t.type === 'expense' && t.category === cat.key)
             .reduce((sum, t) => sum + Number(t.amount), 0);
 
-      const budget = dbRow ? dbRow.budget_amount : config.defaultBudget;
+      const budget = dbRow ? dbRow.budget_amount : 0;
 
       return {
-        category: key,
-        icon: config.icon,
-        label: config.label,
+        category: cat.key,
+        icon: cat.icon,
+        label: cat.label || CATEGORY_LABELS[cat.key] || cat.key,
         spent,
         budget,
-        color: config.color,
+        color: cat.color || '#6b7280',
         fromDb: !!dbRow,
       };
     });
-  }, [transactions, dbBudgetSummary]);
+  }, [transactions, dbBudgetSummary, dbCategories]);
 
   // Calculate month totals
   const monthIncome = transactions
