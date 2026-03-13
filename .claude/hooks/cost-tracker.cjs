@@ -62,7 +62,7 @@ function run(rawInput) {
 if (require.main === module) {
   readStdin(data => {
     run(data);
-    process.stdout.write(data);
+    // Stop hooks: no stdout echo needed (no downstream consumer)
     process.exit(0);
   });
 }

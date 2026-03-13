@@ -28,22 +28,20 @@ function run(rawInput) {
 
   let count = 1;
 
+  // Read current count
   try {
-    const fd = fs.openSync(counterFile, 'a+');
-    try {
-      const buf = Buffer.alloc(64);
-      const bytesRead = fs.readSync(fd, buf, 0, 64, 0);
-      if (bytesRead > 0) {
-        const parsed = parseInt(buf.toString('utf8', 0, bytesRead).trim(), 10);
-        count = (Number.isFinite(parsed) && parsed > 0 && parsed <= 1000000)
-          ? parsed + 1
-          : 1;
-      }
-      fs.ftruncateSync(fd, 0);
-      fs.writeSync(fd, String(count), 0);
-    } finally {
-      fs.closeSync(fd);
-    }
+    const raw = fs.readFileSync(counterFile, 'utf8').trim();
+    const parsed = parseInt(raw, 10);
+    count = (Number.isFinite(parsed) && parsed > 0 && parsed <= 1000000)
+      ? parsed + 1
+      : 1;
+  } catch {
+    // File doesn't exist yet — start at 1
+  }
+
+  // Write updated count
+  try {
+    fs.writeFileSync(counterFile, String(count), 'utf8');
   } catch {
     // Fallback silently
   }

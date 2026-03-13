@@ -83,7 +83,16 @@
         ]
       },
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/suggest-compact.cjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
         "hooks": [
           {
             "type": "command",

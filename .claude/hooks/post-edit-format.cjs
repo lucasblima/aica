@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const { readStdin, findProjectRoot, log } = require('./lib/utils.cjs');
 
-const UNSAFE_PATH_CHARS = /[&|<>^%!]/;
+const UNSAFE_PATH_CHARS = /[&|<>^%!$`]/;
 
 function resolveEslint(projectRoot) {
   const localBin = path.join(projectRoot, 'node_modules', '.bin',

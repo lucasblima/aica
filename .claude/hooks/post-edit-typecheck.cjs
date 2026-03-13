@@ -77,6 +77,7 @@ if (require.main === module) {
   readStdin(data => {
     run(data);
     process.stdout.write(data);
+    process.exit(0); // Exit immediately — tsc runs in background
   });
 }
 

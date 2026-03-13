@@ -148,7 +148,7 @@ function run(rawInput) {
 
   if (existing) {
     let updated = existing;
-    updated = updated.replace(/\*\*Last Updated:\*\*.*$/m, `**Last Updated:** ${currentTime}`);
+    updated = updated.replace(/\*\*Last Updated:\*\*.*\r?$/m, `**Last Updated:** ${currentTime}`);
 
     if (summary) {
       const summaryBlock = buildSummaryBlock(summary);
@@ -181,7 +181,7 @@ function escapeRegExp(value) {
 if (require.main === module) {
   readStdin(data => {
     run(data);
-    process.stdout.write(data);
+    // Stop hooks: no stdout echo needed (no downstream consumer)
     process.exit(0);
   });
 }
