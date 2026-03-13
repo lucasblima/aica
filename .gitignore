@@ -110,3 +110,4 @@ IMPLEMENTATION_*.md
 /*.py
 /*.http
 /*.tar.gz
+*.tsbuildinfo
