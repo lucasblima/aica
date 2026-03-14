@@ -16,6 +16,8 @@
 import { supabase } from './supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
 import { fetchCalendarEvents } from './googleCalendarService'
+import { computeAndStoreLifeScore } from '@/services/scoring/scoringEngine'
+import type { ScoreTrend } from '@/services/scoring/types'
 
 const log = createNamespacedLogger('userAIContextService')
 
@@ -50,6 +52,12 @@ export interface UserAIContext {
   upcomingEvents: Array<{ title: string; startTime: string }> | null
   patterns: UserPattern[]
   latestInsight: LifeCouncilInsight | null
+  lifeScore: {
+    overall: number
+    domains: Record<string, number>
+    trend: ScoreTrend
+    spiralAlert: boolean
+  } | null
 }
 
 // Cache with 5-minute TTL
@@ -191,6 +199,24 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       }
     }
 
+    // Compute Life Score (non-critical — graceful fallback to null)
+    let lifeScoreData: UserAIContext['lifeScore'] = null
+    try {
+      const ls = await computeAndStoreLifeScore()
+      if (ls) {
+        lifeScoreData = {
+          overall: Math.round(ls.composite * 100),
+          domains: Object.fromEntries(
+            Object.entries(ls.domainScores).map(([k, v]) => [k, Math.round(v * 100)])
+          ),
+          trend: ls.trend,
+          spiralAlert: ls.spiralAlert,
+        }
+      }
+    } catch {
+      log.debug('Life Score computation skipped (non-critical)')
+    }
+
     const context: UserAIContext = {
       userName: profileRes.data?.full_name?.split(' ')[0] || 'usuario',
       pendingTasks: pendingTasksRes.count || 0,
@@ -207,6 +233,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       })),
       patterns,
       latestInsight,
+      lifeScore: lifeScoreData,
     }
 
     // Update cache
