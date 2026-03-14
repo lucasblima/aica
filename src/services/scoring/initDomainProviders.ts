@@ -15,6 +15,6 @@ export function initDomainProviders(): void {
   registerJourneyDomainProvider()
   registerStudioDomainProvider()
   registerGrantsDomainProvider()
-  // Atlas, Connections, Finance already register via their own service modules
+  // TODO: Atlas, Connections, Finance scoring providers not yet implemented (4/7 domains active)
   initialized = true
 }
