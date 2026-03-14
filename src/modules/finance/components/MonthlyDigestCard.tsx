@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { AIThinkingState } from '@/components/ui'
 import { useMonthlyDigest } from '../hooks/useMonthlyDigest'
+import { GenerateAudioButton } from '@/components/features/notebooklm'
 
 // =============================================================================
 // Types
@@ -353,6 +354,26 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Generate Audio Briefing */}
+      <GenerateAudioButton
+        params={{
+          module: 'finance',
+          content: `Briefing Financeiro - ${monthName}.
+Nota: ${digest.month_grade}. ${digest.grade_explanation || ''}.
+Destaques: ${(digest.highlights || []).join('; ')}.
+Oportunidades de economia: ${(digest.savings_opportunities || []).join('; ')}.
+Alertas de risco: ${(digest.risk_alerts || []).join('; ')}.
+Dica: ${digest.next_month_tip || ''}.`,
+          title: `Briefing Financeiro - ${monthName}`,
+          format: 'brief',
+          length: 'short',
+          language: 'pt-BR',
+          instructions: 'Tom de coach financeiro amigável. Cubra: nota do mês, destaques, oportunidades de economia, alertas, e uma dica acionável.',
+        }}
+        label="Ouvir Briefing"
+        className="mt-4"
+      />
     </div>
   )
 }
