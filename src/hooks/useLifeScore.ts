@@ -9,6 +9,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { LifeScore, AicaDomain } from '@/services/scoring/types';
+import { initDomainProviders } from '@/services/scoring/initDomainProviders';
 import { DEFAULT_DOMAIN_WEIGHTS } from '@/services/scoring/types';
 import {
   getLatestLifeScore,
@@ -46,6 +47,9 @@ export interface UseLifeScoreReturn {
 }
 
 export function useLifeScore(): UseLifeScoreReturn {
+  // Ensure all domain scoring providers are registered (idempotent)
+  initDomainProviders();
+
   const [lifeScore, setLifeScore] = useState<LifeScore | null>(null);
   const [history, setHistory] = useState<LifeScoreHistoryEntry[]>([]);
   const [weights, setWeights] = useState<Record<AicaDomain, number>>({ ...DEFAULT_DOMAIN_WEIGHTS });
