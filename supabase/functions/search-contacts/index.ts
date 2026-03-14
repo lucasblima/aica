@@ -223,8 +223,8 @@ serve(async (req: Request) => {
           ai_tags
         `)
         .eq('user_id', user.id)
-        .or(`name.ilike.%${response.query.replace(/'/g, "''")}%,contact_name.ilike.%${response.query.replace(/'/g, "''")}%,tags.cs.{${response.query.replace(/'/g, "''")}}`)
-        .not('phone_number', 'in', `(${existingPhones.map(p => `'${p.replace(/'/g, "''")}'`).join(',')})`)
+        .or(`name.ilike.%${response.query.replace(/[',.*()]/g, '')}%,contact_name.ilike.%${response.query.replace(/[',.*()]/g, '')}%,tags.cs.{${response.query.replace(/[',.*(){}]/g, '')}}`)
+        .not('phone_number', 'in', `(${existingPhones.map(p => `'${p.replace(/[^+\d]/g, '')}'`).join(',')})`)
         .limit(remainingLimit)
 
       if (keywordResults && keywordResults.length > 0) {
