@@ -43,9 +43,13 @@ CREATE POLICY "Users can insert own jobs"
   ON public.notebooklm_jobs FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Service can update jobs"
+CREATE POLICY "Users can update own jobs"
   ON public.notebooklm_jobs FOR UPDATE
-  USING (true);
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own jobs"
+  ON public.notebooklm_jobs FOR DELETE
+  USING (auth.uid() = user_id);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notebooklm_jobs;
 

@@ -5,7 +5,7 @@ import os
 
 # Ensure env vars are set before imports
 os.environ["SUPABASE_JWT_SECRET"] = "test-secret-key-for-jwt-verification"
-os.environ["NLM_COOKIE_ENCRYPTION_KEY"] = "dGVzdC1rZXktZm9yLWVuY3J5cHRpb24tMzI="
+os.environ["NLM_COOKIE_ENCRYPTION_KEY"] = "v8ZRxR6LoIe4r4kA9yaHNKyHiRjKa80FXxuqHDtQeLY="
 
 import jwt as pyjwt
 from fastapi.testclient import TestClient

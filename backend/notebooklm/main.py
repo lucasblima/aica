@@ -30,7 +30,7 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["POST", "GET", "OPTIONS", "DELETE"],
-    allow_headers=["*"],
+    allow_headers=["authorization", "content-type", "x-client-info", "apikey"],
 )
 
 app.include_router(health_router)

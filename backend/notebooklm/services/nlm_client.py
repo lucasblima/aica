@@ -13,6 +13,9 @@ from services.job_service import get_supabase, update_job_status
 
 logger = logging.getLogger(__name__)
 
+ARTIFACT_STATUS_COMPLETED = 3
+ARTIFACT_STATUS_FAILED = 4
+
 AUDIO_FORMAT_MAP = {
     "deep-dive": AudioFormat.DEEP_DIVE,
     "brief": AudioFormat.BRIEF,
@@ -83,7 +86,7 @@ async def generate_audio(
             for _ in range(150):
                 artifacts = await client.artifacts.list(nb.id)
                 audio_artifacts = [a for a in artifacts if a.kind and a.kind.name == "audio"]
-                if audio_artifacts and audio_artifacts[-1].status == 3:
+                if audio_artifacts and audio_artifacts[-1].status == ARTIFACT_STATUS_COMPLETED:
                     artifact = audio_artifacts[-1]
                     update_job_status(
                         job_id,
@@ -97,7 +100,7 @@ async def generate_audio(
                         },
                     )
                     return
-                if audio_artifacts and audio_artifacts[-1].status == 4:
+                if audio_artifacts and audio_artifacts[-1].status == ARTIFACT_STATUS_FAILED:
                     raise RuntimeError("NotebookLM audio generation failed")
                 await asyncio.sleep(2)
 

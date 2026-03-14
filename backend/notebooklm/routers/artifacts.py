@@ -1,6 +1,5 @@
 """Artifact generation endpoints."""
 
-import asyncio
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends
@@ -45,26 +44,6 @@ class JobStatusResponse(BaseModel):
     data: dict
 
 
-def process_audio_job(user_id: str, job_id: str, request: GenerateAudioRequest):
-    """Run audio generation in background thread with its own event loop."""
-    loop = asyncio.new_event_loop()
-    try:
-        loop.run_until_complete(
-            generate_audio(
-                user_id=user_id,
-                job_id=job_id,
-                content=request.content,
-                title=request.title,
-                audio_format=request.format,
-                audio_length=request.length,
-                language=request.language,
-                instructions=request.instructions,
-            )
-        )
-    finally:
-        loop.close()
-
-
 @router.post("/generate/audio")
 async def generate_audio_endpoint(
     request: GenerateAudioRequest,
@@ -78,7 +57,17 @@ async def generate_audio_endpoint(
         module=request.module,
         input_data=request.model_dump(),
     )
-    background_tasks.add_task(process_audio_job, user_id, job_id, request)
+    background_tasks.add_task(
+        generate_audio,
+        user_id=user_id,
+        job_id=job_id,
+        content=request.content,
+        title=request.title,
+        audio_format=request.format,
+        audio_length=request.length,
+        language=request.language,
+        instructions=request.instructions,
+    )
     return JobStatusResponse(
         success=True,
         data={"job_id": job_id, "status": "pending"},
