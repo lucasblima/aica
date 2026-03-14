@@ -53,3 +53,11 @@ export {
   deleteCalendarEvent as deleteCalendarEventFromDB,
   upsertExternalEvent,
 } from './calendarEventService';
+
+// AI Agent Service (pure functions for scheduling, conflicts, prep)
+export type { AgendaCalendarEvent, ConflictPair, AgendaWorkItem, TimeBlockSuggestion, ContactInfo } from './agendaAIService';
+export {
+  detectConflicts,
+  suggestTimeBlocks,
+  generatePrepContext,
+} from './agendaAIService';
