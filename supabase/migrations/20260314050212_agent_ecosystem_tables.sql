@@ -52,7 +52,15 @@ CREATE POLICY "Users can read own cooldowns" ON notification_cooldowns FOR SELEC
 CREATE OR REPLACE FUNCTION is_quiet_hours(p_start TIME, p_end TIME)
 RETURNS TABLE (is_quiet BOOLEAN)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT (NOW() AT TIME ZONE 'America/Sao_Paulo')::TIME BETWEEN p_start AND p_end;
+  SELECT CASE
+    WHEN p_start <= p_end THEN
+      -- Normal range (e.g., 08:00-17:00)
+      (NOW() AT TIME ZONE 'America/Sao_Paulo')::TIME BETWEEN p_start AND p_end
+    ELSE
+      -- Overnight range (e.g., 22:00-07:00): quiet if AFTER start OR BEFORE end
+      (NOW() AT TIME ZONE 'America/Sao_Paulo')::TIME >= p_start
+      OR (NOW() AT TIME ZONE 'America/Sao_Paulo')::TIME <= p_end
+  END;
 $$;
 
 -- 5. EVENT EMITTER TRIGGERS (all SECURITY DEFINER to bypass RLS on INSERT)

@@ -86,14 +86,11 @@ const TRIGGER_RULES: TriggerRule[] = [
   },
   {
     event: 'workout.logged',
-    condition: (p) => {
-      const fatigue = p.fatigue_score as number | undefined
-      return fatigue !== undefined && fatigue > 80
-    },
+    condition: () => true,
     agent: 'flux',
-    message: (p) => `Fadiga em ${p.fatigue_score}%. Considere recovery amanhã.`,
-    category: 'urgent_alert',
-    cooldownMs: 48 * 60 * 60 * 1000,
+    message: (p) => `Treino "${p.name}" concluído! Bom trabalho.`,
+    category: 'achievement',
+    cooldownMs: 4 * 60 * 60 * 1000,
   },
   {
     event: 'transaction.imported',
