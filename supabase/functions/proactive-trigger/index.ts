@@ -410,48 +410,28 @@ async function executeAgentLocally(
   // Agent-specific actions
   switch (agentName) {
     case 'morning_briefing': {
+      // Delegate to morning-briefing Edge Function (handles Life Council + data
+      // collection + Gemini synthesis + channel-router delivery)
       try {
-        const councilResponse = await fetch(
-          `${SUPABASE_URL}/functions/v1/run-life-council`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-            },
-            body: JSON.stringify({ userId }),
-          }
-        )
-        const councilData = await councilResponse.json()
-
-        if (councilData.success) {
-          await supabase.from('agent_notifications').insert({
-            user_id: userId,
-            agent_name: 'morning_briefing',
-            notification_type: 'insight',
-            title: (councilData.insight?.headline || 'Briefing matinal').substring(0, 200),
-            body: (councilData.insight?.synthesis || 'Conselho do dia gerado').substring(0, 500),
-            metadata: {
-              insight_id: councilData.insight?.id,
-              overall_status: councilData.insight?.overall_status,
-            },
-          })
-          return {
-            success: true,
-            message: 'Morning briefing generated',
-            data: councilData,
-          }
-        }
+        const mbRes = await fetch(`${SUPABASE_URL}/functions/v1/morning-briefing`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+          body: JSON.stringify({ user_id: userId }),
+        })
+        const mbData = await mbRes.json()
         return {
-          success: false,
-          message: 'Life council call returned unsuccessful',
-          data: councilData,
+          success: mbData.success ?? false,
+          message: mbData.success ? 'Morning briefing generated via dedicated Edge Function' : 'Morning briefing failed',
+          data: mbData,
         }
       } catch (err) {
-        console.error('morning_briefing failed:', err)
+        console.error('morning_briefing delegation failed:', err)
         return {
           success: false,
-          message: 'Morning briefing failed',
+          message: 'Morning briefing delegation failed',
           error: err instanceof Error ? err.message : 'Unknown error',
         }
       }
