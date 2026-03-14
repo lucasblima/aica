@@ -113,6 +113,16 @@ export function useExtractedEntities(limit = 20): UseExtractedEntitiesReturn {
 
       log.info(`Entity ${entityId} routed to ${result.routed_to_module}`, result.created_item_id ? `item: ${result.created_item_id}` : '(no item created)')
 
+      // Emit event for agent ecosystem (gamification + pattern updates)
+      await supabase.from('module_events').insert({
+        user_id: user.id,
+        event_type: 'entity.confirmed',
+        source_module: 'connections',
+        payload: { entity_id: entityId, routed_to: result.routed_to_module },
+      }).then(({ error: evtErr }) => {
+        if (evtErr) log.debug('module_events insert skipped:', evtErr.message)
+      })
+
       // Remove from local state
       setEntities(prev => prev.filter(e => e.entity_id !== entityId))
     } catch (err) {
