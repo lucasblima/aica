@@ -65,6 +65,7 @@ RUN echo "=== Build Environment ===" && \
     echo "VITE_SUPABASE_ANON_KEY: SET" && \
     echo "VITE_GEMINI_API_KEY: SET" && \
     echo "VITE_FRONTEND_URL: ${VITE_FRONTEND_URL}" && \
+    echo "VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:+SET}" && \
     echo "========================="
 
 # Validate that critical environment variables are actually set
