@@ -70,8 +70,8 @@ export function PrivacyPolicyPage() {
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">2. Identificação do Controlador</h2>
             <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6 space-y-2">
               <p className="text-[#5C554B]"><strong>Razão Social:</strong> Comtxae Educação Cultura e Tecnologia Ltda.</p>
-              <p className="text-[#5C554B]"><strong>CNPJ:</strong> [CNPJ]</p>
-              <p className="text-[#5C554B]"><strong>Endereço:</strong> [ENDEREÇO]</p>
+              <p className="text-[#5C554B]"><strong>CNPJ:</strong> 20.260.474/0001-80</p>
+              <p className="text-[#5C554B]"><strong>Endereço:</strong> Rua Marquês de São Vicente, 95, apto 404, bloco 1, CEP 22451-041, Rio de Janeiro - RJ</p>
               <p className="text-[#5C554B]"><strong>Encarregado de Proteção de Dados (DPO):</strong> Lucas Boscacci Pereira Lima da Silva</p>
               <p className="text-[#5C554B]"><strong>E-mail do DPO:</strong> dpo@aica.life</p>
               <p className="text-[#5C554B]"><strong>E-mail geral:</strong> contato@aica.guru</p>

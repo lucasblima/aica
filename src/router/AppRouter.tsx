@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 're
 import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
+import { notificationService } from '../services/notificationService';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from '../services/supabaseService';
 import { generateMissingDailyReports } from '../services/dailyReportService';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -353,6 +354,10 @@ export function AppRouter() {
             }
          } catch (error) {
             log.error(' Erro ao processar callback do Google Calendar:', error);
+            notificationService.showError(
+               'Erro na conexão Google',
+               'Não foi possível conectar ao Google Calendar. Tente novamente em Configurações.'
+            );
          }
       };
 
