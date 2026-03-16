@@ -14,6 +14,7 @@
  */
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Sentry } from '@/lib/sentry';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ErrorBoundary');
@@ -55,6 +56,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     log.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    // Report to Sentry with component stack context
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: errorInfo.componentStack ?? '' } },
+    });
 
     this.setState({ error, errorInfo });
 

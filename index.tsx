@@ -2,11 +2,19 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { initSentry } from './src/lib/sentry';
 import App from './App';
 import './index.css';
 import { cleanExpiredOAuthParams, suppressExpiredSessionWarnings } from './src/utils/authUrlCleaner';
 import { validateEnv, logEnvStatus } from './src/lib/envCheck';
 import { registerFluxDomainProvider } from './src/modules/flux/services';
+
+// =============================================================================
+// ERROR TRACKING
+// Initialize Sentry before anything else to capture early errors.
+// Requires VITE_SENTRY_DSN env var. No-op if not configured.
+// =============================================================================
+initSentry();
 
 // =============================================================================
 // ENVIRONMENT VALIDATION
@@ -35,6 +43,7 @@ if (import.meta.env.PROD && !envValidation.isValid) {
 // Global safety net for uncaught promise rejections
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[AICA] Unhandled promise rejection:', event.reason);
+  // Sentry captures this automatically via its global handlers
 });
 
 // Limpa parametros OAuth expirados ANTES de inicializar a aplicacao
