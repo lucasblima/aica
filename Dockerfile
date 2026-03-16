@@ -30,6 +30,7 @@ ARG VITE_N8N_URL
 ARG VITE_EVOLUTION_URL
 ARG VITE_EVOLUTION_INSTANCE_NAME
 ARG VITE_API_URL
+ARG VITE_SENTRY_DSN
 
 # =============================================================================
 # Convert ARG to ENV - Makes variables available during npm run build
@@ -47,6 +48,7 @@ ENV VITE_N8N_URL=$VITE_N8N_URL
 ENV VITE_EVOLUTION_URL=$VITE_EVOLUTION_URL
 ENV VITE_EVOLUTION_INSTANCE_NAME=$VITE_EVOLUTION_INSTANCE_NAME
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 
 # Copiar apenas package.json (ignorando lockfile do Windows para evitar erros de plataforma)
 COPY package.json ./
