@@ -16,6 +16,15 @@ function getClaudeDir() {
 }
 
 function getSessionsDir() {
+  // Project-scoped sessions when CLAUDE_PROJECT_DIR is available
+  const projectDir = process.env.CLAUDE_PROJECT_DIR;
+  if (projectDir) {
+    const safeName = path.basename(projectDir).replace(/[^a-zA-Z0-9_-]/g, '-');
+    const projectSessions = path.join(getClaudeDir(), 'projects', safeName, 'sessions');
+    ensureDir(projectSessions);
+    return projectSessions;
+  }
+  // Fallback to global
   return path.join(getClaudeDir(), 'sessions');
 }
 

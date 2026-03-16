@@ -1,3 +1,8 @@
+---
+globs: cloudbuild.yaml,Dockerfile,nginx.conf
+description: Deploy pipeline - loads when editing deploy configs
+---
+
 # Deploy Pipeline
 
 > **REGRA:** Claude pode executar `gcloud builds submit` **somente quando o usuario pedir explicitamente**.
@@ -54,13 +59,14 @@ gcloud builds list --limit=5 --region=southamerica-east1 --project=gen-lang-clie
 
 **SOMENTE** quando producao esta down e usuario confirma explicitamente:
 
-1. Fix no codigo (minimal change)
-2. `npm run build && npm run typecheck` (MUST pass)
-3. Deploy staging: verificar fix funciona
-4. Deploy producao: com confirmacao explicita do usuario
-5. PR retroativo: documentar o fix depois
-
-Staging pode ser pulado SOMENTE com confirmacao explicita: "deploy direto para prod".
+1. **Skip ceremony** — No Name, Clarify, or Team steps. Start immediately.
+2. **Reproduce** — Check production logs: Supabase Dashboard → Logs, Cloud Run → Logs
+3. **Debug** — `superpowers:systematic-debugging` Phase 1-4
+4. **Fix** — Minimal fix, regression test if time permits
+5. **Verify** — `npm run build && npm run typecheck` (FRESH output)
+6. **Deploy staging** — Verify fix works on dev.aica.guru
+7. **Deploy production** — With explicit user confirmation. Staging may be skipped ONLY with user's explicit "deploy direto para prod" confirmation.
+8. **PR retroativo** — After production is stable, create PR documenting the fix
 
 ### Rollback
 ```bash
