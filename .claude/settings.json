@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'supabase.*\\(migration\\|db push\\|db reset\\)\\|npx supabase migration' && echo '⚠️  MIGRATION DETECTED!\n\nSafety Checklist:\n- RLS policies defined for new tables?\n- SECURITY DEFINER functions reviewed?\n- Migration tested locally first?\n- Rollback plan documented?\n- No PII in migration (passwords, tokens, etc.)?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'supabase.*\\(migration\\|db push\\|db reset\\)\\|npx supabase migration' && printf '⚠️  MIGRATION DETECTED!\n\nSafety Checklist:\n□ RLS policies? (sem RLS, qualquer usuario autenticado le TODAS as linhas)\n□ SECURITY DEFINER? (executa com privilegios do criador, nao do caller)\n□ Testou local? (npx supabase db push — mostra output como evidencia)\n□ Rollback plan? (CREATE antes de ALTER, nunca DROP sem backup logico)\n□ PII? (nunca senhas/tokens em migrations — use vault secrets)\n\nPadrao RLS:\n  ALTER TABLE x ENABLE ROW LEVEL SECURITY;\n  CREATE POLICY \"own_data\" ON x FOR ALL USING (auth.uid() = user_id);\n' || true"
           }
         ]
       },
@@ -108,6 +108,15 @@
           {
             "type": "command",
             "command": "jq -r '.tool_input.command // empty' | grep -q '^git checkout' && echo '\n📍 Branch switched!\n\nReminder:\n1. Run: git pull origin main (sync)\n2. Check active work: git log main..HEAD --oneline\n3. Check issues: gh issue list --assignee @me\n' || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/knowledge-nudge.cjs\""
           }
         ]
       },

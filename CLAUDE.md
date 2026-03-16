@@ -38,112 +38,21 @@ npx supabase functions serve  # Local Edge Functions
 | **Finance** | `src/modules/finance/` | `finance_transactions` |
 | **Flux** | `src/modules/flux/` | `athletes`, `workout_blocks`, `alerts` |
 
-## Task Sizing
+## Solo Dev Workflow
 
-Before entering the workflow, assess task size:
+Micro (1-5 linhas): Fix > Verify > Commit > Push
+Standard: Clarify > Execute (TDD) > Verify > Review > Finish
+Complex: Clarify > Design > Plan > Execute (TDD) > Verify > Review > Finish
 
-| Tier | Criteria | Workflow |
-|------|----------|---------|
-| **Micro** | 1-5 lines, 1 file, no logic/design decisions | Fix → Verify (build) → Commit → Push |
-| **Standard** | Single module, clear scope | Full workflow (Brainstorm/Plan optional if approach obvious) |
-| **Complex** | Cross-module, architecture decisions, 5+ files | Full workflow, all steps mandatory |
-
-Micro tasks skip: Name, Clarify, Team, Brainstorm, Plan, Worktree, TDD, Review, Finish.
-Standard tasks may skip Brainstorm/Plan if the approach is obvious and well-established.
-
-## Default Working Mode
-
-```
-Name → Clarify → Ask Team → Brainstorm → Plan → Worktree → TDD/Execute → Verify → Review → Finish
-```
-
-Every session follows this mandatory flow:
-
-1. **Name** — Suggest a session name, wait for approval
-2. **Clarify** — Ask about information gaps (see `clarification-first.md`)
-3. **Ask Team** — Always ask if user wants Agent Team activated (never auto-create)
-4. **Brainstorm** — For non-trivial tasks: `superpowers:brainstorming` -> design doc -> user approval
-5. **Plan** — `superpowers:writing-plans` -> implementation plan saved to `docs/plans/`
-6. **Worktree** — `superpowers:using-git-worktrees` -> isolated workspace in `.worktrees/`
-7. **TDD/Execute** — `superpowers:test-driven-development` (RED-GREEN-REFACTOR). For bugs: `superpowers:systematic-debugging` first
-8. **Verify** — `superpowers:verification-before-completion` -> FRESH build/test output as evidence
-9. **Review** — `superpowers:requesting-code-review` -> address findings
-10. **Finish** — `superpowers:finishing-a-development-branch` -> choose (merge/PR/keep/discard) -> execute choice
-
-Steps 4-5 are lightweight for Standard tasks (skip if approach obvious). Steps 7-9 repeat per task. Solo work is chosen by the user, not assumed. Micro tasks skip all steps — just fix, verify, commit, push.
-
-## Superpowers Integration
-
-| Phase | Skill | When |
-|-------|-------|------|
-| 1-3. Ceremony | — | Name, Clarify, Ask Team (no skill needed) |
-| 4. Design | `superpowers:brainstorming` | Before any non-trivial feature |
-| 5. Planning | `superpowers:writing-plans` | After design approval |
-| 6. Workspace | `superpowers:using-git-worktrees` | Every Standard/Complex session |
-| 7. Implementation | `superpowers:test-driven-development` | Every code change |
-| 7. Debugging | `superpowers:systematic-debugging` | Every bug/failure (before TDD) |
-| 7. Agent Teams | `superpowers:subagent-driven-development` | Team execution with spec+quality review |
-| 7. Parallel Work | `superpowers:dispatching-parallel-agents` | 3+ independent tasks/bugs |
-| 8. Verification | `superpowers:verification-before-completion` | Before any completion claim |
-| 9. Code Review | `superpowers:requesting-code-review` | Before finishing branch |
-| 9. Review Response | `superpowers:receiving-code-review` | When addressing review feedback |
-| 10. Finish | `superpowers:finishing-a-development-branch` | After all tasks verified — merge/PR/keep/discard |
-
-## Modular Rules Index
-
-Detailed instructions are in `.claude/rules/` (loaded automatically):
-
-| Rule File | Loading | Content |
-|-----------|---------|---------|
-| `clarification-first.md` | Always | Session flow, 6 dimensions, brainstorming gate |
-| `agent-teams.md` | Always | Team workflow, execution strategies, two-stage review |
-| `session-protocol.md` | Always | Full pipeline, TDD, verification, PR workflow |
-| `security.md` | Always | API keys, RLS, auth, OWASP, verification |
-| `deploy-pipeline.md` | Always | Staging-first pipeline, verification obrigatoria |
-| `architecture.md` | Always | Auth decisions, DB patterns, Edge Functions, troubleshooting |
-| `environments.md` | Always | URLs, Cloud Run services, common fixes |
-| `project-structure.md` | Always | src/ layout, components, imports, plans dir |
-| `code-patterns.md` | When editing `src/**/*.{ts,tsx}` | GeminiClient, Ceramic, TDD, review, verification |
-| `ai-integration.md` | When editing `lib/gemini/` or `supabase/functions/` | Gemini models, File Search, thinking tokens |
-| `design-system.md` | When editing `src/components/` | Ceramic tokens, foundation components |
-| `database.md` | When editing `supabase/migrations/` | Migration checklist, RLS, debugging |
-| `whatsapp.md` | When editing connections or webhooks | Pipeline, privacy, development workflow |
-| `domain-driven-design.md` | When editing `src/services/scoring/` or cross-module features | DDD: Aggregates, Value Objects, Bounded Contexts |
+Regras detalhadas em `.claude/rules/` (carregadas automaticamente).
+Perfil do dev em memory — Claude adapta explicacoes conforme lacunas.
 
 ## Quality Targets
 
-- **Coverage:** >80% unit tests (enforced via `superpowers:test-driven-development`)
+- **Coverage:** >80% unit tests
 - **Build:** <3 min target
 - **Lighthouse:** >90
 - **Compliance:** LGPD/GDPR, OWASP Top 10, WCAG 2.1 AA
-
-## Critical Rules (Summary)
-
-### Session Workflow
-- **ALWAYS** suggest a session name and wait for approval at session start
-- **ALWAYS** clarify information gaps before starting medium+ tasks
-- **ALWAYS** ask user if they want Agent Team activated (never auto-create teams)
-- **ALWAYS** brainstorm before implementing non-trivial features (`superpowers:brainstorming`)
-- **ALWAYS** write implementation plans for multi-step tasks (`superpowers:writing-plans`)
-- **ALWAYS** use git worktrees (`.worktrees/`) for feature work — never `git checkout -b` on main tree
-- **ALWAYS** create Pull Requests for Standard/Complex tasks — never push directly to main
-- Micro tasks (1-5 lines, 1 file) may commit directly to main
-- **ALWAYS** read and address PR comments before merging
-
-### Code Quality
-- **ALWAYS** follow TDD: write failing test first, then implement (`superpowers:test-driven-development`)
-- **ALWAYS** verify with FRESH evidence before claiming done (`superpowers:verification-before-completion`)
-- **ALWAYS** request code review before PR (`superpowers:requesting-code-review`)
-- **ALWAYS** use `superpowers:systematic-debugging` for bugs — never guess-and-check
-- **ALWAYS** follow Session End Protocol (see `session-protocol.md`)
-
-### Security & Architecture
-- **NEVER** expose API keys in frontend — use Edge Functions
-- **NEVER** create .backup/.bak files — Git is the backup
-- **NEVER** deploy without staging validation first
-- **ALWAYS** include RLS policies with new tables
-- **ALWAYS** use `@supabase/ssr` for auth (not `@supabase/supabase-js`)
-- **ALWAYS** use `GeminiClient.getInstance()` singleton
 
 ## Related Docs
 

@@ -1,3 +1,8 @@
+---
+globs: .worktrees/**/TEAM_MODE
+description: Team workflow - loads only when Agent Teams are active
+---
+
 # Agent Teams — User-Approved Working Mode
 
 ## CRITICAL: Always Ask Before Creating a Team

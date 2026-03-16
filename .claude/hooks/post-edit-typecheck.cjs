@@ -61,7 +61,21 @@ function run(rawInput) {
 
           if (relevantLines.length > 0) {
             log(`[Hook] TypeScript errors in ${path.basename(filePath)}:`);
-            relevantLines.forEach(line => log(line));
+            relevantLines.forEach(line => {
+              log(line);
+              // Educational hints for common TS errors
+              if (line.includes('TS2345')) {
+                log('  → Tipo do argumento incompativel. Narrow com type guard ou use assertion.');
+              } else if (line.includes('TS2322')) {
+                log('  → Atribuicao de tipo errada. Verifique se precisa de Partial<T> ou optional (?).');
+              } else if (line.includes('TS2339')) {
+                log('  → Propriedade nao existe no tipo. Verifique o type definition ou use optional chaining (?.).');
+              } else if (line.includes('TS7006')) {
+                log('  → Parametro com tipo implicito `any`. Adicione tipo explicito: (param: TipoEsperado).');
+              } else if (line.includes('TS18046')) {
+                log('  → Variavel `unknown`. Use type narrowing: if (typeof x === "string") { ... }');
+              }
+            });
           }
         }
       });
