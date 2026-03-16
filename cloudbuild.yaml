@@ -32,6 +32,7 @@ substitutions:
   _VITE_API_URL: ''
   _VITE_N8N_URL: 'https://n8n-n8n.w9jo16.easypanel.host/'
   _VITE_EVOLUTION_URL: 'https://evolution-evolution-api.w9jo16.easypanel.host/'
+  _VITE_SENTRY_DSN: 'https://2ef9486efb13e50a9601a76759605aae@o4511055955165184.ingest.de.sentry.io/4511056053469264'
 
 # =============================================================================
 # SECRETS - Sensitive values from Secret Manager
@@ -112,6 +113,7 @@ steps:
           --build-arg VITE_EVOLUTION_URL="${_VITE_EVOLUTION_URL}" \
           --build-arg VITE_EVOLUTION_INSTANCE_NAME="${_VITE_EVOLUTION_INSTANCE_NAME}" \
           --build-arg VITE_API_URL="${_VITE_API_URL}" \
+          --build-arg VITE_SENTRY_DSN="${_VITE_SENTRY_DSN}" \
           -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG} \
           -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest \
           .
