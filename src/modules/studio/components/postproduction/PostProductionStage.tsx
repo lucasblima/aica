@@ -10,6 +10,7 @@ import QuoteExtractorPanel from './QuoteExtractorPanel';
 import ClipSuggestionPanel from './ClipSuggestionPanel';
 import { TeamPanel } from '../collaboration';
 import { CommentThread } from '../collaboration';
+import { GenerateAudioButton } from '@/components/features/notebooklm';
 
 interface PostProductionStageProps {
   projectId: string;
@@ -179,6 +180,23 @@ export default function PostProductionStage({
           );
         })}
       </div>
+
+      {/* Generate Audio Intro/Outro */}
+      {showNotes && (
+        <GenerateAudioButton
+          params={{
+            module: 'studio',
+            content: `${showNotes?.summary || ''}\n\nDestaques: ${(showNotes?.highlights || []).join('; ')}.\n\nCitações: ${(showNotes?.keyQuotes || []).join('; ')}.`,
+            title: `Intro - Episódio`,
+            format: 'brief',
+            length: 'short',
+            language: 'pt-BR',
+            instructions: 'Narração de 2-3 minutos para intro do episódio de podcast. Tom envolvente, destaque os pontos principais. Estilo podcast profissional.',
+          }}
+          label="Gerar Intro/Outro"
+          className="mb-4 px-4"
+        />
+      )}
 
       {/* Panel Content */}
       <div className="flex-1 overflow-y-auto p-4">
