@@ -35,6 +35,15 @@ export interface LifeCouncilInsight {
   createdAt: string
 }
 
+export interface LifeScoreContext {
+  compositeScore: number
+  domainScores: Record<string, number>
+  trend: string | null
+  spiralDetected: boolean
+  spiralDomains: string[]
+  computedAt: string
+}
+
 export interface UserAIContext {
   userName: string
   pendingTasks: number
@@ -50,6 +59,7 @@ export interface UserAIContext {
   upcomingEvents: Array<{ title: string; startTime: string }> | null
   patterns: UserPattern[]
   latestInsight: LifeCouncilInsight | null
+  lifeScore: LifeScoreContext | null
 }
 
 // Cache with 5-minute TTL
@@ -77,7 +87,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       .toISOString().split('T')[0]
 
     // Run all queries in parallel
-    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes, patternsRes, insightRes] = await Promise.all([
+    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes, patternsRes, insightRes, lifeScoreRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('full_name')
@@ -128,6 +138,12 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .select('overall_status, headline, synthesis, actions, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
+        .limit(1),
+      supabase
+        .from('life_scores')
+        .select('composite_score, domain_scores, trend, spiral_detected, spiral_domains, computed_at')
+        .eq('user_id', userId)
+        .order('computed_at', { ascending: false })
         .limit(1),
     ])
 
@@ -191,6 +207,20 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       }
     }
 
+    // Map Life Score
+    let lifeScore: LifeScoreContext | null = null
+    if (lifeScoreRes.data?.length) {
+      const ls = lifeScoreRes.data[0] as any
+      lifeScore = {
+        compositeScore: ls.composite_score,
+        domainScores: ls.domain_scores || {},
+        trend: ls.trend || null,
+        spiralDetected: ls.spiral_detected || false,
+        spiralDomains: Array.isArray(ls.spiral_domains) ? ls.spiral_domains : [],
+        computedAt: ls.computed_at,
+      }
+    }
+
     const context: UserAIContext = {
       userName: profileRes.data?.full_name?.split(' ')[0] || 'usuario',
       pendingTasks: pendingTasksRes.count || 0,
@@ -207,6 +237,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       })),
       patterns,
       latestInsight,
+      lifeScore,
     }
 
     // Update cache
