@@ -290,6 +290,8 @@ export interface Exercise {
 export interface MyAthleteProfile {
   athlete_id: string;
   athlete_name: string;
+  athlete_email?: string;
+  athlete_phone?: string;
   coach_name: string;
   modality: TrainingModality;
   level: AthleteLevel;

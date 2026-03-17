@@ -45,6 +45,7 @@ import {
   LogOut,
   Upload,
   ChevronDown,
+  Edit,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -109,6 +110,47 @@ export default function AthletePortalView() {
   const welcomeParam = searchParams.get('welcome') === 'true';
   const [showWelcome, setShowWelcome] = useState(() => welcomeParam || !AthleteWelcome.hasBeenShown());
   const [showDocUpload, setShowDocUpload] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
+  const [profileForm, setProfileForm] = useState({ name: '', email: '', phone: '' });
+
+  // Initialize profile form when profile loads
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        name: profile.athlete_name === 'Atleta (pendente)' ? '' : profile.athlete_name || '',
+        email: profile.athlete_email || '',
+        phone: profile.athlete_phone === '+0000000000' ? '' : profile.athlete_phone || '',
+      });
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    if (!profile?.athlete_id) return;
+    if (!profileForm.name.trim() || profileForm.name.trim().length < 2) {
+      setProfileSaveError('Nome e obrigatorio (min. 2 caracteres)');
+      return;
+    }
+    setIsSavingProfile(true);
+    setProfileSaveError(null);
+    try {
+      const { error } = await supabase.rpc('complete_athlete_onboarding', {
+        p_athlete_id: profile.athlete_id,
+        p_name: profileForm.name.trim(),
+        p_email: profileForm.email.trim(),
+        p_phone: profileForm.phone.trim(),
+      });
+      if (error) throw error;
+      setEditingProfile(false);
+      // Refetch profile to update display
+      refetch();
+    } catch (err) {
+      setProfileSaveError(err instanceof Error ? err.message : 'Erro ao salvar perfil');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const weekStart = useMemo(() => {
     const now = new Date();
@@ -701,9 +743,9 @@ export default function AthletePortalView() {
         );
       })()}
 
-      {/* Profile Card — compact */}
+      {/* Profile Card — editable (#925) */}
       <motion.section className="px-5 mb-4" custom={0.5} initial="hidden" animate="visible" variants={sectionVariants}>
-        <div className="bg-ceramic-base rounded-2xl shadow-sm p-4">
+        <div className="bg-ceramic-base rounded-2xl shadow-sm p-4 space-y-3">
           <div className="flex items-center gap-3">
             {avatarUrl ? (
               <img
@@ -719,7 +761,7 @@ export default function AthletePortalView() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <h1 className="text-lg font-black text-ceramic-text-primary truncate">
-                  {profile.athlete_name}
+                  {profile.athlete_name === 'Atleta (pendente)' ? 'Seu Perfil' : profile.athlete_name}
                 </h1>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   {prescribedModalities.map((mod) => (
@@ -734,20 +776,89 @@ export default function AthletePortalView() {
               </p>
             </div>
 
-            {/* Compact status badge */}
-            {micro && micro.status === 'active' && (
-              <span className="flex items-center gap-1 px-2 py-1 bg-ceramic-success/10 rounded-lg flex-shrink-0">
-                <CheckCircle className="w-3 h-3 text-ceramic-success" />
-                <span className="text-[10px] font-bold text-ceramic-success">Liberado</span>
-              </span>
-            )}
-            {micro && micro.status === 'draft' && (
-              <span className="flex items-center gap-1 px-2 py-1 bg-amber-500/10 rounded-lg flex-shrink-0">
-                <Clock className="w-3 h-3 text-amber-600" />
-                <span className="text-[10px] font-bold text-amber-700">Pendente</span>
-              </span>
-            )}
+            {/* Status badge + edit toggle */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {micro && micro.status === 'active' && (
+                <span className="flex items-center gap-1 px-2 py-1 bg-ceramic-success/10 rounded-lg">
+                  <CheckCircle className="w-3 h-3 text-ceramic-success" />
+                  <span className="text-[10px] font-bold text-ceramic-success">Liberado</span>
+                </span>
+              )}
+              {micro && micro.status === 'draft' && (
+                <span className="flex items-center gap-1 px-2 py-1 bg-amber-500/10 rounded-lg">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  <span className="text-[10px] font-bold text-amber-700">Pendente</span>
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setEditingProfile(!editingProfile)}
+                className="p-1.5 ceramic-inset hover:bg-ceramic-cool rounded-lg transition-colors"
+                title="Editar perfil"
+              >
+                <Edit className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+              </button>
+            </div>
           </div>
+
+          {/* Inline Profile Edit Form */}
+          {editingProfile && (
+            <div className="pt-3 border-t border-ceramic-text-secondary/10 space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">Nome</label>
+                <input
+                  type="text"
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                  placeholder="Seu nome completo"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    placeholder="seu@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">WhatsApp</label>
+                  <input
+                    type="tel"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    placeholder="+5511987654321"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  disabled={isSavingProfile}
+                  className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-ceramic-text-secondary/20 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                >
+                  {isSavingProfile ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                  {isSavingProfile ? 'Salvando...' : 'Salvar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingProfile(false)}
+                  className="px-4 py-2 ceramic-inset hover:bg-ceramic-cool rounded-lg text-xs font-medium text-ceramic-text-secondary transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+              {profileSaveError && (
+                <p className="text-xs text-ceramic-error">{profileSaveError}</p>
+              )}
+            </div>
+          )}
         </div>
       </motion.section>
 
