@@ -20,7 +20,7 @@ import type { QuestionnaireData } from '../../hooks/useAthleteFeedback';
 
 export interface FeedbackRadarChartProps {
   questionnaire: QuestionnaireData;
-  /** SVG logical size (viewBox). Defaults to 220. */
+  /** SVG logical size (viewBox). Defaults to 300. */
   size?: number;
   /** Fill color for the value polygon. Defaults to amber-500 (#F59E0B). */
   accentColor?: string;
@@ -66,10 +66,11 @@ function buildPolygonPoints(
 
 interface RadarDimension {
   label: string;
-  value: number; // 0-5 scale
+  value: number; // 1-6 scale (raw 0-5 shifted +1)
 }
 
-const MAX_VALUE = 5;
+const SOURCE_MAX = 5; // Raw questionnaire data range (0-5)
+const MAX_VALUE = 6;  // Display scale (1-6) after +1 shift
 
 /**
  * Derive exactly 6 scientific radar dimensions from the raw questionnaire fields.
@@ -98,31 +99,34 @@ function extractDimensions(q: QuestionnaireData): RadarDimension[] | null {
   const populated = sources.filter((v) => v != null).length;
   if (populated < 3) return null;
 
-  // Derived: Aderencia = average of compliance metrics
-  const adherence =
+  // Derived: Aderencia = average of compliance metrics, clamped to SOURCE_MAX
+  const adherenceRaw =
     q.volume_completed != null && q.intensity_completed != null
       ? (q.volume_completed + q.intensity_completed) / 2
       : q.volume_completed ?? q.intensity_completed ?? 0;
+  const adherence = Math.min(SOURCE_MAX, Math.max(0, adherenceRaw));
 
-  // Derived: Carga (sRPE proxy) — stress 0-5 mapped directly
-  const load = q.stress ?? 0;
+  // Derived: Carga (sRPE proxy) — stress 0-5 mapped directly, clamped
+  const load = Math.min(SOURCE_MAX, Math.max(0, q.stress ?? 0));
 
   // Derived: Recuperacao (Hooper-inspired) — avg(sleep, inverted fatigue)
-  // Higher = better recovery. Fatigue inverted: 5 - fatigue.
+  // Higher = better recovery. Fatigue inverted: SOURCE_MAX - fatigue.
   const sleepVal = q.sleep ?? 0;
-  const invertedFatigue = q.fatigue != null ? MAX_VALUE - q.fatigue : 0;
-  const recovery =
+  const invertedFatigue = q.fatigue != null ? SOURCE_MAX - q.fatigue : 0;
+  const recoveryRaw =
     q.sleep != null || q.fatigue != null
       ? (sleepVal + invertedFatigue) / (q.sleep != null && q.fatigue != null ? 2 : 1)
       : 0;
+  const recovery = Math.min(SOURCE_MAX, Math.max(0, recoveryRaw));
 
+  // Shift all values +1 to map from 0-5 raw range to 1-6 display range
   return [
-    { label: 'Volume', value: q.volume_adequate ?? 0 },
-    { label: 'Intensidade', value: q.intensity_adequate ?? 0 },
-    { label: 'Aderencia', value: adherence },
-    { label: 'Carga (sRPE)', value: load },
-    { label: 'Recuperacao', value: recovery },
-    { label: 'Alimentacao', value: q.nutrition ?? 0 },
+    { label: 'Volume', value: Math.min(SOURCE_MAX, q.volume_adequate ?? 0) + 1 },
+    { label: 'Intensidade', value: Math.min(SOURCE_MAX, q.intensity_adequate ?? 0) + 1 },
+    { label: 'Aderencia', value: adherence + 1 },
+    { label: 'Carga (sRPE)', value: load + 1 },
+    { label: 'Recuperacao', value: recovery + 1 },
+    { label: 'Alimentacao', value: Math.min(SOURCE_MAX, q.nutrition ?? 0) + 1 },
   ];
 }
 
@@ -170,7 +174,7 @@ function getHeatColor(ratio: number): string {
 
 export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
   questionnaire,
-  size = 260,
+  size = 300,
   accentColor,
   title,
   subtitle,
@@ -185,9 +189,9 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
 
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size / 2 - 48; // More padding for larger labels
+  const radius = size / 2 - 60; // More padding for larger labels
 
-  const rings = [0, 1, 2, 3, 4, 5]; // Include 0 at center (#689)
+  const rings = [1, 2, 3, 4, 5, 6]; // Scale 1-6 (#914)
 
   // Calculate area ratio for heat color (#688)
   const avgValue = values.reduce((s, v) => s + v, 0) / values.length;
@@ -204,7 +208,7 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
   // Label positions — pushed further out to avoid truncation (#689)
   const labelPositions = labels.map((label, i) => {
     const angle = (2 * Math.PI * i) / count;
-    const { x, y } = polarToCartesian(cx, cy, radius + 30, angle);
+    const { x, y } = polarToCartesian(cx, cy, radius + 40, angle);
     return { label, x, y, angle };
   });
 
@@ -232,33 +236,27 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
         width="100%"
         height="auto"
         viewBox={`0 0 ${size} ${size}`}
-        className="max-w-[260px]"
+        className="max-w-[300px]"
         role="img"
         aria-label="Radar de feedback do atleta"
       >
-        {/* Background rings — include ring 0 at center */}
-        {rings.map((ring) => {
-          if (ring === 0) {
-            // Center dot for 0
-            return <circle key={ring} cx={cx} cy={cy} r={2} fill="currentColor" className="text-ceramic-border" />;
-          }
-          return (
-            <polygon
-              key={ring}
-              points={buildPolygonPoints(
-                cx,
-                cy,
-                radius,
-                labels.map(() => ring),
-                MAX_VALUE,
-              )}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={0.5}
-              className="text-ceramic-border"
-            />
-          );
-        })}
+        {/* Background rings — scale 1-6 (#914) */}
+        {rings.map((ring) => (
+          <polygon
+            key={ring}
+            points={buildPolygonPoints(
+              cx,
+              cy,
+              radius,
+              labels.map(() => ring),
+              MAX_VALUE,
+            )}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={0.5}
+            className="text-ceramic-border"
+          />
+        ))}
 
         {/* Radial grid lines from center */}
         {gridLines.map((point, i) => (
@@ -302,7 +300,7 @@ export const FeedbackRadarChart: React.FC<FeedbackRadarChartProps> = ({
           return <circle key={i} cx={x} cy={y} r={3.5} fill={heatColor} />;
         })}
 
-        {/* Numeric scale labels along first axis (12 o'clock) — include 0 (#689) */}
+        {/* Numeric scale labels along first axis (12 o'clock) — scale 1-6 (#914) */}
         {rings.map((ring) => {
           const r = (ring / MAX_VALUE) * radius;
           const { x, y } = polarToCartesian(cx, cy, r, 0);

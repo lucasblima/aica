@@ -496,18 +496,6 @@ export default function AthleteDetailView() {
           <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
         </button>
 
-        {/* Blocked Banner */}
-        {athlete.status === 'paused' && (
-          <div className="flex items-center gap-3 p-4 mb-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
-            <Lock className="w-5 h-5 text-ceramic-error flex-shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-ceramic-error">Atleta Bloqueado</p>
-              <p className="text-xs text-ceramic-error/80">
-                Este atleta esta com acesso pausado e nao pode visualizar treinos.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Athlete Profile Card */}
         <div className="ceramic-card p-6 space-y-4" title="Informacoes de contato e status do atleta. Clique no icone de edicao para alterar nome, email e telefone.">
@@ -721,8 +709,8 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
-      {/* Summary Cards — side by side on desktop */}
-      <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Summary Cards */}
+      <div className="px-6 mb-6">
 
       {/* Status de Documentos de Saude (#680) */}
       <div title="Status dos documentos de saude do atleta: PAR-Q, Atestado de Liberacao e Exame Cardiologico.">
@@ -734,13 +722,15 @@ export default function AthleteDetailView() {
             </h3>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {/* PAR-Q Status */}
-            <div className={`ceramic-inset p-3 rounded-lg text-center ${
+            {/* PAR-Q Status — clickable to expand details inline (#912) */}
+            <button
+              onClick={() => setParqExpanded(!parqExpanded)}
+              className={`ceramic-inset p-3 rounded-lg text-center transition-all hover:scale-105 ${
               parqStatus?.clearance_status === 'cleared' ? 'bg-ceramic-success/5' :
               parqStatus?.clearance_status === 'expired' || parqStatus?.clearance_status === 'blocked' ? 'bg-ceramic-error/5' :
               parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning/5' :
               'bg-ceramic-cool/50'
-            }`} title="Status do questionario PAR-Q+ de saude">
+            }${parqExpanded ? ' ring-2 ring-ceramic-accent/40' : ''}`} title="Clique para ver detalhes do PAR-Q+">
               <ShieldCheck className={`w-5 h-5 mx-auto mb-1 ${
                 parqStatus?.clearance_status === 'cleared' ? 'text-ceramic-success' :
                 parqStatus?.clearance_status === 'expired' || parqStatus?.clearance_status === 'blocked' ? 'text-ceramic-error' :
@@ -761,7 +751,7 @@ export default function AthleteDetailView() {
                  parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'Restrito' :
                  !athlete.allow_parq_onboarding ? 'N/A' : 'Pendente'}
               </p>
-            </div>
+            </button>
 
             {/* Atestado de Liberacao */}
             {(() => {
@@ -833,105 +823,10 @@ export default function AthleteDetailView() {
               );
             })()}
           </div>
-        </div>
-      </div>
 
-      {/* Status de Pagamento (#680) */}
-      <div title="Status do pagamento mensal do atleta. Verde = pago, amarelo = pendente, vermelho = atrasado.">
-        <div className="ceramic-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign className="w-4 h-4 text-ceramic-text-secondary" />
-            <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Status de Pagamento
-            </h3>
-          </div>
-          {(() => {
-            const pd = getPaymentData(athlete);
-            return (
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                  pd.payment_status === 'paid' ? 'bg-ceramic-success' :
-                  pd.payment_status === 'overdue' ? 'bg-ceramic-error animate-pulse' :
-                  'bg-ceramic-warning'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-bold ${
-                    pd.payment_status === 'paid' ? 'text-ceramic-success' :
-                    pd.payment_status === 'overdue' ? 'text-ceramic-error' :
-                    'text-ceramic-warning'
-                  }`}>
-                    {pd.payment_status === 'paid' ? 'Pago' :
-                     pd.payment_status === 'overdue' ? 'Atrasado' : 'Pendente'}
-                  </p>
-                  {pd.monthly_fee != null && pd.monthly_fee > 0 && (
-                    <p className="text-xs text-ceramic-text-secondary">
-                      R$ {pd.monthly_fee.toFixed(2).replace('.', ',')}
-                      {pd.payment_due_day ? ` · Venc. dia ${pd.payment_due_day}` : ''}
-                    </p>
-                  )}
-                </div>
-                {pd.last_payment_date && (
-                  <p className="text-[10px] text-ceramic-text-secondary/60 flex-shrink-0">
-                    Ultimo: {new Date(pd.last_payment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
-                  </p>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-
-      </div>{/* end Summary Cards grid */}
-
-      {/* Collapsible Sections — 2-col on desktop */}
-      <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-      {/* PAR-Q / Health Section — collapsible (#678), always visible */}
-      <div title="Secao completa do questionario PAR-Q+. Clique para expandir e ver perguntas, respostas e documentos medicos.">
-        <div className="ceramic-card overflow-hidden">
-          {/* Collapsible header */}
-          <button
-            onClick={() => setParqExpanded(!parqExpanded)}
-            className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="ceramic-inset p-2">
-                <ShieldCheck className="w-5 h-5 text-ceramic-text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-bold text-ceramic-text-primary">PAR-Q Detalhado</p>
-                <p className="text-xs text-ceramic-text-secondary">
-                  Perguntas, respostas e documentos
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Status indicator */}
-              {athlete.allow_parq_onboarding && parqStatus && (
-                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                  parqStatus.clearance_status === 'cleared' ? 'bg-ceramic-success' :
-                  parqStatus.clearance_status === 'expired' || parqStatus.clearance_status === 'blocked' ? 'bg-ceramic-error' :
-                  parqStatus.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning' :
-                  'bg-ceramic-text-secondary/30'
-                }`} />
-              )}
-              {athlete.allow_parq_onboarding && !parqStatus && (
-                <span className="w-2.5 h-2.5 rounded-full bg-ceramic-error flex-shrink-0" />
-              )}
-              {!athlete.allow_parq_onboarding && (
-                <span className="text-[10px] font-bold text-ceramic-text-secondary bg-ceramic-text-secondary/10 px-2 py-0.5 rounded">
-                  Desativado
-                </span>
-              )}
-              <span className={`text-ceramic-text-secondary transition-transform ${parqExpanded ? 'rotate-180' : ''}`}>
-                &#9662;
-              </span>
-            </div>
-          </button>
-
-          {/* Expandable content */}
+          {/* Inline PAR-Q detail — expands inside Documentos de Saude (#912) */}
           {parqExpanded && (
-            <div className="p-4 pt-0">
+            <div className="mt-4 border-t border-ceramic-border pt-4">
               {athlete.allow_parq_onboarding ? (
                 <ParQCoachView
                   athleteName={athlete.name}
@@ -954,6 +849,11 @@ export default function AthleteDetailView() {
           )}
         </div>
       </div>
+
+      </div>{/* end Summary Cards */}
+
+      {/* Collapsible Sections — 2-col on desktop */}
+      <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
 
       {/* Athlete Profile Calculator */}
       <div title="Perfil fisico completo: peso, altura, IMC, modalidades praticadas e zonas de treino recomendadas.">
@@ -1213,6 +1113,8 @@ export default function AthleteDetailView() {
 
           {financeOpen && (
             <div className="p-4 pt-0 space-y-4">
+              {/* TODO (#913): Implement billing notifications via web push, email, Telegram, WhatsApp */}
+              {/* Schedule: -1d (reminder), 0 (due today), +1d, +3d, +7d (overdue escalation) */}
               {/* Payment Status Card */}
               {(() => {
                 const pd = getPaymentData(athlete);
@@ -1429,7 +1331,7 @@ export default function AthleteDetailView() {
           <div className="ceramic-card p-4 mb-4 space-y-4">
             <FeedbackRadarChart
               questionnaire={aggregatedQuestionnaire}
-              size={220}
+              size={300}
               title="Visao Geral"
               subtitle="Media dos feedbacks do atleta"
             />

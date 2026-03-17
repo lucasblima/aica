@@ -2,47 +2,124 @@
  * AthleteGroupManager - CRUD para grupos de atletas
  *
  * Permite ao coach criar, renomear, excluir grupos e atribuir atletas.
- * Dados armazenados em localStorage (sem migracao de banco).
+ * Dados persistidos no Supabase (athlete_groups + athlete_group_members).
+ * Migra automaticamente dados legados do localStorage na primeira carga.
  * Segue Ceramic Design System.
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, Pencil, Trash2, Check, Users, Tag } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Check, Users, Tag, Loader2 } from 'lucide-react';
+import { supabase } from '@/services/supabaseClient';
 import type { Athlete, AthleteGroup, AthleteGroupData } from '../../types/flux';
 import { GROUP_COLORS, getGroupColorClasses } from '../../types/flux';
 
 // ============================================
-// localStorage helpers
+// Supabase persistence helpers
 // ============================================
 
-const STORAGE_KEY_PREFIX = 'flux_athlete_groups_';
+const LEGACY_STORAGE_KEY_PREFIX = 'flux_athlete_groups_';
 
-function getStorageKey(coachUserId: string): string {
-  return `${STORAGE_KEY_PREFIX}${coachUserId}`;
-}
+/**
+ * One-time migration from localStorage to Supabase.
+ * Runs on first load; removes localStorage key after success.
+ */
+async function migrateFromLocalStorage(coachUserId: string): Promise<void> {
+  const storageKey = `${LEGACY_STORAGE_KEY_PREFIX}${coachUserId}`;
+  const raw = localStorage.getItem(storageKey);
+  if (!raw) return;
 
-export function loadGroupData(coachUserId: string): AthleteGroupData {
   try {
-    const raw = localStorage.getItem(getStorageKey(coachUserId));
-    if (raw) {
-      const parsed = JSON.parse(raw) as AthleteGroupData;
-      // Validate structure
-      if (Array.isArray(parsed.groups) && typeof parsed.assignments === 'object') {
-        return parsed;
+    const localData = JSON.parse(raw) as AthleteGroupData;
+    if (!localData.groups?.length) {
+      localStorage.removeItem(storageKey);
+      return;
+    }
+
+    for (const group of localData.groups) {
+      const { data: inserted } = await supabase
+        .from('athlete_groups')
+        .upsert(
+          {
+            id: group.id,
+            user_id: coachUserId,
+            name: group.name,
+            color: group.color,
+            created_at: group.createdAt,
+          },
+          { onConflict: 'user_id,name' }
+        )
+        .select()
+        .single();
+
+      if (!inserted) continue;
+
+      const athleteIds = Object.entries(localData.assignments)
+        .filter(([, groupIds]) => groupIds.includes(group.id))
+        .map(([athleteId]) => athleteId);
+
+      if (athleteIds.length > 0) {
+        await supabase.from('athlete_group_members').upsert(
+          athleteIds.map((aid) => ({ group_id: inserted.id, athlete_id: aid })),
+          { onConflict: 'group_id,athlete_id' }
+        );
       }
     }
+
+    localStorage.removeItem(storageKey);
+    console.log('[AthleteGroupManager] Migrated groups from localStorage to Supabase');
   } catch (err) {
-    console.warn('[AthleteGroupManager] Failed to load group data from localStorage:', err);
+    console.error('[AthleteGroupManager] Migration failed:', err);
   }
-  return { groups: [], assignments: {} };
 }
 
-export function saveGroupData(coachUserId: string, data: AthleteGroupData): void {
-  try {
-    localStorage.setItem(getStorageKey(coachUserId), JSON.stringify(data));
-  } catch (err) {
-    console.error('[AthleteGroupManager] Failed to save group data to localStorage:', err);
+/**
+ * Load all groups + membership from Supabase.
+ * Triggers localStorage migration on first call.
+ */
+export async function loadGroupData(coachUserId: string): Promise<AthleteGroupData> {
+  // Migrate legacy data first (no-op if already migrated)
+  await migrateFromLocalStorage(coachUserId);
+
+  const { data: groups } = await supabase
+    .from('athlete_groups')
+    .select('*')
+    .eq('user_id', coachUserId)
+    .order('created_at');
+
+  const groupIds = (groups || []).map((g) => g.id);
+
+  let members: { group_id: string; athlete_id: string }[] = [];
+  if (groupIds.length > 0) {
+    const { data } = await supabase
+      .from('athlete_group_members')
+      .select('group_id, athlete_id')
+      .in('group_id', groupIds);
+    members = data || [];
   }
+
+  const assignments: Record<string, string[]> = {};
+  for (const m of members) {
+    if (!assignments[m.athlete_id]) assignments[m.athlete_id] = [];
+    assignments[m.athlete_id].push(m.group_id);
+  }
+
+  return {
+    groups: (groups || []).map((g) => ({
+      id: g.id,
+      name: g.name,
+      color: g.color,
+      createdAt: g.created_at,
+    })),
+    assignments,
+  };
+}
+
+/**
+ * @deprecated No longer needed — mutations go directly to Supabase.
+ * Kept for backward compatibility; does nothing.
+ */
+export function saveGroupData(_coachUserId: string, _data: AthleteGroupData): void {
+  // no-op — persistence is now handled per-mutation via Supabase
 }
 
 /**
@@ -99,6 +176,7 @@ export function AthleteGroupManager({
   const [editingName, setEditingName] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const newGroupInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,102 +192,103 @@ export function AthleteGroupManager({
   // Derived
   const { groups, assignments } = groupData;
 
-  // Helpers to mutate and persist
-  const persist = (updated: AthleteGroupData) => {
-    saveGroupData(coachUserId, updated);
+  /** Reload data from Supabase and notify parent */
+  const reloadData = async () => {
+    const updated = await loadGroupData(coachUserId);
     onGroupDataChange(updated);
   };
 
   // CREATE group
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     const trimmed = newGroupName.trim();
     if (!trimmed) return;
 
     // Check duplicate name
     if (groups.some((g) => g.name.toLowerCase() === trimmed.toLowerCase())) return;
 
-    const newGroup: AthleteGroup = {
-      id: crypto.randomUUID(),
-      name: trimmed,
-      color: newGroupColor,
-      createdAt: new Date().toISOString(),
-    };
+    setIsSaving(true);
+    try {
+      await supabase
+        .from('athlete_groups')
+        .insert({ user_id: coachUserId, name: trimmed, color: newGroupColor });
 
-    const updated: AthleteGroupData = {
-      groups: [...groups, newGroup],
-      assignments: { ...assignments },
-    };
-
-    persist(updated);
-    setNewGroupName('');
-    // Cycle to next color
-    const currentIdx = GROUP_COLORS.findIndex((c) => c.id === newGroupColor);
-    setNewGroupColor(GROUP_COLORS[(currentIdx + 1) % GROUP_COLORS.length].id);
+      await reloadData();
+      setNewGroupName('');
+      // Cycle to next color
+      const currentIdx = GROUP_COLORS.findIndex((c) => c.id === newGroupColor);
+      setNewGroupColor(GROUP_COLORS[(currentIdx + 1) % GROUP_COLORS.length].id);
+    } catch (err) {
+      console.error('[AthleteGroupManager] Failed to create group:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // RENAME group
-  const handleRenameGroup = (groupId: string) => {
+  const handleRenameGroup = async (groupId: string) => {
     const trimmed = editingName.trim();
     if (!trimmed) return;
 
-    const updated: AthleteGroupData = {
-      groups: groups.map((g) => (g.id === groupId ? { ...g, name: trimmed } : g)),
-      assignments: { ...assignments },
-    };
+    setIsSaving(true);
+    try {
+      await supabase
+        .from('athlete_groups')
+        .update({ name: trimmed, updated_at: new Date().toISOString() })
+        .eq('id', groupId);
 
-    persist(updated);
-    setEditingGroupId(null);
-    setEditingName('');
+      await reloadData();
+      setEditingGroupId(null);
+      setEditingName('');
+    } catch (err) {
+      console.error('[AthleteGroupManager] Failed to rename group:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // DELETE group
-  const handleDeleteGroup = (groupId: string) => {
-    // Remove group and all its assignments
-    const newAssignments = { ...assignments };
-    for (const athleteId of Object.keys(newAssignments)) {
-      newAssignments[athleteId] = newAssignments[athleteId].filter((gid) => gid !== groupId);
-      if (newAssignments[athleteId].length === 0) {
-        delete newAssignments[athleteId];
+  const handleDeleteGroup = async (groupId: string) => {
+    setIsSaving(true);
+    try {
+      // Members cascade-delete via FK
+      await supabase.from('athlete_groups').delete().eq('id', groupId);
+
+      await reloadData();
+
+      // If we were viewing this group, deselect
+      if (selectedGroupId === groupId) {
+        setSelectedGroupId(null);
       }
-    }
-
-    const updated: AthleteGroupData = {
-      groups: groups.filter((g) => g.id !== groupId),
-      assignments: newAssignments,
-    };
-
-    persist(updated);
-
-    // If we were viewing this group, deselect
-    if (selectedGroupId === groupId) {
-      setSelectedGroupId(null);
+    } catch (err) {
+      console.error('[AthleteGroupManager] Failed to delete group:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // TOGGLE athlete in group
-  const handleToggleAthleteInGroup = (athleteId: string, groupId: string) => {
-    const current = assignments[athleteId] || [];
-    let newList: string[];
+  const handleToggleAthleteInGroup = async (athleteId: string, groupId: string) => {
+    setIsSaving(true);
+    try {
+      const { data: existing } = await supabase
+        .from('athlete_group_members')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('athlete_id', athleteId)
+        .maybeSingle();
 
-    if (current.includes(groupId)) {
-      newList = current.filter((gid) => gid !== groupId);
-    } else {
-      newList = [...current, groupId];
+      if (existing) {
+        await supabase.from('athlete_group_members').delete().eq('id', existing.id);
+      } else {
+        await supabase.from('athlete_group_members').insert({ group_id: groupId, athlete_id: athleteId });
+      }
+
+      await reloadData();
+    } catch (err) {
+      console.error('[AthleteGroupManager] Failed to toggle athlete:', err);
+    } finally {
+      setIsSaving(false);
     }
-
-    const newAssignments = { ...assignments };
-    if (newList.length === 0) {
-      delete newAssignments[athleteId];
-    } else {
-      newAssignments[athleteId] = newList;
-    }
-
-    const updated: AthleteGroupData = {
-      groups: [...groups],
-      assignments: newAssignments,
-    };
-
-    persist(updated);
   };
 
   // Athletes filtered by search
@@ -271,14 +350,19 @@ export function AthleteGroupManager({
                 placeholder="Nome do grupo..."
                 className="flex-1 ceramic-inset px-3 py-2.5 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
                 maxLength={40}
+                disabled={isSaving}
               />
               <button
                 onClick={handleCreateGroup}
-                disabled={!newGroupName.trim()}
+                disabled={!newGroupName.trim() || isSaving}
                 className="ceramic-card p-2.5 hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100"
                 title="Criar grupo"
               >
-                <Plus className="w-4 h-4 text-ceramic-text-primary" />
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 text-ceramic-text-secondary animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 text-ceramic-text-primary" />
+                )}
               </button>
             </div>
 
@@ -341,6 +425,7 @@ export function AthleteGroupManager({
                             className="flex-1 ceramic-inset px-2 py-1 rounded text-sm text-ceramic-text-primary focus:outline-none focus:ring-1 focus:ring-ceramic-accent/50"
                             autoFocus
                             maxLength={40}
+                            disabled={isSaving}
                           />
                         ) : (
                           <button
@@ -363,6 +448,7 @@ export function AthleteGroupManager({
                               onClick={() => handleRenameGroup(group.id)}
                               className="p-1.5 hover:bg-ceramic-success/10 rounded transition-colors"
                               title="Salvar"
+                              disabled={isSaving}
                             >
                               <Check className="w-3.5 h-3.5 text-ceramic-success" />
                             </button>
@@ -386,6 +472,7 @@ export function AthleteGroupManager({
                             }}
                             className="p-1.5 hover:bg-ceramic-error/10 rounded transition-colors"
                             title="Excluir grupo"
+                            disabled={isSaving}
                           >
                             <Trash2 className="w-3.5 h-3.5 text-ceramic-error" />
                           </button>
@@ -433,6 +520,7 @@ export function AthleteGroupManager({
                       key={athlete.id}
                       onClick={() => handleToggleAthleteInGroup(athlete.id, selectedGroupId)}
                       className="w-full flex items-center gap-3 px-3 py-2 ceramic-card hover:bg-ceramic-cool transition-colors text-left"
+                      disabled={isSaving}
                     >
                       <div className="w-2 h-2 rounded-full bg-ceramic-success flex-shrink-0" />
                       <span className="text-sm text-ceramic-text-primary flex-1 truncate">
@@ -448,13 +536,14 @@ export function AthleteGroupManager({
               {athletesNotInSelectedGroup.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                    Disponíveis ({athletesNotInSelectedGroup.length})
+                    Disponiveis ({athletesNotInSelectedGroup.length})
                   </p>
                   {athletesNotInSelectedGroup.map((athlete) => (
                     <button
                       key={athlete.id}
                       onClick={() => handleToggleAthleteInGroup(athlete.id, selectedGroupId)}
                       className="w-full flex items-center gap-3 px-3 py-2 ceramic-inset hover:bg-white/50 transition-colors text-left rounded-lg"
+                      disabled={isSaving}
                     >
                       <div className="w-2 h-2 rounded-full bg-ceramic-border flex-shrink-0" />
                       <span className="text-sm text-ceramic-text-secondary flex-1 truncate">
