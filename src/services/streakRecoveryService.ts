@@ -231,7 +231,7 @@ export async function useGracePeriod(userId: string): Promise<{ success: boolean
         message: {
           type: 'recovery_available',
           title: 'Sem Periodos de Descanso',
-          message: `Voce ja usou seus ${config.gracePeriodPerMonth} periodos de descanso este mes. Complete 3 tarefas para recuperar.`,
+          message: `Você já usou seus ${config.gracePeriodPerMonth} periodos de descanso este mes. Complete 3 tarefas para recuperar.`,
           emoji: '💪',
           actionLabel: 'Iniciar Recuperacao',
           actionType: 'start_recovery',
@@ -257,8 +257,8 @@ export async function useGracePeriod(userId: string): Promise<{ success: boolean
       success: true,
       message: {
         type: 'grace_period_active',
-        title: 'Periodo de Descanso Ativado',
-        message: `Cuide-se! Voce ainda tem ${remaining} periodo${remaining !== 1 ? 's' : ''} de descanso este mes.`,
+        title: 'Período de Descanso Ativado',
+        message: `Cuide-se! Você ainda tem ${remaining} período${remaining !== 1 ? 's' : ''} de descanso este mes.`,
         emoji: '💚',
       },
     };
@@ -269,7 +269,7 @@ export async function useGracePeriod(userId: string): Promise<{ success: boolean
       message: {
         type: 'gentle_reminder',
         title: 'Erro',
-        message: 'Nao foi possivel ativar o periodo de descanso. Tente novamente.',
+        message: 'Não foi possível ativar o período de descanso. Tente novamente.',
         emoji: '❌',
       },
     };
@@ -314,7 +314,7 @@ export async function startRecovery(userId: string): Promise<{ success: boolean;
       message: {
         type: 'recovery_in_progress',
         title: 'Recuperacao Iniciada!',
-        message: `Complete ${config.recoveryTasksRequired} tarefas para retomar sua jornada. Voce consegue!`,
+        message: `Complete ${config.recoveryTasksRequired} tarefas para retomar sua jornada. Você consegue!`,
         emoji: '🌅',
       },
     };
@@ -325,7 +325,7 @@ export async function startRecovery(userId: string): Promise<{ success: boolean;
       message: {
         type: 'gentle_reminder',
         title: 'Erro',
-        message: 'Nao foi possivel iniciar a recuperacao. Tente novamente.',
+        message: 'Não foi possível iniciar a recuperacao. Tente novamente.',
         emoji: '❌',
       },
     };

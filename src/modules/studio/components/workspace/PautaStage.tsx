@@ -367,7 +367,7 @@ export default function PautaStage() {
     try {
       const success = await setActiveVersion(pautaId);
       if (!success) {
-        alert('Erro ao carregar versao anterior');
+        alert('Erro ao carregar versão anterior');
       }
     } finally {
       setIsSwappingVersion(false);
@@ -443,12 +443,12 @@ export default function PautaStage() {
             {versions.length > 0 && (
               <div className="flex items-center gap-1 text-xs text-ceramic-success bg-ceramic-success-bg px-3 py-2 rounded-lg border border-ceramic-success/30">
                 <History className="w-3 h-3" aria-hidden="true" />
-                <span>{versions.length} versao{versions.length > 1 ? 'es' : ''}</span>
+                <span>{versions.length} versão{versions.length > 1 ? 'es' : ''}</span>
                 <button
                   onClick={() => setShowVersionHistory(!showVersionHistory)}
                   className="ml-1 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 md:p-0.5 flex items-center justify-center hover:bg-ceramic-success/10 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success"
-                  title="Ver historico de versoes"
-                  aria-label="Ver historico de versoes da pauta"
+                  title="Ver histórico de versoes"
+                  aria-label="Ver histórico de versoes da pauta"
                   aria-expanded={showVersionHistory}
                 >
                   <ChevronDown className="w-4 h-4 md:w-3 md:h-3" aria-hidden="true" />

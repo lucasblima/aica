@@ -12,6 +12,7 @@ import { Search } from 'lucide-react';
 import { useWorkoutTemplates } from '../../hooks/useWorkoutTemplates';
 import type { WorkoutTemplate } from '../../types/flow';
 import type { Athlete } from '../../types/flux';
+import type { ExerciseStructureV2, CyclingSeries } from '../../types/series';
 
 // ============================================
 // Constants
@@ -39,6 +40,55 @@ const MODALITY_BORDER_COLORS: Record<string, string> = {
   strength: '#C084FC',
   walking: '#38BDF8',
   triathlon: '#FB7185',
+};
+
+// ============================================
+// Exercise structure summary (Aq. / P. / Des.)
+// ============================================
+
+function formatWork(s: any): string {
+  const reps = s.repetitions && s.repetitions > 1 ? `${s.repetitions}x` : '';
+  let work = '';
+  if (s.exercise_name) work = s.exercise_name;
+  else if (s.reps) work = `${s.reps}rep${s.load_kg ? ` ${s.load_kg}kg` : ''}`;
+  else if (s.distance_meters) work = s.distance_meters >= 1000 ? `${(s.distance_meters / 1000).toFixed(1).replace('.0', '')}km` : `${s.distance_meters}m`;
+  else if (s.work_value) {
+    if (s.work_unit === 'minutes' || s.unit_detail === 'minutes') {
+      work = s.work_value >= 60 ? `${Math.floor(s.work_value / 60)}h${s.work_value % 60 ? ` ${s.work_value % 60}min` : ''}` : `${s.work_value}min`;
+    } else if (s.work_unit === 'seconds' || s.unit_detail === 'seconds') {
+      work = `${s.work_value}s`;
+    } else {
+      work = `${s.work_value}m`;
+    }
+  } else work = 'série';
+  const rest = (s.rest_minutes || s.rest_seconds)
+    ? ` int ${s.rest_minutes ? `${s.rest_minutes}'` : ''}${s.rest_seconds ? `${s.rest_seconds}"` : ''}`
+    : '';
+  return `${reps}${work}${rest}`;
+}
+
+const ExerciseStructureSummary: React.FC<{ structure: ExerciseStructureV2 }> = ({ structure }) => {
+  if (!structure?.series?.length) return null;
+  return (
+    <div className="space-y-0.5 text-[10px] text-ceramic-text-secondary mt-1">
+      {structure.warmup && (
+        <div className="flex items-start gap-1 leading-tight">
+          <span className="text-amber-600 font-bold shrink-0">Aq.</span>
+          <span className="line-clamp-1">{structure.warmup}</span>
+        </div>
+      )}
+      <div className="flex items-start gap-1 leading-tight">
+        <span className="text-amber-800 font-bold shrink-0">P.</span>
+        <span className="line-clamp-2">{structure.series.map(formatWork).join(' + ')}</span>
+      </div>
+      {structure.cooldown && (
+        <div className="flex items-start gap-1 leading-tight">
+          <span className="text-sky-600 font-bold shrink-0">Des.</span>
+          <span className="line-clamp-1">{structure.cooldown}</span>
+        </div>
+      )}
+    </div>
+  );
 };
 
 // ============================================
@@ -176,6 +226,9 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
                 )}
                 {template.name}
               </h4>
+              {template.exercise_structure && (
+                <ExerciseStructureSummary structure={template.exercise_structure as ExerciseStructureV2} />
+              )}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-ceramic-text-secondary font-medium">
                   {template.duration} min

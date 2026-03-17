@@ -43,6 +43,8 @@ import {
   Lock,
   MoveHorizontal,
   LogOut,
+  Upload,
+  ChevronDown,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -106,6 +108,7 @@ export default function AthletePortalView() {
 
   const welcomeParam = searchParams.get('welcome') === 'true';
   const [showWelcome, setShowWelcome] = useState(() => welcomeParam || !AthleteWelcome.hasBeenShown());
+  const [showDocUpload, setShowDocUpload] = useState(false);
 
   const weekStart = useMemo(() => {
     const now = new Date();
@@ -370,11 +373,11 @@ export default function AthletePortalView() {
           <div className="w-16 h-16 rounded-full bg-ceramic-error/10 flex items-center justify-center mx-auto">
             <Dumbbell className="w-8 h-8 text-ceramic-error" />
           </div>
-          <h1 className="text-xl font-black text-ceramic-text-primary">Liberacao Medica Necessaria</h1>
+          <h1 className="text-xl font-black text-ceramic-text-primary">Liberação Medica Necessaria</h1>
           <p className="text-sm text-ceramic-text-secondary leading-relaxed">
-            Suas respostas no questionario PAR-Q+ indicaram condicoes que requerem liberacao medica antes de iniciar os treinos. Seu coach foi notificado.
+            Suas respostas no questionario PAR-Q+ indicaram condições que requerem liberacao medica antes de iniciar os treinos. Seu coach foi notificado.
           </p>
-          <p className="text-xs text-ceramic-text-secondary">Envie o atestado medico pelo portal ou entre em contato com seu coach.</p>
+          <p className="text-xs text-ceramic-text-secondary">Envie o atestado médico pelo portal ou entre em contato com seu coach.</p>
           <button onClick={() => navigate('/')} className="flex items-center gap-2 mx-auto px-4 py-2 bg-ceramic-base rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
             <ArrowLeft className="w-4 h-4" />Voltar
           </button>
@@ -507,7 +510,7 @@ export default function AthletePortalView() {
                 <h2 id="leave-training-title" className="text-lg font-black text-ceramic-text-primary">Sair do treino?</h2>
               </div>
               <p className="text-sm text-ceramic-text-secondary leading-relaxed">
-                Voce sera desvinculado da prescricao do seu coach. Os exercicios serao removidos da sua agenda. Essa acao nao pode ser desfeita.
+                Você sera desvinculado da prescrição do seu coach. Os exercicios serao removidos da sua agenda. Essa ação não pode ser desfeita.
               </p>
               {leaveTraining.error && (
                 <div className="px-3 py-2 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
@@ -539,73 +542,212 @@ export default function AthletePortalView() {
         )}
       </AnimatePresence>
 
-      {/* Profile Card */}
-      <motion.section className="px-5 mb-4" custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
-        <div className="bg-ceramic-base rounded-2xl shadow-sm p-5 space-y-3">
+      {/* Health Actions Card — FIRST element (#925)
+       *
+       * PAR-Q = LIBERACAO IMEDIATA dos treinos (isenta o treinador de riscos)
+       * Exame + Atestado = COMPLIANCE de longo prazo (atleta vai ao medico, dias/semanas)
+       *
+       * PAR-Q pendente → treinos BLOQUEADOS ate responder
+       * Docs medicos pendentes → treinos LIBERADOS (se PAR-Q ok), docs em paralelo
+       */}
+      {(() => {
+        const needsParq = !parqCleared && profile.parq_clearance_status !== 'cleared' && profile.parq_clearance_status !== 'cleared_with_restrictions';
+        const hasAnyPendingDoc = docs.documents.some(d => d.review_status !== 'approved') ||
+          (!docs.documents.find(d => d.document_type === 'exame_cardiologico') && profile.requires_cardio_exam) ||
+          (!docs.documents.find(d => d.document_type === 'liberacao_atividade') && profile.requires_clearance_cert);
+        const showHealthCard = needsParq || hasAnyPendingDoc;
+
+        if (!showHealthCard) return null;
+
+        return (
+          <motion.section className="px-5 mb-4" custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
+            <div className="rounded-2xl overflow-hidden space-y-0">
+
+              {/* PAR-Q Section — PRIMARY: this unblocks training */}
+              {needsParq && (
+                <div className="bg-amber-50 border border-amber-300/60 rounded-2xl p-5 space-y-3 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                      <Lock className="w-5 h-5 text-amber-700" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-base font-black text-ceramic-text-primary">
+                        Libere seus treinos
+                      </h2>
+                      <p className="text-xs text-amber-700">
+                        Responda o PAR-Q+ para acessar sua prescricao de treinos agora
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      parq.resetWizard();
+                      setShowWelcome(false);
+                    }}
+                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-md"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Responder PAR-Q+ (5 min)
+                  </button>
+
+                  <p className="text-[10px] text-amber-600 text-center">
+                    Questionario rapido de prontidao para atividade fisica — libera seus treinos imediatamente
+                  </p>
+                </div>
+              )}
+
+              {/* Medical Docs Section — SECONDARY: compliance, NOT blocking */}
+              {hasAnyPendingDoc && (
+                <div className="bg-ceramic-base border border-ceramic-border/60 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-ceramic-info/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-ceramic-info" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-ceramic-text-primary">Documentos Medicos</p>
+                      <p className="text-[10px] text-ceramic-text-secondary">
+                        {parqCleared
+                          ? 'Envie quando tiver — seus treinos ja estao liberados'
+                          : 'Agende com seu medico e envie quando disponivel'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Exame Cardiologico */}
+                    {(() => {
+                      const cardioDoc = docs.documents.find(d => d.document_type === 'exame_cardiologico');
+                      const status = cardioDoc?.review_status;
+                      const isRequired = profile.requires_cardio_exam;
+                      if (!isRequired && !cardioDoc) return null;
+                      return (
+                        <div className="ceramic-inset rounded-xl p-3 space-y-2">
+                          <div className="flex items-center gap-1.5">
+                            <Heart className="w-3.5 h-3.5 text-ceramic-error" />
+                            <span className="text-[10px] font-bold text-ceramic-text-primary">Exame Cardiologico</span>
+                          </div>
+                          {cardioDoc ? (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md inline-block ${
+                              status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
+                              status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
+                              'bg-ceramic-warning/10 text-ceramic-warning'
+                            }`}>
+                              {status === 'approved' ? 'Aprovado' : status === 'rejected' ? 'Rejeitado' : 'Em analise'}
+                            </span>
+                          ) : (
+                            <label className="flex items-center justify-center gap-1.5 py-1.5 border border-dashed border-ceramic-border rounded-lg cursor-pointer hover:border-ceramic-info hover:bg-ceramic-info/5 transition-colors">
+                              <Upload className="w-3 h-3 text-ceramic-text-secondary" />
+                              <span className="text-[10px] text-ceramic-text-secondary">Enviar</span>
+                              <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) docs.uploadDocument({ document_type: 'exame_cardiologico', title: 'Exame Cardiologico', file });
+                                e.target.value = '';
+                              }} />
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Atestado de Liberacao */}
+                    {(() => {
+                      const libDoc = docs.documents.find(d => d.document_type === 'liberacao_atividade');
+                      const status = libDoc?.review_status;
+                      const isRequired = profile.requires_clearance_cert;
+                      if (!isRequired && !libDoc) return null;
+                      return (
+                        <div className="ceramic-inset rounded-xl p-3 space-y-2">
+                          <div className="flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-ceramic-info" />
+                            <span className="text-[10px] font-bold text-ceramic-text-primary">Atestado Liberacao</span>
+                          </div>
+                          {libDoc ? (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md inline-block ${
+                              status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
+                              status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
+                              'bg-ceramic-warning/10 text-ceramic-warning'
+                            }`}>
+                              {status === 'approved' ? 'Aprovado' : status === 'rejected' ? 'Rejeitado' : 'Em analise'}
+                            </span>
+                          ) : (
+                            <label className="flex items-center justify-center gap-1.5 py-1.5 border border-dashed border-ceramic-border rounded-lg cursor-pointer hover:border-ceramic-info hover:bg-ceramic-info/5 transition-colors">
+                              <Upload className="w-3 h-3 text-ceramic-text-secondary" />
+                              <span className="text-[10px] text-ceramic-text-secondary">Enviar</span>
+                              <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) docs.uploadDocument({ document_type: 'liberacao_atividade', title: 'Atestado de Liberacao', file });
+                                e.target.value = '';
+                              }} />
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {docs.isUploading && (
+                    <div className="flex items-center justify-center gap-2 py-1">
+                      <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
+                      <span className="text-xs text-ceramic-text-secondary">Enviando...</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          </motion.section>
+        );
+      })()}
+
+      {/* Profile Card — compact */}
+      <motion.section className="px-5 mb-4" custom={0.5} initial="hidden" animate="visible" variants={sectionVariants}>
+        <div className="bg-ceramic-base rounded-2xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            {/* Avatar with fallback to initials */}
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={profile.athlete_name}
-                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ${getAvatarColor(profile.athlete_name)}`}>
-                <span className="text-white font-bold">{getInitials(profile.athlete_name)}</span>
+              <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${getAvatarColor(profile.athlete_name)}`}>
+                <span className="text-white font-bold text-sm">{getInitials(profile.athlete_name)}</span>
               </div>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <h1 className="text-xl font-black text-ceramic-text-primary truncate">
+                <h1 className="text-lg font-black text-ceramic-text-primary truncate">
                   {profile.athlete_name}
                 </h1>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   {prescribedModalities.map((mod) => (
-                    <span key={mod} className="text-base" title={MODALITY_CONFIG[mod]?.label}>
+                    <span key={mod} className="text-sm" title={MODALITY_CONFIG[mod]?.label}>
                       {MODALITY_CONFIG[mod]?.icon}
                     </span>
                   ))}
                 </div>
-                {/* Alert badges for health/financial pending */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {profile.parq_clearance_status && ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
-                    <span className="w-5 h-5 rounded-full bg-ceramic-error/10 flex items-center justify-center" title="Pendencia de saude">
-                      <Heart className="w-3 h-3 text-ceramic-error" />
-                    </span>
-                  )}
-                  {(profile as unknown as Record<string, unknown>).hasPendingPayment && (
-                    <span className="w-5 h-5 rounded-full bg-amber-500/10 flex items-center justify-center" title="Pendencia financeira">
-                      <DollarSign className="w-3 h-3 text-amber-600" />
-                    </span>
-                  )}
-                </div>
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-xs text-ceramic-text-secondary">Prescrito por {profile.coach_name}</p>
-                <span className="text-ceramic-border">·</span>
-                <p className="text-xs text-ceramic-text-secondary">
-                  {prescribedModalities.map((mod) => MODALITY_CONFIG[mod]?.label).join(', ')}
-                </p>
-              </div>
+              <p className="text-[10px] text-ceramic-text-secondary">
+                Prescrito por {profile.coach_name} · {prescribedModalities.map((mod) => MODALITY_CONFIG[mod]?.label).join(', ')}
+              </p>
             </div>
+
+            {/* Compact status badge */}
+            {micro && micro.status === 'active' && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-ceramic-success/10 rounded-lg flex-shrink-0">
+                <CheckCircle className="w-3 h-3 text-ceramic-success" />
+                <span className="text-[10px] font-bold text-ceramic-success">Liberado</span>
+              </span>
+            )}
+            {micro && micro.status === 'draft' && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-amber-500/10 rounded-lg flex-shrink-0">
+                <Clock className="w-3 h-3 text-amber-600" />
+                <span className="text-[10px] font-bold text-amber-700">Pendente</span>
+              </span>
+            )}
           </div>
-
-          {/* Microcycle Status Badge — inside profile card */}
-          {micro && micro.status === 'draft' && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span className="text-sm font-bold text-amber-700">Treino Pendente</span>
-              <span className="text-xs text-amber-600">Aguardando liberacao do coach</span>
-            </div>
-          )}
-          {micro && micro.status === 'active' && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
-              <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0" />
-              <span className="text-sm font-bold text-ceramic-success">Treino Liberado</span>
-            </div>
-          )}
-
         </div>
       </motion.section>
 
@@ -616,27 +758,7 @@ export default function AthletePortalView() {
         </motion.section>
       )}
 
-      {/* Document Pending Banner — #381 */}
-      {profile.parq_clearance_status &&
-       ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
-        <motion.div className="px-5 mb-3" custom={1.6} initial="hidden" animate="visible" variants={sectionVariants}>
-          <div className="flex items-center gap-3 px-4 py-3 bg-ceramic-info/5 border border-ceramic-info/20 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-ceramic-info/10 flex items-center justify-center flex-shrink-0">
-              <FileText className="w-4 h-4 text-ceramic-info" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-ceramic-info">Documentos Pendentes</p>
-              <p className="text-xs text-ceramic-info">
-                {profile.parq_clearance_status === 'expired'
-                  ? 'Seus documentos de saude expiraram'
-                  : profile.parq_clearance_status === 'blocked'
-                  ? 'Liberacao medica necessaria'
-                  : 'Complete seus documentos de saude'}
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      )}
+      {/* Old health docs section removed — now at top of page (#925) */}
 
       {/* Week viewing indicator */}
       {micro && selectedWeek !== (micro.current_week || 1) && (
@@ -688,7 +810,7 @@ export default function AthletePortalView() {
             <motion.div className="px-5 mb-4" custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
                 <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700 leading-relaxed">Este plano de treino esta sendo preparado pelo seu coach e pode sofrer alteracoes.</p>
+                <p className="text-xs text-amber-700 leading-relaxed">Este plano de treino esta sendo preparado pelo seu coach e pode sofrer alterações.</p>
               </div>
             </motion.div>
           )}
@@ -701,7 +823,7 @@ export default function AthletePortalView() {
                   <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
                     <MoveHorizontal className="w-4 h-4 text-ceramic-info flex-shrink-0" />
                     <p className="text-xs text-ceramic-info leading-relaxed">
-                      <span className="font-bold">Organize seus horarios!</span> Arraste os treinos para os horarios que funcionam melhor para voce.
+                      <span className="font-bold">Organize seus horarios!</span> Arraste os treinos para os horarios que funcionam melhor para você.
                       {!calendarConnected && ' Conecte o Google Calendar para ver seus compromissos.'}
                     </p>
                     {!calendarConnected && (
@@ -774,7 +896,7 @@ export default function AthletePortalView() {
                               return (
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-ceramic-cool/40 opacity-50">
                                   <Lock className="w-3.5 h-3.5 text-ceramic-text-secondary/50 flex-shrink-0" />
-                                  <span className="text-xs text-ceramic-text-secondary">Feedback disponivel no dia</span>
+                                  <span className="text-xs text-ceramic-text-secondary">Feedback disponível no dia</span>
                                 </div>
                               );
                             }
@@ -809,7 +931,7 @@ export default function AthletePortalView() {
               <div className="bg-ceramic-cool/50 rounded-2xl p-8 text-center space-y-3">
                 <Dumbbell className="w-10 h-10 text-ceramic-text-secondary/40 mx-auto" />
                 <p className="text-sm font-medium text-ceramic-text-primary">Nenhum treino prescrito ainda</p>
-                <p className="text-xs text-ceramic-text-secondary leading-relaxed">Seu coach ainda nao prescreveu treinos. Fique tranquilo, voce sera notificado quando houver novidades!</p>
+                <p className="text-xs text-ceramic-text-secondary leading-relaxed">Seu coach ainda não prescreveu treinos. Fique tranquilo, você sera notificado quando houver novidades!</p>
               </div>
             </motion.section>
           )}

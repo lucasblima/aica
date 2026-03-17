@@ -76,7 +76,7 @@ export function ComparisonSlide({
             tag="p"
             className="mt-4 text-xl"
             editMode={editMode}
-            placeholder="Descricao da comparacao"
+            placeholder="Descrição da comparacao"
             multiline
           />
         )}

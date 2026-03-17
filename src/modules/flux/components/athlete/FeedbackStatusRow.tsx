@@ -76,7 +76,7 @@ export function FeedbackStatusRow({
         </p>
         {locked && (
           <p className="text-[10px] text-ceramic-text-secondary/50 mt-0.5">
-            Disponivel apos o treino
+            Disponível apos o treino
           </p>
         )}
         {!locked && isSubmitted && summary && (

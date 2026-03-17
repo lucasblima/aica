@@ -2,8 +2,8 @@
  * CustomLevelManager - CRUD para niveis personalizados do coach
  *
  * Permite ao coach criar, renomear, excluir e reordenar niveis customizados.
- * Maximo de 10 niveis. Dados persistidos no Supabase (coach_levels).
- * Segue o mesmo padrao visual do AthleteGroupManager (Ceramic Design System).
+ * Máximo de 10 niveis. Dados persistidos no Supabase (coach_levels).
+ * Segue o mesmo padrão visual do AthleteGroupManager (Ceramic Design System).
  */
 
 import React, { useState, useRef, useEffect } from 'react';

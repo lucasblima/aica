@@ -216,7 +216,7 @@ export interface TimelineEvent {
     isAllDay: boolean;
     source: 'google_calendar' | 'flux_workout' | 'flux' | 'finance' | 'studio' | string;
     color?: string;
-    /** Physical location or video link from Google Calendar */
+    /** Physical location or vídeo link from Google Calendar */
     location?: string;
     /** If this event was created by AICA, which module originated it (flux, atlas, studio, grants) */
     aicaModule?: string;

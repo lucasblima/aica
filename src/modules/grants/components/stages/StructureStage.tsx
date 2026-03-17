@@ -182,7 +182,7 @@ export const StructureStage: React.FC = () => {
           <textarea
             value={sourceText}
             onChange={(e) => setSourceText(e.target.value)}
-            placeholder={`Cole aqui o texto do formulario, por exemplo:\n\n1. Apresentacao da Empresa (max 3000 caracteres)\n2. Descricao do Projeto (max 5000 caracteres)\n3. Inovacao Tecnica (max 2000 caracteres)...`}
+            placeholder={`Cole aqui o texto do formulario, por exemplo:\n\n1. Apresentação da Empresa (max 3000 caracteres)\n2. Descrição do Projeto (max 5000 caracteres)\n3. Inovacao Técnica (max 2000 caracteres)...`}
             rows={6}
             className="w-full bg-transparent text-[#5C554B] placeholder:text-[#948D82] focus:outline-none resize-none text-sm"
             disabled={isParsingAI}

@@ -75,11 +75,11 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     return (
       <div className="ceramic-card p-6">
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">
-          Tendencia de Creditos (30 dias)
+          Tendencia de Créditos (30 dias)
         </h3>
         <div className="ceramic-inset p-8 rounded-xl text-center">
           <p className="text-sm text-ceramic-text-secondary">
-            Nenhum dado disponivel para exibir a tendencia
+            Nenhum dado disponível para exibir a tendencia
           </p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
           </div>
           <div>
             <h3 className="text-lg font-semibold text-ceramic-text-primary">
-              Tendencia de Creditos
+              Tendencia de Créditos
             </h3>
             <p className="text-xs text-ceramic-text-secondary">Ultimos 30 dias</p>
           </div>

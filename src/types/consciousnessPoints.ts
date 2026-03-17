@@ -91,7 +91,7 @@ export const CP_REWARDS: Record<string, CPReward> = {
   'daily_check_in': {
     id: 'daily_check_in',
     name: 'Check-in Consciente',
-    description: 'Iniciou o dia com intencao',
+    description: 'Iniciou o dia com intenção',
     category: 'presence',
     amount: 5,
     cooldown_hours: 20,
@@ -107,8 +107,8 @@ export const CP_REWARDS: Record<string, CPReward> = {
   },
   'end_of_day_review': {
     id: 'end_of_day_review',
-    name: 'Revisao do Dia',
-    description: 'Revisou seu dia com intencao',
+    name: 'Revisão do Dia',
+    description: 'Revisou seu dia com intenção',
     category: 'presence',
     amount: 8,
     cooldown_hours: 20,
@@ -120,7 +120,7 @@ export const CP_REWARDS: Record<string, CPReward> = {
   // -------------------------------------------------------------------------
   'journal_entry': {
     id: 'journal_entry',
-    name: 'Entrada no Diario',
+    name: 'Entrada no Diário',
     description: 'Registrou reflexoes pessoais',
     category: 'reflection',
     amount: 10,
@@ -136,8 +136,8 @@ export const CP_REWARDS: Record<string, CPReward> = {
   },
   'weekly_reflection': {
     id: 'weekly_reflection',
-    name: 'Reflexao Semanal',
-    description: 'Completou uma reflexao semanal',
+    name: 'Reflexão Semanal',
+    description: 'Completou uma reflexão semanal',
     category: 'reflection',
     amount: 20,
     cooldown_hours: 144, // 6 days
@@ -173,7 +173,7 @@ export const CP_REWARDS: Record<string, CPReward> = {
   },
   'reconnection': {
     id: 'reconnection',
-    name: 'Reconexao',
+    name: 'Reconexão',
     description: 'Reconectou com alguem importante',
     category: 'connection',
     amount: 15,
@@ -181,8 +181,8 @@ export const CP_REWARDS: Record<string, CPReward> = {
   },
   'gratitude_expressed': {
     id: 'gratitude_expressed',
-    name: 'Gratidao Expressa',
-    description: 'Expressou gratidao a alguem',
+    name: 'Gratidão Expressa',
+    description: 'Expressou gratidão a alguem',
     category: 'connection',
     amount: 6,
     max_daily: 5,
@@ -201,8 +201,8 @@ export const CP_REWARDS: Record<string, CPReward> = {
   },
   'deep_work_session': {
     id: 'deep_work_session',
-    name: 'Sessao de Trabalho Profundo',
-    description: 'Completou uma sessao de trabalho focado (25min+)',
+    name: 'Sessão de Trabalho Profundo',
+    description: 'Completou uma sessão de trabalho focado (25min+)',
     category: 'intention',
     amount: 10,
     max_daily: 4,
@@ -345,9 +345,9 @@ export function formatCP(cp: number): string {
 export function getCPCategoryDisplayName(category: CPCategory): string {
   const names: Record<CPCategory, string> = {
     presence: 'Presenca',
-    reflection: 'Reflexao',
-    connection: 'Conexao',
-    intention: 'Intencao',
+    reflection: 'Reflexão',
+    connection: 'Conexão',
+    intention: 'Intenção',
     growth: 'Crescimento',
   };
   return names[category];

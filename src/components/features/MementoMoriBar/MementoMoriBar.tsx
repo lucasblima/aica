@@ -253,7 +253,7 @@ export function MementoMoriBar({ onSetBirthdate, forecast, weatherInsight }: Mem
       <div className="ceramic-card p-3">
         <div className="flex items-center gap-2 mb-2 text-ceramic-text-secondary">
           <Calendar className="w-4 h-4" />
-          <p className="text-xs">Quando voce nasceu?</p>
+          <p className="text-xs">Quando você nasceu?</p>
         </div>
         <div className="flex items-center gap-2">
           <input

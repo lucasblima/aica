@@ -55,7 +55,7 @@ export function useTrainingLoad({ athleteId }: UseTrainingLoadOptions): UseTrain
         setMetrics(null);
       }
     } catch (err) {
-      const e = err instanceof Error ? err : new Error('Erro ao carregar historico de treino');
+      const e = err instanceof Error ? err : new Error('Erro ao carregar histórico de treino');
       setError(e);
       log.error('Error loading training history:', err);
     } finally {
@@ -81,7 +81,7 @@ export function useTrainingLoad({ athleteId }: UseTrainingLoadOptions): UseTrain
 
       log.info('Session recorded for athlete:', athleteId);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error('Erro ao registrar sessao');
+      const e = err instanceof Error ? err : new Error('Erro ao registrar sessão');
       setError(e);
       log.error('Error recording session:', err);
       throw e;

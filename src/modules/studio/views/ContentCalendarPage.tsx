@@ -164,7 +164,7 @@ export default function ContentCalendarPage() {
 
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-      <HeaderGlobal title="Calendario de Conteudo" subtitle="STUDIO" onLogoClick={() => navigate('/')} />
+      <HeaderGlobal title="Calendário de Conteúdo" subtitle="STUDIO" onLogoClick={() => navigate('/')} />
 
       <main className="flex-1 overflow-y-auto px-4 sm:px-6 pb-32 pt-4">
         {/* Month Navigation */}
@@ -264,7 +264,7 @@ export default function ContentCalendarPage() {
 
               {selectedEntries.length === 0 ? (
                 <div className="ceramic-inset rounded-xl p-6 text-center">
-                  <p className="text-sm text-ceramic-text-secondary">Nenhum conteudo agendado para este dia.</p>
+                  <p className="text-sm text-ceramic-text-secondary">Nenhum conteúdo agendado para este dia.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -286,7 +286,7 @@ export default function ContentCalendarPage() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ceramic-text-primary truncate">
-                            {entry.caption || 'Sem titulo'}
+                            {entry.caption || 'Sem título'}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <Clock className="w-3 h-3 text-ceramic-text-secondary" />

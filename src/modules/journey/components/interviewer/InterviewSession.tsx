@@ -119,7 +119,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
         const insightResult = await client.call({
           action: 'generate',
           payload: {
-            prompt: `Voce e AICA, assistente de autoconhecimento. O usuario respondeu "${JSON.stringify(localAnswer)}" para a pergunta "${currentQuestion.question_text}". Gere um insight breve e encorajador (1 frase curta) em portugues sobre o que essa resposta revela. Seja caloroso e perspicaz.`,
+            prompt: `Você e AICA, assistente de autoconhecimento. O usuario respondeu "${JSON.stringify(localAnswer)}" para a pergunta "${currentQuestion.question_text}". Gere um insight breve e encorajador (1 frase curta) em portugues sobre o que essa resposta revela. Seja caloroso e perspicaz.`,
             maxTokens: 100,
           },
           model: 'fast',
@@ -222,7 +222,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
           Categoria Completa!
         </h2>
         <p className="text-ceramic-text-secondary">
-          Voce completou todas as {session.total_questions} perguntas de <strong>{session.title}</strong>.
+          Você completou todas as {session.total_questions} perguntas de <strong>{session.title}</strong>.
         </p>
         <div className="flex items-center justify-center gap-2 text-amber-600 font-bold text-lg">
           <Sparkles className="h-5 w-5" />

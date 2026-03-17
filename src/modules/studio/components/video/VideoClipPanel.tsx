@@ -1,5 +1,5 @@
 /**
- * VideoClipPanel - AI-powered clip suggestion for video projects
+ * VideoClipPanel - AI-powered clip suggestion for vídeo projects
  *
  * Features:
  * - "Sugerir Clips" button that calls studio-clip-extract Edge Function
@@ -154,7 +154,7 @@ export default function VideoClipPanel({
           module="studio"
           variant="list"
           lines={3}
-          message="Analisando melhores momentos do video..."
+          message="Analisando melhores momentos do vídeo..."
         />
       </div>
     );

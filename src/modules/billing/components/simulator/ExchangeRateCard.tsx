@@ -25,13 +25,13 @@ export function ExchangeRateCard({ data, isLoading, error, onApplyRate, currentS
 
   if (error || !data) {
     return (
-      <div className="flex items-center gap-3 bg-ceramic-base border border-ceramic-border rounded-xl px-4 py-3" title="Nao foi possivel obter a cotacao atual. O simulador usara o valor padrao configurado na barra lateral.">
+      <div className="flex items-center gap-3 bg-ceramic-base border border-ceramic-border rounded-xl px-4 py-3" title="Não foi possível obter a cotação atual. O simulador usara o valor padrão configurado na barra lateral.">
         <div className="w-8 h-8 rounded-full bg-ceramic-cool flex items-center justify-center">
           <DollarSign className="w-4 h-4 text-ceramic-text-secondary" />
         </div>
         <div>
-          <div className="text-sm text-ceramic-text-secondary">Cotacao indisponivel</div>
-          <div className="text-xs text-ceramic-text-secondary">Usando valor padrao</div>
+          <div className="text-sm text-ceramic-text-secondary">Cotação indisponivel</div>
+          <div className="text-xs text-ceramic-text-secondary">Usando valor padrão</div>
         </div>
       </div>
     );
@@ -41,10 +41,10 @@ export function ExchangeRateCard({ data, isLoading, error, onApplyRate, currentS
   const ratesDiffer = currentSimRate !== undefined && Math.abs(currentSimRate - data.usdBrl) > 0.01;
 
   return (
-    <div className="flex items-center gap-4 bg-ceramic-base border border-ceramic-border rounded-xl px-4 py-3" title="Cotacao em tempo real das moedas que impactam os custos de infraestrutura (USD) e o calculo de margem.">
+    <div className="flex items-center gap-4 bg-ceramic-base border border-ceramic-border rounded-xl px-4 py-3" title="Cotação em tempo real das moedas que impactam os custos de infraestrutura (USD) e o calculo de margem.">
       {/* USD/BRL */}
       <div className="flex items-center gap-2">
-        <Tooltip text="Cotacao do dolar americano em reais. Usado para converter custos de Supabase, Cloud Run e Gemini para BRL.">
+        <Tooltip text="Cotação do dolar americano em reais. Usado para converter custos de Supabase, Cloud Run e Gemini para BRL.">
           <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center cursor-help">
             <DollarSign className="w-4 h-4 text-amber-600" />
           </div>
@@ -68,7 +68,7 @@ export function ExchangeRateCard({ data, isLoading, error, onApplyRate, currentS
               </span>
             </Tooltip>
           </div>
-          <div className="text-xs text-ceramic-text-secondary" title="Preco de compra e venda do dolar. A diferenca entre eles e o spread bancario.">
+          <div className="text-xs text-ceramic-text-secondary" title="Preço de compra e venda do dolar. A diferença entre eles e o spread bancario.">
             Compra: {data.usdBrlBid.toFixed(4)} | Venda: {data.usdBrlAsk.toFixed(4)}
           </div>
         </div>
@@ -78,7 +78,7 @@ export function ExchangeRateCard({ data, isLoading, error, onApplyRate, currentS
       {data.eurBrl > 0 && (
         <>
           <div className="w-px h-8 bg-ceramic-border" />
-          <Tooltip text="Cotacao do euro em reais. Referencia para clientes europeus ou custos em euro.">
+          <Tooltip text="Cotação do euro em reais. Referência para clientes europeus ou custos em euro.">
             <div className="cursor-help">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-medium text-ceramic-text-primary">EUR/BRL</span>
@@ -107,7 +107,7 @@ export function ExchangeRateCard({ data, isLoading, error, onApplyRate, currentS
       )}
 
       {/* Last update */}
-      <div className="ml-auto text-xs text-ceramic-text-secondary" title="Horario da ultima atualizacao da cotacao pela API do Banco Central.">
+      <div className="ml-auto text-xs text-ceramic-text-secondary" title="Horário da ultima atualização da cotação pela API do Banco Central.">
         {formatLastUpdate(data.lastUpdate)}
       </div>
     </div>

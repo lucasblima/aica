@@ -6,7 +6,7 @@
  */
 
 /**
- * ImpactMetricsSlide - Metricas e numeros de impacto
+ * ImpactMetricsSlide - Métricas e numeros de impacto
  * Issue #117 - Presentation Generator
  */
 
@@ -41,7 +41,7 @@ export function ImpactMetricsSlide({
           onChange={(v) => handleChange('title', v)}
           tag="h1"
           editMode={editMode}
-          placeholder="Titulo do Slide"
+          placeholder="Título do Slide"
         />
       </div>
 
@@ -87,7 +87,7 @@ export function ImpactMetricsSlide({
                 tag="p"
                 className="mt-2 text-sm opacity-70"
                 editMode={editMode}
-                placeholder="Descricao opcional"
+                placeholder="Descrição opcional"
                 multiline
               />
             )}

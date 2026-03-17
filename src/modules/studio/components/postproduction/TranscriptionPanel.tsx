@@ -73,10 +73,10 @@ export default function TranscriptionPanel({
           <FileText className="w-8 h-8 text-amber-500" />
         </div>
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
-          Nenhuma transcricao disponivel
+          Nenhuma transcricao disponível
         </h3>
         <p className="text-sm text-ceramic-text-secondary text-center mb-6 max-w-sm">
-          Gere a transcricao automatica do episodio para desbloquear show notes, quotes e clips.
+          Gere a transcricao automatica do episódio para desbloquear show notes, quotes e clips.
         </p>
         {error && (
           <div className="text-center mb-4">

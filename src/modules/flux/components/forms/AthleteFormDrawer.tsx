@@ -1,8 +1,8 @@
 /**
  * AthleteFormDrawer Component
  *
- * Drawer lateral (desktop) / bottom (mobile) para criacao/edicao de atletas.
- * Inspirado no design da Apple - transicoes suaves, contexto preservado.
+ * Drawer lateral (desktop) / bottom (mobile) para criação/edição de atletas.
+ * Inspirado no design da Apple - transições suaves, contexto preservado.
  *
  * Features:
  * - Desktop: Slide-in da direita (600-700px width)
@@ -72,11 +72,11 @@ export default function AthleteFormDrawer({
   const [copyToast, setCopyToast] = useState(false);
   const createdAthleteId = lastCreatedId;
 
-  // Accordion state — in create mode, open modalities first (no basic info section)
+  // Accordion state — in create mode, open health (only section); in edit mode, open basic info
   const [openSections, setOpenSections] = useState({
     basic: mode === 'edit',
-    modalities: mode === 'create',
-    health: false,
+    modalities: false,
+    health: mode === 'create',
   });
 
   // Swipe to dismiss (mobile)
@@ -147,7 +147,7 @@ export default function AthleteFormDrawer({
                 <p className="text-sm text-ceramic-text-secondary mt-1">
                   {mode === 'create'
                     ? 'Configure e gere um link de cadastro'
-                    : 'Atualize as informacoes do atleta'}
+                    : 'Atualize as informações do atleta'}
                 </p>
               </div>
               <button
@@ -197,7 +197,7 @@ export default function AthleteFormDrawer({
                         Como funciona
                       </p>
                       <p className="text-sm text-ceramic-text-primary leading-relaxed">
-                        Selecione as modalidades e requisitos de saude. Ao criar, voce
+                        Selecione as modalidades e requisitos de saúde. Ao criar, você
                         recebera um <strong>link de cadastro</strong> para enviar ao atleta.
                         Ele preenchera nome, email e telefone durante o onboarding.
                       </p>
@@ -254,7 +254,7 @@ export default function AthleteFormDrawer({
                           <UserIcon className="w-4 h-4 text-ceramic-text-primary" />
                         </div>
                         <span className="text-sm font-bold text-ceramic-text-primary">
-                          1. Informacoes Basicas
+                          1. Informações Basicas
                         </span>
                       </div>
                       <ChevronDown
@@ -333,110 +333,112 @@ export default function AthleteFormDrawer({
                   </div>
                 )}
 
-                {/* Section 2: Modalities */}
-                <div className="ceramic-card overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => toggleSection('modalities')}
-                    className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="ceramic-inset p-2">
-                        <Target className="w-4 h-4 text-ceramic-text-primary" />
+                {/* Section: Modalities (edit mode only — athlete chooses during onboarding) */}
+                {mode === 'edit' && (
+                  <div className="ceramic-card overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('modalities')}
+                      className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="ceramic-inset p-2">
+                          <Target className="w-4 h-4 text-ceramic-text-primary" />
+                        </div>
+                        <span className="text-sm font-bold text-ceramic-text-primary">
+                          2. Modalidades
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-ceramic-text-primary">
-                        {mode === 'create' ? '1' : '2'}. Modalidades
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={`w-5 h-5 text-ceramic-text-secondary transition-transform ${
-                        openSections.modalities ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </button>
+                      <ChevronDown
+                        className={`w-5 h-5 text-ceramic-text-secondary transition-transform ${
+                          openSections.modalities ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
 
-                  {openSections.modalities && (
-                    <div className="p-4 pt-0 space-y-4">
-                      <p className="text-xs text-ceramic-text-secondary italic">
-                        Selecione uma ou mais modalidades e defina o nivel para cada uma
-                      </p>
+                    {openSections.modalities && (
+                      <div className="p-4 pt-0 space-y-4">
+                        <p className="text-xs text-ceramic-text-secondary italic">
+                          Selecione uma ou mais modalidades e defina o nivel para cada uma
+                        </p>
 
-                      {MODALITY_OPTIONS.map((modality) => {
-                        const modalityLevel = formData.modalityLevels.find(
-                          (ml) => ml.modality === modality.value
-                        );
-                        const isSelected = !!modalityLevel;
+                        {MODALITY_OPTIONS.map((modality) => {
+                          const modalityLevel = formData.modalityLevels.find(
+                            (ml) => ml.modality === modality.value
+                          );
+                          const isSelected = !!modalityLevel;
 
-                        return (
-                          <div key={modality.value} className="space-y-2">
-                            <button
-                              type="button"
-                              onClick={() => handleModalityToggle(modality.value)}
-                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-2 ${
-                                isSelected
-                                  ? 'bg-ceramic-success/10 border-ceramic-success shadow-md'
-                                  : 'ceramic-inset border-transparent hover:border-ceramic-border'
-                              }`}
-                            >
-                              <span className="text-2xl">{modality.icon}</span>
-                              <span
-                                className={`text-sm font-bold flex-1 text-left ${
+                          return (
+                            <div key={modality.value} className="space-y-2">
+                              <button
+                                type="button"
+                                onClick={() => handleModalityToggle(modality.value)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-2 ${
                                   isSelected
-                                    ? 'text-ceramic-success'
-                                    : 'text-ceramic-text-secondary'
+                                    ? 'bg-ceramic-success/10 border-ceramic-success shadow-md'
+                                    : 'ceramic-inset border-transparent hover:border-ceramic-border'
                                 }`}
                               >
-                                {modality.label}
-                              </span>
-                              {isSelected && (
-                                <CheckCircle className="w-6 h-6 text-ceramic-success flex-shrink-0" />
-                              )}
-                            </button>
-
-                            {isSelected && (
-                              <AnimatePresence>
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  className="pl-12 pr-4 space-y-1"
+                                <span className="text-2xl">{modality.icon}</span>
+                                <span
+                                  className={`text-sm font-bold flex-1 text-left ${
+                                    isSelected
+                                      ? 'text-ceramic-success'
+                                      : 'text-ceramic-text-secondary'
+                                  }`}
                                 >
-                                  <label className="block text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">
-                                    Nivel
-                                  </label>
-                                  <div className="flex gap-2">
-                                    {LEVEL_OPTIONS.map((level) => (
-                                      <button
-                                        key={level.value}
-                                        type="button"
-                                        onClick={() =>
-                                          handleLevelChange(modality.value, level.value)
-                                        }
-                                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                                          modalityLevel?.level === level.value
-                                            ? 'bg-ceramic-accent text-white shadow-md'
-                                            : 'ceramic-inset text-ceramic-text-secondary hover:bg-white/50'
-                                        }`}
-                                      >
-                                        {level.label}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </motion.div>
-                              </AnimatePresence>
-                            )}
-                          </div>
-                        );
-                      })}
+                                  {modality.label}
+                                </span>
+                                {isSelected && (
+                                  <CheckCircle className="w-6 h-6 text-ceramic-success flex-shrink-0" />
+                                )}
+                              </button>
 
-                      {errors.modalityLevels && (
-                        <p className="text-xs text-ceramic-error mt-1">
-                          {errors.modalityLevels}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                              {isSelected && (
+                                <AnimatePresence>
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="pl-12 pr-4 space-y-1"
+                                  >
+                                    <label className="block text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">
+                                      Nivel
+                                    </label>
+                                    <div className="flex gap-2">
+                                      {LEVEL_OPTIONS.map((level) => (
+                                        <button
+                                          key={level.value}
+                                          type="button"
+                                          onClick={() =>
+                                            handleLevelChange(modality.value, level.value)
+                                          }
+                                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                                            modalityLevel?.level === level.value
+                                              ? 'bg-ceramic-accent text-white shadow-md'
+                                              : 'ceramic-inset text-ceramic-text-secondary hover:bg-white/50'
+                                          }`}
+                                        >
+                                          {level.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                </AnimatePresence>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {errors.modalityLevels && (
+                          <p className="text-xs text-ceramic-error mt-1">
+                            {errors.modalityLevels}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Section 3: Health Configuration */}
                 <div className="ceramic-card overflow-hidden">
@@ -450,7 +452,7 @@ export default function AthleteFormDrawer({
                         <Heart className="w-4 h-4 text-ceramic-text-primary" />
                       </div>
                       <span className="text-sm font-bold text-ceramic-text-primary">
-                        {mode === 'create' ? '2' : '3'}. Dados de Saude
+                        {mode === 'create' ? '1' : '3'}. Dados de Saude
                       </span>
                     </div>
                     <ChevronDown
@@ -471,8 +473,8 @@ export default function AthleteFormDrawer({
                           </p>
                           <p className="text-xs text-ceramic-text-secondary leading-relaxed">
                             Os documentos ativados abaixo serao <strong>exigidos durante o cadastro</strong> do
-                            atleta. Enquanto pendentes, o atleta <strong>nao conseguira visualizar a prescricao
-                            de treinos</strong>. Voce revisara e aprovara cada documento no perfil do atleta.
+                            atleta. Enquanto pendentes, o atleta <strong>não conseguira visualizar a prescrição
+                            de treinos</strong>. Você revisara e aprovara cada documento no perfil do atleta.
                           </p>
                         </div>
                       </div>
@@ -492,7 +494,7 @@ export default function AthleteFormDrawer({
                               </p>
                             </div>
                             <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                              Laudo medico atestando saude cardiovascular.
+                              Laudo médico atestando saúde cardiovascular.
                               {formData.requires_cardio_exam && (
                                 <span className="block mt-1 text-amber-700 font-medium">
                                   O atleta devera enviar o laudo antes de acessar os treinos.
@@ -520,7 +522,7 @@ export default function AthleteFormDrawer({
                         </div>
                       </div>
 
-                      {/* Atestado de Liberacao */}
+                      {/* Atestado de Liberação */}
                       <div className={`p-4 rounded-xl border-2 transition-all ${
                         formData.requires_clearance_cert
                           ? 'border-amber-400 bg-amber-50/50'
@@ -531,11 +533,11 @@ export default function AthleteFormDrawer({
                             <div className="flex items-center gap-2 mb-1">
                               <FileText className="w-4 h-4 text-ceramic-info" />
                               <p className="text-sm font-bold text-ceramic-text-primary">
-                                Atestado de Liberacao
+                                Atestado de Liberação
                               </p>
                             </div>
                             <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                              Certificado medico liberando para pratica de atividade fisica.
+                              Certificado médico liberando para pratica de atividade fisica.
                               {formData.requires_clearance_cert && (
                                 <span className="block mt-1 text-amber-700 font-medium">
                                   O atleta devera enviar o atestado antes de acessar os treinos.
@@ -578,7 +580,7 @@ export default function AthleteFormDrawer({
                               </p>
                             </div>
                             <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                              Avaliacao de prontidao para atividade fisica (7 perguntas + termo).
+                              Avaliação de prontidão para atividade fisica (7 perguntas + termo).
                               {formData.allow_parq_onboarding && (
                                 <span className="block mt-1 text-amber-700 font-medium">
                                   O atleta respondera o PAR-Q no cadastro. Prescricao liberada apos assinatura do termo.
@@ -616,13 +618,13 @@ export default function AthleteFormDrawer({
                             {formData.requires_cardio_exam && (
                               <li className="text-xs text-ceramic-text-primary flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-ceramic-error flex-shrink-0" />
-                                Enviar exame cardiologico (bloqueia prescricao ate aprovacao)
+                                Enviar exame cardiologico (bloqueia prescrição ate aprovacao)
                               </li>
                             )}
                             {formData.requires_clearance_cert && (
                               <li className="text-xs text-ceramic-text-primary flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-ceramic-info flex-shrink-0" />
-                                Enviar atestado de liberacao (bloqueia prescricao ate aprovacao)
+                                Enviar atestado de liberacao (bloqueia prescrição ate aprovacao)
                               </li>
                             )}
                             {formData.allow_parq_onboarding && (
@@ -653,7 +655,7 @@ export default function AthleteFormDrawer({
                 )}
                 {isDirty && !errorCount && (
                   <span className="text-xs text-ceramic-text-secondary">
-                    Alteracoes nao salvas
+                    Alteracoes não salvas
                   </span>
                 )}
               </div>
@@ -679,7 +681,7 @@ export default function AthleteFormDrawer({
                     </>
                   ) : (
                     <span>
-                      {mode === 'create' ? 'Gerar Link de Cadastro' : 'Salvar Alteracoes'}
+                      {mode === 'create' ? 'Gerar Link de Cadastro' : 'Salvar Alterações'}
                     </span>
                   )}
                 </button>

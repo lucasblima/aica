@@ -126,12 +126,12 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             icon={<BookOpen size={10} />}
           />
           <MiniBar
-            label="Orcamento"
+            label="Orçamento"
             value={match.factors.budgetFit}
             icon={<DollarSign size={10} />}
           />
           <MiniBar
-            label="Historico"
+            label="Histórico"
             value={match.factors.trackRecord}
             icon={<TrendingUp size={10} />}
           />

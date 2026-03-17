@@ -38,6 +38,7 @@ import {
   Lock,
   Unlock,
   DollarSign,
+  Upload,
 } from 'lucide-react';
 import { PaymentRuler } from '../components/athlete/PaymentRuler';
 import { FeedbackRadarChart } from '../components/athlete/FeedbackRadarChart';
@@ -113,6 +114,10 @@ export default function AthleteDetailView() {
 
   // PAR-Q section collapse state (#678)
   const [parqExpanded, setParqExpanded] = useState(false);
+
+  // Liberacao and Cardio document expand state (#928)
+  const [liberacaoExpanded, setLiberacaoExpanded] = useState(false);
+  const [cardioExpanded, setCardioExpanded] = useState(false);
 
   // Payment / Financial state (#463)
   const [financeOpen, setFinanceOpen] = useState(false);
@@ -454,6 +459,29 @@ export default function AthleteDetailView() {
     navigate('/flux');
   };
 
+  // Document upload handler for Liberacao / Cardio sections (#928)
+  const handleDocUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    documentType: 'liberacao_atividade' | 'exame_cardiologico',
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const titleMap = {
+      liberacao_atividade: 'Atestado de Liberacao',
+      exame_cardiologico: 'Exame Cardiologico',
+    };
+
+    await docs.uploadDocument({
+      file,
+      document_type: documentType,
+      title: titleMap[documentType],
+    });
+
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
+
   // Loading
   if (loading) {
     return (
@@ -469,7 +497,7 @@ export default function AthleteDetailView() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
         <p className="text-lg font-bold text-ceramic-text-primary mb-4">
-          Atleta nao encontrado
+          Atleta não encontrado
         </p>
         <button
           onClick={handleBack}
@@ -498,7 +526,7 @@ export default function AthleteDetailView() {
 
 
         {/* Athlete Profile Card */}
-        <div className="ceramic-card p-6 space-y-4" title="Informacoes de contato e status do atleta. Clique no icone de edicao para alterar nome, email e telefone.">
+        <div className="ceramic-card p-6 space-y-4" title="Informações de contato e status do atleta. Clique no icone de edição para alterar nome, email e telefone.">
           {/* Avatar + Name + Level */}
           <div className="flex items-start gap-4">
             <div className="ceramic-inset w-20 h-20 flex-shrink-0 flex items-center justify-center overflow-hidden rounded-xl">
@@ -542,7 +570,7 @@ export default function AthleteDetailView() {
                     <span
                       className="w-3 h-3 rounded-full bg-ceramic-info animate-pulse flex-shrink-0"
                       title={
-                        athlete.parq_clearance_status === 'blocked' ? 'Liberacao medica necessaria' :
+                        athlete.parq_clearance_status === 'blocked' ? 'Liberação medica necessaria' :
                         athlete.parq_clearance_status === 'expired' ? 'Documentos expirados' :
                         'Documentos pendentes'
                       }
@@ -550,7 +578,7 @@ export default function AthleteDetailView() {
                   )}
                 </h1>
               )}
-              <span title="Nivel de experiencia do atleta: iniciante, intermediario ou avancado">
+              <span title="Nivel de experiência do atleta: iniciante, intermediario ou avancado">
                 <LevelBadge level={athlete.level} size="md" />
               </span>
             </div>
@@ -577,7 +605,7 @@ export default function AthleteDetailView() {
               <button
                 onClick={handleStartEdit}
                 className="ceramic-card p-3 hover:scale-105 transition-transform"
-                title="Editar informacoes de contato do atleta (nome, email, telefone)"
+                title="Editar informações de contato do atleta (nome, email, telefone)"
               >
                 <Edit className="w-5 h-5 text-ceramic-text-primary" />
               </button>
@@ -652,7 +680,7 @@ export default function AthleteDetailView() {
           <button
             onClick={() => navigate(`/flux/canvas/${athleteId}`)}
             className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
-            title="Abrir o Canvas de prescricao para criar e visualizar planos de treino de 4 semanas (microciclos)"
+            title="Abrir o Canvas de prescrição para criar e visualizar planos de treino de 4 semanas (microciclos)"
           >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center group-hover:bg-ceramic-info/20 transition-colors flex-shrink-0">
@@ -712,13 +740,13 @@ export default function AthleteDetailView() {
       {/* Summary Cards */}
       <div className="px-6 mb-6">
 
-      {/* Status de Documentos de Saude (#680) */}
-      <div title="Status dos documentos de saude do atleta: PAR-Q, Atestado de Liberacao e Exame Cardiologico.">
+      {/* Status de Documentos de Saúde (#680) */}
+      <div title="Status dos documentos de saúde do atleta: PAR-Q, Atestado de Liberação e Exame Cardiologico.">
         <div className="ceramic-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Heart className="w-4 h-4 text-ceramic-text-secondary" />
             <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Documentos de Saude
+              Documentos de Saúde
             </h3>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -753,26 +781,28 @@ export default function AthleteDetailView() {
               </p>
             </button>
 
-            {/* Atestado de Liberacao */}
+            {/* Atestado de Liberacao — clickable to expand upload/review (#928) */}
             {(() => {
               const hasLiberacao = docs.documents.some(d => d.document_type === 'liberacao_atividade');
               const liberacaoDoc = docs.documents.find(d => d.document_type === 'liberacao_atividade');
               const isApproved = liberacaoDoc?.review_status === 'approved';
               const isExpired = liberacaoDoc?.expires_at ? new Date(liberacaoDoc.expires_at) < new Date() : false;
               return (
-                <div className={`ceramic-inset p-3 rounded-lg text-center ${
+                <button
+                  onClick={() => setLiberacaoExpanded(!liberacaoExpanded)}
+                  className={`ceramic-inset p-3 rounded-lg text-center transition-all hover:scale-105 ${
                   isApproved && !isExpired ? 'bg-ceramic-success/5' :
                   isExpired ? 'bg-ceramic-error/5' :
                   hasLiberacao ? 'bg-ceramic-warning/5' :
                   athlete.requires_clearance_cert ? 'bg-ceramic-error/5' : 'bg-ceramic-cool/50'
-                }`} title="Atestado de liberacao para atividade fisica">
+                }${liberacaoExpanded ? ' ring-2 ring-ceramic-accent/40' : ''}`} title="Clique para gerenciar atestado de liberacao">
                   <ClipboardCheck className={`w-5 h-5 mx-auto mb-1 ${
                     isApproved && !isExpired ? 'text-ceramic-success' :
                     isExpired ? 'text-ceramic-error' :
                     hasLiberacao ? 'text-ceramic-warning' :
                     athlete.requires_clearance_cert ? 'text-ceramic-error' : 'text-ceramic-text-secondary/40'
                   }`} />
-                  <p className="text-[10px] font-bold text-ceramic-text-primary">Liberacao</p>
+                  <p className="text-[10px] font-bold text-ceramic-text-primary">Liberação</p>
                   <p className={`text-[10px] font-bold ${
                     isApproved && !isExpired ? 'text-ceramic-success' :
                     isExpired ? 'text-ceramic-error' :
@@ -784,23 +814,25 @@ export default function AthleteDetailView() {
                      hasLiberacao ? 'Pendente' :
                      athlete.requires_clearance_cert ? 'Ausente' : 'N/A'}
                   </p>
-                </div>
+                </button>
               );
             })()}
 
-            {/* Exame Cardiologico */}
+            {/* Exame Cardiologico — clickable to expand upload/review (#928) */}
             {(() => {
               const hasCardio = docs.documents.some(d => d.document_type === 'exame_cardiologico');
               const cardioDoc = docs.documents.find(d => d.document_type === 'exame_cardiologico');
               const isApproved = cardioDoc?.review_status === 'approved';
               const isExpired = cardioDoc?.expires_at ? new Date(cardioDoc.expires_at) < new Date() : false;
               return (
-                <div className={`ceramic-inset p-3 rounded-lg text-center ${
+                <button
+                  onClick={() => setCardioExpanded(!cardioExpanded)}
+                  className={`ceramic-inset p-3 rounded-lg text-center transition-all hover:scale-105 ${
                   isApproved && !isExpired ? 'bg-ceramic-success/5' :
                   isExpired ? 'bg-ceramic-error/5' :
                   hasCardio ? 'bg-ceramic-warning/5' :
                   athlete.requires_cardio_exam ? 'bg-ceramic-error/5' : 'bg-ceramic-cool/50'
-                }`} title="Exame cardiologico do atleta">
+                }${cardioExpanded ? ' ring-2 ring-ceramic-accent/40' : ''}`} title="Clique para gerenciar exame cardiologico">
                   <HeartPulse className={`w-5 h-5 mx-auto mb-1 ${
                     isApproved && !isExpired ? 'text-ceramic-success' :
                     isExpired ? 'text-ceramic-error' :
@@ -819,12 +851,12 @@ export default function AthleteDetailView() {
                      hasCardio ? 'Pendente' :
                      athlete.requires_cardio_exam ? 'Ausente' : 'N/A'}
                   </p>
-                </div>
+                </button>
               );
             })()}
           </div>
 
-          {/* Inline PAR-Q detail — expands inside Documentos de Saude (#912) */}
+          {/* Inline PAR-Q detail — expands inside Documentos de Saúde (#912) */}
           {parqExpanded && (
             <div className="mt-4 border-t border-ceramic-border pt-4">
               {athlete.allow_parq_onboarding ? (
@@ -842,9 +874,133 @@ export default function AthleteDetailView() {
               ) : (
                 <p className="text-sm text-ceramic-text-secondary">
                   O onboarding PAR-Q esta desativado para este atleta.
-                  Ative nas configuracoes do atleta para que ele possa preencher o questionario.
+                  Ative nas configurações do atleta para que ele possa preencher o questionario.
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Inline Liberacao detail — expands inside Documentos de Saude (#928) */}
+          {liberacaoExpanded && (
+            <div className="mt-4 border-t border-ceramic-border pt-4">
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Atestado de Liberacao
+                </p>
+                {docs.documents
+                  .filter(d => d.document_type === 'liberacao_atividade')
+                  .map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-2 ceramic-inset rounded-lg">
+                      <span className="text-sm text-ceramic-text-primary truncate max-w-[60%]">{doc.file_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded font-bold ${
+                          doc.review_status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
+                          doc.review_status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
+                          'bg-ceramic-warning/10 text-ceramic-warning'
+                        }`}>
+                          {doc.review_status === 'approved' ? 'Aprovado' :
+                           doc.review_status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                        </span>
+                        {doc.review_status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => docs.reviewDocument(doc.id, 'approved')}
+                              className="text-xs px-2 py-0.5 rounded bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/20 font-bold transition-colors"
+                              title="Aprovar documento"
+                            >
+                              Aprovar
+                            </button>
+                            <button
+                              onClick={() => docs.reviewDocument(doc.id, 'rejected')}
+                              className="text-xs px-2 py-0.5 rounded bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 font-bold transition-colors"
+                              title="Rejeitar documento"
+                            >
+                              Rejeitar
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                {docs.documents.filter(d => d.document_type === 'liberacao_atividade').length === 0 && (
+                  <p className="text-xs text-ceramic-text-secondary">Nenhum documento enviado.</p>
+                )}
+                <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-ceramic-border rounded-lg cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-colors">
+                  <Upload className="w-4 h-4 text-ceramic-text-secondary" />
+                  <span className="text-sm text-ceramic-text-secondary">
+                    {docs.isUploading ? 'Enviando...' : 'Enviar atestado de liberacao'}
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleDocUpload(e, 'liberacao_atividade')}
+                    disabled={docs.isUploading}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Inline Cardio detail — expands inside Documentos de Saude (#928) */}
+          {cardioExpanded && (
+            <div className="mt-4 border-t border-ceramic-border pt-4">
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Exame Cardiologico
+                </p>
+                {docs.documents
+                  .filter(d => d.document_type === 'exame_cardiologico')
+                  .map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-2 ceramic-inset rounded-lg">
+                      <span className="text-sm text-ceramic-text-primary truncate max-w-[60%]">{doc.file_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded font-bold ${
+                          doc.review_status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
+                          doc.review_status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
+                          'bg-ceramic-warning/10 text-ceramic-warning'
+                        }`}>
+                          {doc.review_status === 'approved' ? 'Aprovado' :
+                           doc.review_status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                        </span>
+                        {doc.review_status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => docs.reviewDocument(doc.id, 'approved')}
+                              className="text-xs px-2 py-0.5 rounded bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/20 font-bold transition-colors"
+                              title="Aprovar documento"
+                            >
+                              Aprovar
+                            </button>
+                            <button
+                              onClick={() => docs.reviewDocument(doc.id, 'rejected')}
+                              className="text-xs px-2 py-0.5 rounded bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 font-bold transition-colors"
+                              title="Rejeitar documento"
+                            >
+                              Rejeitar
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                {docs.documents.filter(d => d.document_type === 'exame_cardiologico').length === 0 && (
+                  <p className="text-xs text-ceramic-text-secondary">Nenhum documento enviado.</p>
+                )}
+                <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-ceramic-border rounded-lg cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-colors">
+                  <Upload className="w-4 h-4 text-ceramic-text-secondary" />
+                  <span className="text-sm text-ceramic-text-secondary">
+                    {docs.isUploading ? 'Enviando...' : 'Enviar exame cardiologico'}
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleDocUpload(e, 'exame_cardiologico')}
+                    disabled={docs.isUploading}
+                  />
+                </label>
+              </div>
             </div>
           )}
         </div>
@@ -1157,7 +1313,7 @@ export default function AthleteDetailView() {
                           )}
                           {pd.last_payment_date && (
                             <p className="text-[10px] text-ceramic-text-secondary/60">
-                              Ultimo pagamento:{' '}
+                              Último pagamento:{' '}
                               {new Date(pd.last_payment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </p>
                           )}
@@ -1274,7 +1430,7 @@ export default function AthleteDetailView() {
                 ? 'bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/20 border border-ceramic-success/20'
                 : 'bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 border border-ceramic-error/20'
             }`}
-            title={athlete.status === 'paused' ? 'Reativar o acesso do atleta ao portal e treinos' : 'Pausar o acesso do atleta — ele nao podera ver treinos ate ser desbloqueado'}
+            title={athlete.status === 'paused' ? 'Reativar o acesso do atleta ao portal e treinos' : 'Pausar o acesso do atleta — ele não podera ver treinos ate ser desbloqueado'}
           >
             {blockingAthlete ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -1318,7 +1474,7 @@ export default function AthleteDetailView() {
       )}
 
       {/* Feedbacks Timeline */}
-      <div className="px-6 mb-6" title="Historico de feedbacks do atleta. Mostra comentarios e RPE (percepcao de esforco) apos cada treino completado.">
+      <div className="px-6 mb-6" title="Histórico de feedbacks do atleta. Mostra comentarios e RPE (percepcao de esforco) apos cada treino completado.">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="w-5 h-5 text-ceramic-text-primary" />
           <h2 className="text-lg font-bold text-ceramic-text-primary">

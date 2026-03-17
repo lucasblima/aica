@@ -7,7 +7,7 @@
 export type InterviewQuestionType = 'free_text' | 'long_text' | 'single_choice' | 'multi_choice' | 'scale' | 'date' | 'ranked_list'
 
 // Category enum - 6 categories
-export type InterviewCategory = 'biografia' | 'anamnese' | 'censo' | 'preferencias' | 'conexoes' | 'objetivos'
+export type InterviewCategory = 'biografia' | 'anamnese' | 'censo' | 'preferências' | 'conexoes' | 'objetivos'
 
 // Session status
 export type InterviewSessionStatus = 'not_started' | 'in_progress' | 'completed' | 'paused'
@@ -116,7 +116,7 @@ export const INTERVIEW_CATEGORY_META: Record<InterviewCategory, {
     color: '#3B82F6', // blue
     description: 'Moradia, renda e contexto de vida',
   },
-  preferencias: {
+  'preferências': {
     label: 'Preferências',
     icon: '⚙️',
     color: '#F59E0B', // amber

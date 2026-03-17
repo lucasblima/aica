@@ -181,7 +181,7 @@ export const TimelineStage: React.FC = () => {
               Cronograma do Edital
             </h3>
             <p className="text-sm text-[#948D82]">
-              Fases externas do processo (Inscricao, Avaliacao, Resultado, etc.)
+              Fases externas do processo (Inscrição, Avaliação, Resultado, etc.)
             </p>
           </div>
 
@@ -289,7 +289,7 @@ export const TimelineStage: React.FC = () => {
                 type="text"
                 value={newPhase.description}
                 onChange={(e) => setNewPhase({ ...newPhase, description: e.target.value })}
-                placeholder="Descricao (opcional)"
+                placeholder="Descrição (opcional)"
                 className="w-full bg-ceramic-base border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
               />
               <div className="flex items-center justify-end gap-2">
@@ -320,7 +320,7 @@ export const TimelineStage: React.FC = () => {
             <CalendarClock className="w-8 h-8 text-[#948D82]" />
           </div>
           <h3 className="text-lg font-bold text-[#5C554B] mb-2">
-            Cronograma nao definido
+            Cronograma não definido
           </h3>
           <p className="text-sm text-[#948D82] mb-6 max-w-md mx-auto">
             {hasPdfContent

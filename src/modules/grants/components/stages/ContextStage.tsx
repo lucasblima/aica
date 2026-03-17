@@ -813,7 +813,7 @@ export const ContextStage: React.FC = () => {
         <div className="ceramic-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-[#5C554B]">
-              Conteudo Extraido
+              Conteúdo Extraido
             </h3>
             <button
               onClick={() => setShowPreview(true)}
@@ -836,7 +836,7 @@ export const ContextStage: React.FC = () => {
         <div className="ceramic-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-[#5C554B]">
-              Conteudo Completo
+              Conteúdo Completo
             </h3>
             <button
               onClick={() => setShowPreview(false)}
@@ -856,7 +856,7 @@ export const ContextStage: React.FC = () => {
       {/* Helper hint */}
       {!hasContent && !isProcessing && (
         <StageDependencyHint
-          message="Faca upload do PDF do edital para extrair automaticamente as perguntas e cronograma. Voce pode pular esta etapa e adicionar manualmente."
+          message="Faca upload do PDF do edital para extrair automaticamente as perguntas e cronograma. Você pode pular esta etapa e adicionar manualmente."
           variant="tip"
         />
       )}

@@ -98,7 +98,7 @@ export function IncentiveLawSlide({
       <div className="grid grid-cols-2 gap-8 mb-12">
         {(content.approvalNumber || editMode) && (
           <div className="card">
-            <h3 className="mb-2">Numero de Aprovacao</h3>
+            <h3 className="mb-2">Número de Aprovacao</h3>
             <EditableText
               value={content.approvalNumber || ''}
               onChange={(v) => handleChange('approvalNumber', v)}
@@ -111,7 +111,7 @@ export function IncentiveLawSlide({
         )}
         {(content.validityPeriod || editMode) && (
           <div className="card">
-            <h3 className="mb-2">Periodo de Validade</h3>
+            <h3 className="mb-2">Período de Validade</h3>
             <EditableText
               value={content.validityPeriod || ''}
               onChange={(v) => handleChange('validityPeriod', v)}

@@ -821,10 +821,10 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <div className="text-center max-w-md">
                 <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
-                  Erro ao carregar visualizacao
+                  Erro ao carregar visualização
                 </h3>
                 <p className="text-ceramic-text-secondary mb-4">
-                  Ocorreu um erro inesperado. Tente mudar de modo ou recarregar a pagina.
+                  Ocorreu um erro inesperado. Tente mudar de modo ou recarregar a página.
                 </p>
               </div>
             </div>

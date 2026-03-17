@@ -70,8 +70,8 @@ export default function QuoteExtractorPanel({
         </h3>
         <p className="text-sm text-ceramic-text-secondary text-center mb-6 max-w-sm">
           {transcription
-            ? 'Identifique automaticamente as melhores citacoes do episodio para redes sociais.'
-            : 'Gere a transcricao primeiro para extrair citacoes.'}
+            ? 'Identifique automaticamente as melhores citações do episódio para redes sociais.'
+            : 'Gere a transcricao primeiro para extrair citações.'}
         </p>
         {error && (
           <div className="text-center mb-4">
@@ -79,7 +79,7 @@ export default function QuoteExtractorPanel({
             <button
               onClick={() => { setError(null); handleExtract(); }}
               className="flex items-center gap-2 px-4 py-2 mx-auto text-sm text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors"
-              aria-label="Tentar extrair citacoes novamente"
+              aria-label="Tentar extrair citações novamente"
             >
               <RefreshCw className="w-4 h-4" />
               Tentar novamente
@@ -103,7 +103,7 @@ export default function QuoteExtractorPanel({
   if (isExtracting) {
     return (
       <div className="py-8">
-        <CeramicLoadingState module="studio" variant="list" lines={3} message="Extraindo melhores citacoes..." />
+        <CeramicLoadingState module="studio" variant="list" lines={3} message="Extraindo melhores citações..." />
       </div>
     );
   }

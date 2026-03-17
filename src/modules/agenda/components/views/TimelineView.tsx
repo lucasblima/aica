@@ -163,7 +163,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               notificationService.show({
                 type: 'error',
                 title: 'Erro ao restaurar',
-                message: 'Nao foi possivel desfazer a conclusao. Tente novamente.',
+                message: 'Não foi possível desfazer a conclusão. Tente novamente.',
                 icon: '❌',
                 duration: 5000,
               });

@@ -50,7 +50,7 @@ export function DangerZone({ userEmail, onDeleteAccount, isDeleting }: DangerZon
             exit={{ opacity: 0 }}
           >
             <p className="text-xs text-ceramic-text-secondary mb-3">
-              Esta acao e irreversivel. Todos os seus dados serao permanentemente excluidos.
+              Esta ação e irreversivel. Todos os seus dados serao permanentemente excluidos.
             </p>
             <button
               onClick={handleFirstClick}

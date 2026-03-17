@@ -5,7 +5,7 @@
  * States:
  * - default: "Me avise quando lancar"
  * - loading: spinner
- * - joined: "Voce sera avisado" with cancel
+ * - joined: "Você sera avisado" with cancel
  */
 
 import React, { useState } from 'react';
@@ -69,7 +69,7 @@ export function WaitlistButton({
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ceramic-success/10 text-ceramic-success font-medium text-sm transition-all hover:bg-ceramic-success/20"
         >
           <Check className="w-4 h-4" />
-          <span>Voce sera avisado</span>
+          <span>Você sera avisado</span>
         </button>
         {showCancel && (
           <button

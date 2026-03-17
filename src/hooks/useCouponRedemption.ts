@@ -17,7 +17,7 @@ export function useCouponRedemption(): UseCouponRedemptionReturn {
   const redeem = useCallback(async (code: string): Promise<RedeemResult> => {
     const trimmed = code.trim();
     if (!trimmed) {
-      const fail = { success: false, credits_earned: 0, new_balance: 0, message: 'Digite um codigo' };
+      const fail = { success: false, credits_earned: 0, new_balance: 0, message: 'Digite um código' };
       setError(fail.message);
       return fail;
     }

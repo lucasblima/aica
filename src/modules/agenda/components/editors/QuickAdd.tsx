@@ -18,7 +18,7 @@ type TaskType = 'task' | 'list' | 'event';
 type ProcessingStage = 'transcribing' | 'extracting' | null;
 
 const STAGE_CONFIG: Record<Exclude<ProcessingStage, null>, { icon: React.ElementType; label: string; color: string }> = {
-  transcribing: { icon: Mic, label: 'Transcrevendo audio...', color: 'text-ceramic-info' },
+  transcribing: { icon: Mic, label: 'Transcrevendo áudio...', color: 'text-ceramic-info' },
   extracting: { icon: Brain, label: 'Extraindo dados da tarefa...', color: 'text-purple-500' },
 };
 
@@ -156,7 +156,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
       fillPreview(extractedTask);
     } catch (err) {
       log.error('Voice-to-task error:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao processar audio.');
+      setError(err instanceof Error ? err.message : 'Erro ao processar áudio.');
     } finally {
       setIsTranscribing(false);
       setProcessingStage(null);
@@ -378,7 +378,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="O que voce precisa fazer?"
+                placeholder="O que você precisa fazer?"
                 className="flex-1 px-4 py-3 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors"
                 autoFocus
                 disabled={isLoading || isTranscribing}
@@ -445,19 +445,19 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 <div className="flex flex-col gap-0.5 min-w-[110px]">
                   <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
                     <Clock className="w-3 h-3" />
-                    Horario
+                    Horário
                   </label>
                   <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                    <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Horario" />
+                    <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Horário" />
                   </div>
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-[100px]">
                   <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
                     <Timer className="w-3 h-3" />
-                    Duracao
+                    Duração
                   </label>
                   <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                    <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="min" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} aria-label="Duracao em minutos" />
+                    <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="min" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} aria-label="Duração em minutos" />
                   </div>
                 </div>
               </div>
@@ -500,7 +500,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
               <>
                 <div className="space-y-2">
                   <p className="text-[11px] font-medium text-ceramic-text-secondary uppercase tracking-wide">AICA entendeu:</p>
-                  <input type="text" value={previewTitle} onChange={(e) => setPreviewTitle(e.target.value)} placeholder="Titulo" className="w-full px-4 py-3 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm font-medium text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors" autoFocus disabled={isLoading} maxLength={500} />
+                  <input type="text" value={previewTitle} onChange={(e) => setPreviewTitle(e.target.value)} placeholder="Título" className="w-full px-4 py-3 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm font-medium text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors" autoFocus disabled={isLoading} maxLength={500} />
                   {(previewDueDate || previewScheduledTime) && (
                     <div className="flex items-center gap-2 flex-wrap">
                       {previewDueDate && (
@@ -535,7 +535,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
             <AnimatePresence mode="wait">
               {previewTaskType === 'task' && (
                 <motion.div key="task-content" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-3 overflow-hidden">
-                  <textarea value={previewDescription} onChange={(e) => setPreviewDescription(e.target.value)} placeholder="Descricao (opcional)" rows={2} className="w-full px-4 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors resize-none" disabled={isLoading} />
+                  <textarea value={previewDescription} onChange={(e) => setPreviewDescription(e.target.value)} placeholder="Descrição (opcional)" rows={2} className="w-full px-4 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors resize-none" disabled={isLoading} />
                   <div className="flex flex-wrap gap-2">
                     {/* Priority */}
                     <div className="flex flex-col gap-0.5 flex-1 min-w-[120px]">
@@ -567,20 +567,20 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                     <div className="flex flex-col gap-0.5 min-w-[110px]">
                       <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
                         <Clock className="w-3 h-3" />
-                        Horario
+                        Horário
                       </label>
                       <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                        <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Horario" />
+                        <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none" disabled={isLoading} aria-label="Horário" />
                       </div>
                     </div>
                     {/* Duration */}
                     <div className="flex flex-col gap-0.5 min-w-[100px]">
                       <label className="flex items-center gap-1 text-xs font-medium text-ceramic-text-secondary">
                         <Timer className="w-3 h-3" />
-                        Duracao
+                        Duração
                       </label>
                       <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                        <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="min" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} aria-label="Duracao em minutos" />
+                        <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="min" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} aria-label="Duração em minutos" />
                       </div>
                     </div>
                   </div>
@@ -637,7 +637,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                     <input type="time" value={previewScheduledTime} onChange={(e) => setPreviewScheduledTime(e.target.value)} className="w-full bg-transparent text-sm font-medium text-ceramic-text-primary focus:outline-none" disabled={isLoading} />
                   </div>
                   <div className="flex items-center gap-1 px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
-                    <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="Duracao (min)" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} />
+                    <input type="number" value={previewDuration} onChange={(e) => setPreviewDuration(e.target.value)} placeholder="Duração (min)" min={1} max={480} className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none placeholder:text-ceramic-text-secondary/50" disabled={isLoading} />
                   </div>
                   <textarea value={previewDescription} onChange={(e) => setPreviewDescription(e.target.value)} placeholder="Notas do evento (opcional)" rows={2} className="w-full px-4 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors resize-none" disabled={isLoading} />
                   {isCalendarConnected && (
@@ -657,8 +657,8 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                   <p className="text-xs font-bold text-amber-700">{QUADRANT_MAP[aiSuggestion.quadrant].label}<span className="font-normal text-amber-600 ml-1">({Math.round(aiSuggestion.confidence * 100)}%)</span></p>
                   <p className="text-[11px] text-amber-600 truncate">{aiSuggestion.reasoning}</p>
                 </div>
-                <button type="button" onClick={acceptAiSuggestion} className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors" title="Aceitar sugestao"><Check className="w-3.5 h-3.5" /></button>
-                <button type="button" onClick={dismissAiSuggestion} className="p-1.5 rounded-lg text-amber-400 hover:text-amber-600 hover:bg-amber-100 transition-colors" title="Ignorar sugestao"><XCircle className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={acceptAiSuggestion} className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors" title="Aceitar sugestão"><Check className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={dismissAiSuggestion} className="p-1.5 rounded-lg text-amber-400 hover:text-amber-600 hover:bg-amber-100 transition-colors" title="Ignorar sugestão"><XCircle className="w-3.5 h-3.5" /></button>
               </motion.div>
             )}
 

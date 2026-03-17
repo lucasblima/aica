@@ -1,6 +1,6 @@
 /**
  * Organization Document Service
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Handles upload and processing of organization documents (Cartao CNPJ, etc.)
  * for automatic field extraction and wizard auto-fill.
@@ -88,7 +88,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
     return {
       valid: false,
-      error: `Tipo de arquivo nao suportado. Use PDF, PNG, JPG ou WebP.`,
+      error: `Tipo de arquivo não suportado. Use PDF, PNG, JPG ou WebP.`,
     };
   }
 
@@ -96,7 +96,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     const sizeMB = Math.round(file.size / 1024 / 1024);
     return {
       valid: false,
-      error: `Arquivo muito grande (${sizeMB}MB). Maximo permitido: 20MB.`,
+      error: `Arquivo muito grande (${sizeMB}MB). Máximo permitido: 20MB.`,
     };
   }
 
@@ -146,7 +146,7 @@ export async function uploadOrganizationDocument(
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
-    throw new Error('Usuario nao autenticado');
+    throw new Error('Usuario não autenticado');
   }
 
   // Create storage path
@@ -344,13 +344,13 @@ export async function processOrganizationDocument(
   // Get auth token
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   if (sessionError || !session) {
-    throw new Error('Sessao expirada. Faca login novamente.');
+    throw new Error('Sessão expirada. Faca login novamente.');
   }
 
   onProgress?.({
     stage: 'processing',
     progress: 70,
-    message: 'Extraindo informacoes...',
+    message: 'Extraindo informações...',
   });
 
   // Determine file_type from MIME type

@@ -47,7 +47,7 @@ export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   email_received: 'E-mail Recebido',
   call_outbound: 'Ligacao Realizada',
   call_inbound: 'Ligacao Recebida',
-  meeting: 'Reuniao',
+  meeting: 'Reunião',
   proposal_sent: 'Proposta Enviada',
   follow_up: 'Follow-up',
   negotiation: 'Negociacao',
@@ -107,7 +107,7 @@ export const ACTIVITY_OUTCOME_COLORS: Record<ActivityOutcome, string> = {
 
 /** Labels para recorrencia */
 export const RECURRENCE_TYPE_LABELS: Record<RecurrenceType, string> = {
-  daily: 'Diario',
+  daily: 'Diário',
   weekly: 'Semanal',
   monthly: 'Mensal',
 };
@@ -119,7 +119,7 @@ export const RECURRENCE_TYPE_LABELS: Record<RecurrenceType, string> = {
 /**
  * Atividade de prospeccao
  *
- * Representa uma interacao com um patrocinador potencial
+ * Representa uma interação com um patrocinador potencial
  */
 export interface ProspectActivity {
   id: string;
@@ -129,12 +129,12 @@ export interface ProspectActivity {
   // Tipo
   activity_type: ActivityType;
 
-  // Conteudo
+  // Conteúdo
   title: string;
   description: string | null;
   outcome: ActivityOutcome | null;
 
-  // Proxima acao
+  // Proxima ação
   next_action: string | null;
   next_action_date: string | null;
 
@@ -162,7 +162,7 @@ export interface ProspectActivity {
   };
 }
 
-/** Informacao de anexo */
+/** Informação de anexo */
 export interface AttachmentInfo {
   name: string;
   url: string;
@@ -185,7 +185,7 @@ export interface ProspectReminder {
   user_id: string;
   activity_id: string | null;
 
-  // Conteudo
+  // Conteúdo
   title: string;
   description: string | null;
 
@@ -261,7 +261,7 @@ export type UpdateProspectReminderDTO = Partial<Omit<CreateProspectReminderDTO, 
 // =============================================================================
 
 /**
- * Metricas de conversao do pipeline
+ * Métricas de conversão do pipeline
  */
 export interface PipelineConversionMetrics {
   stage: string;

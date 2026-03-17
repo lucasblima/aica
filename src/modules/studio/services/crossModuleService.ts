@@ -195,7 +195,7 @@ export async function syncRecordingToCalendar(
   }
 
   const guestLabel = episode.guestName ? ` com ${episode.guestName}` : '';
-  const title = `Gravacao: ${episode.title || 'Episodio'}${guestLabel}`;
+  const title = `Gravação: ${episode.title || 'Episódio'}${guestLabel}`;
 
   // Build start_time as ISO string
   const time = episode.scheduledTime || '10:00';
@@ -217,7 +217,7 @@ export async function syncRecordingToCalendar(
         event_type: 'recording',
         source: 'studio',
         location: episode.location || null,
-        description: `Gravacao do episodio${guestLabel}. Criado pelo Studio.`,
+        description: `Gravação do episódio${guestLabel}. Criado pelo Studio.`,
       })
       .select('id, title, start_time, end_time, source')
       .single();
@@ -287,7 +287,7 @@ export async function awardEpisodeCompletionCP(
       .insert({
         user_id: userId,
         type: 'text',
-        content: `Episodio publicado: ${episode.title}`,
+        content: `Episódio publicado: ${episode.title}`,
         emotion: 'proud',
         tags: ['#vitoria', '#studio', '#publicacao', `#episode:${episode.id}`],
       })

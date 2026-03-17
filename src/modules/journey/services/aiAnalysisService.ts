@@ -39,7 +39,7 @@ export async function analyzeContentRealtime(content: string): Promise<AISuggest
       action: 'analyze_content_realtime',
       payload: {
         content,
-        prompt: `Você é um coach de auto-reflexão. Analise este momento pessoal e forneça UMA sugestão útil.
+        prompt: `Você é um coach de auto-reflexão. Análise este momento pessoal e forneça UMA sugestão útil.
 
 Momento: "${content}"
 
@@ -140,7 +140,7 @@ export async function generatePostCaptureInsight(
         newMoment,
         recentTexts,
         topTags: topTags.join(', '),
-        prompt: `Analise este novo momento pessoal e identifique conexões com momentos recentes.
+        prompt: `Análise este novo momento pessoal e identifique conexões com momentos recentes.
 
 Novo momento: "${newMoment}"
 
@@ -247,7 +247,7 @@ export async function clusterMomentsByTheme(
       action: 'cluster_moments_by_theme',
       payload: {
         moments: momentsSummary,
-        prompt: `Analise estes momentos pessoais e agrupe-os por temas principais.
+        prompt: `Análise estes momentos pessoais e agrupe-os por temas principais.
 
 Momentos:
 ${momentsSummary}

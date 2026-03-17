@@ -54,7 +54,7 @@ export function usePresentationPdf({ deckId }: UsePresentationPdfOptions): UsePr
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        throw new Error('Voce precisa estar logado para gerar o PDF');
+        throw new Error('Você precisa estar logado para gerar o PDF');
       }
 
       const { data, error: fnError } = await supabase.functions.invoke(
@@ -68,7 +68,7 @@ export function usePresentationPdf({ deckId }: UsePresentationPdfOptions): UsePr
       );
 
       if (fnError) {
-        throw new Error(fnError.message || 'Erro ao chamar funcao de geracao de PDF');
+        throw new Error(fnError.message || 'Erro ao chamar função de geração de PDF');
       }
 
       if (!data?.success) {

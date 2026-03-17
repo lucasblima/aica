@@ -4,7 +4,7 @@
  * Frontend service for the Universal Input Funnel (Issue #211).
  * Wraps the `extract-intent` Edge Function for non-WhatsApp sources.
  *
- * Supports text, audio transcriptions, OCR output, and document extracts.
+ * Supports text, áudio transcriptions, OCR output, and document extracts.
  * Returns intent classification + embedding for caller to store.
  *
  * PRIVACY: rawText is sent to the Edge Function but NEVER stored — only
@@ -132,7 +132,7 @@ export function normalizeInput(text: string): string {
  *   moduleContext: 'journey',
  * });
  * if (result.success && result.intent) {
- *   console.log(result.intent.summary); // "Reflexao sobre comportamento em reunioes"
+ *   console.log(result.intent.summary); // "Reflexão sobre comportamento em reunioes"
  * }
  * ```
  */

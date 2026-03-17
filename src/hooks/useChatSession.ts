@@ -97,7 +97,7 @@ export function useChatSession(): UseChatSessionReturn {
 
   const getUserId = useCallback(async (): Promise<string> => {
     const { session: authSession } = await getCachedSession()
-    if (!authSession?.user?.id) throw new Error('Nao autenticado')
+    if (!authSession?.user?.id) throw new Error('Não autenticado')
     return authSession.user.id
   }, [])
 
@@ -164,7 +164,7 @@ export function useChatSession(): UseChatSessionReturn {
         setLimitInfo(limit)
         if (!limit.allowed) {
           setLimitReached(true)
-          setError(`Seus creditos mensais acabaram. ${limit.remaining} creditos restantes de ${limit.plan}.`)
+          setError(`Seus créditos mensais acabaram. ${limit.remaining} créditos restantes de ${limit.plan}.`)
           return
         }
       } catch (limitErr) {

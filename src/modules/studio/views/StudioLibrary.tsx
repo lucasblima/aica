@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Mic2, AlertCircle, Calendar, BarChart3, Palette } from 'lucide-react';
+import { Plus, Mic2, AlertCircle, Calendar, BarChart3, Palette, Home } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { PodcastShow } from '../types/podcast';
 import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
@@ -82,7 +82,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       setShows(data || []);
     } catch (error) {
       log.error('Error loading podcast shows:', error);
-      setLoadError('Nao foi possivel carregar seus podcasts. Verifique sua conexao e tente novamente.');
+      setLoadError('Não foi possível carregar seus podcasts. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -148,10 +148,17 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
         {/* Quick Links */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex flex-wrap gap-3 mb-6">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-base text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-cool border border-ceramic-border transition-colors"
+          >
+            <Home className="w-4 h-4" />
+            Inicio
+          </button>
           <a href="/studio/calendar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-border transition-colors">
             <Calendar className="w-4 h-4" />
-            Calendario
+            Calendário
           </a>
           <a href="/studio/analytics" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-border transition-colors">
             <BarChart3 className="w-4 h-4" />

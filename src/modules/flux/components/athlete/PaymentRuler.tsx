@@ -1,36 +1,30 @@
 /**
  * PaymentRuler — Visual notification ruler for athlete payment reminders
  *
- * Shows a horizontal timeline with markers at -7, -3, -1, 0, +1, +3, +7 days
+ * Shows a horizontal timeline with markers at -1, 0, +3, +7 days
  * relative to the payment due date. Highlights current position based on
  * today's date vs due date. Pure UI component — no actual notification sending.
  *
- * Issue #463
+ * Issue #463, simplified in #929
  */
 
 import React from 'react';
 
 /** Reminder markers relative to due date (negative = before, positive = after) */
-const RULER_MARKERS = [-7, -3, -1, 0, 1, 3, 7] as const;
+const RULER_MARKERS = [-1, 0, 3, 7] as const;
 
 /** Labels for each marker */
 const MARKER_LABELS: Record<number, string> = {
-  [-7]: '7 dias antes',
-  [-3]: '3 dias antes',
-  [-1]: 'Véspera',
-  [0]: 'Vencimento',
-  [1]: '1 dia após',
-  [3]: '3 dias após',
-  [7]: '7 dias após',
+  [-1]: 'Lembrete',
+  [0]: 'Vence',
+  [3]: 'Aviso',
+  [7]: 'Atraso',
 };
 
 /** Short labels for compact display */
 const MARKER_SHORT: Record<number, string> = {
-  [-7]: '-7d',
-  [-3]: '-3d',
   [-1]: '-1d',
-  [0]: 'Hoje',
-  [1]: '+1d',
+  [0]: 'Vencimento',
   [3]: '+3d',
   [7]: '+7d',
 };
@@ -204,7 +198,7 @@ export function PaymentRuler({ dueDay, paymentStatus }: PaymentRulerProps) {
                   }`}
                   title={MARKER_LABELS[marker]}
                 >
-                  {isPast ? 'Lembrete' : isDueDay ? 'Cobrar' : 'Aviso'}
+                  {MARKER_LABELS[marker]}
                 </span>
               </div>
             );

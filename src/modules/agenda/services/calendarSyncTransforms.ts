@@ -129,7 +129,7 @@ export function fluxSlotToGoogleEvent(
 
   const descParts: string[] = [];
   if (slot.intensity) descParts.push(`Intensidade: ${slot.intensity}`);
-  if (slot.duration) descParts.push(`Duracao: ${slot.duration}min`);
+  if (slot.duration) descParts.push(`Duração: ${slot.duration}min`);
   descParts.push('Sincronizado pelo AICA');
 
   return {

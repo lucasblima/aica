@@ -1,5 +1,5 @@
 /**
- * useGeminiLiveAudio - React hook for Gemini Live real-time audio sessions
+ * useGeminiLiveAudio - React hook for Gemini Live real-time áudio sessions
  *
  * Wraps GeminiLiveAudioService for use in React components with proper
  * state management and lifecycle handling.
@@ -23,24 +23,24 @@ export interface UseGeminiLiveAudioOptions {
   systemInstruction?: string;
   /** Voice name for Gemini output (e.g. "Kore", "Puck", "Charon") */
   voiceName?: string;
-  /** Enable text transcriptions of audio (default: true) */
+  /** Enable text transcriptions of áudio (default: true) */
   enableTranscription?: boolean;
 }
 
 export interface UseGeminiLiveAudioReturn {
-  /** Connect to Gemini Live and start audio session */
+  /** Connect to Gemini Live and start áudio session */
   connect: () => Promise<void>;
-  /** Disconnect and stop audio session */
+  /** Disconnect and stop áudio session */
   disconnect: () => void;
   /** Send a text message within the live session */
   sendText: (text: string) => void;
   /** Current connection status */
   status: AudioConnectionStatus;
-  /** Whether audio is actively streaming */
+  /** Whether áudio is actively streaming */
   isStreaming: boolean;
   /** Accumulated transcript messages */
   transcript: string;
-  /** Input audio level (0-100) for waveform visualization */
+  /** Input áudio level (0-100) for waveform visualization */
   audioLevel: number;
   /** Error message if any */
   error: string | null;
@@ -181,7 +181,7 @@ export function useGeminiLiveAudio(
   // Derive computed values
   const isStreaming = status === 'streaming';
   const transcript = messages
-    .map(m => `${m.role === 'user' ? 'Voce' : 'IA'}: ${m.content}`)
+    .map(m => `${m.role === 'user' ? 'Você' : 'IA'}: ${m.content}`)
     .join('\n');
 
   // Cleanup on unmount

@@ -57,12 +57,12 @@ export function useGrantsGroundedSearch(): UseGrantsGroundedSearchReturn {
           query,
           context,
           module: 'captacao',
-          systemPrompt: `Voce e um especialista em editais de fomento a pesquisa no Brasil.
+          systemPrompt: `Você e um especialista em editais de fomento a pesquisa no Brasil.
 Busque editais abertos e oportunidades de financiamento.
-Priorize informacoes de fontes oficiais (FAPERJ, FINEP, CNPq, CAPES, FAPESP).
-Inclua: nome do edital, agencia, prazo de submissao, valor disponivel, areas contempladas.
+Priorize informações de fontes oficiais (FAPERJ, FINEP, CNPq, CAPES, FAPESP).
+Inclua: nome do edital, agencia, prazo de submissao, valor disponível, areas contempladas.
 Responda sempre em portugues brasileiro.
-Se nao encontrar editais abertos, mencione editais recentes e indique quando novos podem abrir.`,
+Se não encontrar editais abertos, mencione editais recentes e indique quando novos podem abrir.`,
         },
       })
 
@@ -93,7 +93,7 @@ Se nao encontrar editais abertos, mencione editais recentes e indique quando nov
       ? ` nas agencias: ${agencies.join(', ')}`
       : ' em agencias brasileiras de fomento (FAPERJ, FINEP, CNPq, CAPES, FAPESP)'
 
-    const query = `Editais de fomento abertos para pesquisa em ${topic}${agencyFilter}. Quais estao com inscricoes abertas em 2026?`
+    const query = `Editais de fomento abertos para pesquisa em ${topic}${agencyFilter}. Quais estão com inscricoes abertas em 2026?`
 
     return performSearch(query)
   }, [performSearch])
@@ -104,7 +104,7 @@ Se nao encontrar editais abertos, mencione editais recentes e indique quando nov
   ): Promise<GrantSearchResult> => {
     const query = `Encontre editais de fomento similares a: "${editalTitle}". Contexto: ${editalSummary}. Busque editais abertos com requisitos e areas tematicas semelhantes.`
 
-    return performSearch(query, `Edital de referencia: ${editalTitle}`)
+    return performSearch(query, `Edital de referência: ${editalTitle}`)
   }, [performSearch])
 
   const clearError = useCallback(() => setError(null), [])

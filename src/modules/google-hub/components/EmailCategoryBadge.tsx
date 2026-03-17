@@ -21,7 +21,7 @@ interface CategoryConfig {
 
 const CATEGORY_CONFIG: Record<EmailCategory, CategoryConfig> = {
   actionable: {
-    label: 'Acao',
+    label: 'Ação',
     Icon: Zap,
     bgColor: 'bg-amber-100',
     textColor: 'text-amber-700',
@@ -51,7 +51,7 @@ const CATEGORY_CONFIG: Record<EmailCategory, CategoryConfig> = {
     textColor: 'text-pink-700',
   },
   notification: {
-    label: 'Notificacao',
+    label: 'Notificação',
     Icon: Bell,
     bgColor: 'bg-ceramic-warning/10',
     textColor: 'text-ceramic-warning',

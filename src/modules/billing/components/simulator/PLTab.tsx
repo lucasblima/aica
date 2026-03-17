@@ -34,7 +34,7 @@ export function PLTab({ monthly, breakEvenMonth }: PLTabProps) {
           <thead>
             <tr className="text-ceramic-text-secondary border-b border-ceramic-border">
               <th className="text-left py-2 px-2">
-                <Tooltip text="Numero do mes na simulacao (M1 = primeiro mes)" position="bottom">
+                <Tooltip text="Número do mes na simulação (M1 = primeiro mes)" position="bottom">
                   <span className="cursor-help">Mes</span>
                 </Tooltip>
               </th>
@@ -44,7 +44,7 @@ export function PLTab({ monthly, breakEvenMonth }: PLTabProps) {
                 </Tooltip>
               </th>
               <th className="text-right px-2">
-                <Tooltip text="Usuarios no plano gratuito. Nao geram receita mas consomem creditos de IA." position="bottom">
+                <Tooltip text="Usuarios no plano gratuito. Não geram receita mas consomem créditos de IA." position="bottom">
                   <span className="cursor-help">Free</span>
                 </Tooltip>
               </th>

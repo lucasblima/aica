@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { AIThinkingState } from '@/components/ui'
 import { useMonthlyDigest } from '../hooks/useMonthlyDigest'
+import { GenerateAudioButton } from '@/components/features/notebooklm'
 
 // =============================================================================
 // Types
@@ -47,7 +48,7 @@ const GRADE_CONFIG: Record<string, { bg: string; text: string; label: string }> 
   A: { bg: 'bg-ceramic-success/15', text: 'text-ceramic-success', label: 'Excelente' },
   B: { bg: 'bg-ceramic-info/15', text: 'text-ceramic-info', label: 'Bom' },
   C: { bg: 'bg-ceramic-warning/15', text: 'text-ceramic-warning', label: 'Regular' },
-  D: { bg: 'bg-amber-500/15', text: 'text-amber-600', label: 'Atencao' },
+  D: { bg: 'bg-amber-500/15', text: 'text-amber-600', label: 'Atenção' },
   F: { bg: 'bg-ceramic-error/15', text: 'text-ceramic-error', label: 'Critico' },
 }
 
@@ -101,8 +102,8 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({
 
         <div className="ceramic-inset p-4">
           <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-            O resumo com analise de IA estara disponivel quando o mes fechar.
-            Navegue para um mes anterior para ver a analise completa.
+            O resumo com análise de IA estara disponível quando o mes fechar.
+            Navegue para um mes anterior para ver a análise completa.
           </p>
         </div>
       </div>
@@ -114,7 +115,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({
     return (
       <div className="ceramic-card p-6">
         <AIThinkingState
-          message={isGenerating ? 'Gerando analise com IA...' : 'Carregando resumo...'}
+          message={isGenerating ? 'Gerando análise com IA...' : 'Carregando resumo...'}
         />
       </div>
     )
@@ -171,7 +172,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({
 
         <div className="ceramic-inset p-3">
           <p className="text-xs text-ceramic-text-secondary">
-            Nenhuma transacao encontrada para {monthName}. Faca upload de um extrato primeiro.
+            Nenhuma transação encontrada para {monthName}. Faca upload de um extrato primeiro.
           </p>
         </div>
       </div>
@@ -344,7 +345,7 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({
             </div>
             <div>
               <p className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider mb-1">
-                Dica para o proximo mes
+                Dica para o próximo mes
               </p>
               <p className="text-xs text-ceramic-text-primary leading-relaxed">
                 {digest.next_month_tip}
@@ -353,6 +354,26 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Generate Audio Briefing */}
+      <GenerateAudioButton
+        params={{
+          module: 'finance',
+          content: `Briefing Financeiro - ${monthName}.
+Nota: ${digest.month_grade}. ${digest.grade_explanation || ''}.
+Destaques: ${(digest.highlights || []).join('; ')}.
+Oportunidades de economia: ${(digest.savings_opportunities || []).join('; ')}.
+Alertas de risco: ${(digest.risk_alerts || []).join('; ')}.
+Dica: ${digest.next_month_tip || ''}.`,
+          title: `Briefing Financeiro - ${monthName}`,
+          format: 'brief',
+          length: 'short',
+          language: 'pt-BR',
+          instructions: 'Tom de coach financeiro amigável. Cubra: nota do mês, destaques, oportunidades de economia, alertas, e uma dica acionável.',
+        }}
+        label="Ouvir Briefing"
+        className="mt-4"
+      />
     </div>
   )
 }

@@ -104,7 +104,7 @@ export function useNarrativeAnalysis(): UseNarrativeAnalysisResult {
         setAnalysis(null);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao buscar analise';
+      const msg = err instanceof Error ? err.message : 'Erro ao buscar análise';
       log.error('fetchAnalysis failed:', err);
       setError(msg);
     } finally {

@@ -296,6 +296,9 @@ export interface MyAthleteProfile {
   status: AthleteStatus;
   allow_parq_onboarding: boolean;
   parq_clearance_status: 'pending' | 'cleared' | 'cleared_with_restrictions' | 'blocked' | 'expired' | null;
+  // Health doc requirements (set by coach)
+  requires_cardio_exam?: boolean;
+  requires_clearance_cert?: boolean;
   active_microcycle: {
     id: string;
     name: string;
@@ -574,10 +577,10 @@ export const SEVERITY_COLORS: Record<AlertSeverity, string> = {
  * Training modality configuration
  */
 export const MODALITY_CONFIG: Record<TrainingModality, { label: string; icon: string; color: string }> = {
-  swimming: { label: 'Natacao', icon: '🏊', color: 'cyan' },
+  swimming: { label: 'Natação', icon: '🏊', color: 'cyan' },
   running: { label: 'Corrida', icon: '🏃', color: 'green' },
   cycling: { label: 'Ciclismo', icon: '🚴', color: 'amber' },
-  strength: { label: 'Forca', icon: '🏋️', color: 'purple' },
+  strength: { label: 'Força', icon: '🏋️', color: 'purple' },
   walking: { label: 'Caminhada', icon: '🚶', color: 'blue' },
   triathlon: { label: 'Triatleta', icon: '🏅', color: 'rose' },
 };

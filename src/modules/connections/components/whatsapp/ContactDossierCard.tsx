@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ContactDossier, DossierContext } from '../../hooks/useContactDossier'
+import { GenerateAudioButton } from '@/components/features/notebooklm'
 
 // =============================================================================
 // TYPES
@@ -121,7 +122,7 @@ const ContextSection: React.FC<ContextSectionProps> = ({ context }) => {
 
           {context.notable_patterns.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Padroes notaveis</p>
+              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Padrões notaveis</p>
               <ul className="space-y-1">
                 {context.notable_patterns.map((pattern, i) => (
                   <li key={i} className="text-xs text-ceramic-text-secondary flex items-start gap-1.5">
@@ -274,7 +275,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
         {dossier?.health_score != null && (
           <span className="flex items-center gap-1">
             <Heart className="w-3.5 h-3.5" />
-            Saude: {dossier.health_score}/100
+            Saúde: {dossier.health_score}/100
           </span>
         )}
         {dossier?.relationship_type === 'group' && (
@@ -312,6 +313,28 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
       {/* Context (expandable) */}
       {dossier?.dossier_context && (
         <ContextSection context={dossier.dossier_context as DossierContext} />
+      )}
+
+      {/* Generate Audio Dossier */}
+      {dossier && (
+        <GenerateAudioButton
+          params={{
+            module: 'connections',
+            content: `Dossier de Contato: ${dossier?.contact_name || ''}.
+Resumo: ${dossier?.dossier_summary || ''}.
+Tópicos: ${(dossier?.dossier_topics || []).join(', ')}.
+Pendências: ${(dossier?.dossier_pending_items || []).join(', ')}.
+Score de saúde: ${dossier?.health_score || 0}/100.
+Interações: ${dossier?.interaction_count || 0}.`,
+            title: `Dossier - ${dossier?.contact_name || 'Contato'}`,
+            format: 'brief',
+            length: 'short',
+            language: 'pt-BR',
+            instructions: 'Resumo de 2-3 minutos para ouvir antes de ligar ou reunir com este contato. Tom profissional mas amigável. Inclua pontos-chave e itens pendentes.',
+          }}
+          label="Ouvir Dossier"
+          className="mt-4"
+        />
       )}
     </div>
   )

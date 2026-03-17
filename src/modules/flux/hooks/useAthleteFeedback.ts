@@ -265,7 +265,7 @@ export function useAthleteFeedback(profile: MyAthleteProfile | null) {
       try {
         const { data: userData } = await supabase.auth.getUser();
         const userId = userData?.user?.id;
-        if (!userId) throw new Error('Nao autenticado');
+        if (!userId) throw new Error('Não autenticado');
 
         // 1. Insert into athlete_feedback_entries
         const { error: insertErr } = await supabase
@@ -330,7 +330,7 @@ export function useAthleteFeedback(profile: MyAthleteProfile | null) {
       try {
         const { data: userData } = await supabase.auth.getUser();
         const userId = userData?.user?.id;
-        if (!userId) throw new Error('Nao autenticado');
+        if (!userId) throw new Error('Não autenticado');
 
         const { error: insertErr } = await supabase
           .from('athlete_feedback_entries')

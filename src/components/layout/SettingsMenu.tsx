@@ -358,7 +358,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                 <FileText className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-info" />
                             </div>
                             <span className="font-bold text-sm transition-colors">
-                                Termos de Servico
+                                Termos de Serviço
                             </span>
                         </button>
 

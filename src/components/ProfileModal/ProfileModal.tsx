@@ -77,7 +77,7 @@ export function ProfileModal({
         month: 'long',
         day: 'numeric',
       })
-    : 'Data nao disponivel'
+    : 'Data não disponível'
 
   return (
     <AnimatePresence>
@@ -143,7 +143,7 @@ export function ProfileModal({
                     : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
                 }`}
               >
-                Metricas
+                Métricas
               </button>
             </div>
 
@@ -210,8 +210,8 @@ export function ProfileModal({
                     </h4>
                   </div>
                   <p className="text-xs text-ceramic-text-secondary mb-4">
-                    Voce tem controle total sobre seus dados. A exclusao da conta remove permanentemente
-                    todas as suas informacoes de nossos servidores.
+                    Você tem controle total sobre seus dados. A exclusao da conta remove permanentemente
+                    todas as suas informações de nossos servidores.
                   </p>
 
                   <DangerZone
@@ -230,7 +230,7 @@ export function ProfileModal({
                       <div className="flex items-center gap-2 mb-4">
                         <TrendingUp className="w-4 h-4 text-ceramic-text-secondary" />
                         <h4 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                          Metricas de Eficiencia
+                          Métricas de Eficiência
                         </h4>
                       </div>
                       <EfficiencyFlowCard userId={userId} days={30} />
@@ -239,7 +239,7 @@ export function ProfileModal({
                     {/* Placeholder for future metrics */}
                     <div className="ceramic-inset p-4 text-center">
                       <p className="text-sm text-ceramic-text-secondary">
-                        Mais metricas em breve...
+                        Mais métricas em breve...
                       </p>
                     </div>
                   </div>

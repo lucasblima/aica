@@ -21,7 +21,7 @@ function getRpeLabel(rpe: number): string {
   if (rpe <= 3) return 'Leve';
   if (rpe <= 6) return 'Moderado';
   if (rpe <= 8) return 'Intenso';
-  return 'Maximo';
+  return 'Máximo';
 }
 
 const DAY_NAMES: Record<number, string> = {

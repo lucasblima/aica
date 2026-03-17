@@ -2,7 +2,7 @@
  * CRMCommandCenterView - Painel do Treinador (Coach Panel)
  *
  * Tela 5: Central de gestao com filtros visuais (modality/level/group tabs),
- * acoes em massa, sort por adesao, AthleteCard integrado, e Novo Atleta.
+ * ações em massa, sort por adesão, AthleteCard integrado, e Novo Atleta.
  * Substitui os dropdowns por pill tabs iguais ao FluxDashboard.
  *
  * Renamed from "Command Center" to "Painel do Treinador" (#460).
@@ -140,7 +140,7 @@ interface BulkWhatsAppModalProps {
 
 function BulkWhatsAppModal({ isOpen, onClose, athletes }: BulkWhatsAppModalProps) {
   const [messageTemplate, setMessageTemplate] = useState(
-    'Oi {{nome}}, tudo bem? Passando para dar uma atualizacao sobre seus treinos desta semana. Como voce esta se sentindo? Algum feedback ou dificuldade? Estou aqui pra te ajudar!'
+    'Oi {{nome}}, tudo bem? Passando para dar uma atualização sobre seus treinos desta semana. Como você esta se sentindo? Algum feedback ou dificuldade? Estou aqui pra te ajudar!'
   );
 
   if (!isOpen) return null;
@@ -532,12 +532,15 @@ export default function CRMCommandCenterView() {
   ): Promise<string | void> => {
     try {
       const modalityLevels = athleteData.modalityLevels || [];
-      if (modalityLevels.length === 0) {
+
+      // In edit mode, modality is required. In create mode, it's optional
+      // (athlete chooses modality later, coach assigns during prescription)
+      if (editingAthlete && modalityLevels.length === 0) {
         throw new Error('Selecione pelo menos uma modalidade');
       }
 
       const modalities = modalityLevels.map((ml) => ml.modality);
-      const primaryModality = modalities[0];
+      const primaryModality = modalities[0] || undefined;
       const { modalityLevels: _, ...athletePayload } = athleteData;
       const athleteWithModality = { ...athletePayload, modality: primaryModality };
 
@@ -561,25 +564,27 @@ export default function CRMCommandCenterView() {
         trackAthleteCreated().catch(() => {});
       }
 
-      // Sync athlete profiles
-      const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
-        athleteId,
-        modalities,
-        {
-          level: athleteData.level as AthleteLevel,
-          anamnesis: athleteData.anamnesis,
-          ftp: athleteData.ftp,
-          pace_threshold: athleteData.pace_threshold,
-          css: athleteData.swim_css,
-          modalityLevels: modalityLevels as Array<{
-            modality: TrainingModality;
-            level: AthleteLevel;
-          }>,
-        }
-      );
+      // Sync athlete profiles (skip if no modalities — create mode without modalities)
+      if (modalities.length > 0) {
+        const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
+          athleteId,
+          modalities,
+          {
+            level: athleteData.level as AthleteLevel,
+            anamnesis: athleteData.anamnesis,
+            ftp: athleteData.ftp,
+            pace_threshold: athleteData.pace_threshold,
+            css: athleteData.swim_css,
+            modalityLevels: modalityLevels as Array<{
+              modality: TrainingModality;
+              level: AthleteLevel;
+            }>,
+          }
+        );
 
-      if (profileError) {
-        console.error('Error syncing athlete profiles:', profileError);
+        if (profileError) {
+          console.error('Error syncing athlete profiles:', profileError);
+        }
       }
 
       setAthleteModalOpen(false);
@@ -1139,10 +1144,10 @@ export default function CRMCommandCenterView() {
             }`}
             title={
               adherenceSort === 'none'
-                ? 'Ordenar por adesao'
+                ? 'Ordenar por adesão'
                 : adherenceSort === 'desc'
-                ? 'Maior adesao primeiro'
-                : 'Menor adesao primeiro'
+                ? 'Maior adesão primeiro'
+                : 'Menor adesão primeiro'
             }
           >
             {adherenceSort === 'none' && (
@@ -1338,7 +1343,7 @@ export default function CRMCommandCenterView() {
         title="Excluir Atleta"
         message={
           athleteToDelete
-            ? `Tem certeza que deseja excluir ${athleteToDelete.name}? Esta acao nao pode ser desfeita.`
+            ? `Tem certeza que deseja excluir ${athleteToDelete.name}? Esta ação não pode ser desfeita.`
             : ''
         }
       />

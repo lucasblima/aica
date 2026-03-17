@@ -585,11 +585,11 @@ export const generateTranscript = async (episodeId: string): Promise<boolean> =>
 };
 
 /**
- * Generate cuts (placeholder - integrate with video editing service)
+ * Generate cuts (placeholder - integrate with vídeo editing service)
  */
 export const generateCuts = async (episodeId: string): Promise<boolean> => {
   try {
-    // TODO: Integrate with video editing service (Opus Clip, etc.)
+    // TODO: Integrate with vídeo editing service (Opus Clip, etc.)
     const cutsMetadata = [
       { start_time: 120, end_time: 180, title: 'Best moment 1', platform: 'tiktok' as const },
       { start_time: 300, end_time: 360, title: 'Best moment 2', platform: 'reels' as const },

@@ -84,8 +84,8 @@ interface UseIncentiveLawsReturn {
 /**
  * Hook para gerenciar lista de leis de incentivo fiscal
  *
- * @param options - Opcoes de configuracao
- * @returns Estado e acoes para gerenciar leis
+ * @param options - Opções de configuração
+ * @returns Estado e ações para gerenciar leis
  *
  * @example
  * ```tsx
@@ -228,7 +228,7 @@ interface UseIncentiveLawReturn {
  * Hook para gerenciar uma lei de incentivo especifica
  *
  * @param id - ID da lei (ou null)
- * @returns Estado e acoes para a lei
+ * @returns Estado e ações para a lei
  *
  * @example
  * ```tsx
@@ -319,7 +319,7 @@ interface UseIncentiveLawSummariesReturn {
 /**
  * Hook otimizado para selectors e dropdowns
  *
- * Carrega apenas os campos necessarios para exibicao em listas.
+ * Carrega apenas os campos necessários para exibicao em listas.
  *
  * @returns Lista de resumos de leis
  *
@@ -400,7 +400,7 @@ interface UseIncentiveLawAIContextReturn {
  * }, [selectedLawId]);
  *
  * // Usar context em prompts
- * const prompt = `${context}\n\nGere uma apresentacao comercial...`;
+ * const prompt = `${context}\n\nGere uma apresentação comercial...`;
  * ```
  */
 export function useIncentiveLawAIContext(

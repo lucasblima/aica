@@ -536,7 +536,7 @@ export function AthleteGroupManager({
               {athletesNotInSelectedGroup.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                    Disponiveis ({athletesNotInSelectedGroup.length})
+                    Disponíveis ({athletesNotInSelectedGroup.length})
                   </p>
                   {athletesNotInSelectedGroup.map((athlete) => (
                     <button

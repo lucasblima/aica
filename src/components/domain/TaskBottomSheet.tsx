@@ -131,7 +131,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         if (isDirty) {
-          const confirmed = window.confirm('Voce tem alteracoes nao salvas. Deseja sair?');
+          const confirmed = window.confirm('Você tem alterações não salvas. Deseja sair?');
           if (!confirmed) return;
         }
         onClose();
@@ -151,20 +151,20 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!title.trim()) {
-      newErrors.title = 'O titulo e obrigatorio';
+      newErrors.title = 'O título e obrigatório';
     } else if (title.trim().length < 3) {
-      newErrors.title = 'O titulo deve ter pelo menos 3 caracteres';
+      newErrors.title = 'O título deve ter pelo menos 3 caracteres';
     }
     if (dueDate) {
       const d = new Date(dueDate);
       const today = new Date(); today.setHours(0, 0, 0, 0);
-      if (d < today) newErrors.dueDate = 'A data nao pode ser no passado';
+      if (d < today) newErrors.dueDate = 'A data não pode ser no passado';
     }
     if (estimatedDuration && (isNaN(Number(estimatedDuration)) || Number(estimatedDuration) <= 0)) {
-      newErrors.estimatedDuration = 'Duracao deve ser um numero positivo';
+      newErrors.estimatedDuration = 'Duração deve ser um número positivo';
     }
     if (scheduledTime && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(scheduledTime)) {
-      newErrors.scheduledTime = 'Formato invalido. Use HH:MM';
+      newErrors.scheduledTime = 'Formato inválido. Use HH:MM';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -216,7 +216,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
 
   const handleCloseClick = useCallback(() => {
     if (isDirty) {
-      const confirmed = window.confirm('Voce tem alteracoes nao salvas. Deseja sair?');
+      const confirmed = window.confirm('Você tem alterações não salvas. Deseja sair?');
       if (!confirmed) return;
     }
     onClose();
@@ -273,7 +273,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
           {/* Title */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Titulo *
+              Título *
             </label>
             <input
               type="text"
@@ -282,7 +282,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
                 setTitle(e.target.value);
                 if (errors.title) setErrors({ ...errors, title: '' });
               }}
-              placeholder="Titulo da tarefa"
+              placeholder="Título da tarefa"
               className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
                 errors.title ? 'border border-ceramic-error' : ''
               }`}
@@ -327,7 +327,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
                 <Clock className="w-4 h-4" />
-                Horario
+                Horário
               </label>
               <input
                 type="time"
@@ -344,7 +344,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
                 <Clock className="w-4 h-4" />
-                Duracao (min)
+                Duração (min)
               </label>
               <input
                 type="number"
@@ -393,7 +393,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
         <div className="space-y-3">
           {/* Description */}
           <Accordion
-            title="Descricao"
+            title="Descrição"
             icon={FileText}
             defaultExpanded={!!task.description}
             id="sheet-accordion-description"
@@ -542,7 +542,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
 
       <div className="flex items-center gap-3">
         {isDirty && !errorCount && (
-          <span className="text-xs text-ceramic-text-secondary hidden sm:block">Alteracoes nao salvas</span>
+          <span className="text-xs text-ceramic-text-secondary hidden sm:block">Alterações não salvas</span>
         )}
         <button
           type="button"

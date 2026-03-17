@@ -106,7 +106,7 @@ export default function ArticleEditor({
                 {outline.map((section, i) => (
                   <div key={i} className="text-xs">
                     <p className="font-medium text-ceramic-text-primary">
-                      {i + 1}. {section.heading || 'Sem titulo'}
+                      {i + 1}. {section.heading || 'Sem título'}
                     </p>
                     {section.subpoints.length > 0 && (
                       <ul className="mt-0.5 ml-3 space-y-0.5">

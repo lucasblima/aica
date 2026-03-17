@@ -93,7 +93,7 @@ function getACWRColor(value: number): string {
 function getACWRLabel(value: number): string {
   if (value < 0.8) return 'Subtreino';
   if (value <= 1.3) return 'Ideal';
-  if (value <= 1.5) return 'Atencao';
+  if (value <= 1.5) return 'Atenção';
   return 'Risco';
 }
 

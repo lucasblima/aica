@@ -59,7 +59,7 @@ export function useProspectActivities(sponsorId: string | null) {
 
   // Adicionar atividade
   const addActivity = useCallback(async (dto: Omit<CreateProspectActivityDTO, 'sponsor_id'>) => {
-    if (!sponsorId) throw new Error('Sponsor ID nao definido');
+    if (!sponsorId) throw new Error('Sponsor ID não definido');
 
     try {
       setError(null);
@@ -172,7 +172,7 @@ export function useProspectReminders(sponsorId: string | null) {
 
   // Adicionar lembrete
   const addReminder = useCallback(async (dto: Omit<CreateProspectReminderDTO, 'sponsor_id'>) => {
-    if (!sponsorId) throw new Error('Sponsor ID nao definido');
+    if (!sponsorId) throw new Error('Sponsor ID não definido');
 
     try {
       setError(null);
@@ -428,7 +428,7 @@ export function usePipelineStats(projectId: string | null) {
 }
 
 // =============================================================================
-// useQuickActions - Acoes rapidas de prospeccao
+// useQuickActions - Ações rapidas de prospeccao
 // =============================================================================
 
 export function useQuickActions() {
@@ -467,7 +467,7 @@ export function useQuickActions() {
     }
   }, []);
 
-  // Shortcuts para acoes comuns
+  // Shortcuts para ações comuns
   const logCall = useCallback((sponsorId: string, title: string, outcome?: string) => {
     return logActivity(sponsorId, 'call_outbound', title);
   }, [logActivity]);
@@ -493,9 +493,9 @@ export function useQuickActions() {
   }, [logActivity]);
 
   const scheduleMeeting = useCallback((sponsorId: string, meetingDate: string) => {
-    return logActivity(sponsorId, 'meeting', `Reuniao agendada para ${meetingDate}`, {
+    return logActivity(sponsorId, 'meeting', `Reunião agendada para ${meetingDate}`, {
       newStatus: 'meeting_scheduled',
-      nextAction: 'Participar da reuniao',
+      nextAction: 'Participar da reunião',
       nextActionDate: meetingDate,
     });
   }, [logActivity]);

@@ -6,7 +6,7 @@
  */
 
 /**
- * ContactSlide - CTA e informacoes de contato
+ * ContactSlide - CTA e informações de contato
  * Issue #117 - Presentation Generator
  */
 
@@ -145,7 +145,7 @@ export function ContactSlide({
                 alt="QR Code"
                 className="w-96 h-96 mx-auto mb-6"
               />
-              <p className="text-xl opacity-70">Escaneie para mais informacoes</p>
+              <p className="text-xl opacity-70">Escaneie para mais informações</p>
             </div>
           ) : editMode ? (
             <div className="w-96 h-96 bg-ceramic-base rounded-lg flex items-center justify-center">

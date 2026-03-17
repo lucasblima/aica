@@ -83,7 +83,7 @@ export function FeatureGate({ featureId, children, className = '' }: FeatureGate
 
         {/* Progress info */}
         <p className="text-xs text-ceramic-text-secondary">
-          Voce tem <span className="font-semibold text-amber-600">{currentPoints.toLocaleString()} CP</span> — precisa de{' '}
+          Você tem <span className="font-semibold text-amber-600">{currentPoints.toLocaleString()} CP</span> — precisa de{' '}
           <span className="font-semibold">{targetXP.toLocaleString()}</span> para o Nivel {unlockLevel}
         </p>
 
@@ -105,7 +105,7 @@ export function FeatureGate({ featureId, children, className = '' }: FeatureGate
         {/* Explanation and tips */}
         <div className="w-full pt-2 border-t border-ceramic-border/50 space-y-1.5">
           <p className="text-[11px] text-ceramic-text-secondary leading-relaxed">
-            Ganhe Pontos de Consciencia (CP) para desbloquear! Registre momentos, responda perguntas diarias e use o chat.
+            Ganhe Pontos de Consciência (CP) para desbloquear! Registre momentos, responda perguntas diarias e use o chat.
           </p>
         </div>
       </div>

@@ -131,7 +131,7 @@ export default function TelegramLinkCard() {
                 ? 'Conta vinculada'
                 : status === 'pending'
                 ? 'Aguardando vinculacao'
-                : 'Nao vinculado'}
+                : 'Não vinculado'}
             </p>
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function TelegramLinkCard() {
             exit={{ opacity: 0 }}
           >
             <p className="text-sm text-ceramic-text-secondary mb-4">
-              Vincule sua conta Telegram para receber notificacoes e interagir
+              Vincule sua conta Telegram para receber notificações e interagir
               com a AICA diretamente pelo mensageiro.
             </p>
             <button
@@ -188,7 +188,7 @@ export default function TelegramLinkCard() {
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Gerando codigo...
+                  Gerando código...
                 </>
               ) : (
                 <>
@@ -211,7 +211,7 @@ export default function TelegramLinkCard() {
             {/* Code display */}
             <div className="bg-ceramic-base rounded-lg p-4 border border-ceramic-border">
               <div className="text-center mb-2">
-                <p className="text-sm text-ceramic-text-secondary mb-1">Seu codigo de vinculacao:</p>
+                <p className="text-sm text-ceramic-text-secondary mb-1">Seu código de vinculacao:</p>
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-3xl font-mono font-bold tracking-widest text-ceramic-text-primary">
                     {linkCode}
@@ -219,7 +219,7 @@ export default function TelegramLinkCard() {
                   <button
                     onClick={copyCode}
                     className="p-2 rounded-lg hover:bg-ceramic-cool transition-colors"
-                    title="Copiar codigo"
+                    title="Copiar código"
                   >
                     {copied ? (
                       <CheckCircle2 className="w-5 h-5 text-ceramic-success" />
@@ -234,7 +234,7 @@ export default function TelegramLinkCard() {
               <div className="flex items-center justify-center gap-1 text-xs text-ceramic-text-secondary">
                 <Clock className="w-3 h-3" />
                 {countdown === 'Expirado' ? (
-                  <span className="text-ceramic-error">Codigo expirado</span>
+                  <span className="text-ceramic-error">Código expirado</span>
                 ) : (
                   <span>Expira em {countdown}</span>
                 )}
@@ -263,7 +263,7 @@ export default function TelegramLinkCard() {
                 className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-ceramic-border text-sm text-ceramic-text-secondary hover:bg-ceramic-cool transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={cn('w-4 h-4', isGenerating && 'animate-spin')} />
-                Novo codigo
+                Novo código
               </button>
               <a
                 href="https://t.me/AicaLifeBot"
@@ -304,8 +304,8 @@ export default function TelegramLinkCard() {
             </div>
 
             <p className="text-sm text-ceramic-text-secondary">
-              Voce pode interagir com a AICA via @AicaLifeBot no Telegram.
-              Notificacoes e comandos estao ativos.
+              Você pode interagir com a AICA via @AicaLifeBot no Telegram.
+              Notificacoes e comandos estão ativos.
             </p>
 
             {/* Unlink */}

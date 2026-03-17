@@ -70,7 +70,7 @@ export function VidaUniversalInput() {
     }
   }
 
-  // Waveform bars from audio level
+  // Waveform bars from áudio level
   const waveformBars = useMemo(() => {
     const bars = 8
     return Array.from({ length: bars }, (_, i) => {
@@ -223,7 +223,7 @@ export function VidaUniversalInput() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={speech.isListening ? 'Gravando audio...' : 'O que voce quer fazer?'}
+          placeholder={speech.isListening ? 'Gravando áudio...' : 'O que você quer fazer?'}
           disabled={isCreating || speech.isListening}
           className="flex-1 bg-ceramic-cool rounded-xl px-4 py-3 text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/60 outline-none focus:ring-2 focus:ring-amber-500/30 transition-shadow disabled:opacity-60"
         />
@@ -240,7 +240,7 @@ export function VidaUniversalInput() {
                   ? 'bg-amber-100 text-amber-600'
                   : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-border'
             } disabled:opacity-40`}
-            aria-label={speech.isListening ? 'Parar gravacao' : speech.isTranscribing ? 'Transcrevendo...' : 'Gravar voz'}
+            aria-label={speech.isListening ? 'Parar gravação' : speech.isTranscribing ? 'Transcrevendo...' : 'Gravar voz'}
           >
             {speech.isTranscribing ? (
               <Loader2 className="w-4 h-4 animate-spin" />

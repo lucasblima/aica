@@ -329,7 +329,7 @@ export async function getValidAccessToken(): Promise<string | null> {
 
         if (!tokens) {
             log.error('[getValidAccessToken] ERROR_CODE=TOKEN_NOT_FOUND: No token in database');
-            throw new Error('Token nao encontrado. Autorize o Google Calendar primeiro.');
+            throw new Error('Token não encontrado. Autorize o Google Calendar primeiro.');
         }
 
         log.debug('[getValidAccessToken] Token info from database:', {
@@ -416,7 +416,7 @@ function classifyRefreshError(status: number, errorData: Record<string, unknown>
     if (status === 400 && errorString.includes('invalid_grant')) {
         return {
             code: 'INVALID_GRANT',
-            message: 'Refresh token revogado ou expirado. Reconexao necessaria.',
+            message: 'Refresh token revogado ou expirado. Reconexão necessaria.',
             isRetryable: false,
             requiresReconnect: true,
         };
@@ -436,7 +436,7 @@ function classifyRefreshError(status: number, errorData: Record<string, unknown>
     if (status >= 500 && status < 600) {
         return {
             code: `SERVER_ERROR_${status}`,
-            message: 'Erro temporario no servidor Google. Tentando novamente.',
+            message: 'Erro temporário no servidor Google. Tentando novamente.',
             isRetryable: true,
             requiresReconnect: false,
         };
@@ -446,7 +446,7 @@ function classifyRefreshError(status: number, errorData: Record<string, unknown>
     if (status === 401) {
         return {
             code: 'UNAUTHORIZED',
-            message: 'Credenciais invalidas. Reconexao necessaria.',
+            message: 'Credenciais invalidas. Reconexão necessaria.',
             isRetryable: false,
             requiresReconnect: true,
         };
@@ -649,7 +649,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
     if (refreshState.consecutiveFailures >= TOKEN_REFRESH_CONFIG.maxRetries) {
         notifyRefreshFailure({
             code: lastError?.code || 'MAX_RETRIES_EXCEEDED',
-            message: 'Falha ao sincronizar calendario apos multiplas tentativas. Verifique sua conexao.',
+            message: 'Falha ao sincronizar calendário apos multiplas tentativas. Verifique sua conexão.',
             requiresReconnect: false,
         });
     }

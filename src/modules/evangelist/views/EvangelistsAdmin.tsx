@@ -108,7 +108,7 @@ export function EvangelistsAdmin() {
       try {
         setActionMessage(null);
         await adminService.markCommissionsAsPaid(evangelistId, getCurrentMonth());
-        setActionMessage({ type: 'success', text: 'Comissoes marcadas como pagas.' });
+        setActionMessage({ type: 'success', text: 'Comissões marcadas como pagas.' });
         await fetchData();
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao marcar como pago';
@@ -230,7 +230,7 @@ export function EvangelistsAdmin() {
             accent="text-ceramic-success"
           />
           <SummaryCard
-            label="Comissoes a Pagar"
+            label="Comissões a Pagar"
             value={`R$ ${summary.total_pending_payment.toFixed(2)}`}
             accent="text-orange-600"
           />
@@ -346,11 +346,11 @@ export function EvangelistsAdmin() {
                   <th className="px-6 py-3 font-medium">Nome</th>
                   <th className="px-6 py-3 font-medium">Email</th>
                   <th className="px-6 py-3 font-medium">Tier</th>
-                  <th className="px-6 py-3 font-medium">Codigo Referral</th>
+                  <th className="px-6 py-3 font-medium">Código Referral</th>
                   <th className="px-6 py-3 font-medium text-right">Confirmados</th>
                   <th className="px-6 py-3 font-medium text-right">Comissao Acumulada</th>
                   <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium">Acoes</th>
+                  <th className="px-6 py-3 font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ceramic-border">
@@ -390,7 +390,7 @@ export function EvangelistsAdmin() {
                           <button
                             onClick={() => handleMarkPaid(ev.id)}
                             className="text-xs text-ceramic-info hover:text-ceramic-info/80 font-medium transition-colors"
-                            title="Marcar comissoes do periodo atual como pagas"
+                            title="Marcar comissões do período atual como pagas"
                           >
                             Marcar Pago
                           </button>

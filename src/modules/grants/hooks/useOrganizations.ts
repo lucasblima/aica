@@ -1,5 +1,5 @@
 /**
- * useOrganizations - Hook para gerenciamento de organizacoes
+ * useOrganizations - Hook para gerenciamento de organizações
  *
  * Issue #95 - Criar entidade Organizations
  *
@@ -36,10 +36,10 @@ interface UseOrganizationsReturn {
 }
 
 /**
- * Hook para gerenciar lista de organizacoes
+ * Hook para gerenciar lista de organizações
  *
- * @param options - Opcoes do hook
- * @returns Estado e acoes para gerenciar organizacoes
+ * @param options - Opções do hook
+ * @returns Estado e ações para gerenciar organizações
  *
  * @example
  * ```tsx
@@ -72,7 +72,7 @@ export function useOrganizations(
       setOrganizations(data);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao carregar organizacoes';
+        err instanceof Error ? err.message : 'Erro ao carregar organizações';
       setError(message);
       log.error('Erro:', err);
     } finally {
@@ -168,7 +168,7 @@ interface UseOrganizationReturn {
  * Hook para gerenciar uma organizacao especifica
  *
  * @param id - ID da organizacao (ou null)
- * @returns Estado e acoes para a organizacao
+ * @returns Estado e ações para a organizacao
  *
  * @example
  * ```tsx
@@ -209,7 +209,7 @@ export function useOrganization(id: string | null): UseOrganizationReturn {
   const update = useCallback(
     async (updates: UpdateOrganizationDTO) => {
       if (!id) {
-        throw new Error('ID da organizacao nao definido');
+        throw new Error('ID da organizacao não definido');
       }
 
       const updatedOrg = await orgService.updateOrganization(id, updates);
@@ -253,7 +253,7 @@ interface UseOrganizationRelationshipsReturn {
  * Hook para gerenciar relacionamentos de uma organizacao
  *
  * @param organizationId - ID da organizacao
- * @returns Estado e acoes para gerenciar relacionamentos
+ * @returns Estado e ações para gerenciar relacionamentos
  */
 export function useOrganizationRelationships(
   organizationId: string | null
@@ -332,7 +332,7 @@ interface UseOrganizationMembersReturn {
  * Hook para gerenciar membros de uma organizacao
  *
  * @param organizationId - ID da organizacao
- * @returns Estado e acoes para gerenciar membros
+ * @returns Estado e ações para gerenciar membros
  */
 export function useOrganizationMembers(
   organizationId: string | null

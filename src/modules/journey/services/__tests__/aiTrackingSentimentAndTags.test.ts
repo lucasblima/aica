@@ -68,7 +68,7 @@ vi.mock('@/integrations/geminiSentimentAnalysis', () => ({
 vi.mock('@/integrations/whisperTranscription', () => ({
   transcribeAudioWithWhisper: vi.fn().mockResolvedValue({
     success: true,
-    text: 'Transcribed audio content',
+    text: 'Transcribed áudio content',
     transcribedAt: new Date(),
   }),
   validateAudioFile: vi.fn().mockReturnValue({ valid: true }),

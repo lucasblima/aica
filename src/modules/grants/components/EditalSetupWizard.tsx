@@ -329,7 +329,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                       {existingDocument.original_filename}
                     </p>
                     <p className="text-xs text-ceramic-text-tertiary mt-2">
-                      Extraindo informacoes estruturadas com IA
+                      Extraindo informações estruturadas com IA
                     </p>
                   </div>
                 ) : (

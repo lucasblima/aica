@@ -11,6 +11,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { springHover } from '@/lib/animations/ceramic-motion';
+import { GenerateAudioButton } from '@/components/features/notebooklm';
 
 // ============================================
 // Types
@@ -555,6 +556,22 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
           })}
         </div>
       </div>
+
+      {/* Generate Audio for Weekly Plan */}
+      <GenerateAudioButton
+        params={{
+          module: 'flux',
+          content: `Plano de Treino - Semana ${weekNumber}.
+Treinos da semana: ${workouts.map((w) => `${w.name || w.modality} (${w.duration || 0}min, intensidade ${w.intensity || 'moderada'})`).join('; ')}.`,
+          title: `Treino Semana ${weekNumber}`,
+          format: 'brief',
+          length: 'short',
+          language: 'pt-BR',
+          instructions: 'Tom motivacional de coach. Explique os exercícios da semana, foco de cada sessão, e dicas de recuperação. Energize o atleta!',
+        }}
+        label="Gerar Audio do Treino"
+        className="mt-4 px-4"
+      />
     </div>
   );
 };

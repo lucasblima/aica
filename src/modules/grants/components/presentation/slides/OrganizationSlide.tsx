@@ -74,7 +74,7 @@ export function OrganizationSlide({
             tag="p"
             className="mb-8 text-justify"
             editMode={editMode}
-            placeholder="Descricao da organizacao..."
+            placeholder="Descrição da organizacao..."
             multiline
           />
 

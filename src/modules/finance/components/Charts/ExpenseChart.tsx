@@ -37,8 +37,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   housing: 'Moradia',
   food: 'Alimentacao',
   transport: 'Transporte',
-  health: 'Saude',
-  education: 'Educacao',
+  health: 'Saúde',
+  education: 'Educação',
   entertainment: 'Lazer',
   shopping: 'Compras',
   salary: 'Salario',
@@ -169,7 +169,7 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({ data, totalExpenses 
           Gastos por Categoria
         </h3>
         <div className="flex items-center justify-center h-48 text-ceramic-text-secondary">
-          Nenhuma transacao encontrada
+          Nenhuma transação encontrada
         </div>
       </div>
     );

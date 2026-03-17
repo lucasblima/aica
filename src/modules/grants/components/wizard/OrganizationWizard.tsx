@@ -1,6 +1,6 @@
 /**
  * OrganizationWizard Component
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Main compound component that orchestrates the entire wizard flow.
  */
@@ -304,7 +304,7 @@ function StepContent({ fields, formData, fieldXpMap, onFieldChange }: StepConten
           {String.fromCodePoint(0x1F389)}
         </motion.div>
         <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">
-          Revisao Final
+          Revisão Final
         </h3>
         <p className="text-ceramic-text-secondary">
           Revise os dados e clique em Finalizar para salvar sua organizacao.

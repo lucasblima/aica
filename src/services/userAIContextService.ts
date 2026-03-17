@@ -145,7 +145,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       })
       eventsRes = {
         data: events.map(e => ({
-          title: e.summary || 'Sem titulo',
+          title: e.summary || 'Sem título',
           start_time: e.start.dateTime || e.start.date || '',
         })),
         error: null,
@@ -202,7 +202,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       upcomingEpisodes: episodesRes.count || 0,
       financeSummary,
       upcomingEvents: (eventsRes.data || []).map((e: any) => ({
-        title: e.title || 'Sem titulo',
+        title: e.title || 'Sem título',
         startTime: e.start_time,
       })),
       patterns,

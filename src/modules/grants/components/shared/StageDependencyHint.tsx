@@ -42,7 +42,7 @@ const STAGE_LABELS: Record<StageId, string> = {
   setup: 'Contexto & PDF',
   structure: 'Perguntas',
   drafting: 'Preenchimento IA',
-  docs: 'Documentacao',
+  docs: 'Documentação',
   timeline: 'Cronograma',
 };
 

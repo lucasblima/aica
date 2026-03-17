@@ -224,7 +224,7 @@ export function PixPaymentModal({
                   </div>
                   <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">PIX expirado</h3>
                   <p className="text-sm text-ceramic-text-secondary">
-                    O codigo PIX expirou. Tente novamente para gerar um novo.
+                    O código PIX expirou. Tente novamente para gerar um novo.
                   </p>
                   <button
                     onClick={onClose}
@@ -265,7 +265,7 @@ export function PixPaymentModal({
                   {pixData.copy_paste && (
                     <div>
                       <p className="text-xs text-ceramic-text-secondary mb-2 font-medium">
-                        Ou copie o codigo PIX:
+                        Ou copie o código PIX:
                       </p>
                       <div className="flex gap-2">
                         <div className="flex-1 bg-ceramic-text-secondary/5 rounded-xl px-4 py-3 overflow-hidden">

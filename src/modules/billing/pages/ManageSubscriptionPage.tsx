@@ -74,7 +74,7 @@ export function ManageSubscriptionPage() {
   const getAuthHeaders = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session?.access_token) {
-      throw new Error('Sessao expirada. Faca login novamente.');
+      throw new Error('Sessão expirada. Faca login novamente.');
     }
     return { Authorization: `Bearer ${sessionData.session.access_token}` };
   }, []);
@@ -173,7 +173,7 @@ export function ManageSubscriptionPage() {
         {/* Cancel Success */}
         {cancelSuccess && (
           <div className="bg-ceramic-success/8 border border-ceramic-success/15 text-ceramic-success rounded-xl px-5 py-3.5 text-sm font-medium">
-            Assinatura cancelada com sucesso. Voce retornou ao plano Free.
+            Assinatura cancelada com sucesso. Você retornou ao plano Free.
           </div>
         )}
 
@@ -191,7 +191,7 @@ export function ManageSubscriptionPage() {
             <Crown className="w-10 h-10 text-ceramic-text-secondary/40 mx-auto mb-3" />
             <h2 className="text-lg font-bold text-ceramic-text-primary mb-2">Nenhuma assinatura ativa</h2>
             <p className="text-sm text-ceramic-text-secondary mb-6">
-              Voce esta no plano Free. Faca upgrade para desbloquear mais creditos e funcionalidades.
+              Você esta no plano Free. Faca upgrade para desbloquear mais créditos e funcionalidades.
             </p>
             <button
               onClick={() => navigate('/pricing')}
@@ -235,7 +235,7 @@ export function ManageSubscriptionPage() {
                 <p className="text-sm font-bold text-ceramic-text-primary">{formatCurrency(asaasSub.value)}</p>
               </div>
               <div>
-                <p className="text-xs text-ceramic-text-secondary mb-1">Proxima cobranca</p>
+                <p className="text-xs text-ceramic-text-secondary mb-1">Proxima cobrança</p>
                 <p className="text-sm font-bold text-ceramic-text-primary">
                   {asaasSub.nextDueDate ? formatDate(asaasSub.nextDueDate) : '—'}
                 </p>
@@ -247,7 +247,7 @@ export function ManageSubscriptionPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-ceramic-text-secondary mb-1">Creditos/mes</p>
+                <p className="text-xs text-ceramic-text-secondary mb-1">Créditos/mes</p>
                 <p className="text-sm font-bold text-ceramic-text-primary">
                   {plan.monthly_credits >= 1000
                     ? `${(plan.monthly_credits / 1000).toFixed(plan.monthly_credits % 1000 === 0 ? 0 : 1)}k`
@@ -280,8 +280,8 @@ export function ManageSubscriptionPage() {
           <div className="bg-ceramic-error/5 border border-ceramic-error/20 rounded-2xl p-6 space-y-4">
             <h3 className="text-base font-bold text-ceramic-error">Cancelar assinatura?</h3>
             <p className="text-sm text-ceramic-text-secondary">
-              Ao cancelar, voce perdera acesso aos beneficios do plano pago e retornara ao plano Free
-              com 500 creditos/mes. Esta acao nao pode ser desfeita.
+              Ao cancelar, você perdera acesso aos beneficios do plano pago e retornara ao plano Free
+              com 500 créditos/mes. Esta ação não pode ser desfeita.
             </p>
             <div className="flex gap-3">
               <button
@@ -311,7 +311,7 @@ export function ManageSubscriptionPage() {
           <div className="bg-ceramic-50 rounded-2xl shadow-ceramic-emboss p-6">
             <div className="flex items-center gap-2.5 mb-5">
               <CreditCard className="w-5 h-5 text-amber-500" />
-              <h2 className="text-lg font-bold text-ceramic-text-primary">Historico de Pagamentos</h2>
+              <h2 className="text-lg font-bold text-ceramic-text-primary">Histórico de Pagamentos</h2>
             </div>
 
             <div className="space-y-3">

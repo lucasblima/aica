@@ -11,6 +11,7 @@ import { WeeklySummary } from '../../types/weeklySummary'
 import { AudioRecorder } from '../capture/AudioRecorder'
 import { transcribeAudio } from '@/services/audioService'
 import { useStreakTrend } from '@/hooks/useStreakTrend'
+import { GenerateAudioButton } from '@/components/features/notebooklm'
 
 const log = createNamespacedLogger('WeeklySummaryCard')
 import {
@@ -405,6 +406,27 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
             </div>
           </div>
         )}
+
+        {/* Generate Audio Button */}
+        <GenerateAudioButton
+          params={{
+            module: 'journey',
+            content: `Resumo Semanal de Consciência.
+Tendência emocional: ${summary.summary_data?.emotionalTrend || 'estável'}.
+Emoções dominantes: ${(summary.summary_data?.dominantEmotions || []).join(', ')}.
+Momentos-chave: ${(summary.summary_data?.keyMoments || []).map((m: any) => m.preview).join('; ')}.
+Insights: ${(summary.summary_data?.insights || []).join('; ')}.
+Foco sugerido: ${summary.summary_data?.suggestedFocus || ''}.
+CP ganhos: ${summary.cp_earned_week || 0}.`,
+            title: `Resumo Semanal - ${new Date(summary.period_start).toLocaleDateString('pt-BR')}`,
+            format: 'brief',
+            length: 'short',
+            language: 'pt-BR',
+            instructions: 'Tom reflexivo e encorajador. Fale sobre padrões emocionais, momentos marcantes e recomendações para a próxima semana. Estilo de coaching pessoal.',
+          }}
+          label="Ouvir Resumo"
+          className="mt-4"
+        />
       </div>
     </div>
   )

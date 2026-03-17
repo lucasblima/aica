@@ -2,7 +2,7 @@
  * Field Validators for Organization Wizard
  * Issue #100 - Validacoes de CNPJ, email e telefone
  *
- * Funcoes de validacao para campos do wizard de organizacoes.
+ * Funcoes de validacao para campos do wizard de organizações.
  */
 
 // =============================================================================
@@ -10,7 +10,7 @@
 // =============================================================================
 
 /**
- * Remove caracteres nao numericos do CNPJ
+ * Remove caracteres não numericos do CNPJ
  */
 export function cleanCNPJ(cnpj: string): string {
   return cnpj.replace(/\D/g, '');
@@ -31,11 +31,11 @@ export function formatCNPJ(cnpj: string): string {
 
 /**
  * Valida CNPJ com digito verificador
- * Retorna null se valido, mensagem de erro se invalido
+ * Retorna null se válido, mensagem de erro se inválido
  */
 export function validateCNPJ(value: unknown): string | null {
   if (!value || typeof value !== 'string' || value.trim() === '') {
-    return null; // Campo opcional vazio e valido
+    return null; // Campo opcional vazio e válido
   }
 
   const cnpj = cleanCNPJ(value);
@@ -60,7 +60,7 @@ export function validateCNPJ(value: unknown): string | null {
   ];
 
   if (invalidCNPJs.includes(cnpj)) {
-    return 'CNPJ invalido';
+    return 'CNPJ inválido';
   }
 
   // Calcula primeiro digito verificador
@@ -78,7 +78,7 @@ export function validateCNPJ(value: unknown): string | null {
 
   let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
   if (result !== parseInt(digits.charAt(0))) {
-    return 'CNPJ invalido (digito verificador)';
+    return 'CNPJ inválido (digito verificador)';
   }
 
   // Calcula segundo digito verificador
@@ -95,10 +95,10 @@ export function validateCNPJ(value: unknown): string | null {
 
   result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
   if (result !== parseInt(digits.charAt(1))) {
-    return 'CNPJ invalido (digito verificador)';
+    return 'CNPJ inválido (digito verificador)';
   }
 
-  return null; // Valido
+  return null; // Válido
 }
 
 // =============================================================================
@@ -107,11 +107,11 @@ export function validateCNPJ(value: unknown): string | null {
 
 /**
  * Valida formato de email
- * Retorna null se valido, mensagem de erro se invalido
+ * Retorna null se válido, mensagem de erro se inválido
  */
 export function validateEmail(value: unknown): string | null {
   if (!value || typeof value !== 'string' || value.trim() === '') {
-    return null; // Campo opcional vazio e valido
+    return null; // Campo opcional vazio e válido
   }
 
   const email = value.trim().toLowerCase();
@@ -120,18 +120,18 @@ export function validateEmail(value: unknown): string | null {
   const emailRegex = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/;
 
   if (!emailRegex.test(email)) {
-    return 'Email invalido';
+    return 'Email inválido';
   }
 
   // Verifica se tem dominio com pelo menos 2 caracteres
   const parts = email.split('@');
   if (parts.length !== 2) {
-    return 'Email invalido';
+    return 'Email inválido';
   }
 
   const domain = parts[1];
   if (!domain.includes('.')) {
-    return 'Email deve ter um dominio valido (ex: @dominio.com)';
+    return 'Email deve ter um dominio válido (ex: @dominio.com)';
   }
 
   const tld = domain.split('.').pop();
@@ -139,7 +139,7 @@ export function validateEmail(value: unknown): string | null {
     return 'Email deve ter uma extensao valida (ex: .com, .org, .br)';
   }
 
-  return null; // Valido
+  return null; // Válido
 }
 
 // =============================================================================
@@ -147,7 +147,7 @@ export function validateEmail(value: unknown): string | null {
 // =============================================================================
 
 /**
- * Remove caracteres nao numericos do telefone
+ * Remove caracteres não numericos do telefone
  */
 export function cleanPhone(phone: string): string {
   return phone.replace(/\D/g, '');
@@ -170,18 +170,18 @@ export function formatPhone(phone: string): string {
     return cleaned.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
   }
 
-  // Se nao encaixar, retorna original
+  // Se não encaixar, retorna original
   return phone;
 }
 
 /**
  * Valida telefone brasileiro
  * Aceita fixo (10 digitos) ou celular (11 digitos)
- * Retorna null se valido, mensagem de erro se invalido
+ * Retorna null se válido, mensagem de erro se inválido
  */
 export function validatePhone(value: unknown): string | null {
   if (!value || typeof value !== 'string' || value.trim() === '') {
-    return null; // Campo opcional vazio e valido
+    return null; // Campo opcional vazio e válido
   }
 
   const phone = cleanPhone(value);
@@ -191,10 +191,10 @@ export function validatePhone(value: unknown): string | null {
     return 'Telefone deve ter 10 ou 11 digitos';
   }
 
-  // Verifica DDD valido (11-99)
+  // Verifica DDD válido (11-99)
   const ddd = parseInt(phone.substring(0, 2));
   if (ddd < 11 || ddd > 99) {
-    return 'DDD invalido';
+    return 'DDD inválido';
   }
 
   // Se for celular (11 digitos), deve comecar com 9
@@ -202,12 +202,12 @@ export function validatePhone(value: unknown): string | null {
     return 'Celular deve comecar com 9';
   }
 
-  // Se for fixo (10 digitos), nao pode comecar com 9
+  // Se for fixo (10 digitos), não pode comecar com 9
   if (phone.length === 10 && phone.charAt(2) === '9') {
     return 'Para celular, inclua os 11 digitos';
   }
 
-  return null; // Valido
+  return null; // Válido
 }
 
 // =============================================================================
@@ -216,11 +216,11 @@ export function validatePhone(value: unknown): string | null {
 
 /**
  * Valida URL de website
- * Retorna null se valido, mensagem de erro se invalido
+ * Retorna null se válido, mensagem de erro se inválido
  */
 export function validateURL(value: unknown): string | null {
   if (!value || typeof value !== 'string' || value.trim() === '') {
-    return null; // Campo opcional vazio e valido
+    return null; // Campo opcional vazio e válido
   }
 
   const url = value.trim();
@@ -236,10 +236,10 @@ export function validateURL(value: unknown): string | null {
 
     // Verifica hostname
     if (!parsed.hostname || parsed.hostname.length < 3) {
-      return 'URL deve ter um dominio valido';
+      return 'URL deve ter um dominio válido';
     }
 
-    return null; // Valido
+    return null; // Válido
   } catch {
     // Se falhar ao criar URL, tenta adicionar https://
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -259,7 +259,7 @@ export function validateURL(value: unknown): string | null {
 // =============================================================================
 
 /**
- * Remove caracteres nao numericos do CEP
+ * Remove caracteres não numericos do CEP
  */
 export function cleanCEP(cep: string): string {
   return cep.replace(/\D/g, '');
@@ -277,11 +277,11 @@ export function formatCEP(cep: string): string {
 
 /**
  * Valida CEP brasileiro
- * Retorna null se valido, mensagem de erro se invalido
+ * Retorna null se válido, mensagem de erro se inválido
  */
 export function validateCEP(value: unknown): string | null {
   if (!value || typeof value !== 'string' || value.trim() === '') {
-    return null; // Campo opcional vazio e valido
+    return null; // Campo opcional vazio e válido
   }
 
   const cep = cleanCEP(value);
@@ -293,10 +293,10 @@ export function validateCEP(value: unknown): string | null {
   // CEPs invalidos conhecidos
   if (['00000000', '11111111', '22222222', '33333333', '44444444',
        '55555555', '66666666', '77777777', '88888888', '99999999'].includes(cep)) {
-    return 'CEP invalido';
+    return 'CEP inválido';
   }
 
-  return null; // Valido
+  return null; // Válido
 }
 
 // =============================================================================
@@ -323,7 +323,7 @@ export function getFieldValidator(fieldName: string): ((value: unknown) => strin
 
 /**
  * Valida um campo pelo nome
- * Retorna null se valido ou campo sem validador, mensagem de erro se invalido
+ * Retorna null se válido ou campo sem validador, mensagem de erro se inválido
  */
 export function validateField(fieldName: string, value: unknown): string | null {
   const validator = FIELD_VALIDATORS[fieldName];

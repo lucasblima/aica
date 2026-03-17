@@ -190,7 +190,7 @@ export function ModuleHubPage() {
 
         {filteredModules.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-sm text-ceramic-text-secondary">Nenhum modulo encontrado</p>
+            <p className="text-sm text-ceramic-text-secondary">Nenhum módulo encontrado</p>
           </div>
         )}
       </div>
