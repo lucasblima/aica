@@ -222,10 +222,10 @@ export function assessReadiness(
       : fatigueRisk === 'moderate'
       ? 'Carga moderada. Treino normal pode continuar, mas monitore sinais de fadiga.'
       : acwr > ACWR_DANGER_ZONE
-      ? 'Carga aguda muito alta em relacao ao cronico. Reduza volume para evitar lesoes.'
+      ? 'Carga aguda muito alta em relação ao cronico. Reduza volume para evitar lesões.'
       : readinessScore >= 80
       ? 'Atleta descansado e pronto para treino intenso ou competicao.'
-      : 'Condicoes normais para treino. Siga o plano programado.';
+      : 'Condições normais para treino. Siga o plano programado.';
 
   return {
     readinessScore,

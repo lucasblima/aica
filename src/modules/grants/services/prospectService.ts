@@ -212,7 +212,7 @@ export async function getSponsorReminders(sponsorId: string): Promise<ProspectRe
  */
 export async function getPendingReminders(daysAhead: number = 7): Promise<PendingReminder[]> {
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) throw new Error('Usuario nao autenticado');
+  if (!userData.user) throw new Error('Usuario não autenticado');
 
   const { data, error } = await supabase.rpc('get_pending_reminders', {
     p_user_id: userData.user.id,
@@ -290,7 +290,7 @@ export async function deleteReminder(reminderId: string): Promise<void> {
 // =============================================================================
 
 /**
- * Buscar metricas de conversao do pipeline
+ * Buscar métricas de conversão do pipeline
  */
 export async function getConversionMetrics(projectId: string): Promise<PipelineConversionMetrics[]> {
   const { data, error } = await supabase.rpc('get_prospect_conversion_metrics', {
@@ -304,9 +304,9 @@ export async function getConversionMetrics(projectId: string): Promise<PipelineC
 /**
  * Buscar estatisticas do pipeline para dashboard
  *
- * NOTE: Esta funcao busca todos os sponsors e calcula estatisticas no cliente.
+ * NOTE: Esta função busca todos os sponsors e calcula estatisticas no cliente.
  * Para projetos com muitos sponsors (1000+), considere criar uma view materializada
- * ou funcao SQL para calcular as estatisticas diretamente no banco.
+ * ou função SQL para calcular as estatisticas diretamente no banco.
  */
 export async function getPipelineStats(projectId: string): Promise<PipelineStats> {
   // Buscar todos os sponsors do projeto
@@ -335,7 +335,7 @@ export async function getPipelineStats(projectId: string): Promise<PipelineStats
   // Lembretes pendentes (aproximacao - contando sponsors com next_action_date)
   const pending_follow_ups = sponsorList.filter(s => s.status === 'contacted').length;
 
-  // Taxa de conversao: confirmados / total
+  // Taxa de conversão: confirmados / total
   const confirmed = sponsorList.filter(s =>
     CONFIRMED_SPONSOR_STATUSES.includes(s.status as SponsorStatus)
   ).length;

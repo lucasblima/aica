@@ -110,7 +110,7 @@ export default function AlertsView() {
                 const typeLabels: Record<string, string> = {
                   all: 'Todos',
                   feedback_received: 'Feedback',
-                  health: 'Saude',
+                  health: 'Saúde',
                   motivation: 'Motivacao',
                   absence: 'Ausencia',
                   documents: 'Documentos',
@@ -272,7 +272,7 @@ export default function AlertsView() {
                 Nenhum alerta encontrado
               </p>
               <p className="text-sm text-ceramic-text-secondary font-light">
-                Todos os atletas estao bem!
+                Todos os atletas estão bem!
               </p>
             </div>
           </div>

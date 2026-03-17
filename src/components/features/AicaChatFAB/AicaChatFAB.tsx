@@ -238,7 +238,7 @@ export function AicaChatFAB({
   const handleExecuteAction = useCallback(async (action: ChatAction) => {
     const result = await executeChatAction(action)
     if (!result.success) {
-      throw new Error(result.error || 'Erro ao executar acao')
+      throw new Error(result.error || 'Erro ao executar ação')
     }
   }, [])
 
@@ -315,7 +315,7 @@ export function AicaChatFAB({
                 className="aica-fab-header__action"
                 onClick={() => setShowSessions(true)}
                 aria-label="Ver conversas"
-                title="Historico"
+                title="Histórico"
               >
                 <Clock size={16} />
               </button>
@@ -378,7 +378,7 @@ export function AicaChatFAB({
                     onClick={() => switchSession(s.id)}
                   >
                     <span className="aica-fab-session-item__title">
-                      {s.title || 'Sem titulo'}
+                      {s.title || 'Sem título'}
                     </span>
                     <span className="aica-fab-session-item__date">
                       {formatDate(s.updated_at)}
@@ -410,7 +410,7 @@ export function AicaChatFAB({
               <div className="aica-fab-messages">
                 {messages.length === 0 && !isLoading && (
                   <div className="aica-fab-empty-state">
-                    <p className="aica-fab-empty-state__greeting">Ola! Como posso ajudar?</p>
+                    <p className="aica-fab-empty-state__greeting">Olá! Como posso ajudar?</p>
                     <div className="aica-fab-quick-actions">
                       <button
                         className="aica-fab-quick-action"
@@ -442,11 +442,11 @@ export function AicaChatFAB({
                         className="aica-fab-quick-action"
                         onClick={() => {
                           setInput('')
-                          sendMessage('Quais sao meus padroes comportamentais recentes?')
+                          sendMessage('Quais sao meus padrões comportamentais recentes?')
                         }}
                       >
                         <Brain size={13} />
-                        <span>Meus padroes</span>
+                        <span>Meus padrões</span>
                       </button>
                     </div>
                   </div>
@@ -504,7 +504,7 @@ export function AicaChatFAB({
                   limitReached ? (
                     <div className="rounded-lg mx-3 my-2 p-3 bg-ceramic-warning/10 border border-ceramic-warning/30">
                       <p className="text-ceramic-warning text-xs font-medium mb-1">
-                        Creditos mensais esgotados
+                        Créditos mensais esgotados
                       </p>
                       <p className="text-ceramic-text-secondary text-xs">
                         {error}
@@ -577,7 +577,7 @@ export function AicaChatFAB({
                     )}
                     onClick={toggleMic}
                     disabled={isLoading || isTranscribing}
-                    aria-label={isListening ? 'Parar gravacao' : isTranscribing ? 'Transcrevendo...' : 'Gravar voz'}
+                    aria-label={isListening ? 'Parar gravação' : isTranscribing ? 'Transcrevendo...' : 'Gravar voz'}
                     title={isListening ? 'Parar' : isTranscribing ? 'Transcrevendo...' : 'Falar'}
                   >
                     {isTranscribing ? (

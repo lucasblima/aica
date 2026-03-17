@@ -199,7 +199,7 @@ export function useWorkspaceState({
  * Determines the initial stage to show based on episode data
  *
  * Fix for #663: Previously only checked biography to skip past setup,
- * which forced users back to "Configuracao" even when guest_name and theme
+ * which forced users back to "Configuração" even when guest_name and theme
  * were already filled in from the wizard. Now checks guest_name + theme
  * as a signal that setup is complete.
  */

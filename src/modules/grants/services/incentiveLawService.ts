@@ -9,7 +9,7 @@
  * Incentive Law Service
  * Issue #96 - Cadastro de leis de incentivo fiscal
  *
- * Servico para gerenciamento de leis de incentivo fiscal (Rouanet, ProAC, etc.)
+ * Serviço para gerenciamento de leis de incentivo fiscal (Rouanet, ProAC, etc.)
  * - CRUD operations (leitura publica, escrita admin)
  * - Filtros por jurisdicao, tipo de imposto, estado
  * - Formatacao para contexto de IA (prompts)
@@ -68,7 +68,7 @@ export async function getIncentiveLaws(
     if (filters?.is_active !== undefined) {
       query = query.eq('is_active', filters.is_active);
     } else {
-      // Por padrao, retorna apenas leis ativas
+      // Por padrão, retorna apenas leis ativas
       query = query.eq('is_active', true);
     }
     if (filters?.search) {
@@ -82,7 +82,7 @@ export async function getIncentiveLaws(
     if (sort) {
       query = query.order(sort.field, { ascending: sort.direction === 'asc' });
     } else {
-      // Ordenacao padrao por nome
+      // Ordenacao padrão por nome
       query = query.order('name', { ascending: true });
     }
 
@@ -214,7 +214,7 @@ export async function getIncentiveLawSummaries(): Promise<IncentiveLawSummary[]>
 /**
  * Busca o contexto formatado de uma lei para uso em prompts de IA
  *
- * Usa a funcao SQL get_incentive_law_ai_context para gerar
+ * Usa a função SQL get_incentive_law_ai_context para gerar
  * texto estruturado para inclusao em prompts.
  *
  * @param lawId - ID da lei
@@ -261,10 +261,10 @@ Tipo de Imposto: ${law.tax_type}
 Deducao Maxima: ${law.max_deduction_percentage != null ? `${law.max_deduction_percentage}%` : 'Variavel'}
 
 DESCRICAO:
-${law.description || 'Sem descricao disponivel'}
+${law.description || 'Sem descrição disponível'}
 
 COMO FUNCIONA:
-${law.how_it_works || 'Sem informacoes sobre o processo'}
+${law.how_it_works || 'Sem informações sobre o processo'}
 
 BENEFICIOS PARA PATROCINADORES:
 ${law.benefits_summary || 'Consulte o site oficial'}

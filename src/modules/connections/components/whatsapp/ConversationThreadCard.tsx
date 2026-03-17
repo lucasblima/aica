@@ -151,7 +151,7 @@ export const ConversationThreadCard: React.FC<ConversationThreadCardProps> = ({
         <div className="mb-2">
           <p className="text-xs font-medium text-ceramic-warning flex items-center gap-1 mb-1">
             <ListTodo className="w-3 h-3" />
-            Acoes pendentes ({thread.action_items.length})
+            Ações pendentes ({thread.action_items.length})
           </p>
           <ul className="space-y-0.5">
             {thread.action_items.slice(0, 3).map((a, i) => (

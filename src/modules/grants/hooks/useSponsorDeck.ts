@@ -181,7 +181,7 @@ export function useSponsorDeck({ projectId }: UseSponsorDeckOptions): UseSponsor
         setProgressStep('Validando dados do projeto...');
 
         if (!projectId) {
-          throw new Error('ID do projeto e obrigatorio');
+          throw new Error('ID do projeto e obrigatório');
         }
 
         // Step 2: Get session for authorization
@@ -190,12 +190,12 @@ export function useSponsorDeck({ projectId }: UseSponsorDeckOptions): UseSponsor
 
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !session) {
-          throw new Error('Voce precisa estar logado para gerar o deck');
+          throw new Error('Você precisa estar logado para gerar o deck');
         }
 
         // Step 3: Call edge function
         setProgress(30);
-        setProgressStep('Gerando conteudo com IA...');
+        setProgressStep('Gerando conteúdo com IA...');
 
         const response = await fetch(
           `${SUPABASE_FUNCTIONS_URL}/generate-sponsor-deck`,
@@ -215,7 +215,7 @@ export function useSponsorDeck({ projectId }: UseSponsorDeckOptions): UseSponsor
 
         // Step 4: Process response
         setProgress(70);
-        setProgressStep('Processando apresentacao...');
+        setProgressStep('Processando apresentação...');
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -225,7 +225,7 @@ export function useSponsorDeck({ projectId }: UseSponsorDeckOptions): UseSponsor
         const result: GenerateDeckResponse = await response.json();
 
         if (!result.success) {
-          throw new Error(result.error || 'Falha ao gerar a apresentacao');
+          throw new Error(result.error || 'Falha ao gerar a apresentação');
         }
 
         if (!result.pptxBase64) {

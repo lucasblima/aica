@@ -10,7 +10,7 @@
  * Issue #96 - Cadastro de leis de incentivo fiscal
  *
  * Componente de card para exibicao visual de leis de incentivo.
- * Mostra informacoes resumidas com cores e icones por jurisdicao.
+ * Mostra informações resumidas com cores e icones por jurisdicao.
  *
  * @module modules/grants/components/IncentiveLawCard
  */
@@ -42,7 +42,7 @@ import {
 // =============================================================================
 
 interface IncentiveLawCardProps {
-  /** Lei de incentivo ou dados ja formatados */
+  /** Lei de incentivo ou dados já formatados */
   law: IncentiveLaw | IncentiveLawCardData;
   /** Callback ao clicar no card */
   onClick?: (lawId: string) => void;
@@ -54,7 +54,7 @@ interface IncentiveLawCardProps {
   className?: string;
   /** Mostrar link externo */
   showExternalLink?: boolean;
-  /** Mostrar descricao completa */
+  /** Mostrar descrição completa */
   showDescription?: boolean;
 }
 
@@ -270,7 +270,7 @@ interface IncentiveLawCardCompactProps {
 }
 
 /**
- * Versao compacta do card para listas e selecao
+ * Versão compacta do card para listas e selecao
  */
 export function IncentiveLawCardCompact({
   law,

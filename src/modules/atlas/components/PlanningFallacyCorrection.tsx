@@ -55,7 +55,7 @@ export const PlanningFallacyCorrection: React.FC<PlanningFallacyCorrectionProps>
           {/* Explanation */}
           <p className="mt-1 text-xs text-ceramic-text-secondary">
             <Clock className="w-3 h-3 inline mr-1" />
-            Voce estimou {formatDuration(estimatedMinutes)} → Correcao:{' '}
+            Você estimou {formatDuration(estimatedMinutes)} → Correcao:{' '}
             {formatDuration(correctedMinutes)} (historico: {multiplierDisplay}x)
           </p>
 

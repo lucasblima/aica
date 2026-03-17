@@ -39,17 +39,17 @@ export function useResearchChat() {
       .filter(c => c.status === 'discarded')
       .map(c => c.title);
 
-    return `Voce e Aica, assistente de pesquisa para podcast. Contexto:
+    return `Você e Aica, assistente de pesquisa para podcast. Contexto:
 - Convidado: ${guestName}
 - Tema: ${theme || 'geral'}
-- Biografia: ${dossier?.biography?.substring(0, 2000) || 'Nao disponivel'}
+- Biografia: ${dossier?.biography?.substring(0, 2000) || 'Não disponível'}
 - Controversias: ${dossier?.controversies?.join('; ') || 'Nenhuma'}
 - Cards aprovados: ${approvedCards.join(', ') || 'Nenhum'}
 - Cards descartados: ${discardedCards.join(', ') || 'Nenhum'}
 
 Ajude o entrevistador com pesquisa, perguntas e preparacao. Responda em portugues brasileiro.
-Se sugerir informacao que deveria ser adicionada ao dossie, formate assim:
-[SUGESTAO_DOSSIER: titulo | secao (bio/ficha/noticias) | texto completo]`;
+Se sugerir informação que deveria ser adicionada ao dossie, formate assim:
+[SUGESTAO_DOSSIER: título | seção (bio/ficha/noticias) | texto completo]`;
   }, [guestName, theme, dossier, suggestionCards]);
 
   // Send a message
@@ -86,7 +86,7 @@ Se sugerir informacao que deveria ser adicionada ao dossie, formate assim:
 
       if (fnError) {
         log.error('gemini-chat error:', fnError);
-        throw new Error(fnError.message || 'Erro na funcao gemini-chat');
+        throw new Error(fnError.message || 'Erro na função gemini-chat');
       }
 
       const responseText = data?.response || data?.result?.response || data?.text || 'Sem resposta';

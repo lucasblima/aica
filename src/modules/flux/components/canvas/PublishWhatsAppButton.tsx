@@ -45,7 +45,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
     const dayNames = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
 
     let message = `*Treino Semana ${weekNumber}*\n\n`;
-    message += `Ola ${athleteName.split(' ')[0]}!\n\n`;
+    message += `Olá ${athleteName.split(' ')[0]}!\n\n`;
     message += `Aqui esta sua programacao de treinos para a semana:\n\n`;
 
     // List workouts sequentially (no random day assignment)
@@ -254,7 +254,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                         <span className="text-sm font-bold text-ceramic-text-primary">Agendar para Domingo 18h</span>
                       </div>
                       <p className="text-xs text-ceramic-text-secondary mt-0.5">
-                        Envio automatico no fim de semana
+                        Envio automático no fim de semana
                       </p>
                     </div>
                   </label>

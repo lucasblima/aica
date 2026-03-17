@@ -193,7 +193,7 @@ export const GroupAnalyticsCard: React.FC<GroupAnalyticsCardProps> = ({
         />
         <StatCard
           icon={ListTodo}
-          label="Acoes"
+          label="Ações"
           value={analytics.total_action_items}
           color="text-ceramic-warning"
         />

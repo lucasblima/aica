@@ -41,7 +41,7 @@ export const EDITAL_STAGES: StageDefinition[] = [
   },
   {
     id: 'docs',
-    label: '4. Documentacao',
+    label: '4. Documentação',
     shortLabel: 'Docs',
     description: 'Checklist de documentos de habilitacao'
   },

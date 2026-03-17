@@ -358,7 +358,7 @@ let serviceInstance: GeminiLiveService | null = null
  * @example
  * ```ts
  * const service = getGeminiLiveService()
- * await service.sendMessage('Ola', callbacks)
+ * await service.sendMessage('Olá', callbacks)
  * ```
  */
 export function getGeminiLiveService(): GeminiLiveService {

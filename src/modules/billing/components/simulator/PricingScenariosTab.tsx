@@ -42,7 +42,7 @@ function ScenarioColumn({ config, onUpdate, color, result, onPromote, isFirst }:
         {!isFirst && onPromote && (
           <button
             onClick={onPromote}
-            title="Promover este cenario para a posicao Atual (primeiro cenario)"
+            title="Promover este cenario para a posição Atual (primeiro cenario)"
             className="shrink-0 text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-colors"
           >
             ★ Atual
@@ -52,26 +52,26 @@ function ScenarioColumn({ config, onUpdate, color, result, onPromote, isFirst }:
 
       <div className="space-y-2 text-sm mb-4">
         <label className="flex justify-between">
-          <Tooltip text="Preco mensal do plano Pro neste cenario" position="bottom">
+          <Tooltip text="Preço mensal do plano Pro neste cenario" position="bottom">
             <span className="text-ceramic-text-secondary cursor-help">Pro (R$)</span>
           </Tooltip>
           <input type="number" value={config.priceProBRL} onChange={e => onUpdate({ priceProBRL: Number(e.target.value) })} step={5} className="w-20 text-right bg-ceramic-cool border border-ceramic-border rounded px-2 py-0.5 text-sm" />
         </label>
         <label className="flex justify-between">
-          <Tooltip text="Creditos de IA inclusos no plano Pro neste cenario" position="bottom">
-            <span className="text-ceramic-text-secondary cursor-help">Pro creditos</span>
+          <Tooltip text="Créditos de IA inclusos no plano Pro neste cenario" position="bottom">
+            <span className="text-ceramic-text-secondary cursor-help">Pro créditos</span>
           </Tooltip>
           <input type="number" value={config.creditsPro} onChange={e => onUpdate({ creditsPro: Number(e.target.value) })} step={500} className="w-20 text-right bg-ceramic-cool border border-ceramic-border rounded px-2 py-0.5 text-sm" />
         </label>
         <label className="flex justify-between">
-          <Tooltip text="Preco mensal do plano Teams neste cenario" position="bottom">
+          <Tooltip text="Preço mensal do plano Teams neste cenario" position="bottom">
             <span className="text-ceramic-text-secondary cursor-help">Teams (R$)</span>
           </Tooltip>
           <input type="number" value={config.priceTeamsBRL} onChange={e => onUpdate({ priceTeamsBRL: Number(e.target.value) })} step={10} className="w-20 text-right bg-ceramic-cool border border-ceramic-border rounded px-2 py-0.5 text-sm" />
         </label>
         <label className="flex justify-between">
-          <Tooltip text="Creditos de IA inclusos no plano Teams neste cenario" position="bottom">
-            <span className="text-ceramic-text-secondary cursor-help">Teams creditos</span>
+          <Tooltip text="Créditos de IA inclusos no plano Teams neste cenario" position="bottom">
+            <span className="text-ceramic-text-secondary cursor-help">Teams créditos</span>
           </Tooltip>
           <input type="number" value={config.creditsTeams} onChange={e => onUpdate({ creditsTeams: Number(e.target.value) })} step={1000} className="w-20 text-right bg-ceramic-cool border border-ceramic-border rounded px-2 py-0.5 text-sm" />
         </label>

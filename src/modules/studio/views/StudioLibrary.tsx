@@ -82,7 +82,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       setShows(data || []);
     } catch (error) {
       log.error('Error loading podcast shows:', error);
-      setLoadError('Nao foi possivel carregar seus podcasts. Verifique sua conexao e tente novamente.');
+      setLoadError('Não foi possível carregar seus podcasts. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -158,7 +158,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
           </button>
           <a href="/studio/calendar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-border transition-colors">
             <Calendar className="w-4 h-4" />
-            Calendario
+            Calendário
           </a>
           <a href="/studio/analytics" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-border transition-colors">
             <BarChart3 className="w-4 h-4" />

@@ -138,7 +138,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
       <div className="min-h-screen bg-gradient-to-br from-ceramic-base to-ceramic-cool flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-ceramic-text-secondary font-medium">Carregando episodio...</p>
+          <p className="text-ceramic-text-secondary font-medium">Carregando episódio...</p>
         </div>
       </div>
     );
@@ -160,7 +160,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
               </button>
               <div>
                 <h1 className="text-2xl font-bold text-ceramic-text-primary">
-                  Pre-Producao
+                  Pre-Produção
                 </h1>
                 <p className="text-sm text-ceramic-text-secondary">
                   {guestData.name} • {guestData.theme || 'Sem tema definido'}

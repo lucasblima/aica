@@ -205,7 +205,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
               {templates.length === 0 && (
                 <p className="text-center text-sm text-ceramic-text-secondary py-8">
-                  Nenhum modelo disponivel.
+                  Nenhum modelo disponível.
                 </p>
               )}
             </div>

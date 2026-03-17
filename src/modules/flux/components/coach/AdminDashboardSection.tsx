@@ -42,7 +42,7 @@ export function AdminDashboardSection({ athletes, templateCount }: AdminDashboar
 
   const statusGroups: StatusGroup[] = [
     {
-      label: 'Ficha de saude pendente',
+      label: 'Ficha de saúde pendente',
       count: pendingHealthForm,
       icon: <AlertTriangle className="w-4 h-4" />,
       colorClasses: 'bg-ceramic-warning/10 text-ceramic-warning',

@@ -9,7 +9,7 @@
  * Presentation Generator Types
  * Issue #117 - Gerador de Apresentacoes HTML/PDF
  *
- * Tipos TypeScript para geracao de apresentacoes HTML interativas
+ * Tipos TypeScript para geração de apresentacoes HTML interativas
  * com export para PDF usando RAG + Gemini.
  *
  * @module modules/grants/types/presentation
@@ -20,12 +20,12 @@
 // =============================================================================
 
 /**
- * Template visual disponivel
+ * Template visual disponível
  */
 export type TemplateType = 'professional' | 'creative' | 'institutional';
 
 /**
- * Tipos de slides disponiveis (12 tipos)
+ * Tipos de slides disponíveis (12 tipos)
  */
 export type SlideType =
   | 'cover'
@@ -42,7 +42,7 @@ export type SlideType =
   | 'contact';
 
 /**
- * Publico-alvo para geracao de conteudo
+ * Publico-alvo para geração de conteúdo
  */
 export type AudienceType = 'esg' | 'tax' | 'brand' | 'impact' | 'general';
 
@@ -91,7 +91,7 @@ export interface DeckSlide {
 }
 
 /**
- * Union type para conteudo de todos os slides
+ * Union type para conteúdo de todos os slides
  */
 export type SlideContent =
   | CoverSlideContent
@@ -112,7 +112,7 @@ export type SlideContent =
 // =============================================================================
 
 /**
- * 1. Cover Slide - Capa com logo e titulo
+ * 1. Cover Slide - Capa com logo e título
  */
 export interface CoverSlideContent {
   type: 'cover';
@@ -152,7 +152,7 @@ export interface ProjectSlideContent {
 }
 
 /**
- * 4. Impact Metrics Slide - Metricas e numeros de impacto
+ * 4. Impact Metrics Slide - Métricas e numeros de impacto
  */
 export interface ImpactMetricsSlideContent {
   type: 'impact-metrics';
@@ -275,7 +275,7 @@ export interface ComparisonSlideContent {
 }
 
 /**
- * 12. Contact Slide - CTA e informacoes de contato
+ * 12. Contact Slide - CTA e informações de contato
  */
 export interface ContactSlideContent {
   type: 'contact';
@@ -347,7 +347,7 @@ export interface SlideSorterProps {
 // =============================================================================
 
 /**
- * Estado completo da apresentacao
+ * Estado completo da apresentação
  */
 export interface Presentation {
   id: string;
@@ -358,7 +358,7 @@ export interface Presentation {
 }
 
 /**
- * Opcoes de zoom
+ * Opções de zoom
  */
 export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5] as const;
 export type ZoomLevel = typeof ZOOM_LEVELS[number];

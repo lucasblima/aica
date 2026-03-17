@@ -61,7 +61,7 @@ export const ProjectTypePreview: React.FC<ProjectTypePreviewProps> = ({
       )}
       {!config.comingSoon && (
         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${colors.bg} ${colors.text}`}>
-          Disponivel
+          Disponível
         </span>
       )}
     </button>

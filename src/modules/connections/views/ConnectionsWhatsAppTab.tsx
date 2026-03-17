@@ -911,7 +911,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
               WhatsApp
             </h1>
             <p className="text-sm text-ceramic-text-secondary mt-1">
-              Importe e analise suas conversas
+              Importe e análise suas conversas
             </p>
           </div>
         </div>

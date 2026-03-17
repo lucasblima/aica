@@ -497,7 +497,7 @@ export default function AthleteDetailView() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
         <p className="text-lg font-bold text-ceramic-text-primary mb-4">
-          Atleta nao encontrado
+          Atleta não encontrado
         </p>
         <button
           onClick={handleBack}
@@ -526,7 +526,7 @@ export default function AthleteDetailView() {
 
 
         {/* Athlete Profile Card */}
-        <div className="ceramic-card p-6 space-y-4" title="Informacoes de contato e status do atleta. Clique no icone de edicao para alterar nome, email e telefone.">
+        <div className="ceramic-card p-6 space-y-4" title="Informações de contato e status do atleta. Clique no icone de edição para alterar nome, email e telefone.">
           {/* Avatar + Name + Level */}
           <div className="flex items-start gap-4">
             <div className="ceramic-inset w-20 h-20 flex-shrink-0 flex items-center justify-center overflow-hidden rounded-xl">
@@ -570,7 +570,7 @@ export default function AthleteDetailView() {
                     <span
                       className="w-3 h-3 rounded-full bg-ceramic-info animate-pulse flex-shrink-0"
                       title={
-                        athlete.parq_clearance_status === 'blocked' ? 'Liberacao medica necessaria' :
+                        athlete.parq_clearance_status === 'blocked' ? 'Liberação medica necessaria' :
                         athlete.parq_clearance_status === 'expired' ? 'Documentos expirados' :
                         'Documentos pendentes'
                       }
@@ -578,7 +578,7 @@ export default function AthleteDetailView() {
                   )}
                 </h1>
               )}
-              <span title="Nivel de experiencia do atleta: iniciante, intermediario ou avancado">
+              <span title="Nivel de experiência do atleta: iniciante, intermediario ou avancado">
                 <LevelBadge level={athlete.level} size="md" />
               </span>
             </div>
@@ -605,7 +605,7 @@ export default function AthleteDetailView() {
               <button
                 onClick={handleStartEdit}
                 className="ceramic-card p-3 hover:scale-105 transition-transform"
-                title="Editar informacoes de contato do atleta (nome, email, telefone)"
+                title="Editar informações de contato do atleta (nome, email, telefone)"
               >
                 <Edit className="w-5 h-5 text-ceramic-text-primary" />
               </button>
@@ -680,7 +680,7 @@ export default function AthleteDetailView() {
           <button
             onClick={() => navigate(`/flux/canvas/${athleteId}`)}
             className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
-            title="Abrir o Canvas de prescricao para criar e visualizar planos de treino de 4 semanas (microciclos)"
+            title="Abrir o Canvas de prescrição para criar e visualizar planos de treino de 4 semanas (microciclos)"
           >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center group-hover:bg-ceramic-info/20 transition-colors flex-shrink-0">
@@ -740,13 +740,13 @@ export default function AthleteDetailView() {
       {/* Summary Cards */}
       <div className="px-6 mb-6">
 
-      {/* Status de Documentos de Saude (#680) */}
-      <div title="Status dos documentos de saude do atleta: PAR-Q, Atestado de Liberacao e Exame Cardiologico.">
+      {/* Status de Documentos de Saúde (#680) */}
+      <div title="Status dos documentos de saúde do atleta: PAR-Q, Atestado de Liberação e Exame Cardiologico.">
         <div className="ceramic-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Heart className="w-4 h-4 text-ceramic-text-secondary" />
             <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Documentos de Saude
+              Documentos de Saúde
             </h3>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -802,7 +802,7 @@ export default function AthleteDetailView() {
                     hasLiberacao ? 'text-ceramic-warning' :
                     athlete.requires_clearance_cert ? 'text-ceramic-error' : 'text-ceramic-text-secondary/40'
                   }`} />
-                  <p className="text-[10px] font-bold text-ceramic-text-primary">Liberacao</p>
+                  <p className="text-[10px] font-bold text-ceramic-text-primary">Liberação</p>
                   <p className={`text-[10px] font-bold ${
                     isApproved && !isExpired ? 'text-ceramic-success' :
                     isExpired ? 'text-ceramic-error' :
@@ -856,7 +856,7 @@ export default function AthleteDetailView() {
             })()}
           </div>
 
-          {/* Inline PAR-Q detail — expands inside Documentos de Saude (#912) */}
+          {/* Inline PAR-Q detail — expands inside Documentos de Saúde (#912) */}
           {parqExpanded && (
             <div className="mt-4 border-t border-ceramic-border pt-4">
               {athlete.allow_parq_onboarding ? (
@@ -874,7 +874,7 @@ export default function AthleteDetailView() {
               ) : (
                 <p className="text-sm text-ceramic-text-secondary">
                   O onboarding PAR-Q esta desativado para este atleta.
-                  Ative nas configuracoes do atleta para que ele possa preencher o questionario.
+                  Ative nas configurações do atleta para que ele possa preencher o questionario.
                 </p>
               )}
             </div>
@@ -1313,7 +1313,7 @@ export default function AthleteDetailView() {
                           )}
                           {pd.last_payment_date && (
                             <p className="text-[10px] text-ceramic-text-secondary/60">
-                              Ultimo pagamento:{' '}
+                              Último pagamento:{' '}
                               {new Date(pd.last_payment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </p>
                           )}
@@ -1430,7 +1430,7 @@ export default function AthleteDetailView() {
                 ? 'bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/20 border border-ceramic-success/20'
                 : 'bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 border border-ceramic-error/20'
             }`}
-            title={athlete.status === 'paused' ? 'Reativar o acesso do atleta ao portal e treinos' : 'Pausar o acesso do atleta — ele nao podera ver treinos ate ser desbloqueado'}
+            title={athlete.status === 'paused' ? 'Reativar o acesso do atleta ao portal e treinos' : 'Pausar o acesso do atleta — ele não podera ver treinos ate ser desbloqueado'}
           >
             {blockingAthlete ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -1474,7 +1474,7 @@ export default function AthleteDetailView() {
       )}
 
       {/* Feedbacks Timeline */}
-      <div className="px-6 mb-6" title="Historico de feedbacks do atleta. Mostra comentarios e RPE (percepcao de esforco) apos cada treino completado.">
+      <div className="px-6 mb-6" title="Histórico de feedbacks do atleta. Mostra comentarios e RPE (percepcao de esforco) apos cada treino completado.">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="w-5 h-5 text-ceramic-text-primary" />
           <h2 className="text-lg font-bold text-ceramic-text-primary">

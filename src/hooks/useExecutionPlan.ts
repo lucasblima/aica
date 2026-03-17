@@ -7,7 +7,7 @@
  *
  * @example
  * const { createPlan, activePlan, steps, isPlanning, error, cancelPlan } = useExecutionPlan()
- * await createPlan('Preparar episodio do podcast sobre IA generativa')
+ * await createPlan('Preparar episódio do podcast sobre IA generativa')
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -182,7 +182,7 @@ export function useExecutionPlan(): UseExecutionPlanReturn {
         const {
           data: { user },
         } = await supabase.auth.getUser()
-        if (!user) throw new Error('Nao autenticado')
+        if (!user) throw new Error('Não autenticado')
 
         const { data, error: fnError } = await supabase.functions.invoke(
           'plan-and-execute',
@@ -198,7 +198,7 @@ export function useExecutionPlan(): UseExecutionPlanReturn {
 
         if (!data?.success) {
           throw new Error(
-            data?.error || 'Falha ao criar plano de execucao'
+            data?.error || 'Falha ao criar plano de execução'
           )
         }
 
@@ -215,7 +215,7 @@ export function useExecutionPlan(): UseExecutionPlanReturn {
         log.info('Plan created:', { planId: plan.id, goal, stepsCount: planSteps.length })
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : 'Erro ao criar plano de execucao'
+          err instanceof Error ? err.message : 'Erro ao criar plano de execução'
         log.error('createPlan error:', err)
         setError(message)
       } finally {

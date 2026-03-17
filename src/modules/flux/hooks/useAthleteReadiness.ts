@@ -70,7 +70,7 @@ export function useAthleteReadiness({ athleteId }: UseAthleteReadinessOptions): 
 
       return result;
     } catch (err) {
-      const e = err instanceof Error ? err : new Error('Erro ao avaliar prontidao');
+      const e = err instanceof Error ? err : new Error('Erro ao avaliar prontidão');
       setError(e);
       log.error('Error assessing readiness:', err);
       return null;

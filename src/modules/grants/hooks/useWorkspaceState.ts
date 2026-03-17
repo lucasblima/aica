@@ -66,7 +66,7 @@ export function useWorkspaceState({
       }
 
       if (!project || !opportunity) {
-        throw new Error('Projeto ou oportunidade nao encontrado');
+        throw new Error('Projeto ou oportunidade não encontrado');
       }
 
       // Load briefing data

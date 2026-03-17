@@ -15,7 +15,7 @@
  * await indexMoment(moment)
  *
  * // Query across all moments
- * const result = await queryMoments('Quais padroes emocionais apareceram esta semana?')
+ * const result = await queryMoments('Quais padrões emocionais apareceram esta semana?')
  * console.log(result.answer, result.sources)
  * ```
  */
@@ -62,7 +62,7 @@ function formatMomentForIndexing(moment: Moment): string {
   parts.push('')
 
   if (moment.emotion) {
-    parts.push(`**Emocao:** ${moment.emotion}`)
+    parts.push(`**Emoção:** ${moment.emotion}`)
   }
 
   if (moment.tags?.length) {
@@ -71,14 +71,14 @@ function formatMomentForIndexing(moment: Moment): string {
 
   if (moment.sentiment_data) {
     const sd = moment.sentiment_data
-    parts.push(`**Sentimento:** ${sd.sentiment || 'nao analisado'} (score: ${sd.sentimentScore ?? 'N/A'})`)
+    parts.push(`**Sentimento:** ${sd.sentiment || 'não analisado'} (score: ${sd.sentimentScore ?? 'N/A'})`)
     if (sd.emotions?.length) {
-      parts.push(`**Emocoes detectadas:** ${sd.emotions.join(', ')}`)
+      parts.push(`**Emoções detectadas:** ${sd.emotions.join(', ')}`)
     }
   }
 
   parts.push('')
-  parts.push('## Conteudo')
+  parts.push('## Conteúdo')
   parts.push(moment.content)
 
   return parts.join('\n')
@@ -133,9 +133,9 @@ export function useJourneyFileSearchV2(): UseJourneyFileSearchV2Return {
     question: string,
     systemPrompt?: string
   ): Promise<JourneyQueryResult> => {
-    const defaultPrompt = `Voce e o agente de autoconhecimento do Aica Life OS.
-Analise os momentos e reflexoes do usuario para responder a pergunta.
-Identifique padroes emocionais, temas recorrentes e evolucao ao longo do tempo.
+    const defaultPrompt = `Você e o agente de autoconhecimento do Aica Life OS.
+Análise os momentos e reflexoes do usuario para responder a pergunta.
+Identifique padrões emocionais, temas recorrentes e evolucao ao longo do tempo.
 Responda em portugues brasileiro com empatia e sem julgamento.
 Cite momentos especificos quando relevante.`
 

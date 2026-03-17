@@ -47,13 +47,13 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setSyncError('Usuario nao autenticado');
+        setSyncError('Usuario não autenticado');
         return;
       }
 
       const result = await syncRecordingToCalendar(
         {
-          title: episodeTitle || 'Episodio',
+          title: episodeTitle || 'Episódio',
           scheduledDate: data.scheduledDate,
           scheduledTime: data.scheduledTime,
           guestName: guestName,
@@ -65,7 +65,7 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
       if (result) {
         setSyncSuccess(true);
       } else {
-        setSyncError('Agenda nao disponivel. O evento sera sincronizado com Google Calendar automaticamente.');
+        setSyncError('Agenda não disponível. O evento sera sincronizado com Google Calendar automaticamente.');
       }
     } catch {
       setSyncError('Erro ao sincronizar com a agenda');
@@ -89,7 +89,7 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
             <span>Agendamento</span>
           </h2>
           <p className="text-sm text-ceramic-secondary mt-1">
-            Agende quando sera gravado o episodio (opcional)
+            Agende quando sera gravado o episódio (opcional)
           </p>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
               className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4 text-orange-600" aria-hidden="true" />
-              <span>Data da Gravacao</span>
+              <span>Data da Gravação</span>
             </label>
             <input
               id="scheduled-date-input"
@@ -122,7 +122,7 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
               className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center space-x-2"
             >
               <Clock className="w-4 h-4 text-orange-600" aria-hidden="true" />
-              <span>Horario</span>
+              <span>Horário</span>
             </label>
             <input
               id="scheduled-time-input"
@@ -132,7 +132,7 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-text-primary"
             />
             {!data.scheduledTime && (
-              <p className="text-xs text-ceramic-tertiary mt-1">Defina o horario</p>
+              <p className="text-xs text-ceramic-tertiary mt-1">Defina o horário</p>
             )}
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
             className="block text-sm font-medium text-ceramic-text-primary mb-2 flex items-center space-x-2"
           >
             <MapPin className="w-4 h-4 text-ceramic-tertiary" aria-hidden="true" />
-            <span>Local da Gravacao</span>
+            <span>Local da Gravação</span>
           </label>
           <input
             id="location-input"
@@ -210,7 +210,7 @@ export default function SchedulingSection({ data, onUpdate, episodeTitle, guestN
             htmlFor="season-input"
             className="block text-sm font-medium text-ceramic-text-primary mb-2"
           >
-            Temporada / Numero do Episodio
+            Temporada / Número do Episódio
           </label>
           <input
             id="season-input"

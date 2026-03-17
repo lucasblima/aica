@@ -1,6 +1,6 @@
 /**
  * WizardStep Component
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Container for each wizard step with animated transitions.
  */
@@ -165,7 +165,7 @@ export function WizardStep({
               whileHover={{ scale: 1.02, x: isLastStep ? 0 : 4 }}
               whileTap={{ scale: 0.98 }}
             >
-              <span>{isLastStep ? 'Finalizar' : 'Proximo'}</span>
+              <span>{isLastStep ? 'Finalizar' : 'Próximo'}</span>
               {!isLastStep && <ChevronRight className="w-5 h-5" />}
             </motion.button>
           </div>

@@ -185,7 +185,7 @@ export const INTENT_CATEGORY_LABELS: Record<IntentCategory, string> = {
   document: 'Documento',
   audio: 'Audio',
   social: 'Social',
-  request: 'Solicitacao',
-  update: 'Atualizacao',
-  media: 'Midia',
+  request: 'Solicitação',
+  update: 'Atualização',
+  media: 'Mídia',
 };

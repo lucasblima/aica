@@ -81,7 +81,7 @@ export default function InvitesPage() {
     setDashboardError(null);
     refreshDashboard().catch((err) => {
       console.error('[InvitesPage] Dashboard load failed:', err);
-      setDashboardError('Nao foi possivel carregar os dados de convites. Verifique sua conexao e tente novamente.');
+      setDashboardError('Não foi possível carregar os dados de convites. Verifique sua conexão e tente novamente.');
     });
   }, [refreshDashboard]);
 
@@ -137,10 +137,10 @@ export default function InvitesPage() {
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">
           {[
-            { value: stats?.available ?? 0, label: 'Disponiveis', color: 'text-ceramic-accent' },
+            { value: stats?.available ?? 0, label: 'Disponíveis', color: 'text-ceramic-accent' },
             { value: stats?.total_sent ?? 0, label: 'Enviados', color: 'text-ceramic-text-primary' },
             { value: stats?.total_accepted ?? 0, label: 'Aceitos', color: 'text-ceramic-success' },
-            { value: conversionRate > 0 ? `${Math.round(conversionRate * 100)}%` : '--', label: 'Conversao', color: 'text-ceramic-info' },
+            { value: conversionRate > 0 ? `${Math.round(conversionRate * 100)}%` : '--', label: 'Conversão', color: 'text-ceramic-info' },
           ].map(({ value, label, color }) => (
             <div key={label} className="ceramic-inset p-3 text-center rounded-xl">
               <div className={`text-xl font-bold ${color}`}>{value}</div>
@@ -157,7 +157,7 @@ export default function InvitesPage() {
               <div className="flex-1 min-w-0 space-y-3">
                 {currentCode && (
                   <div>
-                    <div className="text-[10px] text-ceramic-text-secondary font-medium mb-1">Codigo</div>
+                    <div className="text-[10px] text-ceramic-text-secondary font-medium mb-1">Código</div>
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-mono font-bold text-ceramic-text-primary tracking-wider">{formatCode(currentCode)}</span>
                       <button onClick={handleCopyCode} className="p-1 rounded hover:bg-ceramic-cool transition-colors">
@@ -189,13 +189,13 @@ export default function InvitesPage() {
         ) : (
           <div className="ceramic-inset p-6 rounded-2xl text-center space-y-2">
             <div className="text-4xl mb-2">📭</div>
-            <div className="text-ceramic-text-primary font-bold">Sem convites disponiveis</div>
+            <div className="text-ceramic-text-primary font-bold">Sem convites disponíveis</div>
             <div className="text-sm text-ceramic-text-secondary">
-              Voce ganha +2 convites sempre que alguem aceitar seu convite e se tornar ativo.
+              Você ganha +2 convites sempre que alguem aceitar seu convite e se tornar ativo.
             </div>
             <div className="pt-2 text-xs text-ceramic-text-secondary bg-ceramic-cool/50 rounded-lg p-3">
               <span className="font-semibold text-ceramic-text-primary">Como funciona:</span> Cada convite aceito gera
-              XP para voce e para quem foi convidado. Convites expiram em 7 dias se nao forem usados.
+              XP para você e para quem foi convidado. Convites expiram em 7 dias se não forem usados.
             </div>
           </div>
         )}
@@ -275,7 +275,7 @@ export default function InvitesPage() {
             <Ticket className="w-8 h-8 text-ceramic-text-secondary mx-auto mb-3" />
             <div className="text-sm font-bold text-ceramic-text-primary">Nenhum convite enviado ainda</div>
             <div className="text-sm text-ceramic-text-secondary">
-              Gere seu primeiro convite acima e compartilhe com quem voce quer trazer para o Aica.
+              Gere seu primeiro convite acima e compartilhe com quem você quer trazer para o Aica.
             </div>
           </div>
         )}

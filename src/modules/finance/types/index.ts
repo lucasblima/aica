@@ -393,7 +393,7 @@ export const GOAL_TYPE_LABELS: GoalTypeLabel = {
   savings: 'Poupanca',
   debt_payoff: 'Quitar Divida',
   investment: 'Investimento',
-  emergency_fund: 'Reserva de Emergencia',
+  emergency_fund: 'Reserva de Emergência',
   custom: 'Personalizado',
 };
 

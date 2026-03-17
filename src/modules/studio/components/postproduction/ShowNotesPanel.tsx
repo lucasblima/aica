@@ -50,7 +50,7 @@ export default function ShowNotesPanel({
     <button
       onClick={() => handleCopy(text, id)}
       className="flex items-center gap-1 text-xs text-ceramic-text-secondary hover:text-amber-600 transition-colors"
-      title="Copiar secao"
+      title="Copiar seção"
     >
       {copiedSection === id ? (
         <>
@@ -77,11 +77,11 @@ export default function ShowNotesPanel({
           <BookOpen className="w-8 h-8 text-amber-500" />
         </div>
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
-          Show Notes nao geradas
+          Show Notes não geradas
         </h3>
         <p className="text-sm text-ceramic-text-secondary text-center mb-6 max-w-sm">
           {transcription
-            ? 'Gere as show notes automaticamente a partir da transcricao do episodio.'
+            ? 'Gere as show notes automaticamente a partir da transcricao do episódio.'
             : 'Gere a transcricao primeiro para desbloquear as show notes.'}
         </p>
         {error && (
@@ -159,7 +159,7 @@ export default function ShowNotesPanel({
       {showNotes.keyQuotes.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-ceramic-text-primary">Citacoes Principais</h4>
+            <h4 className="text-sm font-semibold text-ceramic-text-primary">Citações Principais</h4>
             <CopyButton text={showNotes.keyQuotes.join('\n')} id="quotes" />
           </div>
           <div className="space-y-3">
@@ -178,7 +178,7 @@ export default function ShowNotesPanel({
       {/* SEO Description */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-ceramic-text-primary">Descricao SEO</h4>
+          <h4 className="text-sm font-semibold text-ceramic-text-primary">Descrição SEO</h4>
           <CopyButton text={showNotes.seoDescription} id="seo" />
         </div>
         <div className="bg-ceramic-cool rounded-lg p-3">

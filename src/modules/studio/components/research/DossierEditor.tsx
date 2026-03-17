@@ -111,7 +111,7 @@ export function DossierEditor() {
 
   const tabs: Array<{ id: DossierTab; label: string; icon: React.FC<any> }> = [
     { id: 'bio', label: 'Biografia', icon: FileText },
-    { id: 'ficha', label: 'Ficha Tecnica', icon: ClipboardList },
+    { id: 'ficha', label: 'Ficha Técnica', icon: ClipboardList },
     { id: 'noticias', label: 'Noticias', icon: Newspaper },
     { id: 'perguntas', label: 'Perguntas', icon: MessageSquare },
   ];
@@ -165,7 +165,7 @@ export function DossierEditor() {
                 {dossier.biography}
               </div>
             ) : (
-              <p className="text-ceramic-text-secondary italic">Biografia nao disponivel</p>
+              <p className="text-ceramic-text-secondary italic">Biografia não disponível</p>
             )}
           </div>
         )}
@@ -184,7 +184,7 @@ export function DossierEditor() {
                 ))
               )
             ) : (
-              <p className="text-ceramic-text-secondary italic">Ficha tecnica nao disponivel</p>
+              <p className="text-ceramic-text-secondary italic">Ficha técnica não disponível</p>
             )}
           </div>
         )}
@@ -265,14 +265,14 @@ export function DossierEditor() {
                         />
                         <button
                           onClick={handleSaveEdit}
-                          aria-label="Salvar edicao"
+                          aria-label="Salvar edição"
                           className="p-1 rounded text-ceramic-success hover:bg-ceramic-cool transition-colors"
                         >
                           <Check className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => { setEditingIndex(null); setEditText(''); }}
-                          aria-label="Cancelar edicao"
+                          aria-label="Cancelar edição"
                           className="p-1 rounded text-ceramic-text-secondary hover:bg-ceramic-cool transition-colors"
                         >
                           <X className="w-4 h-4" />

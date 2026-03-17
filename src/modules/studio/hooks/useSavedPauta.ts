@@ -5,9 +5,9 @@
  * Fornece:
  * - Carregamento da pauta ativa
  * - Listagem de versoes
- * - Mudanca de versao ativa
+ * - Mudanca de versão ativa
  * - Exclusao de pautas
- * - Conversao de pauta salva para GeneratedPauta
+ * - Conversão de pauta salva para GeneratedPauta
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -88,7 +88,7 @@ export function useSavedPauta(projectId: string | undefined): UseSavedPautaResul
   }, [projectId])
 
   /**
-   * Define uma versao especifica como ativa
+   * Define uma versão especifica como ativa
    */
   const setActiveVersion = useCallback(
     async (pautaId: string): Promise<boolean> => {

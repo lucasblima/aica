@@ -106,7 +106,7 @@ export class GeminiClient {
     // Circuit breaker: fail fast if auth recently failed (#723)
     if (GeminiClient.authFailedAt && Date.now() - GeminiClient.authFailedAt < GeminiClient.AUTH_COOLDOWN_MS) {
       throw new GeminiError(
-        'Sessao expirada. Faca login novamente.',
+        'Sessão expirada. Faca login novamente.',
         'UNAUTHORIZED',
         401
       )
@@ -332,7 +332,7 @@ export class GeminiClient {
       if (tokenExpired) {
         GeminiClient.authFailedAt = Date.now()
         throw new GeminiError(
-          'Sessao expirada. Faca login novamente.',
+          'Sessão expirada. Faca login novamente.',
           'UNAUTHORIZED',
           401
         )
@@ -418,7 +418,7 @@ export class GeminiClient {
   private async handleError(response: Response): Promise<GeminiError> {
     const body = await response.json().catch(() => ({}))
 
-    // Priorizar errorCode do backend se disponivel
+    // Priorizar errorCode do backend se disponível
     let code: GeminiError['code']
     if (body.errorCode) {
       // Map backend errorCode to GeminiError code
@@ -453,7 +453,7 @@ export class GeminiClient {
   }
 
   /**
-   * Mapeia status HTTP para codigo de erro GeminiError
+   * Mapeia status HTTP para código de erro GeminiError
    */
   private mapStatusToCode(status: number): GeminiError['code'] {
     switch (status) {

@@ -71,7 +71,7 @@ export const PdfPreviewDrawer: React.FC<PdfPreviewDrawerProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!confirm('Remover o PDF do edital? Esta acao nao pode ser desfeita.')) return;
+    if (!confirm('Remover o PDF do edital? Esta ação não pode ser desfeita.')) return;
 
     try {
       setIsDeleting(true);

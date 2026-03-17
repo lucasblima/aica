@@ -103,7 +103,7 @@ export function TiersSlide({
                   editMode={editMode}
                   placeholder="0"
                 />
-                {' cotas disponiveis'}
+                {' cotas disponíveis'}
               </p>
             </div>
 

@@ -73,7 +73,7 @@ interface UseFileSearchV2Return {
  * Hook para File Search V2 - RAG gerenciado pelo Google.
  *
  * Usa o SDK nativo @google/genai via Edge Function.
- * Suporta upload de documentos, queries com citacoes e gerenciamento de stores.
+ * Suporta upload de documentos, queries com citações e gerenciamento de stores.
  *
  * @example
  * ```tsx
@@ -103,7 +103,7 @@ export function useFileSearchV2(): UseFileSearchV2Return {
     payload: Record<string, any>
   ): Promise<any> => {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('Usuario nao autenticado')
+    if (!session) throw new Error('Usuario não autenticado')
 
     const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',

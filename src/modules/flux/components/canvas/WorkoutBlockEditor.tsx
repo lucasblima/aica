@@ -270,7 +270,7 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
                 boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
               }}
               rows={6}
-              placeholder="Instrucoes especificas, dicas tecnicas, ajustes personalizados..."
+              placeholder="Instrucoes especificas, dicas técnicas, ajustes personalizados..."
             />
           </Section>
 

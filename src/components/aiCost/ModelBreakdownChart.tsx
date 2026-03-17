@@ -24,7 +24,7 @@ export const ModelBreakdownChart: React.FC<ModelBreakdownChartProps> = ({ data }
       <div className="ceramic-card p-6">
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Modelo de IA</h3>
         <div className="ceramic-inset p-8 rounded-xl text-center">
-          <p className="text-sm text-ceramic-text-secondary">Nenhum dado disponivel</p>
+          <p className="text-sm text-ceramic-text-secondary">Nenhum dado disponível</p>
         </div>
       </div>
     );

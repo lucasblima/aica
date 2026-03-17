@@ -1,6 +1,6 @@
 /**
  * useOrganizationWizard Hook
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * State machine for the organization wizard with gamification.
  */
@@ -255,7 +255,7 @@ export function useOrganizationWizard(
 
   const save = useCallback(async (): Promise<boolean> => {
     if (!user) {
-      setError('Usuario nao autenticado');
+      setError('Usuario não autenticado');
       return false;
     }
 

@@ -58,7 +58,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
               <button
                 onClick={onShowPdf}
                 className="ceramic-concave px-2 sm:px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-ceramic-accent hover:scale-95 transition-transform"
-                title="Ver conteudo do edital"
+                title="Ver conteúdo do edital"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Edital</span>
@@ -87,7 +87,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 onClick={onExportPdf}
                 disabled={isExportingPdf}
                 className="ceramic-concave px-2 sm:px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-ceramic-accent hover:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Exportar apresentacao como PDF"
+                title="Exportar apresentação como PDF"
               >
                 {isExportingPdf ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

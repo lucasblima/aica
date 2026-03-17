@@ -131,7 +131,7 @@ function DayFeedbackCard({
         <Lock className="w-4 h-4 text-ceramic-text-secondary/50 flex-shrink-0" />
         <span className="text-xs font-bold text-ceramic-text-secondary">{dayLabel}</span>
         {dateStr && <span className="text-[10px] text-ceramic-text-secondary/60">{dateStr}</span>}
-        <span className="text-[10px] text-ceramic-text-secondary/50 ml-auto">Ainda nao disponivel</span>
+        <span className="text-[10px] text-ceramic-text-secondary/50 ml-auto">Ainda não disponível</span>
       </div>
     );
   }
@@ -536,10 +536,10 @@ export function WeeklyFeedbackCard({
         <Lock className="w-5 h-5 text-ceramic-text-secondary/50 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-ceramic-text-secondary">
-            Feedback Diario — Semana {weekNumber}
+            Feedback Diário — Semana {weekNumber}
           </h3>
           <p className="text-xs text-ceramic-text-secondary/60 mt-0.5">
-            Disponivel quando a semana comecar
+            Disponível quando a semana comecar
           </p>
         </div>
       </div>
@@ -553,7 +553,7 @@ export function WeeklyFeedbackCard({
         <div className="flex items-center justify-between px-1 mb-1">
           <h3 className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider flex items-center gap-1.5">
             <MessageSquare className="w-3 h-3" />
-            Feedback Diario — Semana {weekNumber}
+            Feedback Diário — Semana {weekNumber}
           </h3>
           {submittedCount > 0 && (
             <span className="text-[10px] text-ceramic-text-secondary">

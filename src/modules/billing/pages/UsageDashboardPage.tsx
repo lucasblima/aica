@@ -77,7 +77,7 @@ function formatTimestamp(iso: string): string {
 
 function formatTransactionType(type: string): string {
   const map: Record<string, string> = {
-    daily_claim: 'Resgate Diario',
+    daily_claim: 'Resgate Diário',
     earn: 'Ganho',
     spend: 'Gasto',
     bonus: 'Bonus',
@@ -341,7 +341,7 @@ export function UsageDashboardPage() {
     try {
       const result = await claimDaily();
       if (result.success) {
-        setClaimMessage(`+${result.creditsEarned} creditos resgatados!`);
+        setClaimMessage(`+${result.creditsEarned} créditos resgatados!`);
         await loadData(true);
       } else {
         setClaimMessage(result.message);
@@ -416,9 +416,9 @@ export function UsageDashboardPage() {
           icon={<Activity className="w-5 h-5 text-amber-600" />}
         />
         <UsageStatsCard
-          title="Creditos"
+          title="Créditos"
           value={balance}
-          subtitle={canClaimDaily ? 'Bonus disponivel!' : 'Resgatado hoje'}
+          subtitle={canClaimDaily ? 'Bonus disponível!' : 'Resgatado hoje'}
           icon={<Coins className="w-5 h-5 text-amber-600" />}
         />
         <UsageStatsCard
@@ -428,7 +428,7 @@ export function UsageDashboardPage() {
           icon={<CreditCard className="w-5 h-5 text-amber-600" />}
         />
         <UsageStatsCard
-          title="Creditos Usados (30d)"
+          title="Créditos Usados (30d)"
           value={summary.total_credits_30d}
           subtitle={`${summary.total_interactions_30d} interacoes`}
           icon={<Coins className="w-5 h-5 text-amber-600" />}
@@ -439,7 +439,7 @@ export function UsageDashboardPage() {
       <div className="bg-ceramic-50 rounded-xl p-5 shadow-ceramic-emboss">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-            Uso Diario de Interacoes
+            Uso Diário de Interacoes
           </span>
           <span className="text-xs font-bold text-ceramic-text-primary">
             {summary.interactions_today} de {summary.daily_limit}
@@ -472,7 +472,7 @@ export function UsageDashboardPage() {
             ) : (
               <Gift className="w-5 h-5" />
             )}
-            Resgatar Creditos Diarios
+            Resgatar Créditos Diarios
           </button>
         </div>
       )}
@@ -489,7 +489,7 @@ export function UsageDashboardPage() {
         {dailyChart.every((d) => d.count === 0) ? (
           <div className="h-40 flex items-center justify-center">
             <p className="text-sm text-ceramic-text-secondary italic">
-              Nenhuma interacao nos ultimos {CHART_DAYS} dias.
+              Nenhuma interação nos ultimos {CHART_DAYS} dias.
             </p>
           </div>
         ) : (
@@ -569,7 +569,7 @@ export function UsageDashboardPage() {
         {usageLogs.length === 0 ? (
           <div className="px-5 pb-5">
             <p className="text-sm text-ceramic-text-secondary italic">
-              Nenhuma interacao registrada ainda.
+              Nenhuma interação registrada ainda.
             </p>
           </div>
         ) : (
@@ -579,13 +579,13 @@ export function UsageDashboardPage() {
                 <thead>
                   <tr className="border-b border-ceramic-text-secondary/10">
                     <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                      Acao
+                      Ação
                     </th>
                     <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                      Modulo
+                      Módulo
                     </th>
                     <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                      Creditos
+                      Créditos
                     </th>
                     <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
                       Data
@@ -638,7 +638,7 @@ export function UsageDashboardPage() {
       <div className="bg-ceramic-50 rounded-xl shadow-ceramic-emboss overflow-hidden">
         <div className="p-5 pb-3 flex items-center justify-between">
           <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary">
-            Transacoes de Creditos
+            Transações de Créditos
           </h3>
           <span className="text-xs text-ceramic-text-secondary">
             {creditTransactions.length} registros exibidos
@@ -648,7 +648,7 @@ export function UsageDashboardPage() {
         {creditTransactions.length === 0 ? (
           <div className="px-5 pb-5">
             <p className="text-sm text-ceramic-text-secondary italic">
-              Nenhuma transacao registrada ainda.
+              Nenhuma transação registrada ainda.
             </p>
           </div>
         ) : (
@@ -667,7 +667,7 @@ export function UsageDashboardPage() {
                       Saldo
                     </th>
                     <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary hidden md:table-cell">
-                      Descricao
+                      Descrição
                     </th>
                     <th className="text-right px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
                       Data

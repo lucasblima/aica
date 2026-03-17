@@ -1,6 +1,6 @@
 /**
  * FieldReward Component
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Animated XP reward popup when a field is filled.
  */

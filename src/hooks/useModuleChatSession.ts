@@ -80,7 +80,7 @@ export function useModuleChatSession(module: AgentModule): UseModuleChatSessionR
 
   const getUserId = useCallback(async (): Promise<string> => {
     const { data: { session: authSession } } = await supabase.auth.getSession()
-    if (!authSession?.user?.id) throw new Error('Nao autenticado')
+    if (!authSession?.user?.id) throw new Error('Não autenticado')
     return authSession.user.id
   }, [])
 
@@ -144,7 +144,7 @@ export function useModuleChatSession(module: AgentModule): UseModuleChatSessionR
       })
 
       const result = response?.result
-      const responseText = result?.text || result?.response || result || 'Desculpe, nao consegui gerar uma resposta.'
+      const responseText = result?.text || result?.response || result || 'Desculpe, não consegui gerar uma resposta.'
       const finalText = typeof responseText === 'string' ? responseText : JSON.stringify(responseText)
 
       // Save assistant message to DB

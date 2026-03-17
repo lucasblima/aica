@@ -116,7 +116,7 @@ export function useLinkSuggestions(
       // Find the suggestion for callback
       const suggestion = suggestions.find((s) => s.id === suggestionId);
       if (!suggestion) {
-        const error = new Error('Sugestao nao encontrada');
+        const error = new Error('Sugestão não encontrada');
         setError(error);
         onErrorRef.current?.(error);
         return;
@@ -155,7 +155,7 @@ export function useLinkSuggestions(
       // Find the suggestion for callback
       const suggestion = suggestions.find((s) => s.id === suggestionId);
       if (!suggestion) {
-        const error = new Error('Sugestao nao encontrada');
+        const error = new Error('Sugestão não encontrada');
         setError(error);
         onErrorRef.current?.(error);
         return;
@@ -174,7 +174,7 @@ export function useLinkSuggestions(
         // Rollback on error
         setSuggestions((prev) => [...prev, suggestion].sort((a, b) => b.confidence - a.confidence));
 
-        const error = err instanceof Error ? err : new Error('Erro ao rejeitar sugestao');
+        const error = err instanceof Error ? err : new Error('Erro ao rejeitar sugestão');
         setError(error);
         onErrorRef.current?.(error);
       } finally {

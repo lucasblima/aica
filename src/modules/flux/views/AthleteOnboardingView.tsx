@@ -70,7 +70,7 @@ export default function AthleteOnboardingView() {
   useEffect(() => {
     if (!athleteId) {
       setStep('error');
-      setErrorMessage('Link de cadastro invalido.');
+      setErrorMessage('Link de cadastro inválido.');
       return;
     }
 
@@ -82,7 +82,7 @@ export default function AthleteOnboardingView() {
 
         if (error || !data || data.length === 0) {
           setStep('error');
-          setErrorMessage('Atleta nao encontrado. Verifique o link com seu treinador.');
+          setErrorMessage('Atleta não encontrado. Verifique o link com seu treinador.');
           return;
         }
 
@@ -122,15 +122,15 @@ export default function AthleteOnboardingView() {
     const newErrors: OnboardingErrors = {};
 
     if (!formData.name || formData.name.trim().length < 2) {
-      newErrors.name = 'Nome e obrigatorio (min. 2 caracteres)';
+      newErrors.name = 'Nome e obrigatório (min. 2 caracteres)';
     }
 
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email valido e obrigatorio';
+      newErrors.email = 'Email válido e obrigatório';
     }
 
     if (!formData.phone || formData.phone.length < 10) {
-      newErrors.phone = 'Telefone invalido (formato: +5511987654321)';
+      newErrors.phone = 'Telefone inválido (formato: +5511987654321)';
     }
 
     setErrors(newErrors);
@@ -216,7 +216,7 @@ export default function AthleteOnboardingView() {
 
   const healthDocs = [
     ...(athlete?.requires_cardio_exam ? ['Exame Cardiologico'] : []),
-    ...(athlete?.requires_clearance_cert ? ['Atestado de Liberacao Medica'] : []),
+    ...(athlete?.requires_clearance_cert ? ['Atestado de Liberação Medica'] : []),
     ...(athlete?.allow_parq_onboarding ? ['Questionario PAR-Q+'] : []),
   ];
 
@@ -244,7 +244,7 @@ export default function AthleteOnboardingView() {
           <div className="w-16 h-16 rounded-full bg-ceramic-error/10 flex items-center justify-center mx-auto">
             <AlertCircle className="w-8 h-8 text-ceramic-error" />
           </div>
-          <h1 className="text-xl font-black text-ceramic-text-primary">Link Invalido</h1>
+          <h1 className="text-xl font-black text-ceramic-text-primary">Link Inválido</h1>
           <p className="text-sm text-ceramic-text-secondary leading-relaxed">{errorMessage}</p>
         </div>
       </div>
@@ -321,7 +321,7 @@ export default function AthleteOnboardingView() {
               <div>
                 <h2 className="text-lg font-bold text-ceramic-text-primary">Seus Dados</h2>
                 <p className="text-xs text-ceramic-text-secondary">
-                  Preencha suas informacoes para o treinador
+                  Preencha suas informações para o treinador
                 </p>
               </div>
             </div>
@@ -407,7 +407,7 @@ export default function AthleteOnboardingView() {
                 <Heart className="w-5 h-5 text-ceramic-text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-ceramic-text-primary">Documentacao de Saude</h2>
+                <h2 className="text-lg font-bold text-ceramic-text-primary">Documentação de Saúde</h2>
                 <p className="text-xs text-ceramic-text-secondary">
                   Seu treinador requer os seguintes documentos
                 </p>
@@ -433,8 +433,8 @@ export default function AthleteOnboardingView() {
                 <div className="flex items-start gap-3 p-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-lg">
                   <ShieldCheck className="w-5 h-5 text-ceramic-info mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-ceramic-text-primary leading-relaxed">
-                    Voce podera enviar estes documentos apos criar sua conta.
-                    A prescricao de treinos sera liberada apos aprovacao do treinador.
+                    Você podera enviar estes documentos apos criar sua conta.
+                    A prescrição de treinos sera liberada apos aprovacao do treinador.
                   </p>
                 </div>
               </div>
@@ -442,7 +442,7 @@ export default function AthleteOnboardingView() {
               <div className="flex items-start gap-3 p-4 bg-ceramic-success/10 border border-ceramic-success/20 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-ceramic-success mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-ceramic-text-primary">
-                  Nenhuma documentacao adicional necessaria. Voce pode comecar a treinar!
+                  Nenhuma documentação adicional necessaria. Você pode comecar a treinar!
                 </p>
               </div>
             )}
@@ -474,8 +474,8 @@ export default function AthleteOnboardingView() {
             </div>
 
             <p className="text-sm text-ceramic-text-primary leading-relaxed">
-              Para acessar sua prescricao de treinos e enviar documentos de saude,
-              voce precisa de uma conta na plataforma AICA.
+              Para acessar sua prescrição de treinos e enviar documentos de saúde,
+              você precisa de uma conta na plataforma AICA.
             </p>
 
             <div className="space-y-3">
@@ -489,7 +489,7 @@ export default function AthleteOnboardingView() {
               </button>
 
               <p className="text-xs text-ceramic-text-secondary text-center">
-                Voce sera redirecionado de volta apos fazer login
+                Você sera redirecionado de volta apos fazer login
               </p>
             </div>
           </div>

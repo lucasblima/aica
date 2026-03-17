@@ -266,7 +266,7 @@ function StepCard({ step }: StepCardProps) {
         {/* Timing info */}
         {step.completed_at && step.started_at && (
           <p className="mt-1 text-xs text-ceramic-text-secondary">
-            Duracao:{' '}
+            Duração:{' '}
             {(
               (new Date(step.completed_at).getTime() -
                 new Date(step.started_at).getTime()) /
@@ -341,7 +341,7 @@ export function ExecutionPlanView({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
               <h3 className="text-lg font-semibold text-ceramic-text-primary truncate">
-                Plano de Execucao
+                Plano de Execução
               </h3>
               <StatusBadge status={plan.status} />
             </div>

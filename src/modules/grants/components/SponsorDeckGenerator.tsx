@@ -181,7 +181,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
       <div>
         <label className="flex items-center gap-2 text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-secondary mb-2">
           <DollarSign className="w-4 h-4" />
-          Informacoes Financeiras
+          Informações Financeiras
         </label>
         <div className="flex items-center gap-3">
           <button
@@ -210,12 +210,12 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               }
             `}
           >
-            Apenas informacoes gerais
+            Apenas informações gerais
           </button>
         </div>
         <p className="text-xs text-ceramic-text-secondary mt-1.5">
           {options.includeFinancials
-            ? 'O deck incluira valores aprovados, cotas de patrocinio e precos.'
+            ? 'O deck incluira valores aprovados, cotas de patrocinio e preços.'
             : 'O deck focara no projeto e contrapartidas, sem mencionar valores.'
           }
         </p>
@@ -246,7 +246,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
             ))}
           </select>
           <p className="text-xs text-ceramic-text-secondary mt-1.5">
-            A cota selecionada sera visualmente destacada na apresentacao.
+            A cota selecionada sera visualmente destacada na apresentação.
           </p>
         </div>
       )}
@@ -284,7 +284,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               type="button"
               onClick={() => onOptionsChange({ ...options, colorScheme: undefined })}
               className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary"
-              title="Usar cor padrao do template"
+              title="Usar cor padrão do template"
             >
               <X className="w-4 h-4" />
             </button>
@@ -318,7 +318,7 @@ function PreviewSection({ slides, includeFinancials }: PreviewSectionProps) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary dark:text-ceramic-text-secondary">
         <Layers className="w-4 h-4" />
-        <span>{visibleSlides.length} slides na apresentacao</span>
+        <span>{visibleSlides.length} slides na apresentação</span>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -378,7 +378,7 @@ function GeneratingSection({ progress, progressStep }: GeneratingSectionProps) {
 
       {/* Progress text */}
       <p className="text-ceramic-text-secondary dark:text-ceramic-text-secondary text-center">
-        {progressStep || 'Iniciando geracao...'}
+        {progressStep || 'Iniciando geração...'}
       </p>
       <p className="text-sm text-ceramic-text-secondary dark:text-ceramic-text-secondary mt-1">
         {progress}% concluido
@@ -406,7 +406,7 @@ function DoneSection({ filename, onDownload, onReset }: DoneSectionProps) {
       </h3>
 
       <p className="text-ceramic-text-secondary dark:text-ceramic-text-secondary text-center mb-6">
-        Sua apresentacao esta pronta para download.
+        Sua apresentação esta pronta para download.
       </p>
 
       {filename && (
@@ -540,7 +540,7 @@ export function SponsorDeckGenerator({
       case 'preview':
         return 'Gerar Deck';
       default:
-        return 'Proximo';
+        return 'Próximo';
     }
   };
 

@@ -23,7 +23,7 @@ const TRL_LABELS: Record<number, string> = {
   6: 'Demonstracao',
   7: 'Prototipo operacional',
   8: 'Sistema qualificado',
-  9: 'Em producao',
+  9: 'Em produção',
 };
 
 // ============================================================================

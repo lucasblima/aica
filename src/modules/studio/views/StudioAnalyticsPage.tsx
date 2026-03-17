@@ -148,7 +148,7 @@ export default function StudioAnalyticsPage() {
         <div className="ceramic-inset rounded-2xl p-8 mb-8 flex flex-col items-center justify-center text-center">
           <BarChart3 className="w-10 h-10 text-ceramic-text-secondary/40 mb-3" />
           <p className="text-sm font-medium text-ceramic-text-secondary">Grafico em breve</p>
-          <p className="text-xs text-ceramic-text-secondary/60 mt-1">Visualizacao de metricas ao longo do tempo</p>
+          <p className="text-xs text-ceramic-text-secondary/60 mt-1">Visualização de métricas ao longo do tempo</p>
         </div>
 
         {/* Generate Insights Button */}
@@ -195,7 +195,7 @@ export default function StudioAnalyticsPage() {
                 };
                 const typeLabels: Record<string, string> = {
                   trend: 'Tendencia',
-                  top_content: 'Top Conteudo',
+                  top_content: 'Top Conteúdo',
                   recommendation: 'Recomendacao',
                 };
                 return (
@@ -218,11 +218,11 @@ export default function StudioAnalyticsPage() {
         {/* Recent Content Table */}
         <div className="mb-8">
           <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary mb-4">
-            Conteudo Recente
+            Conteúdo Recente
           </h3>
           {recentContent.length === 0 && !loading ? (
             <div className="ceramic-inset rounded-2xl p-6 text-center">
-              <p className="text-sm text-ceramic-text-secondary">Nenhum dado de analytics disponivel.</p>
+              <p className="text-sm text-ceramic-text-secondary">Nenhum dado de analytics disponível.</p>
             </div>
           ) : (
             <div className="ceramic-card rounded-2xl overflow-hidden">
@@ -230,17 +230,17 @@ export default function StudioAnalyticsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-ceramic-border">
-                      <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Titulo</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Título</th>
                       <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Plataforma</th>
                       <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Data</th>
-                      <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Metricas</th>
+                      <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">Métricas</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentContent.map(entry => (
                       <tr key={entry.id} className="border-b border-ceramic-border/50 last:border-0">
                         <td className="px-4 py-3 text-ceramic-text-primary font-medium truncate max-w-[200px]">
-                          {entry.projectId || 'Conteudo'}
+                          {entry.projectId || 'Conteúdo'}
                         </td>
                         <td className="px-4 py-3 text-ceramic-text-secondary">{entry.platform}</td>
                         <td className="px-4 py-3 text-ceramic-text-secondary">

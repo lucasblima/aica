@@ -29,7 +29,7 @@ export async function createMoment(
   input: CreateMomentInput
 ): Promise<MomentWithCP> {
   try {
-    // Transcribe audio if provided (must complete before insert)
+    // Transcribe áudio if provided (must complete before insert)
     let finalContent = input.content
     let momentType: 'text' | 'audio' = input.type || 'text'
     if (input.audioBlob && input.audioBlob.size > 0) {

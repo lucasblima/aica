@@ -79,7 +79,7 @@ export interface UseAthleteFormReturn {
 // ============================================
 
 export const MODALITY_OPTIONS: { value: TrainingModality; label: string; icon: string }[] = [
-  { value: 'swimming', label: 'Natacao', icon: '\u{1F3CA}' },
+  { value: 'swimming', label: 'Natação', icon: '\u{1F3CA}' },
   { value: 'running', label: 'Corrida', icon: '\u{1F3C3}' },
   { value: 'cycling', label: 'Ciclismo', icon: '\u{1F6B4}' },
   { value: 'strength', label: 'Musculacao', icon: '\u{1F3CB}\uFE0F' },
@@ -243,16 +243,16 @@ export function useAthleteForm({
     // In create mode, name/phone are filled by the athlete during onboarding
     if (mode === 'edit') {
       if (!formData.name || formData.name.trim().length < 2) {
-        newErrors.name = 'Nome e obrigatorio (min. 2 caracteres)';
+        newErrors.name = 'Nome e obrigatório (min. 2 caracteres)';
       }
 
       if (!formData.phone || formData.phone.length < 10) {
-        newErrors.phone = 'Telefone invalido (formato: +5511987654321)';
+        newErrors.phone = 'Telefone inválido (formato: +5511987654321)';
       }
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email invalido';
+      newErrors.email = 'Email inválido';
     }
 
     setErrors(newErrors);
@@ -340,7 +340,7 @@ export function useAthleteForm({
   const handleClose = useCallback(() => {
     if (isDirty) {
       const confirmed = window.confirm(
-        'Voce tem alteracoes nao salvas. Deseja realmente sair?'
+        'Você tem alterações não salvas. Deseja realmente sair?'
       );
       if (!confirmed) return;
     }

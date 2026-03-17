@@ -229,7 +229,7 @@ export function JourneyHeroCard({
                         ? 'bg-amber-100 text-amber-600'
                         : 'bg-ceramic-cool text-amber-600 hover:bg-amber-100'
                   } disabled:opacity-40`}
-                  aria-label={speech.isListening ? 'Parar gravacao' : speech.isTranscribing ? 'Transcrevendo...' : 'Ditar resposta'}
+                  aria-label={speech.isListening ? 'Parar gravação' : speech.isTranscribing ? 'Transcrevendo...' : 'Ditar resposta'}
                 >
                   {speech.isTranscribing ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
