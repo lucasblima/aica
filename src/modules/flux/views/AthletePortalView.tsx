@@ -43,6 +43,8 @@ import {
   Lock,
   MoveHorizontal,
   LogOut,
+  Upload,
+  ChevronDown,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -106,6 +108,7 @@ export default function AthletePortalView() {
 
   const welcomeParam = searchParams.get('welcome') === 'true';
   const [showWelcome, setShowWelcome] = useState(() => welcomeParam || !AthleteWelcome.hasBeenShown());
+  const [showDocUpload, setShowDocUpload] = useState(false);
 
   const weekStart = useMemo(() => {
     const now = new Date();
@@ -616,24 +619,92 @@ export default function AthletePortalView() {
         </motion.section>
       )}
 
-      {/* Document Pending Banner — #381 */}
+      {/* Health Documents Section — #381, #925 */}
       {profile.parq_clearance_status &&
        ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
         <motion.div className="px-5 mb-3" custom={1.6} initial="hidden" animate="visible" variants={sectionVariants}>
-          <div className="flex items-center gap-3 px-4 py-3 bg-ceramic-info/5 border border-ceramic-info/20 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-ceramic-info/10 flex items-center justify-center flex-shrink-0">
-              <FileText className="w-4 h-4 text-ceramic-info" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-ceramic-info">Documentos Pendentes</p>
-              <p className="text-xs text-ceramic-info">
-                {profile.parq_clearance_status === 'expired'
-                  ? 'Seus documentos de saúde expiraram'
-                  : profile.parq_clearance_status === 'blocked'
-                  ? 'Liberação medica necessaria'
-                  : 'Complete seus documentos de saúde'}
-              </p>
-            </div>
+          <div className="bg-ceramic-info/5 border border-ceramic-info/20 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowDocUpload(!showDocUpload)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ceramic-info/10 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-ceramic-info/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-ceramic-info" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-bold text-ceramic-info">Documentos de Saude</p>
+                <p className="text-xs text-ceramic-info">
+                  {profile.parq_clearance_status === 'expired'
+                    ? 'Seus documentos de saúde expiraram'
+                    : profile.parq_clearance_status === 'blocked'
+                    ? 'Liberação medica necessaria'
+                    : 'Envie seus documentos para liberar treinos'}
+                </p>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-ceramic-info transition-transform ${showDocUpload ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showDocUpload && (
+              <div className="px-4 pb-4 space-y-3">
+                {/* Existing documents */}
+                {docs.documents.length > 0 && (
+                  <div className="space-y-2">
+                    {docs.documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-2.5 ceramic-inset rounded-lg">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileText className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
+                          <span className="text-xs text-ceramic-text-primary truncate">{doc.title || doc.file_name}</span>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex-shrink-0 ${
+                          doc.review_status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
+                          doc.review_status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
+                          'bg-ceramic-warning/10 text-ceramic-warning'
+                        }`}>
+                          {doc.review_status === 'approved' ? 'Aprovado' :
+                           doc.review_status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col items-center gap-1.5 p-3 border-2 border-dashed border-ceramic-border rounded-xl cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-colors">
+                    <Heart className="w-5 h-5 text-ceramic-error" />
+                    <span className="text-[10px] font-bold text-ceramic-text-primary text-center">Exame Cardiologico</span>
+                    <span className="text-[9px] text-ceramic-text-secondary">Enviar laudo</span>
+                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && profile.athlete_id) {
+                        docs.uploadDocument({ document_type: 'exame_cardiologico', title: 'Exame Cardiologico', file });
+                      }
+                      e.target.value = '';
+                    }} />
+                  </label>
+                  <label className="flex flex-col items-center gap-1.5 p-3 border-2 border-dashed border-ceramic-border rounded-xl cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-colors">
+                    <FileText className="w-5 h-5 text-ceramic-info" />
+                    <span className="text-[10px] font-bold text-ceramic-text-primary text-center">Atestado de Liberacao</span>
+                    <span className="text-[9px] text-ceramic-text-secondary">Enviar atestado</span>
+                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && profile.athlete_id) {
+                        docs.uploadDocument({ document_type: 'liberacao_atividade', title: 'Atestado de Liberacao', file });
+                      }
+                      e.target.value = '';
+                    }} />
+                  </label>
+                </div>
+
+                {docs.isUploading && (
+                  <div className="flex items-center justify-center gap-2 py-2">
+                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                    <span className="text-xs text-ceramic-text-secondary">Enviando documento...</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
       )}
