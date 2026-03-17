@@ -2,12 +2,12 @@
  * AicaChatFAB - Floating Action Button for Aica Chat
  *
  * Chat interface with persistent sessions (chat_sessions + chat_messages).
- * Uses useChatSession hook for lifecycle, ADK agent-proxy for AI calls.
+ * Uses useChatSession hook for lifecycle, gemini-chat Edge Function for AI calls.
  * Supports expand to fullscreen with context sidebar.
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, Square, Loader2 } from 'lucide-react'
+import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, Square, Loader2, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
@@ -80,12 +80,14 @@ export function AicaChatFAB({
     limitReached,
     limitInfo,
     sendMessage,
+    retryLastMessage,
     createNewSession,
     switchSession,
     archiveSession,
     showSessions,
     setShowSessions,
     activeAgent,
+    lastFailedMessage,
   } = useChatSession()
 
   const activeModule = activeAgent
@@ -525,6 +527,16 @@ export function AicaChatFAB({
                   ) : (
                     <div className="aica-fab-error">
                       <p>{error}</p>
+                      {lastFailedMessage && (
+                        <button
+                          onClick={retryLastMessage}
+                          disabled={isLoading}
+                          className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-700 transition-colors disabled:opacity-50"
+                        >
+                          <RotateCcw size={12} />
+                          Tentar novamente
+                        </button>
+                      )}
                     </div>
                   )
                 )}
