@@ -242,6 +242,47 @@ export async function deleteEpisode(id: string): Promise<void> {
 }
 
 // =====================================================
+// SHOWS CRUD
+// =====================================================
+
+/**
+ * Updates an existing podcast show.
+ * Uses the raw `podcast_shows` table (not the view) for writes.
+ * Maps `title` → `name` since the raw column is `name`.
+ */
+export async function updateShow(
+  showId: string,
+  updates: { title?: string; description?: string; cover_image_url?: string; rss_feed_url?: string; website_url?: string; status?: 'active' | 'archived' | 'paused' }
+): Promise<void> {
+  const dbPayload: Record<string, unknown> = {}
+  if (updates.title !== undefined) dbPayload.name = updates.title
+  if (updates.description !== undefined) dbPayload.description = updates.description
+  if (updates.cover_image_url !== undefined) dbPayload.cover_image_url = updates.cover_image_url
+  if (updates.rss_feed_url !== undefined) dbPayload.rss_feed_url = updates.rss_feed_url
+  if (updates.website_url !== undefined) dbPayload.website_url = updates.website_url
+  if (updates.status !== undefined) dbPayload.status = updates.status
+
+  const { error } = await supabase
+    .from('podcast_shows')
+    .update(dbPayload)
+    .eq('id', showId)
+
+  if (error) throw new Error(`Failed to update show: ${error.message}`)
+}
+
+/**
+ * Deletes a podcast show and all related episodes (cascading via FK).
+ */
+export async function deleteShow(showId: string): Promise<void> {
+  const { error } = await supabase
+    .from('podcast_shows')
+    .delete()
+    .eq('id', showId)
+
+  if (error) throw new Error(`Failed to delete show: ${error.message}`)
+}
+
+// =====================================================
 // TOPICS CRUD
 // =====================================================
 
