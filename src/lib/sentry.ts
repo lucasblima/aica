@@ -17,6 +17,8 @@ export function initSentry() {
     tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0.5,
+    // Capture all unhandled errors and promise rejections
+    autoSessionTracking: true,
     beforeSend(event) {
       // Strip PII from breadcrumbs
       if (event.breadcrumbs) {
@@ -36,5 +38,11 @@ export function initSentry() {
     },
   });
 }
+
+/**
+ * Sentry.ErrorBoundary — use this to wrap route-level components.
+ * Captures React render errors automatically with full context.
+ */
+export const SentryErrorBoundary = Sentry.ErrorBoundary;
 
 export { Sentry };

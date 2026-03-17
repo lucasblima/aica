@@ -9,6 +9,7 @@ import { generateMissingDailyReports } from '../services/dailyReportService';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NotificationContainer, LoadingScreen, BottomNav, CeramicLoadingState } from '../components';
 import { ErrorBoundary, ModuleErrorFallback } from '../components/ui/ErrorBoundary';
+import { SentryErrorBoundary } from '../lib/sentry';
 import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -720,6 +721,7 @@ export function AppRouter() {
    // Wrapped in Suspense to handle lazy-loaded components
    // TourProvider enables contextual onboarding tours (Phase 2 - Organic Onboarding)
    return (
+      <SentryErrorBoundary fallback={<div className="flex items-center justify-center min-h-screen bg-ceramic-base text-ceramic-text-secondary">Algo deu errado. Recarregue a página.</div>}>
       <ErrorBoundary>
       <TourProvider tours={allTours}>
          <XPNotificationProvider>
@@ -988,5 +990,6 @@ export function AppRouter() {
          </XPNotificationProvider>
       </TourProvider>
       </ErrorBoundary>
+      </SentryErrorBoundary>
    );
 }
