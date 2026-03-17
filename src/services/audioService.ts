@@ -34,7 +34,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
 
   try {
     const audioBase64 = await blobToBase64(audioBlob)
-    const mimeType = audioBlob.type || 'áudio/webm'
+    const mimeType = audioBlob.type || 'audio/webm'
 
     log.debug('[audioService] Transcribing áudio', {
       mimeType,

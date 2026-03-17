@@ -288,7 +288,7 @@ export class GeminiLiveAudioService {
       this.session.sendRealtimeInput({
         audio: {
           data: base64,
-          mimeType: `áudio/pcm;rate=${INPUT_SAMPLE_RATE}`,
+          mimeType: `audio/pcm;rate=${INPUT_SAMPLE_RATE}`,
         },
       });
     } catch (error) {
@@ -418,7 +418,7 @@ export class GeminiLiveAudioService {
     // Handle áudio data from model
     if (content.modelTurn?.parts) {
       for (const part of content.modelTurn.parts) {
-        if (part.inlineData?.data && part.inlineData.mimeType?.startsWith('áudio/')) {
+        if (part.inlineData?.data && part.inlineData.mimeType?.startsWith('audio/')) {
           this.playAudioData(part.inlineData.data);
         }
         if (part.text) {

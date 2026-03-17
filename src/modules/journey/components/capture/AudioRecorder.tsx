@@ -3,7 +3,7 @@
  * Microphone recording for Journey QuickCapture
  *
  * States: idle -> recording -> processing
- * Uses MediaRecorder API with áudio/webm;codecs=opus
+ * Uses MediaRecorder API with audio/webm;codecs=opus
  * Max recording: 5 minutes
  */
 
@@ -92,11 +92,11 @@ export function AudioRecorder({
       analyserRef.current = analyser
 
       // Determine supported MIME type
-      const mimeType = MediaRecorder.isTypeSupported('áudio/webm;codecs=opus')
-        ? 'áudio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('áudio/webm')
-          ? 'áudio/webm'
-          : 'áudio/mp4'
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4'
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder

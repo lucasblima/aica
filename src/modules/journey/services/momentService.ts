@@ -31,11 +31,11 @@ export async function createMoment(
   try {
     // Transcribe áudio if provided (must complete before insert)
     let finalContent = input.content
-    let momentType: 'text' | 'áudio' = input.type || 'text'
+    let momentType: 'text' | 'audio' = input.type || 'text'
     if (input.audioBlob && input.audioBlob.size > 0) {
       const transcription = await transcribeAudio(input.audioBlob)
       finalContent = finalContent ? `${finalContent}\n\n${transcription}` : transcription
-      momentType = 'áudio'
+      momentType = 'audio'
     }
 
     // Insert moment WITHOUT waiting for sentiment analysis (faster UX)

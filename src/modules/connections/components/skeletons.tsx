@@ -135,7 +135,7 @@ export function GridItemSkeleton({ count = 6 }: { count?: number }) {
           key={i}
           className="bg-ceramic-base border-2 border-ceramic-border rounded-lg overflow-hidden animate-pulse"
         >
-          <div className="aspect-vídeo bg-ceramic-cool" />
+          <div className="aspect-video bg-ceramic-cool" />
           <div className="p-4">
             <div className="h-4 bg-ceramic-cool rounded w-3/4 mb-2" />
             <div className="h-3 bg-ceramic-cool rounded w-1/2 mb-3" />

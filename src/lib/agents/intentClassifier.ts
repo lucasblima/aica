@@ -39,7 +39,7 @@ const MODULE_KEYWORDS: Record<Exclude<AgentModule, 'coordinator'>, string[]> = {
   ],
   studio: [
     'podcast', 'episódio', 'convidado', 'gravação', 'pauta',
-    'entrevista', 'microfone', 'áudio',
+    'entrevista', 'microfone', 'audio',
   ],
   captacao: [
     'edital', 'grant', 'faperj', 'cnpq', 'finep', 'proposta',

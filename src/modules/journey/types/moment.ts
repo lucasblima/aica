@@ -5,7 +5,7 @@
 
 import { SentimentAnalysis } from './sentiment'
 
-export type MomentType = 'text' | 'áudio' | 'photo'
+export type MomentType = 'text' | 'audio' | 'photo'
 
 export interface Moment {
   id: string

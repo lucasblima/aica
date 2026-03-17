@@ -37,7 +37,7 @@ export type StudioMode = 'LOADING' | 'LIBRARY' | 'SHOW_PAGE' | 'WIZARD' | 'WORKS
  * Types of projects supported by Studio.
  * Extensible for future content types.
  */
-export type ProjectType = 'podcast' | 'vídeo' | 'article' | 'newsletter' | 'clip';
+export type ProjectType = 'podcast' | 'video' | 'article' | 'newsletter' | 'clip';
 
 /**
  * Generic project representation in Studio.
@@ -81,7 +81,7 @@ export interface PodcastProjectMetadata {
 }
 
 export interface VideoProjectMetadata {
-  type: 'vídeo';
+  type: 'video';
   // Future extension
 }
 
@@ -527,8 +527,8 @@ export interface StudioAsset {
   userId: string;
   /** DB column: `project_id` (UUID, nullable) */
   projectId?: string;
-  /** DB column: `asset_type` (TEXT, CHECK: 'áudio'|'vídeo'|'image'|'document'|'transcript') */
-  assetType: 'áudio' | 'vídeo' | 'image' | 'document' | 'transcript';
+  /** DB column: `asset_type` (TEXT, CHECK: 'audio'|'video'|'image'|'document'|'transcript') */
+  assetType: 'audio' | 'video' | 'image' | 'document' | 'transcript';
   /** DB column: `file_url` (TEXT, NOT NULL) */
   fileUrl: string;
   /**

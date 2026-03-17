@@ -48,8 +48,8 @@ vi.mock('@/services/supabaseClient', () => ({
     }),
     storage: {
       from: vi.fn().mockReturnValue({
-        upload: vi.fn().mockResolvedValue({ data: { path: 'áudio/test.webm' }, error: null }),
-        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/áudio.webm' } }),
+        upload: vi.fn().mockResolvedValue({ data: { path: 'audio/test.webm' }, error: null }),
+        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/audio.webm' } }),
       }),
     },
   },

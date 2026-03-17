@@ -101,7 +101,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     // 7. PREPARE MOMENT DATA
     const processedData: ProcessedMomentData = {
       user_id: validatedInput.userId,
-      type: textFromAudio ? 'áudio' : 'text',
+      type: textFromAudio ? 'audio' : 'text',
       content: finalContent,
       emotion_selected: validatedInput.emotionSelected,
       emotion_intensity: validatedInput.emotionIntensity,

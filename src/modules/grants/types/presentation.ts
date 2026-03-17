@@ -253,7 +253,7 @@ export interface MediaSlideContent {
   title: string;
   description?: string;
   items: Array<{
-    type: 'image' | 'vídeo';
+    type: 'image' | 'video';
     url: string;
     thumbnailUrl?: string;
     caption?: string;

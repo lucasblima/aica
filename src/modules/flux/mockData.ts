@@ -209,7 +209,7 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
     'Senti dor forte no treino de hoje. Precisei parar.',
     'Estou com cansaco extremo, não dormi bem.',
     'Minha lesao antiga voltou a incomodar.',
-    'Fiz exame médico e preciso descansar.',
+    'Fiz exame medico e preciso descansar.',
   ],
   motivation: [
     'Não to conseguindo manter o ritmo. Desanimado.',
@@ -225,7 +225,7 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
   ],
   documents: [
     'Exame cardiologico pendente - vencido ha 30 dias.',
-    'Atestado médico vencido - renovacao necessaria.',
+    'Atestado medico vencido - renovacao necessaria.',
     'Exame cardiologico pendente - nunca apresentado.',
     'Documentação incompleta para treino.',
   ],
@@ -247,7 +247,7 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
 };
 
 const CRITICAL_KEYWORDS: Record<AlertType, string[]> = {
-  health: ['dor', 'parar', 'lesao', 'médico'],
+  health: ['dor', 'parar', 'lesao', 'medico'],
   motivation: ['desistir', 'desanimado', 'dificil'],
   absence: ['faltei', 'perdi', 'não consegui'],
   documents: ['vencido', 'pendente', 'incompleta'],
@@ -317,7 +317,7 @@ const PENDING_EXAM_ALERTS: Alert[] = [
     alert_type: 'documents',
     severity: 'critical',
     keywords_detected: ['pendente', 'atestado'],
-    message_preview: 'Atestado médico nunca apresentado. Documentação obrigatoria.',
+    message_preview: 'Atestado medico nunca apresentado. Documentação obrigatoria.',
     created_at: generateDate(3),
   },
   {
@@ -350,7 +350,7 @@ const PENDING_EXAM_ALERTS: Alert[] = [
     alert_type: 'documents',
     severity: 'high',
     keywords_detected: ['vencido', 'atestado'],
-    message_preview: 'Atestado médico vencido ha 15 dias. Solicitar renovacao.',
+    message_preview: 'Atestado medico vencido ha 15 dias. Solicitar renovacao.',
     created_at: generateDate(5),
   },
   {
@@ -372,7 +372,7 @@ const PENDING_EXAM_ALERTS: Alert[] = [
     alert_type: 'documents',
     severity: 'medium',
     keywords_detected: ['pendente', 'atestado'],
-    message_preview: 'Atestado médico vence em 15 dias. Lembrar atleta.',
+    message_preview: 'Atestado medico vence em 15 dias. Lembrar atleta.',
     created_at: generateDate(6),
   },
   {
@@ -405,7 +405,7 @@ const PENDING_EXAM_ALERTS: Alert[] = [
     alert_type: 'documents',
     severity: 'low',
     keywords_detected: ['pendente', 'atestado'],
-    message_preview: 'Atestado médico vence em 30 dias. Planejar renovacao.',
+    message_preview: 'Atestado medico vence em 30 dias. Planejar renovacao.',
     created_at: generateDate(5),
   },
   {

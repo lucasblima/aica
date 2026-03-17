@@ -63,7 +63,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
             .from('studio_assets')
             .select('*')
             .eq('project_id', project.id)
-            .eq('asset_type', 'vídeo')
+            .eq('asset_type', 'video')
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
@@ -85,7 +85,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
         if (assetRes.data) {
           const meta = (assetRes.data.metadata || {}) as Record<string, unknown>;
           setUploadedFile({
-            name: (meta.original_name as string) || 'vídeo',
+            name: (meta.original_name as string) || 'video',
             size: assetRes.data.file_size || 0,
             format: (meta.format as string) || 'Desconhecido',
             assetId: assetRes.data.id,

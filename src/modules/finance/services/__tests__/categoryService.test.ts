@@ -182,7 +182,7 @@ describe('createCategory', () => {
   it('should auto-generate key from label when key not provided', async () => {
     const newCategory = {
       ...mockCategories[0],
-      key: 'educação',
+      key: 'educacao',
       label: 'Educação',
       sort_order: 3,
     };
@@ -209,7 +209,7 @@ describe('createCategory', () => {
     expect(insertChain.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: TEST_USER_ID,
-        key: 'educação',
+        key: 'educacao',
         label: 'Educação',
         sort_order: 3,
       })

@@ -118,11 +118,11 @@ export default function StudioMainView() {
 
   /**
    * Load a project by ID from URL parameters for deep-linking.
-   * Supports: /studio?project=<id>&type=podcast|article|vídeo
+   * Supports: /studio?project=<id>&type=podcast|article|video
    * Fetches project data from the appropriate table, then navigates to workspace.
    */
   const loadProjectFromUrl = useCallback(async (projectId: string, projectType: string) => {
-    const validTypes: ProjectType[] = ['podcast', 'vídeo', 'article', 'newsletter', 'clip'];
+    const validTypes: ProjectType[] = ['podcast', 'video', 'article', 'newsletter', 'clip'];
     const type = validTypes.includes(projectType as ProjectType) ? projectType : 'podcast';
 
     try {

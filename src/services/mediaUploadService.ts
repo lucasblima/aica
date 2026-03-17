@@ -11,7 +11,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('MediaUploadService');
 
 
-export type AssetType = 'document' | 'image' | 'vídeo' | 'áudio' | 'transcript' | 'thumbnail' | 'music';
+export type AssetType = 'document' | 'image' | 'video' | 'audio' | 'transcript' | 'thumbnail' | 'music';
 export type SourceType = 'upload' | 'ai_generated' | 'ai_extracted' | 'external_link';
 export type ModuleType = 'grants' | 'journey' | 'podcast' | 'finance' | 'atlas';
 export type StorageBucket = 'user-media' | 'ai-generated' | 'podcast-recordings' | 'thumbnails' | 'transcriptions';
@@ -46,7 +46,7 @@ function getBucketForAsset(assetType: AssetType, sourceType: SourceType): Storag
   if (sourceType === 'ai_generated') return 'ai-generated';
   if (assetType === 'thumbnail') return 'thumbnails';
   if (assetType === 'transcript') return 'transcriptions';
-  if (assetType === 'áudio' || assetType === 'vídeo') return 'podcast-recordings';
+  if (assetType === 'audio' || assetType === 'video') return 'podcast-recordings';
   return 'user-media';
 }
 
@@ -72,10 +72,10 @@ async function extractMediaMetadata(file: File): Promise<Record<string, any>> {
     URL.revokeObjectURL(img.src);
   }
 
-  if (file.type.startsWith('vídeo/')) {
+  if (file.type.startsWith('video/')) {
     // Para vídeos, criar elemento de vídeo temporário
     const video = await new Promise<HTMLVideoElement>((resolve, reject) => {
-      const vid = document.createElement('vídeo');
+      const vid = document.createElement('video');
       vid.preload = 'metadata';
       vid.onloadedmetadata = () => resolve(vid);
       vid.onerror = reject;
@@ -85,12 +85,12 @@ async function extractMediaMetadata(file: File): Promise<Record<string, any>> {
     metadata.duration_seconds = Math.round(video.duration);
     metadata.width = video.videoWidth;
     metadata.height = video.videoHeight;
-    metadata.aspect_ratio = `${vídeo.videoWidth}:${vídeo.videoHeight}`;
+    metadata.aspect_ratio = `${video.videoWidth}:${video.videoHeight}`;
 
     URL.revokeObjectURL(video.src);
   }
 
-  if (file.type.startsWith('áudio/')) {
+  if (file.type.startsWith('audio/')) {
     // Para áudio, criar elemento de áudio temporário
     const audio = await new Promise<HTMLAudioElement>((resolve, reject) => {
       const aud = new Audio();

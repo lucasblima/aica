@@ -62,7 +62,7 @@ export function MediaSlide({
         {content.items.map((item, index) => (
           <div key={index} className="relative">
             {item.type === 'image' ? (
-              <div className="aspect-vídeo bg-ceramic-cool rounded-lg overflow-hidden">
+              <div className="aspect-video bg-ceramic-cool rounded-lg overflow-hidden">
                 {item.url ? (
                   <img
                     src={item.url}
@@ -76,7 +76,7 @@ export function MediaSlide({
                 )}
               </div>
             ) : (
-              <div className="aspect-vídeo bg-ceramic-base rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="aspect-video bg-ceramic-base rounded-lg overflow-hidden flex items-center justify-center">
                 {item.thumbnailUrl ? (
                   <img
                     src={item.thumbnailUrl}

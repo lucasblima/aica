@@ -15,11 +15,11 @@ export type IntentCategory =
   | 'response'    // Answering/confirming
   | 'scheduling'  // Calendar/meeting related
   | 'document'    // File/document shared
-  | 'áudio'       // Voice message
+  | 'audio'       // Voice message
   | 'social'      // Greetings, small talk
   | 'request'     // Asking for action
   | 'update'      // Status/progress info
-  | 'media';      // Photo/vídeo/sticker
+  | 'media';      // Photo/video/sticker
 
 export type IntentSentiment = 'positive' | 'neutral' | 'negative' | 'urgent';
 
@@ -51,7 +51,7 @@ export interface MessageIntent {
   /** Mentioned time if scheduling detected */
   mentionedTime?: string;
   /** Type of media if applicable */
-  mediaType?: 'image' | 'áudio' | 'vídeo' | 'document' | 'sticker';
+  mediaType?: 'image' | 'audio' | 'video' | 'document' | 'sticker';
   /** LLM confidence score 0-1 */
   confidence: number;
 }

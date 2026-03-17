@@ -28,7 +28,7 @@ const PODCAST_CONFIG: ProjectTypeConfig = {
 };
 
 const VIDEO_CONFIG: ProjectTypeConfig = {
-  type: 'vídeo',
+  type: 'video',
   label: 'Video',
   iconName: 'Video',
   description: 'Produção de videos com roteiro, filmagem e edição',

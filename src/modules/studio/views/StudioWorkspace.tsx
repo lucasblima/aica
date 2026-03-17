@@ -28,7 +28,7 @@ const log = createNamespacedLogger('StudioWorkspace');
  * Unsupported project type fallback — config-aware with back navigation
  */
 function UnsupportedProjectType({ type, onBack }: { type: string; onBack: () => void }) {
-  const KNOWN_TYPES: ProjectType[] = ['podcast', 'vídeo', 'article'];
+  const KNOWN_TYPES: ProjectType[] = ['podcast', 'video', 'article'];
   const config = KNOWN_TYPES.includes(type as ProjectType)
     ? getProjectTypeConfig(type as ProjectType)
     : null;
@@ -123,7 +123,7 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
         </div>
       );
 
-    case 'vídeo':
+    case 'video':
       return (
         <div data-testid="studio-workspace">
           <VideoWorkspace project={project} onBack={onBack} />

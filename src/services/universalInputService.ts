@@ -32,7 +32,7 @@ export type IntentCategory =
   | 'response'
   | 'scheduling'
   | 'document'
-  | 'áudio'
+  | 'audio'
   | 'social'
   | 'request'
   | 'update'
@@ -99,7 +99,7 @@ export interface UniversalInputResponse {
 /**
  * Normalize raw input text for intent extraction.
  * Trims whitespace and enforces a reasonable length limit.
- * For Phase 1, this is a simple text passthrough — áudio/image
+ * For Phase 1, this is a simple text passthrough — audio/image
  * preprocessing will be added in Phase 2.
  */
 export function normalizeInput(text: string): string {

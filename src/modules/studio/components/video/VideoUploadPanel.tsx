@@ -100,7 +100,7 @@ export default function VideoUploadPanel({
         .insert({
           user_id: user?.id,
           project_id: projectId,
-          asset_type: 'vídeo',
+          asset_type: 'video',
           file_url: `uploads/videos/${file.name}`, // placeholder URL until real storage
           file_size: file.size,
           metadata: {
@@ -108,7 +108,7 @@ export default function VideoUploadPanel({
             mime_type: file.type,
             format,
           },
-          tags: ['vídeo', format.toLowerCase()],
+          tags: ['video', format.toLowerCase()],
         })
         .select('id')
         .single();

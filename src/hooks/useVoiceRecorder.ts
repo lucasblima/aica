@@ -113,11 +113,11 @@ export function useVoiceRecorder({
       source.connect(analyser)
       analyserRef.current = analyser
 
-      const mimeType = MediaRecorder.isTypeSupported('áudio/webm;codecs=opus')
-        ? 'áudio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('áudio/webm')
-          ? 'áudio/webm'
-          : 'áudio/mp4'
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4'
 
       const recorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = recorder

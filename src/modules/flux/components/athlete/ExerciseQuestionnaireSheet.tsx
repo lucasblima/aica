@@ -146,7 +146,7 @@ export function ExerciseQuestionnaireSheet({
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      const mimeType = blob.type || 'áudio/webm';
+      const mimeType = blob.type || 'audio/webm';
 
       log.debug('Transcribing áudio', { mimeType, sizeBytes: blob.size });
 

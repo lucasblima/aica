@@ -21,7 +21,7 @@ import { transcribeAudio } from '@/services/audioService'
 
 export interface MultiModalOutput {
   text: string
-  type: 'text' | 'áudio' | 'photo'
+  type: 'text' | 'audio' | 'photo'
   metadata?: {
     audioBlob?: Blob
     photoFile?: File
@@ -63,7 +63,7 @@ export function MultiModalInput({
 }: MultiModalInputProps) {
   const [text, setText] = useState('')
   const [state, setState] = useState<InputState>('idle')
-  const [inputType, setInputType] = useState<'text' | 'áudio' | 'photo'>('text')
+  const [inputType, setInputType] = useState<'text' | 'audio' | 'photo'>('text')
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -155,11 +155,11 @@ export function MultiModalInput({
       source.connect(analyser)
       analyserRef.current = analyser
 
-      const mimeType = MediaRecorder.isTypeSupported('áudio/webm;codecs=opus')
-        ? 'áudio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('áudio/webm')
-          ? 'áudio/webm'
-          : 'áudio/mp4'
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4'
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
@@ -177,7 +177,7 @@ export function MultiModalInput({
         }
 
         setAudioBlob(blob)
-        setInputType('áudio')
+        setInputType('audio')
         setState('transcribing')
 
         try {

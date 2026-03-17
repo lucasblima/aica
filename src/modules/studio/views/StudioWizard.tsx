@@ -318,7 +318,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
           />
         );
       case 'article':
-      case 'vídeo':
+      case 'video':
         return (
           <div className="space-y-4">
             <div>

@@ -11,9 +11,9 @@ export type MessageDirection = 'incoming' | 'outgoing';
 
 export type MessageType =
   | 'text'
-  | 'áudio'
+  | 'audio'
   | 'image'
-  | 'vídeo'
+  | 'video'
   | 'document'
   | 'sticker'
   | 'location'
@@ -320,7 +320,7 @@ export interface MediaMetadata {
   file_name: string;
   file_size_bytes: number;
   mime_type: string;
-  media_type: 'image' | 'áudio' | 'vídeo' | 'document' | 'sticker';
+  media_type: 'image' | 'audio' | 'video' | 'document' | 'sticker';
   duration_seconds: number | null;
   dimensions: { width: number; height: number } | null;
   transcription: string | null;
