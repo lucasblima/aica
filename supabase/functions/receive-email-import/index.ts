@@ -33,8 +33,14 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const MAX_IMPORTS_PER_DAY = 10;
 const MAX_ATTACHMENT_SIZE = 100 * 1024 * 1024; // 100MB
-const ALLOWED_EXTENSIONS = ['.txt', '.zip'];
+const ALLOWED_EXTENSIONS = ['.txt', '.zip', '.pdf', '.csv'];
+const MAX_FINANCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB (Finance limit)
 const FROM_EMAIL = 'AICA Import <noreply@aica.guru>';
+
+function isFinanceFile(filename: string): boolean {
+  const ext = '.' + filename.toLowerCase().split('.').pop();
+  return ext === '.pdf' || ext === '.csv';
+}
 
 // ============================================================================
 // CORS
@@ -297,6 +303,171 @@ function rejectionEmailHTML(reason: string): string {
   `;
 }
 
+function financeConfirmationEmailHTML(filenames: string): string {
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
+      <div style="background: linear-gradient(135deg, #F5F0E8 0%, #EDE8DC 100%); border-radius: 16px; padding: 32px; text-align: center;">
+        <h2 style="color: #2D2A24; margin: 0 0 12px;">Extrato importado!</h2>
+        <p style="color: #6B6760; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+          Seu extrato <strong>${filenames}</strong> foi processado pelo AICA.
+          As transações já estão disponíveis em <strong>Finanças</strong>.
+        </p>
+        <a href="https://aica.guru/finance" style="display: inline-block; background: #D4AF37; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
+          Ver Transações
+        </a>
+      </div>
+      <p style="color: #C4BFB5; font-size: 11px; text-align: center; margin-top: 16px;">
+        AICA Life OS &mdash; aica.guru
+      </p>
+    </div>
+  `;
+}
+
+// ============================================================================
+// FINANCE PROCESSING
+// ============================================================================
+
+async function processFinanceAttachment(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+  filename: string,
+  content: Uint8Array,
+): Promise<void> {
+  const ext = '.' + filename.toLowerCase().split('.').pop();
+
+  if (ext === '.csv') {
+    await processFinanceCSV(supabaseAdmin, userId, filename, content);
+  } else if (ext === '.pdf') {
+    await processFinancePDF(supabaseAdmin, userId, filename, content);
+  }
+}
+
+async function processFinanceCSV(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+  filename: string,
+  content: Uint8Array,
+): Promise<void> {
+  const { parseCSVContent } = await import('../_shared/csvParser.ts');
+
+  const text = new TextDecoder('utf-8').decode(content);
+  const parsed = parseCSVContent(text);
+
+  // Upload to storage
+  const timestamp = Date.now();
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storagePath = `${userId}/email_${timestamp}_${safeName}`;
+  await supabaseAdmin.storage.from('finance-statements').upload(storagePath, content, {
+    contentType: 'text/csv',
+    upsert: false,
+  });
+
+  // Create statement record
+  const { data: statement, error: stmtError } = await supabaseAdmin
+    .from('finance_statements')
+    .insert({
+      user_id: userId,
+      file_name: filename,
+      file_size_bytes: content.byteLength,
+      storage_path: storagePath,
+      source_type: 'csv',
+      source_bank: parsed.bankName.toLowerCase().replace(/\s+/g, '_'),
+      bank_name: parsed.bankName,
+      statement_period_start: parsed.periodStart,
+      statement_period_end: parsed.periodEnd,
+      transaction_count: parsed.transactions.length,
+      processing_status: 'processing',
+      processing_started_at: new Date().toISOString(),
+      mime_type: 'text/csv',
+    })
+    .select('id')
+    .single();
+
+  if (stmtError) throw new Error(`Erro ao criar registro: ${stmtError.message}`);
+
+  // Generate hash and upsert transactions
+  // Hash format must match statementService.ts generateTransactionHash():
+  //   `${userId}|${date}|${description}|${Math.abs(amount).toFixed(2)}`
+  const txRecords = await Promise.all(
+    parsed.transactions.map(async (tx) => {
+      const hashData = `${userId}|${tx.date}|${tx.description}|${Math.abs(tx.amount).toFixed(2)}`;
+      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(hashData));
+      const hashId = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      return {
+        user_id: userId,
+        statement_id: statement.id,
+        hash_id: hashId,
+        transaction_date: tx.date,
+        description: tx.description,
+        amount: Math.abs(tx.amount),
+        type: tx.type,
+        category: 'other',
+        is_recurring: false,
+      };
+    })
+  );
+
+  const { data: upsertResult, error: txError } = await supabaseAdmin
+    .from('finance_transactions')
+    .upsert(txRecords, { onConflict: 'hash_id', ignoreDuplicates: true })
+    .select('id');
+
+  if (txError) throw new Error(`Erro ao inserir transações: ${txError.message}`);
+
+  const inserted = upsertResult?.length || 0;
+  log.info(`[Finance-CSV] ${inserted} inserted, ${txRecords.length - inserted} skipped for ${filename}`);
+
+  // Mark statement completed
+  await supabaseAdmin.from('finance_statements').update({
+    processing_status: 'completed',
+    processing_completed_at: new Date().toISOString(),
+    total_credits: parsed.transactions.filter(t => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount), 0),
+    total_debits: parsed.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0),
+  }).eq('id', statement.id);
+}
+
+async function processFinancePDF(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+  filename: string,
+  content: Uint8Array,
+): Promise<void> {
+  // Upload to storage
+  const timestamp = Date.now();
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storagePath = `${userId}/email_${timestamp}_${safeName}`;
+  await supabaseAdmin.storage.from('finance-statements').upload(storagePath, content, {
+    contentType: 'application/pdf',
+    upsert: false,
+  });
+
+  // Create statement record with pending status
+  const { data: statement, error: stmtError } = await supabaseAdmin
+    .from('finance_statements')
+    .insert({
+      user_id: userId,
+      file_name: filename,
+      file_size_bytes: content.byteLength,
+      storage_path: storagePath,
+      source_type: 'pdf',
+      processing_status: 'pending',
+      mime_type: 'application/pdf',
+    })
+    .select('id')
+    .single();
+
+  if (stmtError) throw new Error(`Erro ao criar registro: ${stmtError.message}`);
+
+  // TODO: PDF email import requires a `parse_statement_from_storage` action in gemini-chat
+  // that downloads PDF from storage, extracts text, and parses transactions.
+  // This action does not exist yet — gemini-chat only has `parse_statement` which expects `rawText`.
+  // For now, PDF email imports create the statement record with 'pending' status.
+  // Users can process the PDF via the web UI at https://aica.guru/finance.
+  // CSV email imports work fully end-to-end.
+  log.info(`[Finance-PDF] Statement ${statement.id} created as pending — PDF email parsing not yet implemented. User can process via web UI.`);
+}
+
 // ============================================================================
 // MAIN HANDLER
 // ============================================================================
@@ -530,6 +701,13 @@ serve(async (req) => {
       continue;
     }
 
+    // Update import_type for finance files
+    if (logId && isFinanceFile(filename)) {
+      await supabase.from('email_import_log')
+        .update({ import_type: 'finance' })
+        .eq('id', logId);
+    }
+
     // Download attachment content via Resend Attachments API
     if (!attachmentId) {
       log.error(`Attachment ${i} has no id — cannot download`);
@@ -549,6 +727,28 @@ serve(async (req) => {
     if (attachmentData.size > MAX_ATTACHMENT_SIZE) {
       log.warn(`Attachment too large: ${attachmentData.size} bytes`);
       results.push({ filename, error: 'Arquivo muito grande (max 100MB)' });
+      continue;
+    }
+
+    // Finance file routing — before WhatsApp pipeline
+    if (isFinanceFile(filename)) {
+      // Finance-specific size limit (10MB vs 100MB for WhatsApp)
+      if (attachmentData.size > MAX_FINANCE_FILE_SIZE) {
+        log.warn(`Finance file too large: ${attachmentData.size} bytes (max 10MB)`);
+        results.push({ filename, error: 'Extrato muito grande (máximo 10MB)' });
+        continue;
+      }
+
+      try {
+        await processFinanceAttachment(supabase, matchedUser.id, filename, attachmentData.content);
+        results.push({ filename, importId: `finance-${filename}` });
+        processedCount++;
+        log.info(`Finance file processed: ${filename}`);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        log.error(`Finance processing failed for ${filename}:`, errorMsg);
+        results.push({ filename, error: errorMsg });
+      }
       continue;
     }
 
@@ -635,16 +835,26 @@ serve(async (req) => {
   if (processedCount > 0) {
     await updateLog('completed');
 
-    const fileList = results
-      .filter((r) => r.importId)
-      .map((r) => r.filename)
-      .join(', ');
+    const financeFiles = results.filter((r) => r.importId && isFinanceFile(r.filename));
+    const whatsappFiles = results.filter((r) => r.importId && !isFinanceFile(r.filename));
 
-    await sendReplyEmail(
-      senderEmail,
-      'AICA - Import em processamento',
-      confirmationEmailHTML(fileList),
-    );
+    if (financeFiles.length > 0) {
+      const fileList = financeFiles.map((r) => r.filename).join(', ');
+      await sendReplyEmail(
+        senderEmail,
+        'AICA - Extrato importado',
+        financeConfirmationEmailHTML(fileList),
+      );
+    }
+
+    if (whatsappFiles.length > 0) {
+      const fileList = whatsappFiles.map((r) => r.filename).join(', ');
+      await sendReplyEmail(
+        senderEmail,
+        'AICA - Import em processamento',
+        confirmationEmailHTML(fileList),
+      );
+    }
   } else {
     const errorReasons = results.map((r) => `${r.filename}: ${r.error}`).join('<br>');
     await updateLog('failed', `No valid attachments: ${results.map((r) => r.error).join('; ')}`);
@@ -654,7 +864,7 @@ serve(async (req) => {
       'AICA - Import com problemas',
       rejectionEmailHTML(
         `Nenhum arquivo valido encontrado:<br><br>${errorReasons}<br><br>` +
-        `Envie arquivos .txt ou .zip exportados do WhatsApp.`,
+        `Envie arquivos .txt ou .zip (WhatsApp) ou .pdf/.csv (extrato bancário).`,
       ),
     );
   }
