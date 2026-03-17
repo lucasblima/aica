@@ -279,13 +279,14 @@ export function useAthleteForm({
 
       try {
         const isCreate = mode === 'create';
+        const hasModalities = formData.modalityLevels.length > 0;
         const athleteData: Partial<Athlete> & { modalityLevels?: ModalityLevel[] } = {
           name: isCreate ? 'Atleta (pendente)' : formData.name.trim(),
           email: formData.email.trim() || undefined,
           phone: isCreate ? '+0000000000' : formData.phone.trim(),
-          modality: formData.modalityLevels[0].modality,
-          level: formData.modalityLevels[0].level as AthleteLevel,
-          practiced_modalities: formData.modalityLevels.map((ml) => ml.modality),
+          modality: hasModalities ? formData.modalityLevels[0].modality : undefined,
+          level: hasModalities ? formData.modalityLevels[0].level as AthleteLevel : 'iniciante',
+          practiced_modalities: hasModalities ? formData.modalityLevels.map((ml) => ml.modality) : [],
           status: isCreate ? 'trial' : 'active',
           invitation_status: isCreate ? 'pending' : formData.invitation_status,
           requires_cardio_exam: formData.requires_cardio_exam,
@@ -350,8 +351,9 @@ export function useAthleteForm({
   const errorCount = Object.keys(errors).length;
   const isFormValid =
     errorCount === 0 &&
-    !!formData.name &&
-    !!formData.phone;
+    (mode === 'create'
+      ? true  // Create mode: no name/phone required (athlete fills during onboarding)
+      : !!formData.name && !!formData.phone);
 
   return {
     formData,
