@@ -335,7 +335,7 @@ export default function CRMCommandCenterView() {
       } = await supabase.auth.getUser();
       if (user) {
         setCoachUserId(user.id);
-        setGroupData(loadGroupData(user.id));
+        setGroupData(await loadGroupData(user.id));
       }
     };
     loadCoachData();

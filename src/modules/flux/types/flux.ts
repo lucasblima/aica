@@ -324,12 +324,12 @@ export interface MyAthleteProfile {
 }
 
 // ============================================
-// ATHLETE GROUPS (localStorage-based, no migration)
+// ATHLETE GROUPS (Supabase: athlete_groups + athlete_group_members)
 // ============================================
 
 /**
- * Athlete group for coach organization (stored in localStorage)
- * Key: `flux_athlete_groups_${coachUserId}`
+ * Athlete group data structure (in-memory representation)
+ * Persisted in Supabase tables: athlete_groups, athlete_group_members
  */
 export interface AthleteGroupData {
   groups: AthleteGroup[];
