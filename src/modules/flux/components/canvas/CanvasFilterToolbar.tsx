@@ -42,8 +42,10 @@ export const ZONE_OPTIONS = [
 interface CanvasFilterToolbarProps {
   modalityFilter: string[];
   onModalityToggle: (mod: string) => void;
-  zoneFilter: string[];
-  onZoneToggle: (zone: string) => void;
+  /** @deprecated Zone filter removed per #921 — kept for interface compat */
+  zoneFilter?: string[];
+  /** @deprecated Zone filter removed per #921 */
+  onZoneToggle?: (zone: string) => void;
   // Week tabs (moved from CanvasEditorDrawer #783)
   currentWeek: number;
   onWeekChange: (week: number) => void;
@@ -53,8 +55,6 @@ interface CanvasFilterToolbarProps {
 export const CanvasFilterToolbar: React.FC<CanvasFilterToolbarProps> = ({
   modalityFilter,
   onModalityToggle,
-  zoneFilter,
-  onZoneToggle,
   currentWeek,
   onWeekChange,
   viewMode,
@@ -108,25 +108,7 @@ export const CanvasFilterToolbar: React.FC<CanvasFilterToolbarProps> = ({
         ))}
       </div>
 
-      {/* Divider */}
-      <div className="w-px h-5 bg-ceramic-border/30" />
-
-      {/* Zone pills (multi-select toggle: empty = show all) */}
-      <div className="flex items-center gap-1">
-        {ZONE_OPTIONS.map((zone) => (
-          <button
-            key={zone.key}
-            onClick={() => onZoneToggle(zone.key)}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-              zoneFilter.includes(zone.key)
-                ? 'bg-ceramic-base text-ceramic-text-primary shadow-sm'
-                : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary'
-            }`}
-          >
-            {zone.label}
-          </button>
-        ))}
-      </div>
+      {/* Zone filter removed per #921 */}
     </div>
   );
 };

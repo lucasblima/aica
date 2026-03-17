@@ -25,7 +25,7 @@ import {
   Copy,
   Link2,
   User as UserIcon,
-  Mail,
+  FileText,
   Loader2,
 } from 'lucide-react';
 import type { Athlete, ModalityLevel } from '../../types/flux';
@@ -461,137 +461,179 @@ export default function AthleteFormDrawer({
                   </button>
 
                   {openSections.health && (
-                    <div className="p-4 pt-0 space-y-4">
-                      <div className="flex items-start gap-3 p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded-lg">
-                        <Info className="w-5 h-5 text-ceramic-info mt-0.5 flex-shrink-0" />
+                    <div className="p-4 pt-0 space-y-5">
+                      {/* Explainer */}
+                      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200/50 rounded-xl">
+                        <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-sm font-bold text-ceramic-info mb-2">
-                            Configuracao de Onboarding de Saude
+                          <p className="text-sm font-bold text-ceramic-text-primary mb-1">
+                            Quando o atleta precisa apresentar documentos?
                           </p>
-                          <p className="text-sm text-ceramic-text-primary leading-relaxed">
-                            Defina as regras de documentacao e onboarding para este atleta.
-                            Dados detalhados de anamnese serao coletados via IA no modulo
-                            Flux.
+                          <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                            Os documentos ativados abaixo serao <strong>exigidos durante o cadastro</strong> do
+                            atleta. Enquanto pendentes, o atleta <strong>nao conseguira visualizar a prescricao
+                            de treinos</strong>. Voce revisara e aprovara cada documento no perfil do atleta.
                           </p>
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
-                          Documentacao Exigida
-                        </label>
-
-                        <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg mb-2">
-                          <div>
-                            <p className="text-sm font-medium text-ceramic-text-primary">
-                              Exame Cardiologico
-                            </p>
-                            <p className="text-xs text-ceramic-text-secondary">
-                              Laudo medico cardiologico
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleChange(
-                                'requires_cardio_exam',
-                                !formData.requires_cardio_exam
-                              )
-                            }
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              formData.requires_cardio_exam
-                                ? 'bg-ceramic-success'
-                                : 'bg-ceramic-text-secondary/30'
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                formData.requires_cardio_exam
-                                  ? 'translate-x-6'
-                                  : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg">
-                          <div>
-                            <p className="text-sm font-medium text-ceramic-text-primary">
-                              Atestado de Liberacao
-                            </p>
-                            <p className="text-xs text-ceramic-text-secondary">
-                              Liberacao medica para atividade fisica
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleChange(
-                                'requires_clearance_cert',
-                                !formData.requires_clearance_cert
-                              )
-                            }
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              formData.requires_clearance_cert
-                                ? 'bg-ceramic-success'
-                                : 'bg-ceramic-text-secondary/30'
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                formData.requires_clearance_cert
-                                  ? 'translate-x-6'
-                                  : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
-                          Permissoes de Onboarding
-                        </label>
-
-                        <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg">
+                      {/* Exame Cardiologico */}
+                      <div className={`p-4 rounded-xl border-2 transition-all ${
+                        formData.requires_cardio_exam
+                          ? 'border-amber-400 bg-amber-50/50'
+                          : 'border-transparent ceramic-inset'
+                      }`}>
+                        <div className="flex items-center justify-between">
                           <div className="flex-1 mr-4">
-                            <p className="text-sm font-medium text-ceramic-text-primary">
-                              Liberar Questionario PAR-Q
-                            </p>
-                            <p className="text-xs text-ceramic-text-secondary">
-                              Atleta podera responder PAR-Q + Termo de Responsabilidade no
-                              Flux
-                            </p>
-                            {formData.allow_parq_onboarding && (
-                              <p className="text-xs text-ceramic-warning mt-1 font-medium">
-                                Prescricao tecnica sera liberada apenas apos assinatura
+                            <div className="flex items-center gap-2 mb-1">
+                              <Heart className="w-4 h-4 text-ceramic-error" />
+                              <p className="text-sm font-bold text-ceramic-text-primary">
+                                Exame Cardiologico
                               </p>
-                            )}
+                            </div>
+                            <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                              Laudo medico atestando saude cardiovascular.
+                              {formData.requires_cardio_exam && (
+                                <span className="block mt-1 text-amber-700 font-medium">
+                                  O atleta devera enviar o laudo antes de acessar os treinos.
+                                </span>
+                              )}
+                            </p>
                           </div>
                           <button
                             type="button"
                             onClick={() =>
-                              handleChange(
-                                'allow_parq_onboarding',
-                                !formData.allow_parq_onboarding
-                              )
+                              handleChange('requires_cardio_exam', !formData.requires_cardio_exam)
                             }
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              formData.allow_parq_onboarding
-                                ? 'bg-ceramic-success'
+                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
+                              formData.requires_cardio_exam
+                                ? 'bg-amber-500'
                                 : 'bg-ceramic-text-secondary/30'
                             }`}
                           >
                             <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                formData.allow_parq_onboarding
-                                  ? 'translate-x-6'
-                                  : 'translate-x-1'
+                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${
+                                formData.requires_cardio_exam ? 'translate-x-6' : 'translate-x-1'
                               }`}
                             />
                           </button>
                         </div>
                       </div>
+
+                      {/* Atestado de Liberacao */}
+                      <div className={`p-4 rounded-xl border-2 transition-all ${
+                        formData.requires_clearance_cert
+                          ? 'border-amber-400 bg-amber-50/50'
+                          : 'border-transparent ceramic-inset'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 mr-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FileText className="w-4 h-4 text-ceramic-info" />
+                              <p className="text-sm font-bold text-ceramic-text-primary">
+                                Atestado de Liberacao
+                              </p>
+                            </div>
+                            <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                              Certificado medico liberando para pratica de atividade fisica.
+                              {formData.requires_clearance_cert && (
+                                <span className="block mt-1 text-amber-700 font-medium">
+                                  O atleta devera enviar o atestado antes de acessar os treinos.
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChange('requires_clearance_cert', !formData.requires_clearance_cert)
+                            }
+                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
+                              formData.requires_clearance_cert
+                                ? 'bg-amber-500'
+                                : 'bg-ceramic-text-secondary/30'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${
+                                formData.requires_clearance_cert ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* PAR-Q */}
+                      <div className={`p-4 rounded-xl border-2 transition-all ${
+                        formData.allow_parq_onboarding
+                          ? 'border-amber-400 bg-amber-50/50'
+                          : 'border-transparent ceramic-inset'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 mr-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <CheckCircle className="w-4 h-4 text-ceramic-success" />
+                              <p className="text-sm font-bold text-ceramic-text-primary">
+                                Questionario PAR-Q+
+                              </p>
+                            </div>
+                            <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                              Avaliacao de prontidao para atividade fisica (7 perguntas + termo).
+                              {formData.allow_parq_onboarding && (
+                                <span className="block mt-1 text-amber-700 font-medium">
+                                  O atleta respondera o PAR-Q no cadastro. Prescricao liberada apos assinatura do termo.
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChange('allow_parq_onboarding', !formData.allow_parq_onboarding)
+                            }
+                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
+                              formData.allow_parq_onboarding
+                                ? 'bg-amber-500'
+                                : 'bg-ceramic-text-secondary/30'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${
+                                formData.allow_parq_onboarding ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Summary of what athlete will see */}
+                      {(formData.requires_cardio_exam || formData.requires_clearance_cert || formData.allow_parq_onboarding) && (
+                        <div className="p-3 bg-ceramic-cool rounded-lg">
+                          <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
+                            O que o atleta vera no cadastro:
+                          </p>
+                          <ul className="space-y-1">
+                            {formData.requires_cardio_exam && (
+                              <li className="text-xs text-ceramic-text-primary flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-ceramic-error flex-shrink-0" />
+                                Enviar exame cardiologico (bloqueia prescricao ate aprovacao)
+                              </li>
+                            )}
+                            {formData.requires_clearance_cert && (
+                              <li className="text-xs text-ceramic-text-primary flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-ceramic-info flex-shrink-0" />
+                                Enviar atestado de liberacao (bloqueia prescricao ate aprovacao)
+                              </li>
+                            )}
+                            {formData.allow_parq_onboarding && (
+                              <li className="text-xs text-ceramic-text-primary flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-ceramic-success flex-shrink-0" />
+                                Responder PAR-Q+ e assinar termo de responsabilidade
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
