@@ -722,13 +722,15 @@ export default function AthleteDetailView() {
             </h3>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {/* PAR-Q Status */}
-            <div className={`ceramic-inset p-3 rounded-lg text-center ${
+            {/* PAR-Q Status — clickable to expand details inline (#912) */}
+            <button
+              onClick={() => setParqExpanded(!parqExpanded)}
+              className={`ceramic-inset p-3 rounded-lg text-center transition-all hover:scale-105 ${
               parqStatus?.clearance_status === 'cleared' ? 'bg-ceramic-success/5' :
               parqStatus?.clearance_status === 'expired' || parqStatus?.clearance_status === 'blocked' ? 'bg-ceramic-error/5' :
               parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning/5' :
               'bg-ceramic-cool/50'
-            }`} title="Status do questionario PAR-Q+ de saude">
+            }${parqExpanded ? ' ring-2 ring-ceramic-accent/40' : ''}`} title="Clique para ver detalhes do PAR-Q+">
               <ShieldCheck className={`w-5 h-5 mx-auto mb-1 ${
                 parqStatus?.clearance_status === 'cleared' ? 'text-ceramic-success' :
                 parqStatus?.clearance_status === 'expired' || parqStatus?.clearance_status === 'blocked' ? 'text-ceramic-error' :
@@ -749,7 +751,7 @@ export default function AthleteDetailView() {
                  parqStatus?.clearance_status === 'cleared_with_restrictions' ? 'Restrito' :
                  !athlete.allow_parq_onboarding ? 'N/A' : 'Pendente'}
               </p>
-            </div>
+            </button>
 
             {/* Atestado de Liberacao */}
             {(() => {
@@ -821,6 +823,30 @@ export default function AthleteDetailView() {
               );
             })()}
           </div>
+
+          {/* Inline PAR-Q detail — expands inside Documentos de Saude (#912) */}
+          {parqExpanded && (
+            <div className="mt-4 border-t border-ceramic-border pt-4">
+              {athlete.allow_parq_onboarding ? (
+                <ParQCoachView
+                  athleteName={athlete.name}
+                  parqStatus={parqStatus}
+                  latestResponse={latestParQ}
+                  documents={docs.documents}
+                  isLoadingStatus={parqLoading}
+                  onReviewDocument={docs.reviewDocument}
+                  onViewDocument={async (doc) => docs.getDocumentUrl(doc)}
+                  onUploadDocument={(input) => docs.uploadDocument(input)}
+                  isUploading={docs.isUploading}
+                />
+              ) : (
+                <p className="text-sm text-ceramic-text-secondary">
+                  O onboarding PAR-Q esta desativado para este atleta.
+                  Ative nas configuracoes do atleta para que ele possa preencher o questionario.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -873,75 +899,6 @@ export default function AthleteDetailView() {
 
       {/* Collapsible Sections — 2-col on desktop */}
       <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-      {/* PAR-Q / Health Section — collapsible (#678), always visible */}
-      <div title="Secao completa do questionario PAR-Q+. Clique para expandir e ver perguntas, respostas e documentos medicos.">
-        <div className="ceramic-card overflow-hidden">
-          {/* Collapsible header */}
-          <button
-            onClick={() => setParqExpanded(!parqExpanded)}
-            className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="ceramic-inset p-2">
-                <ShieldCheck className="w-5 h-5 text-ceramic-text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-bold text-ceramic-text-primary">PAR-Q Detalhado</p>
-                <p className="text-xs text-ceramic-text-secondary">
-                  Perguntas, respostas e documentos
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Status indicator */}
-              {athlete.allow_parq_onboarding && parqStatus && (
-                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                  parqStatus.clearance_status === 'cleared' ? 'bg-ceramic-success' :
-                  parqStatus.clearance_status === 'expired' || parqStatus.clearance_status === 'blocked' ? 'bg-ceramic-error' :
-                  parqStatus.clearance_status === 'cleared_with_restrictions' ? 'bg-ceramic-warning' :
-                  'bg-ceramic-text-secondary/30'
-                }`} />
-              )}
-              {athlete.allow_parq_onboarding && !parqStatus && (
-                <span className="w-2.5 h-2.5 rounded-full bg-ceramic-error flex-shrink-0" />
-              )}
-              {!athlete.allow_parq_onboarding && (
-                <span className="text-[10px] font-bold text-ceramic-text-secondary bg-ceramic-text-secondary/10 px-2 py-0.5 rounded">
-                  Desativado
-                </span>
-              )}
-              <span className={`text-ceramic-text-secondary transition-transform ${parqExpanded ? 'rotate-180' : ''}`}>
-                &#9662;
-              </span>
-            </div>
-          </button>
-
-          {/* Expandable content */}
-          {parqExpanded && (
-            <div className="p-4 pt-0">
-              {athlete.allow_parq_onboarding ? (
-                <ParQCoachView
-                  athleteName={athlete.name}
-                  parqStatus={parqStatus}
-                  latestResponse={latestParQ}
-                  documents={docs.documents}
-                  isLoadingStatus={parqLoading}
-                  onReviewDocument={docs.reviewDocument}
-                  onViewDocument={async (doc) => docs.getDocumentUrl(doc)}
-                  onUploadDocument={(input) => docs.uploadDocument(input)}
-                  isUploading={docs.isUploading}
-                />
-              ) : (
-                <p className="text-sm text-ceramic-text-secondary">
-                  O onboarding PAR-Q esta desativado para este atleta.
-                  Ative nas configuracoes do atleta para que ele possa preencher o questionario.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Athlete Profile Calculator */}
       <div title="Perfil fisico completo: peso, altura, IMC, modalidades praticadas e zonas de treino recomendadas.">
