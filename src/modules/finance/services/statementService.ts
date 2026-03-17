@@ -250,16 +250,7 @@ export const statementService = {
       const otherOverlaps = overlapping.filter(s => s.id !== statementId);
       if (otherOverlaps.length > 0) {
         const names = otherOverlaps.map(s => `${s.bank_name} (${s.file_name})`).join(', ');
-        // Mark current statement as failed
-        await this.updateStatement(statementId, {
-          processing_status: 'failed',
-          processing_error: `Período sobreposto com: ${names}`,
-          processing_completed_at: new Date().toISOString(),
-        });
-        throw new Error(
-          `Já existe extrato para este período: ${names}. ` +
-          `Delete o extrato existente antes de importar novamente.`
-        );
+        log.info(`[saveParsedData] Período sobreposto com ${otherOverlaps.length} extrato(s): ${names} — continuando com dedup por hash`);
       }
     }
 
@@ -400,24 +391,12 @@ export const statementService = {
   },
 
   /**
-   * Check if statement already exists (by file hash)
-   * Only considers completed statements as duplicates (allows retry on failures)
+   * Check if statement already exists (by file hash).
+   * Relaxed for incremental import — always returns false.
+   * Transaction-level SHA-256 hash dedup prevents actual duplicate transactions.
    */
-  async checkDuplicate(userId: string, fileHash: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('finance_statements')
-      .select('id, processing_status')
-      .eq('user_id', userId)
-      .eq('file_hash', fileHash)
-      .eq('processing_status', 'completed') // Only block if successfully processed
-      .maybeSingle(); // Returns null if no results (no 406 error)
-
-    // If there's an error other than "not found", log it
-    if (error && error.code !== 'PGRST116') {
-      log.warn('[statementService] checkDuplicate error:', error);
-    }
-
-    return !!data;
+  async checkDuplicate(_userId: string, _fileHash: string): Promise<boolean> {
+    return false;
   },
 
   /**
@@ -528,26 +507,11 @@ export const statementService = {
       );
       if (hasOverlap) {
         const names = overlapping.map(s => `${s.bank_name} (${s.file_name})`).join(', ');
-        throw new Error(
-          `Já existe extrato para este período: ${names}. ` +
-          `Delete o extrato existente antes de importar novamente.`
-        );
+        log.info(`[CSV] Período sobreposto com: ${names} — continuando com dedup por hash`);
       }
 
-      // 3. Calculate file hash for deduplication
+      // 3. Calculate file hash (stored for reference, no longer blocks re-imports)
       const fileHash = await this.calculateFileHash(file);
-
-      // 4. Check if exact same file already exists
-      const { data: existing } = await supabase
-        .from('finance_statements')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('file_hash', fileHash)
-        .maybeSingle();
-
-      if (existing) {
-        throw new Error('Este extrato já foi importado anteriormente.');
-      }
 
       // 3b. AI categorize transactions that have no category
       const uncategorized = parsed.transactions.filter(t => !t.category || t.category === 'other');
@@ -634,9 +598,13 @@ export const statementService = {
         }))
       );
 
-      const { error: txError } = await supabase
+      const { data: upsertResult, error: txError } = await supabase
         .from('finance_transactions')
-        .insert(transactionsToInsert);
+        .upsert(transactionsToInsert, {
+          onConflict: 'hash_id',
+          ignoreDuplicates: true,
+        })
+        .select('id');
 
       if (txError) {
         log.error('[CSV] Transaction insert error:', txError);
@@ -648,7 +616,9 @@ export const statementService = {
         throw new Error('Erro ao inserir transações');
       }
 
-      log.debug('[CSV] Transactions inserted:', transactionsToInsert.length);
+      const insertedCount = upsertResult?.length || 0;
+      const skippedCount = transactionsToInsert.length - insertedCount;
+      log.info(`[CSV] Transactions: ${insertedCount} inserted, ${skippedCount} duplicates skipped`);
 
       // 6. Calculate totals
       const totalCredits = parsed.transactions
