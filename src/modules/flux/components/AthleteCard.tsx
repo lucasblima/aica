@@ -12,7 +12,7 @@ import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } fr
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
-import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, ClipboardEdit } from 'lucide-react';
+import { AlertCircle, MessageSquare, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, ClipboardEdit } from 'lucide-react';
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
@@ -94,14 +94,7 @@ export function AthleteCard({
   // Status configuration
   const statusConfig = STATUS_CONFIG[athlete.status];
 
-  // Consistency color logic (colorimetric feedback)
-  const getConsistencyColor = (rate: number): string => {
-    if (rate >= 80) return 'text-ceramic-success bg-ceramic-success/10';
-    if (rate >= 60) return 'text-ceramic-warning bg-ceramic-warning/10';
-    return 'text-ceramic-error bg-ceramic-error/10';
-  };
-
-  const consistencyColorClass = getConsistencyColor(adherenceRate);
+  // adherenceRate kept in props for backward compatibility but not displayed on card
   const hasActiveAlerts = activeAlerts.length > 0;
   const hasCriticalAlerts = activeAlerts.some((alert) => alert.severity === 'critical');
 
@@ -166,17 +159,14 @@ export function AthleteCard({
                 />
               )}
             </div>
-            <div className="mt-1 flex items-center gap-2">
-              <LevelBadge level={athlete.level} size="sm" />
-              {athlete.modality && (
-                <span
-                  className="text-sm"
-                  title={MODALITY_CONFIG[athlete.modality]?.label}
-                >
+            {/* Modality icons (level removed — can vary per modality) */}
+            {athlete.modality && (
+              <div className="mt-0.5 flex items-center gap-1">
+                <span className="text-sm" title={MODALITY_CONFIG[athlete.modality]?.label}>
                   {MODALITY_CONFIG[athlete.modality]?.icon}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Status Badge — #693: hover tooltip for ATIVO/INATIVO */}
@@ -319,42 +309,26 @@ export function AthleteCard({
           </div>
         )}
 
-        {/* Metrics Row */}
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-ceramic-text-secondary/10">
-          {/* Consistency Rate */}
+        {/* Metrics Row — feedbacks + status indicators */}
+        <div className="flex items-center gap-3 pt-2 border-t border-ceramic-text-secondary/10 flex-wrap">
+          {/* Feedbacks summary */}
           <div className="flex items-center gap-2">
-            <div className={`ceramic-inset p-1.5 ${consistencyColorClass}`}>
-              <TrendingUp className="w-3.5 h-3.5" />
+            <div className="ceramic-inset p-1.5">
+              <MessageSquare className="w-3.5 h-3.5 text-ceramic-text-secondary" />
             </div>
             <div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
-                Adesao
+                Feedbacks
               </p>
-              <p className={`text-sm font-bold ${consistencyColorClass}`}>
-                {adherenceRate}%
-              </p>
+              {recentFeedbacks.length > 0 && recentFeedbacks[0].completed_at ? (
+                <p className="text-xs font-bold text-ceramic-text-primary">
+                  {recentFeedbacks.length} · {new Date(recentFeedbacks[0].completed_at).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
+                </p>
+              ) : (
+                <p className="text-xs font-medium text-ceramic-text-secondary">Nenhum</p>
+              )}
             </div>
           </div>
-
-          {/* Last Feedback */}
-          {recentFeedbacks.length > 0 && recentFeedbacks[0].completed_at && (
-            <div className="flex items-center gap-2">
-              <div className="ceramic-inset p-1.5">
-                <Calendar className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-              </div>
-              <div>
-                <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
-                  Último Feedback
-                </p>
-                <p className="text-xs font-bold text-ceramic-text-primary">
-                  {new Date(recentFeedbacks[0].completed_at).toLocaleDateString('pt-BR', {
-                    day: 'numeric',
-                    month: 'short',
-                  })}
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* PAR-Q Status */}
           {athlete.allow_parq_onboarding && athlete.parq_clearance_status && (
@@ -364,42 +338,14 @@ export function AthleteCard({
           {/* Active Alerts */}
           {hasActiveAlerts && (
             <div className="flex items-center gap-2">
-              <div
-                className={`
-                  ceramic-inset p-1.5
-                  ${hasCriticalAlerts ? 'bg-ceramic-error/10' : 'bg-ceramic-warning/10'}
-                `}
-              >
-                <AlertCircle
-                  className={`w-3.5 h-3.5 ${hasCriticalAlerts ? 'text-ceramic-error' : 'text-ceramic-warning'}`}
-                />
+              <div className={`ceramic-inset p-1.5 ${hasCriticalAlerts ? 'bg-ceramic-error/10' : 'bg-ceramic-warning/10'}`}>
+                <AlertCircle className={`w-3.5 h-3.5 ${hasCriticalAlerts ? 'text-ceramic-error' : 'text-ceramic-warning'}`} />
               </div>
               <div>
-                <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
-                  Alertas
-                </p>
-                <p
-                  className={`text-sm font-bold ${hasCriticalAlerts ? 'text-ceramic-error' : 'text-ceramic-warning'}`}
-                >
-                  {activeAlerts.length}
-                </p>
+                <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">Alertas</p>
+                <p className={`text-sm font-bold ${hasCriticalAlerts ? 'text-ceramic-error' : 'text-ceramic-warning'}`}>{activeAlerts.length}</p>
               </div>
             </div>
-          )}
-
-          {/* WhatsApp Quick Action */}
-          {onWhatsAppClick && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onWhatsAppClick();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-ceramic-success/20 hover:bg-ceramic-success/30 rounded-lg transition-colors"
-              title="Enviar mensagem via WhatsApp"
-            >
-              <MessageCircle className="w-4 h-4 text-ceramic-success" />
-              <span className="text-xs font-bold text-ceramic-success">WhatsApp</span>
-            </button>
           )}
         </div>
 
