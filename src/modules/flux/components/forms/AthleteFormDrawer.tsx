@@ -12,18 +12,19 @@
  * - 3 secoes: Basic Info + Modalities + Health Config
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
 import {
   X,
   AlertCircle,
   CheckCircle,
   ChevronDown,
-  User as UserIcon,
   Target,
   Heart,
   Info,
   Copy,
+  Link2,
+  User as UserIcon,
   Mail,
   Loader2,
 } from 'lucide-react';
@@ -34,15 +35,13 @@ import {
   MODALITY_OPTIONS,
   LEVEL_OPTIONS,
 } from '../../hooks/useAthleteForm';
-import UserSearchSection from './UserSearchSection';
-import type { UserSearchResult } from '../../hooks/useUserSearch';
 
 interface AthleteFormDrawerProps {
   mode: 'create' | 'edit';
   initialData?: Athlete;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (athlete: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }) => Promise<void>;
+  onSave: (athlete: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }) => Promise<string | void>;
 }
 
 export default function AthleteFormDrawer({
@@ -66,62 +65,17 @@ export default function AthleteFormDrawer({
     handleLevelChange,
     handleSubmit,
     handleClose,
+    lastCreatedId,
   } = useAthleteForm({ mode, initialData, isOpen, onSave, onClose, autoCloseDelayMs: 1000 });
 
-  // User search state (create mode only)
-  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
-  const [isManualMode, setIsManualMode] = useState(false);
-
-  // Reset user search state when drawer opens/closes
-  React.useEffect(() => {
-    if (isOpen) {
-      setSelectedUser(null);
-      setIsManualMode(false);
-    }
-  }, [isOpen]);
-
-  const handleUserSelected = useCallback(
-    (user: UserSearchResult) => {
-      setSelectedUser(user);
-      // Auto-fill form fields from selected user
-      if (user.full_name) handleChange('name', user.full_name);
-      if (user.email) handleChange('email', user.email);
-      handleChange('auth_user_id', user.id);
-      handleChange('invitation_status', 'connected');
-    },
-    [handleChange]
-  );
-
-  const handleClearUserSelection = useCallback(() => {
-    setSelectedUser(null);
-    handleChange('name', '');
-    handleChange('email', '');
-    handleChange('auth_user_id', undefined);
-    handleChange('invitation_status', undefined);
-  }, [handleChange]);
-
-  const handleToggleManualMode = useCallback(() => {
-    setIsManualMode((prev) => {
-      const goingToManual = !prev;
-      if (goingToManual) {
-        // Switching to manual: clear any selected user
-        setSelectedUser(null);
-        handleChange('auth_user_id', undefined);
-        handleChange('invitation_status', undefined);
-      }
-      return goingToManual;
-    });
-  }, [handleChange]);
-
-  // Invite system state (Drawer-specific)
-  const [isSendingInvite, setIsSendingInvite] = useState(false);
-  const [inviteToast, setInviteToast] = useState<string | null>(null);
+  // Invite link state
   const [copyToast, setCopyToast] = useState(false);
+  const createdAthleteId = lastCreatedId;
 
-  // Accordion state
+  // Accordion state — in create mode, open modalities first (no basic info section)
   const [openSections, setOpenSections] = useState({
-    basic: true,
-    modalities: false,
+    basic: mode === 'edit',
+    modalities: mode === 'create',
     health: false,
   });
 
@@ -132,45 +86,18 @@ export default function AthleteFormDrawer({
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const handleCopyInviteLink = async () => {
+  const getInviteLink = (athleteId: string) =>
+    `https://aica.guru/onboarding/${athleteId}`;
+
+  const handleCopyInviteLink = async (athleteId: string) => {
     try {
-      await navigator.clipboard.writeText('https://aica.guru/meu-treino');
+      await navigator.clipboard.writeText(getInviteLink(athleteId));
       setCopyToast(true);
       setTimeout(() => setCopyToast(false), 3000);
     } catch (err) {
       console.error('Failed to copy link:', err);
     }
   };
-
-  const handleSendInvite = async () => {
-    if (!initialData?.id || !formData.email) return;
-    setIsSendingInvite(true);
-    try {
-      const result = await AthleteService.sendInvite({
-        athleteId: initialData.id,
-        athleteName: formData.name,
-        athleteEmail: formData.email,
-        coachName: '',
-      });
-      if (result.success) {
-        setInviteToast(`Convite enviado para ${formData.email}`);
-      } else {
-        setInviteToast(`Erro: ${result.error || 'Falha ao enviar convite'}`);
-      }
-    } catch {
-      setInviteToast('Erro ao enviar convite');
-    } finally {
-      setIsSendingInvite(false);
-      setTimeout(() => setInviteToast(null), 4000);
-    }
-  };
-
-  const showInviteActions =
-    mode === 'edit' &&
-    initialData?.id &&
-    formData.email &&
-    formData.email.includes('@') &&
-    initialData?.invitation_status !== 'connected';
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.y > 150) {
@@ -219,7 +146,7 @@ export default function AthleteFormDrawer({
                 </h2>
                 <p className="text-sm text-ceramic-text-secondary mt-1">
                   {mode === 'create'
-                    ? 'Cadastre um novo atleta no sistema'
+                    ? 'Configure e gere um link de cadastro'
                     : 'Atualize as informacoes do atleta'}
                 </p>
               </div>
@@ -261,164 +188,150 @@ export default function AthleteFormDrawer({
                   </motion.div>
                 )}
 
-                {/* User Search Section (create mode only) */}
-                {mode === 'create' && (
-                  <UserSearchSection
-                    onUserSelected={handleUserSelected}
-                    onClear={handleClearUserSelection}
-                    selectedUser={selectedUser}
-                    isManualMode={isManualMode}
-                    onToggleManualMode={handleToggleManualMode}
-                  />
+                {/* Create mode: Invite link explanation */}
+                {mode === 'create' && !submitSuccess && (
+                  <div className="flex items-start gap-3 p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
+                    <Link2 className="w-5 h-5 text-ceramic-info mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-bold text-ceramic-info mb-1">
+                        Como funciona
+                      </p>
+                      <p className="text-sm text-ceramic-text-primary leading-relaxed">
+                        Selecione as modalidades e requisitos de saude. Ao criar, voce
+                        recebera um <strong>link de cadastro</strong> para enviar ao atleta.
+                        Ele preenchera nome, email e telefone durante o onboarding.
+                      </p>
+                    </div>
+                  </div>
                 )}
 
-                {/* Section 1: Basic Info */}
-                <div className="ceramic-card overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => toggleSection('basic')}
-                    className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
-                  >
+                {/* Create mode: Show invite link after success */}
+                {mode === 'create' && submitSuccess && createdAthleteId && (
+                  <div className="ceramic-card p-5 space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className="ceramic-inset p-2">
-                        <UserIcon className="w-4 h-4 text-ceramic-text-primary" />
+                      <div className="p-2.5 bg-ceramic-success/15 rounded-xl">
+                        <CheckCircle className="w-6 h-6 text-ceramic-success" />
                       </div>
-                      <span className="text-sm font-bold text-ceramic-text-primary">
-                        1. Informacoes Basicas
-                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-ceramic-text-primary">
+                          Atleta criado!
+                        </p>
+                        <p className="text-xs text-ceramic-text-secondary">
+                          Envie o link abaixo para seu atleta se cadastrar
+                        </p>
+                      </div>
                     </div>
-                    <ChevronDown
-                      className={`w-5 h-5 text-ceramic-text-secondary transition-transform ${
-                        openSections.basic ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </button>
 
-                  {openSections.basic && (
-                    <div className="p-4 pt-0 space-y-4">
-                      {/* Name */}
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                          Nome *
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => handleChange('name', e.target.value)}
-                          disabled={!!selectedUser}
-                          className={`w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 ${
-                            selectedUser ? 'opacity-60 cursor-not-allowed' : ''
-                          }`}
-                          placeholder="Nome completo do atleta"
-                        />
-                        {errors.name && (
-                          <p className="text-xs text-ceramic-error mt-1">{errors.name}</p>
-                        )}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={getInviteLink(createdAthleteId)}
+                        className="flex-1 ceramic-inset px-3 py-2.5 rounded-lg text-xs text-ceramic-text-secondary font-mono select-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCopyInviteLink(createdAthleteId)}
+                        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        {copyToast ? 'Copiado!' : 'Copiar'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Section 1: Basic Info (edit mode only) */}
+                {mode === 'edit' && (
+                  <div className="ceramic-card overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('basic')}
+                      className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="ceramic-inset p-2">
+                          <UserIcon className="w-4 h-4 text-ceramic-text-primary" />
+                        </div>
+                        <span className="text-sm font-bold text-ceramic-text-primary">
+                          1. Informacoes Basicas
+                        </span>
                       </div>
+                      <ChevronDown
+                        className={`w-5 h-5 text-ceramic-text-secondary transition-transform ${
+                          openSections.basic ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
 
-                      {/* Email */}
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => handleChange('email', e.target.value)}
-                          disabled={!!selectedUser || initialData?.invitation_status === 'connected'}
-                          className={`w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 ${
-                            selectedUser || initialData?.invitation_status === 'connected'
-                              ? 'opacity-60 cursor-not-allowed'
-                              : ''
-                          }`}
-                          placeholder="email@exemplo.com"
-                        />
-                        {errors.email && (
-                          <p className="text-xs text-ceramic-error mt-1">{errors.email}</p>
-                        )}
-                        {formData.email &&
-                          initialData?.invitation_status === 'connected' && (
-                            <p className="text-xs text-ceramic-success mt-1.5 flex items-center gap-1.5">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-ceramic-success" />
-                              Conectado
-                            </p>
+                    {openSections.basic && (
+                      <div className="p-4 pt-0 space-y-4">
+                        {/* Name */}
+                        <div>
+                          <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
+                            Nome *
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => handleChange('name', e.target.value)}
+                            className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                            placeholder="Nome completo do atleta"
+                          />
+                          {errors.name && (
+                            <p className="text-xs text-ceramic-error mt-1">{errors.name}</p>
                           )}
-                        {formData.email &&
-                          initialData?.invitation_status !== 'connected' &&
-                          formData.email.includes('@') && (
-                            <p className="text-xs text-ceramic-text-secondary mt-1.5">
-                              Quando {formData.name || 'o atleta'} criar conta AICA, sera
-                              conectado automaticamente
-                            </p>
-                          )}
-                      </div>
+                        </div>
 
-                      {/* Invite Actions */}
-                      {showInviteActions && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={handleCopyInviteLink}
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 ceramic-inset hover:bg-white/50 rounded-lg transition-colors"
-                          >
-                            <Copy className="w-4 h-4 text-ceramic-info" />
-                            <span className="text-xs font-bold text-ceramic-info">
-                              {copyToast ? 'Link copiado!' : 'Copiar Link de Convite'}
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSendInvite}
-                            disabled={
-                              isSendingInvite || initialData?.invitation_sent_at != null
-                            }
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-ceramic-info/10 hover:bg-ceramic-info/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-                          >
-                            {isSendingInvite ? (
-                              <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
-                            ) : (
-                              <Mail className="w-4 h-4 text-ceramic-info" />
+                        {/* Email */}
+                        <div>
+                          <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleChange('email', e.target.value)}
+                            disabled={initialData?.invitation_status === 'connected'}
+                            className={`w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 ${
+                              initialData?.invitation_status === 'connected'
+                                ? 'opacity-60 cursor-not-allowed'
+                                : ''
+                            }`}
+                            placeholder="email@exemplo.com"
+                          />
+                          {errors.email && (
+                            <p className="text-xs text-ceramic-error mt-1">{errors.email}</p>
+                          )}
+                          {formData.email &&
+                            initialData?.invitation_status === 'connected' && (
+                              <p className="text-xs text-ceramic-success mt-1.5 flex items-center gap-1.5">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-ceramic-success" />
+                                Conectado
+                              </p>
                             )}
-                            <span className="text-xs font-bold text-ceramic-info">
-                              {isSendingInvite
-                                ? 'Enviando...'
-                                : initialData?.invitation_sent_at
-                                  ? 'Convite enviado'
-                                  : 'Enviar Convite por Email'}
-                            </span>
-                          </button>
                         </div>
-                      )}
 
-                      {/* Invite Toast */}
-                      {inviteToast && (
-                        <div className="flex items-center gap-2 p-2.5 bg-ceramic-success/10 border border-ceramic-success/20 rounded-lg">
-                          <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0" />
-                          <p className="text-xs font-medium text-ceramic-success">
-                            {inviteToast}
-                          </p>
+                        {/* Phone */}
+                        <div>
+                          <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
+                            Telefone (WhatsApp) *
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => handleChange('phone', e.target.value)}
+                            className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                            placeholder="+5511987654321"
+                          />
+                          {errors.phone && (
+                            <p className="text-xs text-ceramic-error mt-1">{errors.phone}</p>
+                          )}
                         </div>
-                      )}
-
-                      {/* Phone */}
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                          Telefone (WhatsApp) *
-                        </label>
-                        <input
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => handleChange('phone', e.target.value)}
-                          className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                          placeholder="+5511987654321"
-                        />
-                        {errors.phone && (
-                          <p className="text-xs text-ceramic-error mt-1">{errors.phone}</p>
-                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Section 2: Modalities */}
                 <div className="ceramic-card overflow-hidden">
@@ -432,7 +345,7 @@ export default function AthleteFormDrawer({
                         <Target className="w-4 h-4 text-ceramic-text-primary" />
                       </div>
                       <span className="text-sm font-bold text-ceramic-text-primary">
-                        2. Modalidades
+                        {mode === 'create' ? '1' : '2'}. Modalidades
                       </span>
                     </div>
                     <ChevronDown
@@ -537,7 +450,7 @@ export default function AthleteFormDrawer({
                         <Heart className="w-4 h-4 text-ceramic-text-primary" />
                       </div>
                       <span className="text-sm font-bold text-ceramic-text-primary">
-                        3. Dados de Saude
+                        {mode === 'create' ? '2' : '3'}. Dados de Saude
                       </span>
                     </div>
                     <ChevronDown
@@ -724,7 +637,7 @@ export default function AthleteFormDrawer({
                     </>
                   ) : (
                     <span>
-                      {mode === 'create' ? 'Criar Atleta' : 'Salvar Alteracoes'}
+                      {mode === 'create' ? 'Gerar Link de Cadastro' : 'Salvar Alteracoes'}
                     </span>
                   )}
                 </button>
