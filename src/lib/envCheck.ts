@@ -21,8 +21,6 @@ export interface EnvConfig {
 
   // Optional but recommended
   frontendUrl?: string;
-  /** @deprecated VITE_GEMINI_API_KEY is no longer used. All Gemini API calls now go through Edge Functions. */
-  geminiApiKey?: string;
   googleOAuthClientId?: string;
 
   // Optional services
@@ -54,7 +52,6 @@ export function validateEnv(): EnvValidationResult {
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
     supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
     frontendUrl: import.meta.env.VITE_FRONTEND_URL,
-    geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY,
     googleOAuthClientId: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID,
     pdfExtractorUrl: import.meta.env.VITE_PDF_EXTRACTOR_URL,
     n8nWebhookUrl: import.meta.env.VITE_N8N_WEBHOOK_URL,
@@ -89,10 +86,6 @@ export function validateEnv(): EnvValidationResult {
   // =========================================================================
   // RECOMMENDED VARIABLES - Features may be limited without these
   // =========================================================================
-
-  // NOTE: VITE_GEMINI_API_KEY is DEPRECATED - All Gemini API calls now use Edge Functions
-  // The API key is stored securely in Supabase Edge Function secrets, not in the frontend.
-  // No warning is needed for missing VITE_GEMINI_API_KEY as it's no longer required.
 
   if (!config.frontendUrl && import.meta.env.PROD) {
     warnings.push(
@@ -145,7 +138,6 @@ export function logEnvStatus(): void {
   log.info(`    VITE_SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING'}`);
   log.info(`    VITE_SUPABASE_ANON_KEY: ${import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'}`);
   log.info('  Optional Variables:');
-  log.info(`    VITE_GEMINI_API_KEY: ${import.meta.env.VITE_GEMINI_API_KEY ? 'SET (DEPRECATED)' : 'NOT SET (OK - uses Edge Functions)'}`);
   log.info(`    VITE_FRONTEND_URL: ${import.meta.env.VITE_FRONTEND_URL || 'NOT SET'}`);
   log.info(`    VITE_GOOGLE_OAUTH_CLIENT_ID: ${import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ? 'SET' : 'NOT SET'}`);
   log.info(`    VITE_PDF_EXTRACTOR_URL: ${import.meta.env.VITE_PDF_EXTRACTOR_URL || 'NOT SET'}`);
