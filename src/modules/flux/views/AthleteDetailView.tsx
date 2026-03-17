@@ -496,18 +496,6 @@ export default function AthleteDetailView() {
           <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
         </button>
 
-        {/* Blocked Banner */}
-        {athlete.status === 'paused' && (
-          <div className="flex items-center gap-3 p-4 mb-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
-            <Lock className="w-5 h-5 text-ceramic-error flex-shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-ceramic-error">Atleta Bloqueado</p>
-              <p className="text-xs text-ceramic-error/80">
-                Este atleta esta com acesso pausado e nao pode visualizar treinos.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Athlete Profile Card */}
         <div className="ceramic-card p-6 space-y-4" title="Informacoes de contato e status do atleta. Clique no icone de edicao para alterar nome, email e telefone.">
