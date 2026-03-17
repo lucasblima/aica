@@ -3,9 +3,16 @@
  *
  * Uses fetch + ReadableStream reader (not EventSource) to support POST body.
  * Returns an AsyncGenerator yielding TokenEvent | DoneEvent | ErrorEvent.
+ *
+ * Handles Edge Function fallback: when sendMessageStream fails server-side,
+ * the Edge Function returns JSON (Content-Type: application/json) instead of SSE.
+ * This service detects that and extracts the response from JSON.
  */
 
 import { getCachedSession } from '@/services/authCacheService'
+
+/** Timeout for the streaming fetch (30 seconds) */
+const STREAM_TIMEOUT_MS = 30_000
 
 export interface TokenEvent {
   type: 'token'
@@ -38,6 +45,72 @@ export interface InterviewMeta {
   intent: string
 }
 
+/** Build common headers + URL for gemini-chat Edge Function */
+function getChatEndpoint(accessToken: string) {
+  const supabaseUrl =
+    import.meta.env.VITE_SUPABASE_URL ||
+    'https://uzywajqzbdbrfammshdg.supabase.co'
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+  return {
+    url: `${supabaseUrl}/functions/v1/gemini-chat`,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      apikey: anonKey,
+    },
+  }
+}
+
+/**
+ * Non-streaming fallback: POST to gemini-chat with action=chat_aica.
+ * Used when streaming fails on the client side.
+ */
+export async function fetchChatNonStreaming(
+  sessionId: string,
+  message: string,
+  history: Array<{ role: string; content: string }>,
+  context?: Record<string, unknown>,
+): Promise<{ text: string; agent: string; actions: unknown[]; usage?: { input: number; output: number } }> {
+  const { session } = await getCachedSession()
+  if (!session?.access_token) throw new Error('Not authenticated')
+
+  const { url, headers } = getChatEndpoint(session.access_token)
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        action: 'chat_aica',
+        payload: { message, session_id: sessionId, history, context },
+      }),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const json = await response.json()
+    if (!json.success) {
+      throw new Error(json.error || 'Erro no servidor')
+    }
+
+    return {
+      text: json.response || json.text || '',
+      agent: json.agent || 'aica_coordinator',
+      actions: Array.isArray(json.suggestedActions) ? json.suggestedActions : [],
+      usage: json.usage,
+    }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 export async function* streamChat(
   sessionId: string,
   message: string,
@@ -49,34 +122,72 @@ export async function* streamChat(
   const { session } = await getCachedSession()
   if (!session?.access_token) throw new Error('Not authenticated')
 
-  const supabaseUrl =
-    import.meta.env.VITE_SUPABASE_URL ||
-    'https://uzywajqzbdbrfammshdg.supabase.co'
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  const { url, headers } = getChatEndpoint(session.access_token)
 
-  const url = `${supabaseUrl}/functions/v1/gemini-chat`
+  // AbortController with 30s timeout
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS)
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-      apikey: anonKey,
-    },
-    body: JSON.stringify({
-      action: 'chat_aica_stream',
-      payload: {
-        message,
-        session_id: sessionId,
-        history,
-        context,
-        ...(interview ? { interview } : {}),
-      },
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        action: 'chat_aica_stream',
+        payload: {
+          message,
+          session_id: sessionId,
+          history,
+          context,
+          ...(interview ? { interview } : {}),
+        },
+      }),
+      signal: controller.signal,
+    })
+  } catch (fetchErr) {
+    clearTimeout(timeout)
+    if ((fetchErr as Error).name === 'AbortError') {
+      yield { type: 'error', message: 'Tempo limite excedido. Tente novamente.' }
+    } else {
+      yield { type: 'error', message: (fetchErr as Error).message || 'Erro de conexao' }
+    }
+    return
+  }
 
   if (!response.ok || !response.body) {
-    yield { type: 'error', message: `HTTP ${response.status}` }
+    clearTimeout(timeout)
+    try {
+      const errJson = await response.json()
+      yield { type: 'error', message: errJson.error || `HTTP ${response.status}` }
+    } catch {
+      yield { type: 'error', message: `HTTP ${response.status}` }
+    }
+    return
+  }
+
+  // Detect non-SSE response (Edge Function fallback returns JSON when streaming fails server-side)
+  const contentType = response.headers.get('content-type') || ''
+  if (!contentType.includes('text/event-stream')) {
+    clearTimeout(timeout)
+    try {
+      const json = await response.json()
+      if (json.text || json.response) {
+        yield {
+          type: 'done',
+          fullText: json.text || json.response,
+          agent: json.agent || 'aica_coordinator',
+          actions: json.suggestedActions || json.actions || [],
+          usage: json.usage,
+        }
+      } else if (json.error) {
+        yield { type: 'error', message: json.error }
+      } else {
+        yield { type: 'error', message: 'Resposta inesperada do servidor' }
+      }
+    } catch {
+      yield { type: 'error', message: 'Resposta invalida do servidor' }
+    }
     return
   }
 
@@ -115,6 +226,7 @@ export async function* streamChat(
       }
     }
   } finally {
+    clearTimeout(timeout)
     reader.releaseLock()
   }
 }

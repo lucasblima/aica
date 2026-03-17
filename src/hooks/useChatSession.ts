@@ -1,19 +1,18 @@
 /**
  * useChatSession - Session lifecycle hook for Aica Chat
  *
- * Wraps chatService (persistence) + streaming via chatStreamService + GeminiClient fallback.
- * Streaming is tried first; on failure falls back to agent-proxy (ADK).
+ * Wraps chatService (persistence) + streaming via chatStreamService.
+ * Streaming is tried first; on failure falls back to non-streaming gemini-chat.
  * NEVER calls supabase.auth.refreshSession() — uses getSession() only.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { chatService, type ChatSession, type ChatMessage } from '@/services/chatService'
-import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 import { getUserAIContext } from '@/services/userAIContextService'
-import { streamChat, type InterviewMeta } from '@/services/chatStreamService'
+import { streamChat, fetchChatNonStreaming, type InterviewMeta } from '@/services/chatStreamService'
 import type { ChatAction } from '@/types/chatActions'
 
 export interface DisplayMessage {
@@ -37,12 +36,14 @@ export interface UseChatSessionReturn {
   limitReached: boolean
   limitInfo: InteractionLimitResult | null
   sendMessage: (text: string, interviewMeta?: InterviewMeta) => Promise<void>
+  retryLastMessage: () => Promise<void>
   createNewSession: () => void
   switchSession: (sessionId: string) => Promise<void>
   archiveSession: (sessionId: string) => Promise<void>
   showSessions: boolean
   setShowSessions: (show: boolean) => void
   activeAgent: string | null
+  lastFailedMessage: string | null
 }
 
 function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
@@ -66,6 +67,7 @@ export function useChatSession(): UseChatSessionReturn {
   const [limitInfo, setLimitInfo] = useState<InteractionLimitResult | null>(null)
   const [showSessions, setShowSessions] = useState(false)
   const [activeAgent, setActiveAgent] = useState<string | null>(null)
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const initRef = useRef(false)
 
   // Load sessions on mount
@@ -151,7 +153,7 @@ export function useChatSession(): UseChatSessionReturn {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
 
-    setError(null)
+    // Don't clear error eagerly — only clear on success
     setLimitReached(false)
     setIsLoading(true)
 
@@ -236,7 +238,7 @@ export function useChatSession(): UseChatSessionReturn {
       let tokensOutput: number | undefined
       let modelUsed = 'gemini-chat-stream'
 
-      // Strategy: try streaming first, fallback to agent-proxy
+      // Strategy: try streaming first, fallback to non-streaming gemini-chat
       try {
         const streamResult = await tryStreaming(
           currentSession.id,
@@ -251,54 +253,27 @@ export function useChatSession(): UseChatSessionReturn {
         tokensInput = streamResult.usage?.input
         tokensOutput = streamResult.usage?.output
       } catch (streamErr) {
-        // Streaming failed — fallback to agent-proxy (ADK)
-        console.warn('[useChatSession] Streaming failed, falling back to agent-proxy:', streamErr)
+        // Streaming failed — fallback to non-streaming chat_aica
+        console.warn('[useChatSession] Streaming failed, falling back to non-streaming:', streamErr)
         setIsStreaming(false)
         setStreamedText('')
-        modelUsed = 'adk-agent-proxy'
+        modelUsed = 'gemini-chat-fallback'
 
-        const client = GeminiClient.getInstance()
-        const response = await client.call({
-          action: 'agent_chat',
-          payload: {
-            message: trimmed,
-            session_id: currentSession.id,
-            history,
-            context: userContext,
-          },
-        })
+        const fallbackResult = await fetchChatNonStreaming(
+          currentSession.id,
+          trimmed,
+          history,
+          userContext,
+        )
 
-        const result = response?.result
-        const responseText = result?.response || result || 'Desculpe, nao consegui gerar uma resposta.'
-        finalText = typeof responseText === 'string' ? responseText : JSON.stringify(responseText)
-        respondingAgent = result?.agent || 'aica_coordinator'
-        const sources: Array<{ title: string; url: string }> = result?.sources || []
-        responseActions = Array.isArray(result?.actions) ? result.actions : []
-        tokensInput = response?.tokensUsed?.input
-        tokensOutput = response?.tokensUsed?.output
-
-        // Save and append (non-streaming path keeps sources)
-        const savedAssistantMsg = await chatService.saveMessage({
-          sessionId: currentSession.id,
-          userId,
-          content: finalText,
-          direction: 'outbound',
-          modelUsed,
-          tokensInput,
-          tokensOutput,
-        })
-
-        setMessages(prev => [...prev, {
-          ...chatMsgToDisplay(savedAssistantMsg),
-          agent: respondingAgent,
-          actions: responseActions,
-          sources,
-        }])
-        setActiveAgent(respondingAgent)
-        return // early return — non-streaming path handled above
+        finalText = fallbackResult.text
+        respondingAgent = fallbackResult.agent
+        responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
+        tokensInput = fallbackResult.usage?.input
+        tokensOutput = fallbackResult.usage?.output
       }
 
-      // Streaming succeeded — clear streaming state, save to DB, append final message
+      // Success — clear streaming state, save to DB, append final message
       setIsStreaming(false)
       setStreamedText('')
 
@@ -318,9 +293,14 @@ export function useChatSession(): UseChatSessionReturn {
         actions: responseActions,
       }])
       setActiveAgent(respondingAgent)
+
+      // Clear error and failed message on success
+      setError(null)
+      setLastFailedMessage(null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
       setError(message)
+      setLastFailedMessage(trimmed)
     } finally {
       setIsLoading(false)
       setIsStreaming(false)
@@ -328,10 +308,19 @@ export function useChatSession(): UseChatSessionReturn {
     }
   }, [session, messages, isLoading, getUserId, tryStreaming])
 
+  const retryLastMessage = useCallback(async () => {
+    if (!lastFailedMessage) return
+    const msg = lastFailedMessage
+    setError(null)
+    setLastFailedMessage(null)
+    await sendMessage(msg)
+  }, [lastFailedMessage, sendMessage])
+
   const createNewSession = useCallback(() => {
     setSession(null)
     setMessages([])
     setError(null)
+    setLastFailedMessage(null)
     setShowSessions(false)
     setActiveAgent(null)
   }, [])
@@ -345,6 +334,7 @@ export function useChatSession(): UseChatSessionReturn {
       setSession(target)
       setShowSessions(false)
       setError(null)
+      setLastFailedMessage(null)
       setActiveAgent(null)
     } catch {
       setError('Erro ao carregar conversa')
@@ -377,11 +367,13 @@ export function useChatSession(): UseChatSessionReturn {
     limitReached,
     limitInfo,
     sendMessage,
+    retryLastMessage,
     createNewSession,
     switchSession,
     archiveSession,
     showSessions,
     setShowSessions,
     activeAgent,
+    lastFailedMessage,
   }
 }
