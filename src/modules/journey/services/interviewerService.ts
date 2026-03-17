@@ -258,11 +258,17 @@ async function submitInterviewResponseLocal(
       await updateSessionProgress(sessionId)
     }
 
+    log.warn(
+      'Local fallback used — CP recorded in response but NOT awarded via gamification system. ' +
+      'CP will be reconciled when Edge Function is available again.',
+      { response_id: insertData.id, cp_earned: CP_PER_ANSWER }
+    )
+
     return {
       success: true,
       response_id: insertData.id,
       cp_earned: CP_PER_ANSWER,
-      cp_result: null,
+      cp_result: null, // CP not actually awarded — Edge Function handles real CP award
       insights_extracted: 0,
       processing_time_ms: 0,
     }
@@ -429,11 +435,6 @@ export async function getCategoryCompletion(
     return result
   } catch (error) {
     log.error('Error in getCategoryCompletion:', error)
-
-    // Return empty results for all categories
-    for (const category of categories) {
-      result[category] = { total: 0, answered: 0, percentage: 0 }
-    }
-    return result
+    throw error // Re-throw so UI can show error state instead of silent 0/0
   }
 }

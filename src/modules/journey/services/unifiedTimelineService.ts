@@ -55,6 +55,18 @@ const INTENT_CATEGORY_COLORS: Record<IntentCategory, string> = {
 const log = createNamespacedLogger('UnifiedTimeline')
 
 /**
+ * Maximum items fetched per source to prevent OOM on constrained environments.
+ * Even if the caller requests a large limit, each individual source query
+ * will never exceed this cap.
+ */
+const MAX_PER_SOURCE_LIMIT = 50
+
+/**
+ * Default overall limit for timeline queries.
+ */
+const DEFAULT_TIMELINE_LIMIT = 20
+
+/**
  * Date range to SQL date filter
  */
 function getDateFilter(dateRange: TimelineFilters['dateRange']): string | null {
@@ -611,7 +623,7 @@ async function fetchActivityEvents(
 export async function fetchUnifiedTimelineEvents(
   userId: string,
   filters: TimelineFilters = DEFAULT_TIMELINE_FILTERS,
-  limit: number = 20,
+  limit: number = DEFAULT_TIMELINE_LIMIT,
   offset: number = 0
 ): Promise<{ events: UnifiedEvent[]; total: number }> {
   if (!userId) {
@@ -619,7 +631,13 @@ export async function fetchUnifiedTimelineEvents(
   }
 
   const dateFilter = getDateFilter(filters.dateRange)
-  const perSourceLimit = Math.ceil(limit / filters.sources.length) + 5 // Extra to ensure enough after merge
+  const activeSourceCount = filters.sources.length || 1
+  // Distribute the requested limit across sources, with a small buffer for
+  // merge-then-trim, but never exceed MAX_PER_SOURCE_LIMIT to prevent OOM.
+  const perSourceLimit = Math.min(
+    Math.ceil(limit / activeSourceCount) + 5,
+    MAX_PER_SOURCE_LIMIT
+  )
 
   // Fetch from all enabled sources in parallel
   const fetchPromises: Promise<UnifiedEvent[]>[] = []
@@ -713,10 +731,15 @@ export async function fetchTimelineStats(
     }
   }
 
+  // Cap stats fetch to MAX_PER_SOURCE_LIMIT * number of sources.
+  // This keeps memory bounded while providing reasonably accurate stats.
+  const statsSourceCount = DEFAULT_TIMELINE_FILTERS.sources.length || 1
+  const statsLimit = MAX_PER_SOURCE_LIMIT * statsSourceCount
+
   const { events } = await fetchUnifiedTimelineEvents(
     userId,
     { ...DEFAULT_TIMELINE_FILTERS, dateRange },
-    1000, // Fetch more for accurate stats
+    statsLimit,
     0
   )
 
