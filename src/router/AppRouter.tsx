@@ -72,6 +72,9 @@ const AthletePortalView = lazy(() => import('../modules/flux/views/AthletePortal
 // Athlete Onboarding - Public page for new athletes to complete their profile
 const AthleteOnboardingView = lazy(() => import('../modules/flux/views/AthleteOnboardingView').then(m => ({ default: m.default })));
 
+// Coach Invite Link - Public page for reusable invite links ("Link Coringa")
+const CoachInviteView = lazy(() => import('../modules/flux/views/CoachInviteView').then(m => ({ default: m.default })));
+
 // Guest Portal - Read-only episode view for podcast guests
 const GuestPortalView = lazy(() => import('../modules/studio/views/GuestPortalView').then(m => ({ default: m.default })));
 
@@ -770,6 +773,16 @@ export function AppRouter() {
                   element={
                     <Suspense fallback={<LoadingScreen message="Carregando..." />}>
                       <AthleteOnboardingView />
+                    </Suspense>
+                  }
+               />
+
+               {/* Coach Invite Link — Public route for reusable invite links */}
+               <Route
+                  path="/join/:token"
+                  element={
+                    <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+                      <CoachInviteView />
                     </Suspense>
                   }
                />

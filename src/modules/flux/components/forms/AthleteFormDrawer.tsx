@@ -25,11 +25,13 @@ import {
   Copy,
   Link2,
   User as UserIcon,
+  Users,
   FileText,
   Loader2,
 } from 'lucide-react';
 import type { Athlete, ModalityLevel } from '../../types/flux';
 import { AthleteService } from '../../services/athleteService';
+import { CoachInviteLinkService, type CoachInviteLink } from '../../services/coachInviteLinkService';
 import {
   useAthleteForm,
   MODALITY_OPTIONS,
@@ -71,6 +73,22 @@ export default function AthleteFormDrawer({
   // Invite link state
   const [copyToast, setCopyToast] = useState(false);
   const createdAthleteId = lastCreatedId;
+  const [coringaLink, setCoringaLink] = useState<CoachInviteLink | null>(null);
+  const [coringaCopyToast, setCoringaCopyToast] = useState(false);
+
+  // Generate coringa link on success
+  React.useEffect(() => {
+    if (mode === 'create' && submitSuccess && !coringaLink) {
+      const healthConfig = {
+        requires_cardio_exam: formData.requires_cardio_exam,
+        requires_clearance_cert: formData.requires_clearance_cert,
+        allow_parq_onboarding: formData.allow_parq_onboarding,
+      };
+      CoachInviteLinkService.getOrCreateLink(healthConfig).then(({ data }) => {
+        if (data) setCoringaLink(data);
+      });
+    }
+  }, [submitSuccess, mode, coringaLink, formData.requires_cardio_exam, formData.requires_clearance_cert, formData.allow_parq_onboarding]);
 
   // Accordion state — in create mode, open health (only section); in edit mode, open basic info
   const [openSections, setOpenSections] = useState({
@@ -96,6 +114,18 @@ export default function AthleteFormDrawer({
       setTimeout(() => setCopyToast(false), 3000);
     } catch (err) {
       console.error('Failed to copy link:', err);
+    }
+  };
+
+  const getCoringaUrl = (token: string) => `https://aica.guru/join/${token}`;
+
+  const handleCopyCoringaLink = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(getCoringaUrl(token));
+      setCoringaCopyToast(true);
+      setTimeout(() => setCoringaCopyToast(false), 3000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
   };
 
@@ -205,38 +235,63 @@ export default function AthleteFormDrawer({
                   </div>
                 )}
 
-                {/* Create mode: Show invite link after success */}
+                {/* Create mode: Show invite links after success */}
                 {mode === 'create' && submitSuccess && createdAthleteId && (
-                  <div className="ceramic-card p-5 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-ceramic-success/15 rounded-xl">
-                        <CheckCircle className="w-6 h-6 text-ceramic-success" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-ceramic-text-primary">
-                          Atleta criado!
-                        </p>
-                        <p className="text-xs text-ceramic-text-secondary">
-                          Envie o link abaixo para seu atleta se cadastrar
+                  <div className="space-y-3">
+                    {/* Individual Link */}
+                    <div className="ceramic-card p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="w-4 h-4 text-ceramic-text-secondary" />
+                        <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                          Link Individual
                         </p>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <input type="text" readOnly value={getInviteLink(createdAthleteId)}
+                          className="flex-1 ceramic-inset px-3 py-2 rounded-lg text-[10px] text-ceramic-text-secondary font-mono select-all" />
+                        <button type="button" onClick={() => handleCopyInviteLink(createdAthleteId)}
+                          className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5">
+                          <Copy className="w-3.5 h-3.5" />
+                          {copyToast ? 'Copiado!' : 'Copiar'}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-ceramic-text-secondary">Para este atleta especifico</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={getInviteLink(createdAthleteId)}
-                        className="flex-1 ceramic-inset px-3 py-2.5 rounded-lg text-xs text-ceramic-text-secondary font-mono select-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleCopyInviteLink(createdAthleteId)}
-                        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
-                      >
-                        <Copy className="w-4 h-4" />
-                        {copyToast ? 'Copiado!' : 'Copiar'}
-                      </button>
+                    {/* Link Coringa */}
+                    <div className="ceramic-card p-4 space-y-3 border-2 border-amber-300/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-amber-600" />
+                          <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Link Coringa</p>
+                        </div>
+                        {coringaLink && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-700">
+                            {coringaLink.current_uses}/{coringaLink.max_uses} usos
+                          </span>
+                        )}
+                      </div>
+                      {coringaLink ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <input type="text" readOnly value={getCoringaUrl(coringaLink.token)}
+                              className="flex-1 ceramic-inset px-3 py-2 rounded-lg text-[10px] text-ceramic-text-secondary font-mono select-all" />
+                            <button type="button" onClick={() => handleCopyCoringaLink(coringaLink.token)}
+                              className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5">
+                              <Copy className="w-3.5 h-3.5" />
+                              {coringaCopyToast ? 'Copiado!' : 'Copiar'}
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-ceramic-text-secondary">
+                            Reutilizavel — compartilhe em grupo (WhatsApp, email). Mesmas configs de saude.
+                          </p>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 py-2">
+                          <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                          <span className="text-xs text-ceramic-text-secondary">Gerando link...</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
