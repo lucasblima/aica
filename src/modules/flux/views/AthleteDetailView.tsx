@@ -709,8 +709,8 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
-      {/* Summary Cards — side by side on desktop */}
-      <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Summary Cards */}
+      <div className="px-6 mb-6">
 
       {/* Status de Documentos de Saude (#680) */}
       <div title="Status dos documentos de saude do atleta: PAR-Q, Atestado de Liberacao e Exame Cardiologico.">
@@ -850,52 +850,7 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
-      {/* Status de Pagamento (#680) */}
-      <div title="Status do pagamento mensal do atleta. Verde = pago, amarelo = pendente, vermelho = atrasado.">
-        <div className="ceramic-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign className="w-4 h-4 text-ceramic-text-secondary" />
-            <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Status de Pagamento
-            </h3>
-          </div>
-          {(() => {
-            const pd = getPaymentData(athlete);
-            return (
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                  pd.payment_status === 'paid' ? 'bg-ceramic-success' :
-                  pd.payment_status === 'overdue' ? 'bg-ceramic-error animate-pulse' :
-                  'bg-ceramic-warning'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-bold ${
-                    pd.payment_status === 'paid' ? 'text-ceramic-success' :
-                    pd.payment_status === 'overdue' ? 'text-ceramic-error' :
-                    'text-ceramic-warning'
-                  }`}>
-                    {pd.payment_status === 'paid' ? 'Pago' :
-                     pd.payment_status === 'overdue' ? 'Atrasado' : 'Pendente'}
-                  </p>
-                  {pd.monthly_fee != null && pd.monthly_fee > 0 && (
-                    <p className="text-xs text-ceramic-text-secondary">
-                      R$ {pd.monthly_fee.toFixed(2).replace('.', ',')}
-                      {pd.payment_due_day ? ` · Venc. dia ${pd.payment_due_day}` : ''}
-                    </p>
-                  )}
-                </div>
-                {pd.last_payment_date && (
-                  <p className="text-[10px] text-ceramic-text-secondary/60 flex-shrink-0">
-                    Ultimo: {new Date(pd.last_payment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
-                  </p>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-
-      </div>{/* end Summary Cards grid */}
+      </div>{/* end Summary Cards */}
 
       {/* Collapsible Sections — 2-col on desktop */}
       <div className="px-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1158,6 +1113,8 @@ export default function AthleteDetailView() {
 
           {financeOpen && (
             <div className="p-4 pt-0 space-y-4">
+              {/* TODO (#913): Implement billing notifications via web push, email, Telegram, WhatsApp */}
+              {/* Schedule: -1d (reminder), 0 (due today), +1d, +3d, +7d (overdue escalation) */}
               {/* Payment Status Card */}
               {(() => {
                 const pd = getPaymentData(athlete);
