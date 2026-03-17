@@ -142,6 +142,9 @@ interface JourneyFullScreenProps {
 }
 
 export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
   useTourAutoStart('journey-first-visit');
 
   // Debug: Log when component mounts
@@ -152,7 +155,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
     };
   }, []);
 
-  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search' | 'interview'>('timeline')
   const [activeInterviewSessionId, setActiveInterviewSessionId] = useState<string | null>(null)
   const [showInsight, setShowInsight] = useState(false)
@@ -163,7 +165,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
     action?: 'view_similar' | 'view_patterns';
   } | null>(null)
 
-  const { user } = useAuth()
   const { moments, create: createMoment } = useMoments()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary({ immediate: true })
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestionAI()
@@ -178,6 +179,11 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   // Track answered question IDs to prevent re-displaying the same question after refresh
   const answeredIdsRef = useRef<Set<string>>(new Set())
   const questionRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => { isMountedRef.current = false }
+  }, [])
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -297,7 +303,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       generatePostCaptureInsight(input.content || '', recentMoments)
         .then((insight) => {
-          if (insight && insight.message) {
+          if (isMountedRef.current && insight && insight.message) {
             setCurrentInsight(insight)
             setShowInsight(true)
           }

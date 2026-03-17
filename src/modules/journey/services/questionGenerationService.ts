@@ -410,16 +410,27 @@ async function callEdgeFunction(
     throw EdgeFunctionError.fromResponse(status, errorMsg)
   }
 
-  const raw = response.data as Record<string, unknown>
-  const result = response.data as GenerationResult
+  const raw = response.data as Record<string, unknown> | null
+
+  if (!raw || typeof raw !== 'object') {
+    throw new EdgeFunctionError(502, 'INVALID_RESPONSE', 'Edge Function returned non-object response')
+  }
+
+  if (raw.success === false) {
+    throw new EdgeFunctionError(
+      500,
+      'GENERATION_FAILED',
+      (raw.error as string) || 'Question generation failed on server'
+    )
+  }
 
   return {
-    success: result.success,
-    questionsGenerated: result.questionsGenerated || (raw.questions_generated as number) || 0,
-    questions: result.questions || [],
-    contextUpdated: result.contextUpdated || (raw.context_updated as boolean) || false,
-    processingTimeMs: result.processingTimeMs || (raw.processing_time_ms as number),
-    error: result.error,
+    success: Boolean(raw.success),
+    questionsGenerated: (raw.questionsGenerated as number) || (raw.questions_generated as number) || 0,
+    questions: Array.isArray(raw.questions) ? raw.questions : [],
+    contextUpdated: Boolean(raw.contextUpdated ?? raw.context_updated),
+    processingTimeMs: (raw.processingTimeMs as number) || (raw.processing_time_ms as number),
+    error: raw.error as string | undefined,
   }
 }
 

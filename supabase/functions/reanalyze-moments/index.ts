@@ -24,11 +24,13 @@ const ALLOWED_ORIGINS = [
   'https://aica.guru',
 ]
 
-function getCorsHeaders(request: Request): Record<string, string> {
+function getCorsHeaders(request: Request): Record<string, string> | null {
   const origin = request.headers.get('origin') || ''
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ''
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+    return null
+  }
   return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
@@ -86,7 +88,14 @@ serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req)
 
   if (req.method === 'OPTIONS') {
+    if (!corsHeaders) return new Response('Forbidden', { status: 403 })
     return new Response('ok', { headers: corsHeaders })
+  }
+  if (!corsHeaders) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   if (req.method !== 'POST') {
