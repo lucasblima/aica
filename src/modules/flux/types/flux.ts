@@ -324,6 +324,29 @@ export interface MyAthleteProfile {
 }
 
 // ============================================
+// CUSTOM COACH LEVELS (Supabase: coach_levels)
+// ============================================
+
+/**
+ * Custom level defined by a coach.
+ * Coaches can create up to 10 custom levels to replace the default 3.
+ */
+export interface CoachLevel {
+  id: string;
+  user_id: string;
+  name: string;
+  display_order: number;
+  color: string;
+  min_consistency?: number;
+  min_weekly_volume?: number;
+  max_weekly_volume?: number;
+  min_weeks_active?: number;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
 // ATHLETE GROUPS (Supabase: athlete_groups + athlete_group_members)
 // ============================================
 

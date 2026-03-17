@@ -44,12 +44,14 @@ import {
   loadGroupData,
   getAthleteGroups,
 } from '../components/coach/AthleteGroupManager';
+import { CustomLevelManager } from '../components/coach/CustomLevelManager';
 import type {
   Athlete,
   TrainingModality,
   AthleteLevel,
   AthleteGroup,
   AthleteGroupData,
+  CoachLevel,
   ModalityLevel,
   Alert,
 } from '../types/flux';
@@ -68,7 +70,7 @@ import {
 
 type SortOrder = 'none' | 'asc' | 'desc';
 
-type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado';
+type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado' | (string & {});
 
 const LEVEL_CATEGORIES: {
   id: LevelCategory;
@@ -309,6 +311,10 @@ export default function CRMCommandCenterView() {
     assignments: {},
   });
 
+  // Custom levels state (#911)
+  const [coachLevels, setCoachLevels] = useState<CoachLevel[]>([]);
+  const [showLevelManager, setShowLevelManager] = useState(false);
+
   // Athlete form modal state
   const [athleteModalOpen, setAthleteModalOpen] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
@@ -327,7 +333,7 @@ export default function CRMCommandCenterView() {
     });
   }, []);
 
-  // Load coach user ID and group data
+  // Load coach user ID, group data, and custom levels
   useEffect(() => {
     const loadCoachData = async () => {
       const {
@@ -336,6 +342,13 @@ export default function CRMCommandCenterView() {
       if (user) {
         setCoachUserId(user.id);
         setGroupData(await loadGroupData(user.id));
+        // Load custom levels (#911)
+        const { data: levelsData } = await supabase
+          .from('coach_levels')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('display_order');
+        setCoachLevels((levelsData || []) as CoachLevel[]);
       }
     };
     loadCoachData();
@@ -405,9 +418,17 @@ export default function CRMCommandCenterView() {
 
     // Level
     if (selectedLevel !== 'all') {
-      const levelCategory = LEVEL_CATEGORIES.find((c) => c.id === selectedLevel);
-      if (levelCategory) {
-        result = result.filter((a) => levelCategory.levels.includes(a.level));
+      // Check if filtering by a custom level (UUID) or default category
+      const isCustomLevel = coachLevels.some((l) => l.id === selectedLevel);
+      if (isCustomLevel) {
+        result = result.filter(
+          (a) => (a as Athlete & { custom_level_id?: string }).custom_level_id === selectedLevel
+        );
+      } else {
+        const levelCategory = LEVEL_CATEGORIES.find((c) => c.id === selectedLevel);
+        if (levelCategory) {
+          result = result.filter((a) => levelCategory.levels.includes(a.level));
+        }
       }
     }
 
@@ -437,6 +458,7 @@ export default function CRMCommandCenterView() {
     selectedGroupIds,
     groupData,
     adherenceSort,
+    coachLevels,
   ]);
 
   // ---- Helpers ----
@@ -843,39 +865,120 @@ export default function CRMCommandCenterView() {
               <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
                 Nivel
               </span>
+              <button
+                onClick={() => setShowLevelManager(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
+                title="Gerenciar niveis personalizados"
+              >
+                <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Gerenciar
+                </span>
+              </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {LEVEL_CATEGORIES.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedLevel(category.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                    selectedLevel === category.id
-                      ? 'ceramic-card bg-ceramic-base shadow-md'
-                      : 'ceramic-inset hover:bg-white/50'
-                  }`}
-                >
-                  <span className="text-lg">{category.icon}</span>
-                  <span
-                    className={`text-xs font-bold uppercase tracking-wider ${
-                      selectedLevel === category.id
-                        ? 'text-ceramic-text-primary'
-                        : 'text-ceramic-text-secondary'
+              {coachLevels.length > 0 ? (
+                <>
+                  {/* "Todos" pill */}
+                  <button
+                    onClick={() => setSelectedLevel('all')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      selectedLevel === 'all'
+                        ? 'ceramic-card bg-ceramic-base shadow-md'
+                        : 'ceramic-inset hover:bg-white/50'
                     }`}
                   >
-                    {category.label}
-                  </span>
-                  <span
-                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                    <span className="text-xs font-bold uppercase tracking-wider text-ceramic-text-primary">
+                      Todos
+                    </span>
+                    <span
+                      className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                        selectedLevel === 'all'
+                          ? 'bg-ceramic-success/20 text-ceramic-success'
+                          : 'bg-ceramic-cool text-ceramic-text-secondary'
+                      }`}
+                    >
+                      {allAthletes.length}
+                    </span>
+                  </button>
+
+                  {/* Custom level pills */}
+                  {coachLevels.map((level) => {
+                    const colors = getGroupColorClasses(level.color);
+                    const count = allAthletes.filter(
+                      (a) => (a as Athlete & { custom_level_id?: string }).custom_level_id === level.id
+                    ).length;
+                    const isSelected = selectedLevel === level.id;
+
+                    return (
+                      <button
+                        key={level.id}
+                        onClick={() => setSelectedLevel(isSelected ? 'all' : (level.id as LevelCategory))}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                          isSelected
+                            ? 'ceramic-card bg-ceramic-base shadow-md'
+                            : 'ceramic-inset hover:bg-white/50'
+                        }`}
+                      >
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${colors.bg} border border-black/10`}
+                        />
+                        <span
+                          className={`text-xs font-bold uppercase tracking-wider ${
+                            isSelected
+                              ? 'text-ceramic-text-primary'
+                              : 'text-ceramic-text-secondary'
+                          }`}
+                        >
+                          {level.name}
+                        </span>
+                        <span
+                          className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                            isSelected
+                              ? `${colors.bg} ${colors.text}`
+                              : 'bg-ceramic-cool text-ceramic-text-secondary'
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </>
+              ) : (
+                /* Default hardcoded levels when no custom levels exist */
+                LEVEL_CATEGORIES.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedLevel(category.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
                       selectedLevel === category.id
-                        ? 'bg-ceramic-success/20 text-ceramic-success'
-                        : 'bg-ceramic-cool text-ceramic-text-secondary'
+                        ? 'ceramic-card bg-ceramic-base shadow-md'
+                        : 'ceramic-inset hover:bg-white/50'
                     }`}
                   >
-                    {levelCounts[category.id]}
-                  </span>
-                </button>
-              ))}
+                    <span className="text-lg">{category.icon}</span>
+                    <span
+                      className={`text-xs font-bold uppercase tracking-wider ${
+                        selectedLevel === category.id
+                          ? 'text-ceramic-text-primary'
+                          : 'text-ceramic-text-secondary'
+                      }`}
+                    >
+                      {category.label}
+                    </span>
+                    <span
+                      className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                        selectedLevel === category.id
+                          ? 'bg-ceramic-success/20 text-ceramic-success'
+                          : 'bg-ceramic-cool text-ceramic-text-secondary'
+                      }`}
+                    >
+                      {levelCounts[category.id]}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
@@ -1247,6 +1350,15 @@ export default function CRMCommandCenterView() {
         athletes={allAthletes}
         groupData={groupData}
         onGroupDataChange={(updated) => setGroupData(updated)}
+      />
+
+      {/* Custom Level Manager Modal (#911) */}
+      <CustomLevelManager
+        isOpen={showLevelManager}
+        onClose={() => setShowLevelManager(false)}
+        coachUserId={coachUserId}
+        levels={coachLevels}
+        onLevelsChange={(updated) => setCoachLevels(updated)}
       />
     </div>
   );
