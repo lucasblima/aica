@@ -103,11 +103,8 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
     if (userId) refresh()
   }, [userId, refresh])
 
-  if (isLoading) {
-    return <PatternDashboardSkeleton />
-  }
-
   // Aggregate dominant emotions from weekly trend data into summary for heatmap
+  // MUST be before any conditional return to satisfy React Rules of Hooks
   const emotionSummary = useMemo(() => {
     if (!emotionTrends || emotionTrends.length === 0) return undefined;
 
@@ -143,6 +140,11 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
         color: EMOTION_COLORS[label] || FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length],
       }));
   }, [emotionTrends]);
+
+  // Early return AFTER all hooks — React requires same hook count every render
+  if (isLoading) {
+    return <PatternDashboardSkeleton />
+  }
 
   const showBackfillBanner = backfillProgress.isRunning || (backfillProgress.processed > 0 && backfillProgress.total > 0)
 
