@@ -69,6 +69,9 @@ const EraForgeAccessGuard = lazy(() => import('../modules/eraforge/components/Er
 // Athlete Portal - Read-only training view for athletes
 const AthletePortalView = lazy(() => import('../modules/flux/views/AthletePortalView').then(m => ({ default: m.default })));
 
+// Athlete Onboarding - Public page for new athletes to complete their profile
+const AthleteOnboardingView = lazy(() => import('../modules/flux/views/AthleteOnboardingView').then(m => ({ default: m.default })));
+
 // Guest Portal - Read-only episode view for podcast guests
 const GuestPortalView = lazy(() => import('../modules/studio/views/GuestPortalView').then(m => ({ default: m.default })));
 
@@ -759,6 +762,16 @@ export function AppRouter() {
                <Route
                   path="/presentation-demo"
                   element={<PresentationDemo />}
+               />
+
+               {/* Athlete Onboarding - Public route for coach-generated invite links */}
+               <Route
+                  path="/onboarding/:athleteId"
+                  element={
+                    <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+                      <AthleteOnboardingView />
+                    </Suspense>
+                  }
                />
 
                {/* Invite Accept - Public route for viral invites */}
