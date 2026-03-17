@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit } from 'lucide-react';
+import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit, Home, MoreVertical, Trash2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { HeaderGlobal } from '@/components/layout';
 import type { PodcastShow } from '../types/podcast';
 import { createNamespacedLogger } from '@/lib/logger';
+import { updateShow, deleteShow, deleteEpisode as deleteEpisodeService } from '../services/workspaceDatabaseService';
 
 const log = createNamespacedLogger('PodcastShowPage');
 
@@ -219,36 +220,45 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
           </div>
         ) : !fetchError && (
           <>
+            {/* Navigation Bar */}
+            <div className="flex items-center gap-2 mx-6 mt-4 mb-2">
+              <button
+                onClick={() => navigate('/')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-base text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-cool border border-ceramic-border transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                Inicio
+              </button>
+              <button
+                onClick={onBack}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-base text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-cool border border-ceramic-border transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Biblioteca
+              </button>
+            </div>
+
             {/* Show Header */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 mx-6 mt-6 rounded-2xl p-6 mb-6 shadow-sm">
-              <div className="flex items-start gap-6">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 mx-6 mt-2 rounded-2xl p-4 sm:p-6 mb-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                 {/* Show Artwork */}
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center shadow-lg flex-shrink-0">
                   {show?.cover_url ? (
                     <img src={show.cover_url} alt={show.title} className="w-full h-full object-cover rounded-2xl" />
                   ) : (
-                    <Mic2 className="w-12 h-12 text-amber-600" />
+                    <Mic2 className="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" />
                   )}
                 </div>
 
                 {/* Show Info */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <button
-                      onClick={onBack}
-                      className="text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-                      title="Voltar para biblioteca"
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <h1 className="text-2xl font-bold text-ceramic-text-primary">{showTitle}</h1>
-                  </div>
-                  <p className="text-ceramic-text-secondary mt-1 text-sm">
-                    {show?.description || 'Sem descrição'}
+                <div className="flex-1 text-center sm:text-left min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-ceramic-text-primary truncate">{showTitle}</h1>
+                  <p className="text-ceramic-text-secondary mt-1 text-sm line-clamp-2">
+                    {show?.description || 'Sem descricao'}
                   </p>
 
                   {/* Stats */}
-                  <div className="flex gap-6 mt-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 mt-4">
                     <Stat label="Total" value={stats.total} />
                     <Stat label="Publicados" value={stats.published} color="green" />
                     <Stat label="Em progresso" value={stats.inProgress} color="amber" />
@@ -260,17 +270,17 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
                 <button
                   data-testid="new-episode-button"
                   onClick={onCreateEpisode}
-                  className="ceramic-card px-4 py-3 font-bold rounded-xl hover:scale-105 transition-transform inline-flex items-center gap-2 shadow-sm"
+                  className="ceramic-card px-4 py-3 font-bold rounded-xl hover:scale-105 transition-transform inline-flex items-center gap-2 shadow-sm flex-shrink-0 w-full sm:w-auto justify-center"
                 >
                   <Plus className="w-4 h-4" />
-                  Novo Episódio
+                  Novo Episodio
                 </button>
               </div>
             </div>
 
             {/* Tabs */}
-            <nav className="bg-ceramic-base border-b border-ceramic-border px-6 sticky top-0 z-10">
-              <div className="flex gap-6">
+            <nav className="bg-ceramic-base border-b border-ceramic-border px-6 sticky top-0 z-10 overflow-x-auto">
+              <div className="flex gap-4 sm:gap-6 min-w-max">
                 <TabButton active={activeTab === 'episodes'} onClick={() => setActiveTab('episodes')}>
                   Episódios
                 </TabButton>
@@ -305,11 +315,12 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
                       onSortChange={setSortBy}
                       onSelectEpisode={onSelectEpisode}
                       onCreateNew={onCreateEpisode}
+                      onDeleteEpisode={() => fetchShowData()}
                     />
                   )}
-                  {activeTab === 'drafts' && <DraftsSection episodes={episodes.filter(e => e.status === 'draft')} onSelectEpisode={onSelectEpisode} />}
+                  {activeTab === 'drafts' && <DraftsSection episodes={episodes.filter(e => e.status === 'draft')} onSelectEpisode={onSelectEpisode} onDeleteEpisode={() => fetchShowData()} />}
                   {activeTab === 'files' && <FilesSection showId={showId} />}
-                  {activeTab === 'settings' && <SettingsSection show={show} onRefresh={fetchShowData} />}
+                  {activeTab === 'settings' && <SettingsSection show={show} onRefresh={fetchShowData} onShowDeleted={onBack} />}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -375,6 +386,7 @@ interface EpisodesSectionProps {
   onSortChange: (sort: SortType) => void;
   onSelectEpisode: (episodeId: string) => void;
   onCreateNew: () => void;
+  onDeleteEpisode: () => void;
 }
 
 const EpisodesSection: React.FC<EpisodesSectionProps> = ({
@@ -385,12 +397,13 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
   onSortChange,
   onSelectEpisode,
   onCreateNew,
+  onDeleteEpisode,
 }) => {
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+        <div className="flex flex-wrap gap-2">
           <FilterChip active={filter === 'all'} onClick={() => onFilterChange('all')}>
             Todos
           </FilterChip>
@@ -427,6 +440,7 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
             key={episode.id}
             episode={episode}
             onClick={() => onSelectEpisode(episode.id)}
+            onDelete={() => onDeleteEpisode()}
           />
         ))}
       </div>
@@ -478,9 +492,14 @@ const CreateNewCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 interface EpisodeCardProps {
   episode: Episode;
   onClick: () => void;
+  onDelete?: (episodeId: string) => void;
 }
 
-const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
+const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick, onDelete }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const statusConfig: Record<Episode['status'], { bg: string; text: string; label: string }> = {
     draft: { bg: 'bg-ceramic-base', text: 'text-ceramic-text-secondary', label: 'Rascunho' },
     planning: { bg: 'bg-ceramic-info/10', text: 'text-ceramic-info', label: 'Planejando' },
@@ -496,52 +515,94 @@ const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
   const status = statusConfig[episode.status];
   const relativeDate = formatRelativeDate(episode.updated_at);
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteEpisodeService(episode.id);
+      onDelete?.(episode.id);
+    } catch {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
   return (
-    <button
-      onClick={onClick}
+    <div
       className="
         bg-ceramic-base rounded-2xl p-4 text-left
         border border-ceramic-border
         hover:border-amber-300 hover:shadow-lg
         transition-all duration-200
-        group
+        group relative
       "
     >
-      {/* Thumbnail */}
-      <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl mb-3 flex items-center justify-center">
-        <Mic2 className="w-8 h-8 text-amber-400" />
-      </div>
-
-      {/* Content */}
-      <h3 className="font-medium text-ceramic-text-primary line-clamp-2 group-hover:text-amber-600 transition-colors">
-        {episode.title || 'Sem titulo'}
-      </h3>
-
-      <p className="text-sm text-ceramic-text-secondary mt-1 line-clamp-1">
-        {episode.guest_name || 'Sem convidado'}
-      </p>
-
-      {episode.episode_theme && (
-        <p className="text-xs text-ceramic-text-secondary mt-1 line-clamp-1">
-          Tema: {episode.episode_theme}
-        </p>
+      {/* Menu button */}
+      {onDelete && (
+        <div className="absolute top-2 right-2 z-10">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); setConfirmDelete(false); }}
+            className="p-1.5 rounded-lg bg-ceramic-base/80 text-ceramic-text-secondary hover:bg-ceramic-cool transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 mt-1 bg-ceramic-base border border-ceramic-border rounded-lg shadow-lg py-1 min-w-[140px]">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-ceramic-error hover:bg-ceramic-error/10 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {deleting ? 'Excluindo...' : confirmDelete ? 'Confirmar?' : 'Excluir'}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-ceramic-border">
-        <span className={`text-xs px-2 py-1 rounded-full ${status.bg} ${status.text}`}>
-          {status.label}
-        </span>
+      <button onClick={onClick} className="w-full text-left">
+        {/* Thumbnail */}
+        <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl mb-3 flex items-center justify-center">
+          <Mic2 className="w-8 h-8 text-amber-400" />
+        </div>
 
-        <span className="text-xs text-ceramic-text-secondary">{relativeDate}</span>
-      </div>
-    </button>
+        {/* Content */}
+        <h3 className="font-medium text-ceramic-text-primary line-clamp-2 group-hover:text-amber-600 transition-colors">
+          {episode.title || 'Sem titulo'}
+        </h3>
+
+        <p className="text-sm text-ceramic-text-secondary mt-1 line-clamp-1">
+          {episode.guest_name || 'Sem convidado'}
+        </p>
+
+        {episode.episode_theme && (
+          <p className="text-xs text-ceramic-text-secondary mt-1 line-clamp-1">
+            Tema: {episode.episode_theme}
+          </p>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-ceramic-border">
+          <span className={`text-xs px-2 py-1 rounded-full ${status.bg} ${status.text}`}>
+            {status.label}
+          </span>
+
+          <span className="text-xs text-ceramic-text-secondary">{relativeDate}</span>
+        </div>
+      </button>
+    </div>
   );
 };
 
-const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: string) => void }> = ({
+const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: string) => void; onDeleteEpisode: () => void }> = ({
   episodes,
   onSelectEpisode,
+  onDeleteEpisode,
 }) => (
   <div>
     <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Rascunhos</h2>
@@ -558,7 +619,7 @@ const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: strin
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {episodes.map(episode => (
-          <EpisodeCard key={episode.id} episode={episode} onClick={() => onSelectEpisode(episode.id)} />
+          <EpisodeCard key={episode.id} episode={episode} onClick={() => onSelectEpisode(episode.id)} onDelete={() => onDeleteEpisode()} />
         ))}
       </div>
     )}
@@ -580,34 +641,135 @@ const FilesSection: React.FC<{ showId: string }> = ({ showId }) => (
   </div>
 );
 
-const SettingsSection: React.FC<{ show: PodcastShow | null; onRefresh: () => void }> = ({ show, onRefresh }) => (
-  <div className="max-w-2xl">
-    <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Configuracoes do Podcast</h2>
-    <div className="ceramic-card p-6 rounded-2xl space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Nome do Podcast</label>
-        <input
-          type="text"
-          defaultValue={show?.title || ''}
-          disabled
-          className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base"
-        />
+interface SettingsSectionProps {
+  show: PodcastShow | null;
+  onRefresh: () => void;
+  onShowDeleted: () => void;
+}
+
+const SettingsSection: React.FC<SettingsSectionProps> = ({ show, onRefresh, onShowDeleted }) => {
+  const [title, setTitle] = useState(show?.title || '');
+  const [description, setDescription] = useState(show?.description || '');
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasChanges = title !== (show?.title || '') || description !== (show?.description || '');
+
+  const handleSave = async () => {
+    if (!show || !hasChanges) return;
+    setSaving(true);
+    setError(null);
+    setSaveSuccess(false);
+    try {
+      await updateShow(show.id, { title, description });
+      setSaveSuccess(true);
+      onRefresh();
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!show) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await deleteShow(show.id);
+      onShowDeleted();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir');
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Configuracoes do Podcast</h2>
+      <div className="ceramic-card p-6 rounded-2xl space-y-4">
+        {error && (
+          <div className="p-3 rounded-lg bg-ceramic-error/10 border border-ceramic-error/30">
+            <p className="text-sm text-ceramic-error">{error}</p>
+          </div>
+        )}
+        {saveSuccess && (
+          <div className="p-3 rounded-lg bg-ceramic-success/10 border border-ceramic-success/30">
+            <p className="text-sm text-ceramic-success">Alteracoes salvas com sucesso!</p>
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Nome do Podcast</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Descricao</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+
+        {/* Save button */}
+        <button
+          onClick={handleSave}
+          disabled={!hasChanges || saving}
+          className={`
+            px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+            ${hasChanges
+              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
+              : 'bg-ceramic-cool text-ceramic-text-secondary cursor-not-allowed'}
+          `}
+        >
+          {saving ? 'Salvando...' : 'Salvar Alteracoes'}
+        </button>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Descricao</label>
-        <textarea
-          defaultValue={show?.description || ''}
-          disabled
-          rows={4}
-          className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base"
-        />
+
+      {/* Danger Zone */}
+      <div className="mt-8 ceramic-card p-6 rounded-2xl border border-ceramic-error/30">
+        <h3 className="text-lg font-bold text-ceramic-error mb-2">Zona de Perigo</h3>
+        <p className="text-sm text-ceramic-text-secondary mb-4">
+          Excluir o podcast ira remover permanentemente todos os episodios e dados associados.
+        </p>
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 rounded-lg border border-ceramic-error text-ceramic-error text-sm font-medium hover:bg-ceramic-error/10 transition-colors"
+          >
+            Excluir Podcast
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-4 py-2 rounded-lg bg-ceramic-error text-white text-sm font-medium hover:bg-ceramic-error/90 transition-colors"
+            >
+              {deleting ? 'Excluindo...' : 'Confirmar Exclusao'}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="px-4 py-2 rounded-lg border border-ceramic-border text-ceramic-text-secondary text-sm font-medium hover:bg-ceramic-cool transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
       </div>
-      <p className="text-xs text-ceramic-text-secondary italic">
-        Em breve: edição de configurações do podcast
-      </p>
     </div>
-  </div>
-);
+  );
+};
 
 /* ============================================================================
  * Utilities
