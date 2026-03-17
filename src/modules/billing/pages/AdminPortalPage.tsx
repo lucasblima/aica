@@ -15,7 +15,7 @@ interface AdminCard {
 const ADMIN_CARDS: AdminCard[] = [
   {
     title: 'Cupons',
-    description: 'Criar cupons promocionais, adicionar creditos manuais e gerenciar campanhas.',
+    description: 'Criar cupons promocionais, adicionar créditos manuais e gerenciar campanhas.',
     icon: Gift,
     path: '/admin/coupons',
     color: 'text-amber-500',
@@ -31,7 +31,7 @@ const ADMIN_CARDS: AdminCard[] = [
   },
   {
     title: 'Asaas \u2014 Pagamentos',
-    description: 'Gerenciar planos, precos e integracoes de pagamento via Asaas.',
+    description: 'Gerenciar planos, preços e integracoes de pagamento via Asaas.',
     icon: CreditCard,
     path: '/admin/asaas',
     color: 'text-ceramic-success',

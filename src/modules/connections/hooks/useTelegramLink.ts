@@ -147,7 +147,7 @@ export function useTelegramLink(): UseTelegramLinkReturn {
       setLinkData(data as TelegramLinkData)
     } catch (err) {
       log.error('Failed to generate link code:', err)
-      setError(err instanceof Error ? err.message : 'Erro ao gerar codigo')
+      setError(err instanceof Error ? err.message : 'Erro ao gerar código')
     } finally {
       setIsGenerating(false)
     }

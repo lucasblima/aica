@@ -33,7 +33,7 @@ export async function getExportData(
  */
 export function exportToCSV(
   transactions: FinanceTransaction[],
-  filename: string = 'transacoes.csv'
+  filename: string = 'transações.csv'
 ): void {
   const MAX_EXPORT_ROWS = 50000;
   let txToExport = transactions;
@@ -44,7 +44,7 @@ export function exportToCSV(
 
   const headers = [
     'Data',
-    'Descricao',
+    'Descrição',
     'Valor',
     'Tipo',
     'Categoria',
@@ -57,7 +57,7 @@ export function exportToCSV(
     Number(tx.amount).toFixed(2),
     tx.type === 'income' ? 'Receita' : 'Despesa',
     tx.category,
-    tx.is_recurring ? 'Sim' : 'Nao',
+    tx.is_recurring ? 'Sim' : 'Não',
   ]);
 
   const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join(
@@ -73,7 +73,7 @@ export function exportToCSV(
 export function exportToPDF(
   transactions: FinanceTransaction[],
   summary: { totalIncome: number; totalExpenses: number; balance: number },
-  filename: string = 'transacoes'
+  filename: string = 'transações'
 ): void {
   const totalIncome = formatCurrency(summary.totalIncome);
   const totalExpenses = formatCurrency(summary.totalExpenses);
@@ -111,14 +111,14 @@ export function exportToPDF(
   </style>
 </head>
 <body>
-  <h1>AICA Finance - Relatorio de Transacoes</h1>
+  <h1>AICA Finance - Relatório de Transações</h1>
   <div class="summary">
     <div>Receitas: <strong>${totalIncome}</strong></div>
     <div>Despesas: <strong>${totalExpenses}</strong></div>
     <div>Saldo: <strong>${balance}</strong></div>
   </div>
   <table>
-    <thead><tr><th>Data</th><th>Descricao</th><th>Valor</th><th>Categoria</th></tr></thead>
+    <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Categoria</th></tr></thead>
     <tbody>${tableRows}</tbody>
   </table>
 </body>

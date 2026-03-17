@@ -136,7 +136,7 @@ export async function reorderTiers(
     display_order: index + 1,
   }));
 
-  // Atualizar cada tier individualmente (Supabase nao suporta upsert em batch facilmente)
+  // Atualizar cada tier individualmente (Supabase não suporta upsert em batch facilmente)
   for (const update of updates) {
     const { error } = await supabase
       .from('sponsorship_tiers')
@@ -509,7 +509,7 @@ export async function getCaptureProgress(projectId: string): Promise<CaptureProg
 
   if (sponsorsError) throw sponsorsError;
 
-  // Calcular metricas
+  // Calcular métricas
   const capturedValue = project.captured_value || 0;
   const captureGoal = project.capture_goal || 0;
   const capturePercentage = captureGoal > 0 ? (capturedValue / captureGoal) * 100 : 0;
@@ -640,7 +640,7 @@ export async function getProjectSponsorshipContext(
 
   if (sponsorsError) throw sponsorsError;
 
-  // Calcular metricas de patrocinadores
+  // Calcular métricas de patrocinadores
   const sponsorsByStatus: Record<SponsorStatus, number> = {} as Record<SponsorStatus, number>;
   let confirmedSponsors = 0;
   let confirmedValue = 0;

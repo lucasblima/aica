@@ -140,16 +140,16 @@ export function useWhatsAppImport(): UseWhatsAppImportReturn {
       const validExtensions = ['.txt', '.zip'];
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
       if (!validExtensions.includes(ext)) {
-        throw new Error('Formato invalido. Aceita apenas .txt ou .zip');
+        throw new Error('Formato inválido. Aceita apenas .txt ou .zip');
       }
 
       if (file.size > 100 * 1024 * 1024) {
-        throw new Error('Arquivo muito grande. Maximo: 100MB');
+        throw new Error('Arquivo muito grande. Máximo: 100MB');
       }
 
       // Auth
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Nao autenticado');
+      if (!user) throw new Error('Não autenticado');
 
       // Hash file for dedup
       const fileHash = await hashFile(file);
@@ -164,7 +164,7 @@ export function useWhatsAppImport(): UseWhatsAppImportReturn {
         .single();
 
       if (existing && existing.processing_status === 'completed') {
-        throw new Error('Este arquivo ja foi importado anteriormente');
+        throw new Error('Este arquivo já foi importado anteriormente');
       }
 
       // Upload to Supabase Storage

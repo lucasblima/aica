@@ -29,9 +29,9 @@ const generateMessage = (athlete: AthleteWithMetrics, alerts: Alert[] = []): str
   if (hasHealthAlert) {
     return `Oi ${firstName}, tudo bem? 🏊‍♂️
 
-Vi que voce relatou algum desconforto no ultimo treino. Como esta se sentindo agora?
+Vi que você relatou algum desconforto no último treino. Como esta se sentindo agora?
 
-Sua saude e a prioridade. Se precisar, podemos ajustar o treino ou fazer uma pausa ate voce estar 100%.
+Sua saúde e a prioridade. Se precisar, podemos ajustar o treino ou fazer uma pausa ate você estar 100%.
 
 Me conta como posso te ajudar! 💪`;
   }
@@ -42,7 +42,7 @@ Me conta como posso te ajudar! 💪`;
 
 Percebi que as coisas andam mais dificeis ultimamente. Quero te ouvir - o que esta acontecendo?
 
-Lembre-se: todo atleta passa por fases assim. O importante e nao desistir. Vamos conversar e encontrar juntos um caminho que funcione pra voce.
+Lembre-se: todo atleta passa por fases assim. O importante e não desistir. Vamos conversar e encontrar juntos um caminho que funcione pra você.
 
 Estou aqui pra te apoiar! 🙌`;
   }
@@ -62,9 +62,9 @@ Como posso te ajudar? 💬`;
   if (consistency < 60) {
     return `Oi ${firstName}! 👋
 
-Notei que sua adesao aos treinos esta em ${consistency}% esse mes. Quero entender melhor o que esta acontecendo.
+Notei que sua adesão aos treinos esta em ${consistency}% esse mes. Quero entender melhor o que esta acontecendo.
 
-Esta tendo alguma dificuldade? O treino esta muito puxado? Os horarios nao estao funcionando?
+Esta tendo alguma dificuldade? O treino esta muito puxado? Os horarios não estão funcionando?
 
 Me conta pra gente ajustar o que for preciso. Estou aqui pra te ajudar a alcancar seus objetivos! 💪`;
   }
@@ -73,7 +73,7 @@ Me conta pra gente ajustar o que for preciso. Estou aqui pra te ajudar a alcanca
   if (consistency < 80) {
     return `E ai ${firstName}, tudo bem? 🏋️
 
-Sua adesao esta em ${consistency}% - ja e um bom numero! Mas sei que voce pode mais.
+Sua adesão esta em ${consistency}% - já e um bom número! Mas sei que você pode mais.
 
 O que esta faltando pra gente chegar nos 100%? Algum ajuste no treino ou na rotina que eu possa fazer?
 
@@ -83,9 +83,9 @@ Bora juntos nessa! 🚀`;
   // Good consistency (>= 80%)
   return `Oi ${firstName}! 🌟
 
-Parabens pela dedicacao! Sua adesao de ${consistency}% mostra que voce esta comprometido(a) com seus objetivos.
+Parabens pela dedicacao! Sua adesão de ${consistency}% mostra que você esta comprometido(a) com seus objetivos.
 
-Como voce esta se sentindo com os treinos? Tem algo que gostaria de ajustar ou algum feedback?
+Como você esta se sentindo com os treinos? Tem algo que gostaria de ajustar ou algum feedback?
 
 Continue assim! 💪🔥`;
 };
@@ -99,21 +99,21 @@ const getAlternativeMessage = (athlete: AthleteWithMetrics, variant: number): st
     // Variant 1 - More casual
     `Fala ${firstName}! 👊
 
-Passando pra saber como voce ta. Vi que a adesao ta em ${consistency}% - bora conversar sobre isso?
+Passando pra saber como você ta. Vi que a adesão ta em ${consistency}% - bora conversar sobre isso?
 
 O que ta rolando? Posso te ajudar em algo?`,
 
     // Variant 2 - More professional
-    `Ola ${firstName},
+    `Olá ${firstName},
 
-Gostaria de fazer um acompanhamento sobre seus treinos. Sua taxa de adesao atual e de ${consistency}%.
+Gostaria de fazer um acompanhamento sobre seus treinos. Sua taxa de adesão atual e de ${consistency}%.
 
 Podemos conversar sobre como otimizar sua rotina de treinos? Estou a disposicao.`,
 
     // Variant 3 - Motivational
     `${firstName}! 💪
 
-Cada treino conta, cada esforco importa. Vi que sua adesao ta em ${consistency}%.
+Cada treino conta, cada esforco importa. Vi que sua adesão ta em ${consistency}%.
 
 Vamos juntos superar qualquer obstaculo? Me conta o que precisa!`,
   ];
@@ -237,7 +237,7 @@ export function WhatsAppMessageModal({
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-ceramic-text-secondary uppercase tracking-wider">Adesao</p>
+              <p className="text-xs text-ceramic-text-secondary uppercase tracking-wider">Adesão</p>
               <p className={`text-2xl font-bold ${consistencyColor}`}>{consistency}%</p>
             </div>
           </div>

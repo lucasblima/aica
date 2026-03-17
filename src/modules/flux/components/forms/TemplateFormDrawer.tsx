@@ -261,7 +261,7 @@ export default function TemplateFormDrawer({
                     Modalidade
                   </label>
                   <p className="text-xs text-ceramic-text-secondary mb-3">
-                    Clique na modalidade para iniciar a criacao do exercicio
+                    Clique na modalidade para iniciar a criação do exercicio
                   </p>
                   <div className={`grid grid-cols-3 sm:grid-cols-5 gap-2 ${
                     !formData.modality ? 'ring-2 ring-ceramic-accent/30 rounded-lg p-1' : ''
@@ -321,7 +321,7 @@ export default function TemplateFormDrawer({
                             <div className="text-left">
                               <span className="block">Privado</span>
                               <span className={`block text-xs font-normal ${!formData.is_public ? 'text-white/70' : 'text-ceramic-text-secondary/70'}`}>
-                                Voce e seus atletas
+                                Você e seus atletas
                               </span>
                             </div>
                           </button>
@@ -345,8 +345,8 @@ export default function TemplateFormDrawer({
                         </div>
                         <p className="text-xs text-ceramic-text-secondary mt-2">
                           {formData.is_public
-                            ? 'Este exercicio ficara disponivel na biblioteca publica para outros treinadores.'
-                            : 'Apenas voce e seus atletas terao acesso a este exercicio.'}
+                            ? 'Este exercicio ficara disponível na biblioteca publica para outros treinadores.'
+                            : 'Apenas você e seus atletas terao acesso a este exercicio.'}
                         </p>
                       </div>
 

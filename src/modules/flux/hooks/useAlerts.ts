@@ -107,8 +107,8 @@ export function useAlerts(): UseAlertsReturn {
               feedback_id: '',
               alert_type: 'absence',
               severity: 'high',
-              keywords_detected: ['baixa adesao'],
-              message_preview: `${athlete.name} com adesao de ${Math.round(rate)}% — acao recomendada`,
+              keywords_detected: ['baixa adesão'],
+              message_preview: `${athlete.name} com adesão de ${Math.round(rate)}% — ação recomendada`,
               created_at: new Date().toISOString(),
             });
           } else if (rate < 50 && rate > 0) {
@@ -119,8 +119,8 @@ export function useAlerts(): UseAlertsReturn {
               feedback_id: '',
               alert_type: 'motivation',
               severity: 'medium',
-              keywords_detected: ['adesao moderada'],
-              message_preview: `${athlete.name} com adesao de ${Math.round(rate)}% — monitorar`,
+              keywords_detected: ['adesão moderada'],
+              message_preview: `${athlete.name} com adesão de ${Math.round(rate)}% — monitorar`,
               created_at: new Date().toISOString(),
             });
           }

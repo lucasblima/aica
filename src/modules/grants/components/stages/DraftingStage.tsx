@@ -458,7 +458,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
                 <div className="ceramic-tray p-6 text-center">
                   <AlertCircle className="w-8 h-8 text-[#948D82] mx-auto mb-2" />
                   <p className="text-sm text-[#948D82] mb-4">
-                    Campo ainda nao preenchido
+                    Campo ainda não preenchido
                   </p>
                   <button
                     onClick={onGenerate}
@@ -475,7 +475,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
               {exceedsMax && (
                 <div className="mt-3 p-3 bg-ceramic-error-bg border border-ceramic-error/20 rounded-lg">
                   <p className="text-xs text-ceramic-error font-medium">
-                    Texto excede o limite maximo de {field.max_chars} caracteres
+                    Texto excede o limite máximo de {field.max_chars} caracteres
                   </p>
                 </div>
               )}

@@ -125,7 +125,7 @@ export default function ArticleOutlinePanel({
             type="text"
             value={theme}
             onChange={e => setTheme(e.target.value)}
-            placeholder="Ex: Impacto da IA na educacao brasileira"
+            placeholder="Ex: Impacto da IA na educação brasileira"
             className="flex-1 px-3 py-2 rounded-lg border border-ceramic-border bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
             onKeyDown={e => e.key === 'Enter' && handleGenerateOutline()}
           />
@@ -173,7 +173,7 @@ export default function ArticleOutlinePanel({
                     type="text"
                     value={section.heading}
                     onChange={e => updateHeading(index, e.target.value)}
-                    placeholder="Titulo da secao"
+                    placeholder="Título da seção"
                     className="flex-1 bg-transparent text-sm font-medium text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none"
                   />
                   <span className="text-xs text-ceramic-text-secondary flex-shrink-0">
@@ -182,7 +182,7 @@ export default function ArticleOutlinePanel({
                   <button
                     onClick={() => removeSection(index)}
                     className="p-1 rounded text-ceramic-text-secondary/50 hover:text-ceramic-error hover:bg-ceramic-error/10 transition-colors"
-                    aria-label={`Remover secao ${index + 1}`}
+                    aria-label={`Remover seção ${index + 1}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -252,7 +252,7 @@ export default function ArticleOutlinePanel({
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <ListOrdered className="w-10 h-10 text-ceramic-text-secondary/30 mb-3" />
             <p className="text-sm text-ceramic-text-secondary">
-              Nenhuma secao no outline ainda.
+              Nenhuma seção no outline ainda.
             </p>
             <p className="text-xs text-ceramic-text-secondary/60 mt-1">
               Use o campo acima para gerar automaticamente ou adicione manualmente.
@@ -268,7 +268,7 @@ export default function ArticleOutlinePanel({
           className="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
         >
           <Plus className="w-4 h-4" />
-          Adicionar secao
+          Adicionar seção
         </button>
         <span className="text-xs text-ceramic-text-secondary">
           {outline.length} secoes | ~{totalWords.toLocaleString('pt-BR')} palavras

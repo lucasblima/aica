@@ -876,41 +876,41 @@ function generateTemplateQuestion(context: UserContext): string | null {
   // Template based on recent emotions
   const recentEmotions = context.momentHistory?.slice(0, 3).map(m => m.emotion).filter(Boolean) || []
   if (recentEmotions.includes('stressed') || recentEmotions.includes('burnt out')) {
-    candidates.push('O que voce pode soltar hoje para aliviar a pressao?')
+    candidates.push('O que você pode soltar hoje para aliviar a pressao?')
   }
   if (recentEmotions.includes('happy') || recentEmotions.includes('grateful')) {
     candidates.push('O que contribuiu para essa energia positiva recente?')
   }
   if (recentEmotions.includes('anxious') || recentEmotions.includes('overwhelmed')) {
-    candidates.push('Qual e a menor acao que te ajudaria a se sentir mais no controle agora?')
+    candidates.push('Qual e a menor ação que te ajudaria a se sentir mais no controle agora?')
   }
   if (recentEmotions.includes('sad') || recentEmotions.includes('depressed')) {
-    candidates.push('Qual pequeno gesto de cuidado voce pode fazer por si mesmo hoje?')
+    candidates.push('Qual pequeno gesto de cuidado você pode fazer por si mesmo hoje?')
   }
 
   // Template based on critical areas
   if (context.criticalAreas.length > 0) {
     const area = context.criticalAreas[0]
-    candidates.push(`O que voce precisa para desbloquear progresso em ${area.areaName}?`)
+    candidates.push(`O que você precisa para desbloquear progresso em ${area.areaName}?`)
   }
 
   // Template based on time of day
   if (context.timeOfDay === 'morning') {
-    candidates.push('Qual e a sua intencao principal para hoje?')
+    candidates.push('Qual e a sua intenção principal para hoje?')
   } else if (context.timeOfDay === 'evening') {
     candidates.push('Qual foi o momento mais significativo do seu dia?')
   } else if (context.timeOfDay === 'afternoon') {
-    candidates.push('O que voce conquistou ate agora que merece reconhecimento?')
+    candidates.push('O que você conquistou ate agora que merece reconhecimento?')
   }
 
   // Template based on Life Council insights
   if (context.lifeCouncil?.headline) {
-    candidates.push('Refletindo sobre seu momento atual, o que voce gostaria de mudar primeiro?')
+    candidates.push('Refletindo sobre seu momento atual, o que você gostaria de mudar primeiro?')
   }
 
   // Template based on patterns
   if (context.patterns && context.patterns.length > 0) {
-    candidates.push('Voce notou algum padrao se repetindo na sua vida recentemente?')
+    candidates.push('Você notou algum padrão se repetindo na sua vida recentemente?')
   }
 
   if (candidates.length === 0) return null

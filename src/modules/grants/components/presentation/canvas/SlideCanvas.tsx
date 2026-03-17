@@ -172,7 +172,7 @@ export function SlideCanvas({
             onClick={handleNext}
             disabled={!canGoNext}
             className="p-2 rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Proximo slide"
+            title="Próximo slide"
           >
             <ChevronRight className="w-5 h-5" />
           </button>

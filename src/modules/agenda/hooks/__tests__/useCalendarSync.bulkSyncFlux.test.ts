@@ -11,7 +11,7 @@ vi.mock('@/services/supabaseClient', () => ({
         eq: vi.fn().mockResolvedValue({
           data: [
             { id: 's1', name: 'Run', day_of_week: 1, week_number: 1, start_time: '08:00', duration: 60, modality: 'corrida', intensity: 'moderate' },
-            { id: 's2', name: 'Swim', day_of_week: 3, week_number: 1, start_time: '10:00', duration: 45, modality: 'natacao', intensity: 'light' },
+            { id: 's2', name: 'Swim', day_of_week: 3, week_number: 1, start_time: '10:00', duration: 45, modality: 'natação', intensity: 'light' },
           ],
           error: null,
         }),

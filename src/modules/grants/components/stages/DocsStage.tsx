@@ -328,7 +328,7 @@ export const DocsStage: React.FC = () => {
           </h3>
           <p className="text-sm text-[#948D82] mb-6 max-w-md mx-auto">
             {hasPdfContent
-              ? 'Extraia os documentos necessarios do PDF ou adicione manualmente.'
+              ? 'Extraia os documentos necessários do PDF ou adicione manualmente.'
               : 'Faca upload do PDF do edital para extrair automaticamente, ou adicione manualmente.'}
           </p>
           <div className="flex flex-wrap justify-center gap-3">

@@ -88,7 +88,7 @@ export function validateMomentInput(input: any): ValidationResult {
     }
   }
 
-  // Validate content (optional, but at least one of content/audio required)
+  // Validate content (optional, but at least one of content/áudio required)
   if (input.content !== undefined && input.content !== null) {
     const sanitized = sanitizeText(input.content)
     if (sanitized.length > 10000) {
@@ -96,11 +96,11 @@ export function validateMomentInput(input: any): ValidationResult {
     } else if (sanitized.length > 0) {
       validatedInput.content = sanitized
     } else if (!input.audioFile) {
-      warnings.push('Content is empty. Make sure to provide audio if no text is provided.')
+      warnings.push('Content is empty. Make sure to provide áudio if no text is provided.')
     }
   }
 
-  // Validate audio (optional)
+  // Validate áudio (optional)
   if (input.audioFile !== undefined && input.audioFile !== null) {
     if (!(input.audioFile instanceof Blob)) {
       errors.push('audioFile must be a Blob')
@@ -253,7 +253,7 @@ export function isValidLifeArea(area: string): area is LifeArea {
 }
 
 /**
- * Check if moment has both text and audio (for 'both' type detection)
+ * Check if moment has both text and áudio (for 'both' type detection)
  */
 export function hasMultipleContentTypes(input: CreateMomentEntryInput): boolean {
   return !!(input.content && input.content.trim().length > 0 && input.audioFile)
@@ -269,7 +269,7 @@ export function estimateBaseCP(input: CreateMomentEntryInput): number {
   if (input.content && input.content.length > 100) points += 3
   if (input.content && input.content.length > 300) points += 2
 
-  // Bonus for audio
+  // Bonus for áudio
   if (input.audioFile) points += 5
 
   // Bonus for emotion intensity
@@ -348,15 +348,15 @@ export function validateMomentBatch(inputs: any[]): {
  */
 export function getUserFriendlyErrorMessage(error: string): string {
   const errorMap: Record<string, string> = {
-    'userId is required': 'Erro: Usuario nao identificado',
-    'emotionSelected is required': 'Por favor, selecione uma emocao',
-    'emotionIntensity is required': 'Por favor, indique a intensidade da emocao',
+    'userId is required': 'Erro: Usuario não identificado',
+    'emotionSelected is required': 'Por favor, selecione uma emoção',
+    'emotionIntensity is required': 'Por favor, indique a intensidade da emoção',
     'emotionIntensity must be between 1 and 10': 'A intensidade deve estar entre 1 e 10',
     'lifeAreas is required': 'Por favor, selecione pelo menos uma area da vida',
     'At least one lifeArea must be selected': 'Por favor, selecione pelo menos uma area da vida',
-    'Either content or audioFile must be provided': 'Por favor, forneça texto ou arquivo de audio',
-    'Content must be less than 10,000 characters': 'Seu texto é muito longo (maximo 10.000 caracteres)',
-    'audioFile must be less than 25MB': 'Seu arquivo de audio é muito grande (maximo 25MB)',
+    'Either content or audioFile must be provided': 'Por favor, forneça texto ou arquivo de áudio',
+    'Content must be less than 10,000 characters': 'Seu texto é muito longo (máximo 10.000 caracteres)',
+    'audioFile must be less than 25MB': 'Seu arquivo de áudio é muito grande (máximo 25MB)',
   }
 
   return errorMap[error] || `Erro: ${error}`

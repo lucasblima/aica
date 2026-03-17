@@ -44,7 +44,7 @@ export default function WelcomePage() {
       return
     }
     if (password !== confirmPassword) {
-      setPasswordError('As senhas nao coincidem.')
+      setPasswordError('As senhas não coincidem.')
       return
     }
 
@@ -79,7 +79,7 @@ export default function WelcomePage() {
               Bem-vindo, {firstName}!
             </h1>
             <p className="text-ceramic-text-secondary mb-6">
-              Sua conta AICA esta pronta. Voce ja pode acessar todos os modulos pelo navegador.
+              Sua conta AICA esta pronta. Você já pode acessar todos os modulos pelo navegador.
             </p>
 
             <div className="space-y-3">
@@ -98,7 +98,7 @@ export default function WelcomePage() {
             </div>
 
             <p className="text-xs text-ceramic-text-secondary mt-6">
-              Voce tambem pode conectar o Google Calendar depois em Configuracoes.
+              Você também pode conectar o Google Calendar depois em Configurações.
             </p>
           </div>
         )}
@@ -110,7 +110,7 @@ export default function WelcomePage() {
               Criar senha
             </h2>
             <p className="text-ceramic-text-secondary mb-6 text-sm">
-              Com uma senha, voce pode acessar a AICA diretamente pelo navegador sem precisar de link magico.
+              Com uma senha, você pode acessar a AICA diretamente pelo navegador sem precisar de link magico.
             </p>
 
             <div className="space-y-4">
@@ -122,7 +122,7 @@ export default function WelcomePage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimo 6 caracteres"
+                  placeholder="Mínimo 6 caracteres"
                   className="w-full px-3 py-2 bg-ceramic-base border border-ceramic-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-ceramic-text-primary"
                 />
               </div>
@@ -168,7 +168,7 @@ export default function WelcomePage() {
               Senha criada!
             </h2>
             <p className="text-ceramic-text-secondary mb-6">
-              Agora voce pode acessar a AICA com email e senha, alem do Telegram.
+              Agora você pode acessar a AICA com email e senha, alem do Telegram.
             </p>
             <button
               onClick={handleGoToDashboard}

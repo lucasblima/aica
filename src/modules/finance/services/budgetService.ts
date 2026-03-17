@@ -12,8 +12,8 @@ export async function getBudgets(
   month: number,
   year: number
 ): Promise<FinanceBudget[]> {
-  if (month < 1 || month > 12) throw new Error('Mes invalido (1-12)');
-  if (year < 2020 || year > 2100) throw new Error('Ano invalido');
+  if (month < 1 || month > 12) throw new Error('Mes inválido (1-12)');
+  if (year < 2020 || year > 2100) throw new Error('Ano inválido');
 
   try {
     const { data, error } = await supabase
@@ -42,8 +42,8 @@ export async function upsertBudget(
   month: number,
   year: number
 ): Promise<FinanceBudget> {
-  if (month < 1 || month > 12) throw new Error('Mes invalido (1-12)');
-  if (year < 2020 || year > 2100) throw new Error('Ano invalido');
+  if (month < 1 || month > 12) throw new Error('Mes inválido (1-12)');
+  if (year < 2020 || year > 2100) throw new Error('Ano inválido');
 
   try {
     const { data, error } = await supabase.rpc('upsert_budget', {

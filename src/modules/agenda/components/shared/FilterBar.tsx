@@ -33,10 +33,10 @@ const PRIORITY_OPTIONS: { key: TaskPriorityFilter; label: string; emoji: string 
 ];
 
 const SORT_OPTIONS: { key: TaskSortBy; label: string }[] = [
-  { key: 'created_at', label: 'Data de Criacao' },
+  { key: 'created_at', label: 'Data de Criação' },
   { key: 'due_date', label: 'Data de Vencimento' },
   { key: 'priority', label: 'Prioridade' },
-  { key: 'title', label: 'Titulo' },
+  { key: 'title', label: 'Título' },
 ];
 
 export const TaskFilterBar: React.FC<TaskFilterBarProps> = ({

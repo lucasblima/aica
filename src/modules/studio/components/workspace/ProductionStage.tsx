@@ -78,13 +78,13 @@ export default function ProductionStage() {
     const dossier = state.research?.dossier;
     const topicTexts = pauta.topics.map(t => t.text).join(', ');
 
-    let instruction = `Voce e ${guestName}, um convidado sendo entrevistado em um podcast.`;
+    let instruction = `Você e ${guestName}, um convidado sendo entrevistado em um podcast.`;
 
     if (dossier?.biography) {
       instruction += `\n\nSua biografia: ${dossier.biography.substring(0, 500)}`;
     }
     if (dossier?.technicalSheet) {
-      instruction += `\n\nFicha tecnica: ${JSON.stringify(dossier.technicalSheet).substring(0, 300)}`;
+      instruction += `\n\nFicha técnica: ${JSON.stringify(dossier.technicalSheet).substring(0, 300)}`;
     }
     if (topicTexts) {
       instruction += `\n\nTopicos da entrevista: ${topicTexts}`;
@@ -163,7 +163,7 @@ export default function ProductionStage() {
       setRecordingError(null);
       actions.startRecording();
     } catch (error) {
-      setRecordingError('Nao foi possivel iniciar a gravacao. Verifique as permissoes do microfone e tente novamente.');
+      setRecordingError('Não foi possível iniciar a gravação. Verifique as permissões do microfone e tente novamente.');
     }
   };
 
@@ -177,7 +177,7 @@ export default function ProductionStage() {
         actions.pauseRecording();
       }
     } catch (error) {
-      setRecordingError('Erro ao alterar o estado da gravacao. Tente novamente.');
+      setRecordingError('Erro ao alterar o estado da gravação. Tente novamente.');
     }
   };
 
@@ -187,7 +187,7 @@ export default function ProductionStage() {
       setRecordingError(null);
       actions.stopRecording();
     } catch (error) {
-      setRecordingError('Erro ao finalizar a gravacao. Seus dados foram preservados.');
+      setRecordingError('Erro ao finalizar a gravação. Seus dados foram preservados.');
     }
   };
 
@@ -495,7 +495,7 @@ export default function ProductionStage() {
                           <div
                             className="flex items-end space-x-0.5 h-5"
                             role="img"
-                            aria-label={`Nivel de audio: ${practiceAudioLevel}%`}
+                            aria-label={`Nivel de áudio: ${practiceAudioLevel}%`}
                           >
                             {[0, 1, 2, 3, 4].map((i) => (
                               <div
@@ -557,7 +557,7 @@ export default function ProductionStage() {
                           <button
                             onClick={clearPracticeMessages}
                             className="flex items-center space-x-2 px-4 py-2 text-sm text-ceramic-secondary hover:text-ceramic-text-primary border border-ceramic-border rounded-lg hover:bg-ceramic-cool transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-border focus:ring-offset-2"
-                            aria-label="Limpar historico da conversa"
+                            aria-label="Limpar histórico da conversa"
                           >
                             <X className="w-4 h-4" aria-hidden="true" />
                             <span>Limpar</span>
@@ -570,7 +570,7 @@ export default function ProductionStage() {
                         <div
                           className="max-h-60 overflow-y-auto rounded-lg border border-ceramic-border bg-ceramic-surface p-4 space-y-3"
                           role="log"
-                          aria-label="Historico da conversa de pratica"
+                          aria-label="Histórico da conversa de pratica"
                           aria-live="polite"
                         >
                           {practiceMessages.map((msg, index) => (
@@ -594,7 +594,7 @@ export default function ProductionStage() {
                                   <span className={`text-xs font-semibold ${
                                     msg.role === 'user' ? 'text-orange-600' : 'text-purple-600'
                                   }`}>
-                                    {msg.role === 'user' ? 'Voce' : setup.guestName || 'IA'}
+                                    {msg.role === 'user' ? 'Você' : setup.guestName || 'IA'}
                                   </span>
                                 </div>
                                 <p className="text-sm leading-relaxed">{msg.content}</p>

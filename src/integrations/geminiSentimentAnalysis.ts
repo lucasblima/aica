@@ -28,15 +28,15 @@ export async function analyzeSentimentWithGemini(content: string): Promise<Senti
   }
 
   try {
-    const prompt = `Analise o sentimento do seguinte texto em Português e retorne um JSON.
+    const prompt = `Análise o sentimento do seguinte texto em Português e retorne um JSON.
 
 Texto: "${content}"
 
 Retorne EXATAMENTE este JSON (sem markdown):
 {
-  "sentiment_score": <numero entre -1 e 1>,
+  "sentiment_score": <número entre -1 e 1>,
   "sentiment_label": "<very_positive|positive|neutral|negative|very_negative>",
-  "confidence": <numero entre 0 e 1>,
+  "confidence": <número entre 0 e 1>,
   "keywords": [<lista de palavras-chave que indicam sentimento>],
   "tone": "<descriptivo tom em 1-2 palavras>",
   "intensity": <1-10>
@@ -138,15 +138,15 @@ export async function detectEmotionalPatterns(
   const patterns: string[] = []
 
   if (trend === 'ascending') {
-    patterns.push('Voce esta melhorando emocionalmente!')
+    patterns.push('Você esta melhorando emocionalmente!')
   } else if (trend === 'descending') {
-    patterns.push('Parece que voce tem passado por um período desafiador.')
+    patterns.push('Parece que você tem passado por um período desafiador.')
   }
 
   if (averageScore > 0.3) {
     patterns.push('Sua tendencia geral é positiva.')
   } else if (averageScore < -0.3) {
-    patterns.push('Voce tem expressado sentimentos mais negativos ultimamente.')
+    patterns.push('Você tem expressado sentimentos mais negativos ultimamente.')
   }
 
   const negativeCount = sentimentHistory.filter(s => s.score < -0.3).length
@@ -169,7 +169,7 @@ export async function generateSentimentInsights(
   content: string,
   sentiment: SentimentAnalysisResult
 ): Promise<string> {
-  if (!content) return 'Sem insights disponiveis.'
+  if (!content) return 'Sem insights disponíveis.'
 
   try {
     const prompt = `Com base no sentimento analisado, gere um insight util e empático.

@@ -1,7 +1,7 @@
 /**
  * GuestPortalView — read-only episode portal for podcast guests
  *
- * Route: /meu-episodio
+ * Route: /meu-episódio
  * Mirrors the AthletePortalView (/meu-treino) pattern.
  * Shows episode info (title, theme, scheduled date, pauta topics) for
  * guests whose email matches their auth account via platform_contacts.
@@ -128,9 +128,9 @@ export default function GuestPortalView() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base px-6">
         <div className="ceramic-card p-8 max-w-sm text-center space-y-4">
           <Mic className="w-12 h-12 text-ceramic-text-secondary mx-auto" />
-          <h1 className="text-xl font-black text-ceramic-text-primary">Meu Episodio</h1>
+          <h1 className="text-xl font-black text-ceramic-text-primary">Meu Episódio</h1>
           <p className="text-sm text-ceramic-text-secondary">
-            {error || profilesError || 'Nenhum episodio vinculado a sua conta. Peca ao host para adicionar seu email no cadastro do episodio.'}
+            {error || profilesError || 'Nenhum episódio vinculado a sua conta. Peca ao host para adicionar seu email no cadastro do episódio.'}
           </p>
           <button
             onClick={() => navigate('/')}
@@ -166,7 +166,7 @@ export default function GuestPortalView() {
                 Meus Episodios
               </h1>
               <p className="text-xs text-ceramic-text-secondary">
-                Veja o que esta preparado para voce
+                Veja o que esta preparado para você
               </p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function GuestPortalView() {
                       : 'bg-ceramic-cool text-ceramic-text-secondary'
                 }`}>
                   {episode.status === 'draft' ? 'Em preparacao' :
-                   episode.status === 'recording' ? 'Em gravacao' :
+                   episode.status === 'recording' ? 'Em gravação' :
                    episode.status === 'published' ? 'Publicado' :
                    episode.status}
                 </span>

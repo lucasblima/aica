@@ -86,7 +86,7 @@ export async function recordDailyActivity(): Promise<{
 
     // If on sabbatical, don't count activity
     if (currentState.isOnSabbatical) {
-      log.info('Usuario em sabbatico, atividade nao contabilizada');
+      log.info('Usuario em sabbatico, atividade não contabilizada');
       return { state: currentState, suggestion: null };
     }
 
@@ -178,7 +178,7 @@ export function checkSabbaticalEligibility(state: SabbaticalState): SabbaticalSu
   if (days >= STRONG_THRESHOLD) {
     return {
       eligible: true,
-      message: `Voce esta ativo ha ${days} dias consecutivos! Isso e impressionante, mas descansar e essencial. Sugerimos uma pausa de ${STRONG_SABBATICAL_DAYS} dias para recarregar. Durante a pausa, suas sequencias ficam protegidas.`,
+      message: `Você esta ativo ha ${days} dias consecutivos! Isso e impressionante, mas descansar e essencial. Sugerimos uma pausa de ${STRONG_SABBATICAL_DAYS} dias para recarregar. Durante a pausa, suas sequências ficam protegidas.`,
       suggestedDays: STRONG_SABBATICAL_DAYS,
       urgency: 'strong',
     };
@@ -196,7 +196,7 @@ export function checkSabbaticalEligibility(state: SabbaticalState): SabbaticalSu
   // GENTLE_THRESHOLD <= days < MODERATE_THRESHOLD
   return {
     eligible: true,
-    message: `Voce esta usando o AICA ha ${days} dias seguidos. Que tal uma pausa de ${DEFAULT_SABBATICAL_DAYS} dias? Suas sequencias e pontuacoes ficam protegidas durante o descanso.`,
+    message: `Você esta usando o AICA ha ${days} dias seguidos. Que tal uma pausa de ${DEFAULT_SABBATICAL_DAYS} dias? Suas sequências e pontuações ficam protegidas durante o descanso.`,
     suggestedDays: DEFAULT_SABBATICAL_DAYS,
     urgency: 'gentle',
   };

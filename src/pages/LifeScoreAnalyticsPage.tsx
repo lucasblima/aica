@@ -140,7 +140,7 @@ function HistoryChart({ data }: {
   if (data.length < 2) {
     return (
       <div className="flex items-center justify-center h-40 text-sm text-ceramic-text-secondary">
-        Dados insuficientes para o grafico (minimo 2 pontos)
+        Dados insuficientes para o grafico (mínimo 2 pontos)
       </div>
     );
   }
@@ -377,7 +377,7 @@ export default function LifeScoreAnalyticsPage() {
             </button>
             <div>
               <h1 className="text-lg font-bold text-ceramic-text-primary">Life Score</h1>
-              <p className="text-xs text-ceramic-text-secondary">Analise integrada da sua vida</p>
+              <p className="text-xs text-ceramic-text-secondary">Análise integrada da sua vida</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -522,7 +522,7 @@ export default function LifeScoreAnalyticsPage() {
                       Espiral Negativa Detectada
                     </h3>
                     <p className="text-xs text-ceramic-text-secondary">
-                      Os seguintes dominios estao em declinio correlacionado:{' '}
+                      Os seguintes dominios estão em declinio correlacionado:{' '}
                       <strong>
                         {lifeScore.spiralDomains
                           .map(d => DOMAIN_LABELS[d])
@@ -539,7 +539,7 @@ export default function LifeScoreAnalyticsPage() {
             {/* Section 4: Historical Chart */}
             <section>
               <h2 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
-                Historico
+                Histórico
               </h2>
               <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-4">
                 <HistoryChart

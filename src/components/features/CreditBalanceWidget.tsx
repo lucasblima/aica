@@ -53,7 +53,7 @@ export function CreditBalanceWidget({
       const result = await claimDaily()
       if (result.success) {
         setClaimSuccess(true)
-        setClaimMessage(`+${result.creditsEarned} creditos!`)
+        setClaimMessage(`+${result.creditsEarned} créditos!`)
         setTimeout(() => {
           setClaimSuccess(false)
           setClaimMessage(null)
@@ -98,7 +98,7 @@ export function CreditBalanceWidget({
             onClick={handleClaimDaily}
             disabled={isClaiming}
             className="p-1 rounded-full bg-amber-100 hover:bg-amber-200 transition-colors"
-            title="Resgatar creditos diarios"
+            title="Resgatar créditos diarios"
           >
             {isClaiming ? (
               <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
@@ -130,7 +130,7 @@ export function CreditBalanceWidget({
               {balance}
             </motion.div>
             <div className="text-xs text-ceramic-text-secondary font-medium">
-              Creditos restantes
+              Créditos restantes
             </div>
           </div>
         </div>
@@ -277,7 +277,7 @@ export function CreditBalanceWidget({
         <div className="mt-4 pt-3 border-t border-ceramic-text-secondary/10">
           <div className="flex items-center gap-1 text-xs text-ceramic-text-secondary">
             <TrendingUp className="w-3 h-3" />
-            <span>{lifetimeEarned} creditos bonus ganhos no total</span>
+            <span>{lifetimeEarned} créditos bonus ganhos no total</span>
           </div>
         </div>
       )}

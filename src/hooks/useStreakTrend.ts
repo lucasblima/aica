@@ -119,7 +119,7 @@ export function useStreakTrend(options: UseStreakTrendOptions = {}): UseStreakTr
         message: {
           type: 'gentle_reminder',
           title: 'Erro',
-          message: 'Usuario nao autenticado',
+          message: 'Usuario não autenticado',
           emoji: '❌',
         },
       };
@@ -142,7 +142,7 @@ export function useStreakTrend(options: UseStreakTrendOptions = {}): UseStreakTr
         message: {
           type: 'gentle_reminder',
           title: 'Erro',
-          message: 'Nao foi possivel ativar o periodo de descanso',
+          message: 'Não foi possível ativar o período de descanso',
           emoji: '❌',
         },
       };
@@ -159,7 +159,7 @@ export function useStreakTrend(options: UseStreakTrendOptions = {}): UseStreakTr
         message: {
           type: 'gentle_reminder',
           title: 'Erro',
-          message: 'Usuario nao autenticado',
+          message: 'Usuario não autenticado',
           emoji: '❌',
         },
       };
@@ -182,7 +182,7 @@ export function useStreakTrend(options: UseStreakTrendOptions = {}): UseStreakTr
         message: {
           type: 'gentle_reminder',
           title: 'Erro',
-          message: 'Nao foi possivel iniciar a recuperacao',
+          message: 'Não foi possível iniciar a recuperacao',
           emoji: '❌',
         },
       };

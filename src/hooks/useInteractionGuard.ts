@@ -120,7 +120,7 @@ export function useInteractionGuard(): UseInteractionGuardReturn {
       setLimitStatus(result)
     } catch (err) {
       // On error, default to allowing (billing never blocks core)
-      log.warn('Falha ao verificar limite, permitindo interacao:', { error: err })
+      log.warn('Falha ao verificar limite, permitindo interação:', { error: err })
       setLimitStatus(prev => ({ ...prev, allowed: true }))
     } finally {
       setIsLoading(false)
@@ -154,7 +154,7 @@ export function useInteractionGuard(): UseInteractionGuardReturn {
     notificationService.show({
       type: 'warning',
       title: 'Limite de interacoes atingido',
-      message: `Seu plano ${plan} atingiu o limite diario. Renova as ${resetTime}. Adquira creditos extras ou faca upgrade do plano.`,
+      message: `Seu plano ${plan} atingiu o limite diário. Renova as ${resetTime}. Adquira créditos extras ou faca upgrade do plano.`,
       duration: 8000,
     })
   }, [])
@@ -177,14 +177,14 @@ export function useInteractionGuard(): UseInteractionGuardReturn {
       setLimitStatus(currentLimit)
     } catch (err) {
       // Billing check failed — allow the interaction anyway
-      log.warn('Verificacao de limite falhou, permitindo interacao:', { error: err })
+      log.warn('Verificacao de limite falhou, permitindo interação:', { error: err })
       currentLimit = { allowed: true, remaining: 999, plan: 'free', resetsAt: '' }
     }
 
     // Step 2: If blocked, show notification and return null
     if (!currentLimit.allowed) {
       showLimitReachedNotification(currentLimit.plan, currentLimit.resetsAt)
-      log.info('Interacao bloqueada: limite atingido', {
+      log.info('Interação bloqueada: limite atingido', {
         plan: currentLimit.plan,
         remaining: currentLimit.remaining,
       })
@@ -198,7 +198,7 @@ export function useInteractionGuard(): UseInteractionGuardReturn {
     logInteraction(action, module, model, tokensIn, tokensOut)
       .then(logResult => {
         if (logResult.creditDeducted) {
-          log.info('Credito extra deduzido para interacao', {
+          log.info('Credito extra deduzido para interação', {
             remaining: logResult.remaining,
           })
         }
@@ -210,7 +210,7 @@ export function useInteractionGuard(): UseInteractionGuardReturn {
         }))
       })
       .catch(err => {
-        log.warn('Falha ao registrar interacao (nao-bloqueante):', { error: err })
+        log.warn('Falha ao registrar interação (não-bloqueante):', { error: err })
       })
 
     return result

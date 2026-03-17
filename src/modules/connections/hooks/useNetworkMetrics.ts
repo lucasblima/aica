@@ -80,7 +80,7 @@ export function useNetworkMetrics(): UseNetworkMetricsReturn {
       }
     } catch (err) {
       log.error('Failed to fetch network metrics:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar metricas de rede');
+      setError(err instanceof Error ? err.message : 'Erro ao carregar métricas de rede');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -99,7 +99,7 @@ export function useNetworkMetrics(): UseNetworkMetricsReturn {
       }
     } catch (err) {
       log.error('Network metrics refresh failed:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao recalcular metricas');
+      setError(err instanceof Error ? err.message : 'Erro ao recalcular métricas');
     } finally {
       setIsRefreshing(false);
     }

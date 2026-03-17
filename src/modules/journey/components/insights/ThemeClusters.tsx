@@ -38,7 +38,7 @@ export function ThemeClusters({ themes, isBackfilling }: ThemeClustersProps) {
             <>
               <TagIcon className="h-6 w-6 text-[#C4A574] mb-2" />
               <p className="text-xs text-[#948D82] text-center">
-                Temas serao identificados automaticamente conforme voce registra momentos.
+                Temas serao identificados automaticamente conforme você registra momentos.
               </p>
             </>
           )}

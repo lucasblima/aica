@@ -227,16 +227,16 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
           ${balance >= 0 ? 'bg-ceramic-success/10' : 'bg-ceramic-error/10'}
         `}
       >
-        <p className="text-xs text-ceramic-text-secondary mb-1">Saldo do Periodo</p>
+        <p className="text-xs text-ceramic-text-secondary mb-1">Saldo do Período</p>
         <p
           className={`text-2xl font-bold ${balance >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}
         >
           {formatCurrency(balance)}
         </p>
         {balance >= 0 ? (
-          <p className="text-xs text-ceramic-success mt-1">Voce economizou este mes!</p>
+          <p className="text-xs text-ceramic-success mt-1">Você economizou este mes!</p>
         ) : (
-          <p className="text-xs text-ceramic-error mt-1">Atencao: gastos excederam receitas</p>
+          <p className="text-xs text-ceramic-error mt-1">Atenção: gastos excederam receitas</p>
         )}
       </div>
     </div>

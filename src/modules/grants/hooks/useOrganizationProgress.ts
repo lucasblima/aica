@@ -1,6 +1,6 @@
 /**
  * useOrganizationProgress Hook
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Calculates and tracks organization profile completion progress.
  */
@@ -189,7 +189,7 @@ export function getProgressMessage(progress: OrganizationProgress): string {
   }
 
   if (progress.completionPercentage >= 25) {
-    return 'Bom comeco! Adicione mais informacoes para destacar sua organizacao.';
+    return 'Bom comeco! Adicione mais informações para destacar sua organizacao.';
   }
 
   return 'Comece a preencher seu perfil para ganhar XP e desbloquear recursos!';

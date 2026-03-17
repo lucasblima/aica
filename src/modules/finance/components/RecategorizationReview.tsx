@@ -14,8 +14,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   food: 'Alimentacao',
   transport: 'Transporte',
   housing: 'Moradia',
-  health: 'Saude',
-  education: 'Educacao',
+  health: 'Saúde',
+  education: 'Educação',
   entertainment: 'Entretenimento',
   shopping: 'Compras',
   bills: 'Contas',
@@ -78,7 +78,7 @@ export const RecategorizationReview: React.FC<RecategorizationReviewProps> = ({
               Revisar Categorias
             </h2>
             <p className="text-xs text-ceramic-text-secondary mt-0.5">
-              {items.length} {items.length === 1 ? 'sugestao' : 'sugestoes'} da IA
+              {items.length} {items.length === 1 ? 'sugestão' : 'sugestoes'} da IA
             </p>
           </div>
           <button
@@ -179,7 +179,7 @@ export const RecategorizationReview: React.FC<RecategorizationReviewProps> = ({
                   Salvando...
                 </>
               ) : (
-                <>Aplicar {acceptedCount} {acceptedCount === 1 ? 'alteracao' : 'alteracoes'}</>
+                <>Aplicar {acceptedCount} {acceptedCount === 1 ? 'alteracao' : 'alterações'}</>
               )}
             </button>
           </div>

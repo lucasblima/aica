@@ -159,7 +159,7 @@ const AthletePicker: React.FC<AthletePickerProps> = ({ athletes, isLoading, onSe
 // ============================================
 
 const MODALITY_PT_LABELS: Record<string, string> = {
-  swimming: 'Natacao',
+  swimming: 'Natação',
   running: 'Corrida',
   cycling: 'Ciclismo',
   strength: 'Musculacao',
@@ -531,7 +531,7 @@ export default function CanvasEditorView() {
           Erro ao carregar ciclo
         </p>
         <p className="text-sm text-ceramic-text-secondary mb-6">
-          Nao foi possivel criar o ciclo para este atleta.
+          Não foi possível criar o ciclo para este atleta.
         </p>
         <button
           onClick={() => navigate('/flux')}
@@ -552,7 +552,7 @@ export default function CanvasEditorView() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
         <p className="text-lg font-bold text-ceramic-text-primary mb-4">
-          Atleta nao encontrado
+          Atleta não encontrado
         </p>
         <button
           onClick={() => navigate('/flux')}

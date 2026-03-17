@@ -272,10 +272,10 @@ export async function getUserCredits(): Promise<UserCredits> {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        log.debug('Nenhum registro de creditos encontrado')
+        log.debug('Nenhum registro de créditos encontrado')
         return DEFAULT_CREDITS
       }
-      log.error('Erro ao buscar creditos:', { error })
+      log.error('Erro ao buscar créditos:', { error })
       return DEFAULT_CREDITS
     }
 
@@ -286,7 +286,7 @@ export async function getUserCredits(): Promise<UserCredits> {
       lastDailyClaim: data.last_daily_claim ?? null,
     }
   } catch (err) {
-    log.error('Erro inesperado ao buscar creditos:', { error: err })
+    log.error('Erro inesperado ao buscar créditos:', { error: err })
     return DEFAULT_CREDITS
   }
 }
@@ -353,7 +353,7 @@ export async function logInteraction(
     interactionId: null,
     creditDeducted: false,
     remaining: 0,
-    message: 'Erro ao registrar interacao',
+    message: 'Erro ao registrar interação',
   }
 
   const userId = await getCurrentUserId()
@@ -370,7 +370,7 @@ export async function logInteraction(
     })
 
     if (error) {
-      log.error('Erro ao registrar interacao:', { error })
+      log.error('Erro ao registrar interação:', { error })
       return FALLBACK
     }
 
@@ -385,7 +385,7 @@ export async function logInteraction(
       message: row.message ?? '',
     }
   } catch (err) {
-    log.error('Erro inesperado ao registrar interacao:', { error: err })
+    log.error('Erro inesperado ao registrar interação:', { error: err })
     return FALLBACK
   }
 }
@@ -398,7 +398,7 @@ export async function claimDailyCredits(): Promise<ClaimDailyCreditsResult> {
     success: false,
     creditsEarned: 0,
     newBalance: 0,
-    message: 'Erro ao resgatar creditos diarios',
+    message: 'Erro ao resgatar créditos diarios',
   }
 
   const userId = await getCurrentUserId()
@@ -410,7 +410,7 @@ export async function claimDailyCredits(): Promise<ClaimDailyCreditsResult> {
     })
 
     if (error) {
-      log.error('Erro ao resgatar creditos diarios:', { error })
+      log.error('Erro ao resgatar créditos diarios:', { error })
       return FALLBACK
     }
 
@@ -424,7 +424,7 @@ export async function claimDailyCredits(): Promise<ClaimDailyCreditsResult> {
       message: row.message ?? '',
     }
   } catch (err) {
-    log.error('Erro inesperado ao resgatar creditos:', { error: err })
+    log.error('Erro inesperado ao resgatar créditos:', { error: err })
     return FALLBACK
   }
 }
@@ -482,7 +482,7 @@ export async function spendCredits(
   const FALLBACK: SpendCreditsResult = {
     success: false,
     newBalance: 0,
-    message: 'Erro ao gastar creditos',
+    message: 'Erro ao gastar créditos',
   }
 
   const userId = await getCurrentUserId()
@@ -498,7 +498,7 @@ export async function spendCredits(
     })
 
     if (error) {
-      log.error('Erro ao gastar creditos:', { error })
+      log.error('Erro ao gastar créditos:', { error })
       return FALLBACK
     }
 
@@ -511,7 +511,7 @@ export async function spendCredits(
       message: row.message ?? '',
     }
   } catch (err) {
-    log.error('Erro inesperado ao gastar creditos:', { error: err })
+    log.error('Erro inesperado ao gastar créditos:', { error: err })
     return FALLBACK
   }
 }

@@ -81,7 +81,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({ projectId, assetId
   const handleSubmitComment = async (content: string, parentId?: string) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      throw new Error('Sessao expirada. Faca login novamente para comentar.');
+      throw new Error('Sessão expirada. Faca login novamente para comentar.');
     }
 
     const { error } = await supabase

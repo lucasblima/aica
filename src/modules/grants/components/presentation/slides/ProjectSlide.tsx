@@ -51,7 +51,7 @@ export function ProjectSlide({
               onChange={(v) => handleChange('duration', v)}
               tag="p"
               editMode={editMode}
-              placeholder="Duracao"
+              placeholder="Duração"
             />
           )}
           {(content.location || editMode) && (

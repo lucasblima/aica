@@ -84,7 +84,7 @@ export const EntityDashboard: React.FC<EntityDashboardProps> = ({ personaId }) =
       } else {
         setChatMessages((prev) => [
           ...prev,
-          { role: 'entity', content: 'Desculpe, nao consegui processar sua mensagem.' },
+          { role: 'entity', content: 'Desculpe, não consegui processar sua mensagem.' },
         ]);
       }
 
@@ -122,7 +122,7 @@ export const EntityDashboard: React.FC<EntityDashboardProps> = ({ personaId }) =
   if (error || !persona) {
     return (
       <div className="p-6 text-center">
-        <p className="text-ceramic-error text-sm">{error || 'Persona nao encontrada'}</p>
+        <p className="text-ceramic-error text-sm">{error || 'Persona não encontrada'}</p>
         <button onClick={reload} className="mt-2 text-xs text-ceramic-info underline">
           Tentar novamente
         </button>

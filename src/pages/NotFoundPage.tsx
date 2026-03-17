@@ -10,14 +10,14 @@ export default function NotFoundPage() {
       <div className="ceramic-card p-10 text-center max-w-md">
         <p className="text-6xl font-black text-ceramic-text-primary mb-2">404</p>
         <p className="text-lg font-medium text-ceramic-text-secondary mb-6">
-          Pagina nao encontrada
+          Página não encontrada
         </p>
         <button
           onClick={() => navigate('/')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Voltar ao inicio
+          Voltar ao início
         </button>
       </div>
     </div>

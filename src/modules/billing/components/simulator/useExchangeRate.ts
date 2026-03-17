@@ -82,7 +82,7 @@ export function useExchangeRate(): UseExchangeRateReturn {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Falha ao buscar cotacao');
+          setError(err instanceof Error ? err.message : 'Falha ao buscar cotação');
         }
       } finally {
         if (!cancelled) setIsLoading(false);

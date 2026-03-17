@@ -35,7 +35,7 @@ describe('CSVParserService', () => {
   const service = new CSVParserService();
 
   describe('Comma-delimited CSV with Portuguese columns (Issue #749)', () => {
-    it('should use generic format for Data,Valor,Identificador,Descricao (comma-delimited, no Saldo)', async () => {
+    it('should use generic format for Data,Valor,Identificador,Descrição (comma-delimited, no Saldo)', async () => {
       const csv = [
         'Data,Valor,Identificador,Descri\u00E7\u00E3o',
         '01/03/2026,-150.00,TXN001,Supermercado Extra',
@@ -63,7 +63,7 @@ describe('CSVParserService', () => {
   describe('Semicolon-delimited CSV with Brazilian date format', () => {
     it('should use generic format for semicolon CSV without matching a known bank', async () => {
       const csv = [
-        'Data;Descricao;Valor;Categoria',
+        'Data;Descrição;Valor;Categoria',
         '15/02/2026;Restaurante;-89,90;Alimentacao',
         '16/02/2026;Freelance;200,00;Renda',
       ].join('\n');
@@ -71,7 +71,7 @@ describe('CSVParserService', () => {
       const file = createCSVFile(csv);
       const result = await service.parseCSV(file);
 
-      // No known bank has these exact columns (Descricao without cedilla), so generic format
+      // No known bank has these exact columns (Descrição without cedilla), so generic format
       expect(result.bankName).toBe('Gen\u00E9rico');
       expect(result.transactions).toHaveLength(2);
       expect(result.transactions[0].description).toBe('Restaurante');

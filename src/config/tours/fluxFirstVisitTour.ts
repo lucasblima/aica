@@ -13,7 +13,7 @@ export const fluxFirstVisitTour: TourConfig = {
     {
       target: '[data-tour="flux-header"]',
       content:
-        'Bem-vindo ao Flux! Aqui voce gerencia treinos de natacao, corrida, ciclismo e forca para seus atletas.',
+        'Bem-vindo ao Flux! Aqui você gerencia treinos de natação, corrida, ciclismo e força para seus atletas.',
       placement: 'bottom',
     },
     {
@@ -25,13 +25,13 @@ export const fluxFirstVisitTour: TourConfig = {
     {
       target: '[data-tour="flux-filters"]',
       content:
-        'Filtre atletas por modalidade e nivel. Use a busca para encontrar rapidamente quem precisa de atencao.',
+        'Filtre atletas por modalidade e nivel. Use a busca para encontrar rapidamente quem precisa de atenção.',
       placement: 'bottom',
     },
     {
       target: '[data-tour="flux-athletes-grid"]',
       content:
-        'Seus atletas aparecem aqui com status colorimetrico de adesao. Clique em um atleta para ver detalhes e prescrever treinos.',
+        'Seus atletas aparecem aqui com status colorimetrico de adesão. Clique em um atleta para ver detalhes e prescrever treinos.',
       placement: 'top',
     },
     {

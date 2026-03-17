@@ -131,7 +131,7 @@ export async function evaluateAndCalculateCP(
         depth: heuristicScore,
         authenticity: heuristicScore,
         clarity: heuristicScore,
-        feedback_message: 'Obrigado por compartilhar sua reflexao!',
+        feedback_message: 'Obrigado por compartilhar sua reflexão!',
         feedback_tier: tier,
       },
     }

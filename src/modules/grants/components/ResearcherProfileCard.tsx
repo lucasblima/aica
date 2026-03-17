@@ -76,10 +76,10 @@ const ComponentBar: React.FC<ComponentBarProps> = ({ label, value, weight }) => 
 
 const RSS_EXPLANATION: ScoreExplanation = {
   title: 'Researcher Strength Score (RSS)',
-  summary: 'Score composto que avalia a forca academica do pesquisador baseado em metricas bibliometricas reconhecidas internacionalmente.',
+  summary: 'Score composto que avalia a força academica do pesquisador baseado em métricas bibliometricas reconhecidas internacionalmente.',
   methodology: 'Hirsch, J.E. (2005). An index to quantify an individual\'s scientific research output. PNAS, 102(46), 16569-16572.',
   brazilianValidation: 'Benchmarks calibrados para o contexto academico brasileiro (mediana h-index ~10, top ~50).',
-  formulaDescription: 'RSS = 30% h-index + 20% citacoes + 15% m-quotient + 20% fator de impacto + 15% centralidade colaborativa. Cada componente normalizado para 0-100.',
+  formulaDescription: 'RSS = 30% h-index + 20% citações + 15% m-quotient + 20% fator de impacto + 15% centralidade colaborativa. Cada componente normalizado para 0-100.',
   scaleDescription: '0-100, onde 80+ = Lider, 60-79 = Senior, 40-59 = Estabelecido, <40 = Emergente.',
   isContested: false,
   improvementTips: [
@@ -158,7 +158,7 @@ export const ResearcherProfileCard: React.FC<ResearcherProfileCardProps> = ({
           weight="30%"
         />
         <ComponentBar
-          label="Citacoes"
+          label="Citações"
           value={strength.components.citationScore}
           weight="20%"
         />

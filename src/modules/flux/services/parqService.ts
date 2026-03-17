@@ -171,7 +171,7 @@ export class ParQService {
         return {
           data: {
             cleared,
-            reason: cleared ? null : 'Liberacao medica pendente',
+            reason: cleared ? null : 'Liberação medica pendente',
             parq_status: status.clearance_status,
             missing_documents: status.clearance_status === 'blocked' && !status.has_clearance_document
               ? ['atestado_medico']

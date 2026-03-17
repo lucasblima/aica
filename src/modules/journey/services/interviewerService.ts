@@ -384,7 +384,7 @@ export async function startSession(
 export async function getCategoryCompletion(
   userId: string
 ): Promise<Record<InterviewCategory, { total: number; answered: number; percentage: number }>> {
-  const categories: InterviewCategory[] = ['biografia', 'anamnese', 'censo', 'preferencias', 'conexoes', 'objetivos']
+  const categories: InterviewCategory[] = ['biografia', 'anamnese', 'censo', 'preferências', 'conexoes', 'objetivos']
 
   const result = {} as Record<InterviewCategory, { total: number; answered: number; percentage: number }>
 

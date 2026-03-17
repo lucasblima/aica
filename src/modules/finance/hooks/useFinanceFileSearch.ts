@@ -263,7 +263,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
           await ensureCorpus();
         }
         if (!corpus) {
-          throw new Error('Nao foi possivel criar o corpus de busca');
+          throw new Error('Não foi possível criar o corpus de busca');
         }
 
         const results = await baseHook.search({

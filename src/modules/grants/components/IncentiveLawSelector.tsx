@@ -40,7 +40,7 @@ interface IncentiveLawSelectorProps {
   placeholder?: string;
   /** Label do campo */
   label?: string;
-  /** Se o campo e obrigatorio */
+  /** Se o campo e obrigatório */
   required?: boolean;
   /** Se o campo esta desabilitado */
   disabled?: boolean;

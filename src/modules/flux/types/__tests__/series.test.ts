@@ -400,7 +400,7 @@ describe('generateWorkoutName', () => {
       expect(name).toContain('12');
     });
 
-    it('names as "Forca Maxima" for low reps (<=5)', () => {
+    it('names as "Força Maxima" for low reps (<=5)', () => {
       const series = [makeStrengthSeries({ reps: 3 })];
       expect(generateWorkoutName('strength', series)).toBe('Força Máxima 1x3rep');
     });

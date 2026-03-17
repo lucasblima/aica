@@ -117,7 +117,7 @@ export function useBilling(): UseBillingReturn {
       if (creditsResult.status === 'fulfilled') {
         setCredits(creditsResult.value)
       } else {
-        log.warn('Falha ao buscar creditos:', creditsResult.reason)
+        log.warn('Falha ao buscar créditos:', creditsResult.reason)
       }
 
       if (summaryResult.status === 'fulfilled') {
@@ -132,7 +132,7 @@ export function useBilling(): UseBillingReturn {
         log.warn('Falha ao buscar planos:', plansResult.reason)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao carregar dados de cobranca'
+      const message = err instanceof Error ? err.message : 'Erro ao carregar dados de cobrança'
       setError(message)
       log.error('Erro ao carregar billing:', { error: err })
     } finally {
@@ -172,7 +172,7 @@ export function useBilling(): UseBillingReturn {
 
       return result
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao resgatar creditos'
+      const message = err instanceof Error ? err.message : 'Erro ao resgatar créditos'
       setError(message)
       return {
         success: false,

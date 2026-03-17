@@ -166,7 +166,7 @@ function NewContactModal({ isOpen, onClose, onCreated }: NewContactModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-              Modulo de origem
+              Módulo de origem
             </label>
             <select
               value={sourceModule}

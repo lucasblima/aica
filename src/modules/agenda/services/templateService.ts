@@ -39,10 +39,10 @@ const SYSTEM_TEMPLATES: RoutineTemplate[] = [
     id: 'morning-routine',
     name: 'Rotina Matinal',
     icon: '\u{1F305}',
-    description: 'Meditacao, exercicio e journaling para comecar o dia',
+    description: 'Meditação, exercicio e journaling para comecar o dia',
     isSystem: true,
     items: [
-      { title: 'Meditacao', scheduledTime: '07:00', estimatedDuration: 10, recurrenceRule: 'FREQ=DAILY;INTERVAL=1' },
+      { title: 'Meditação', scheduledTime: '07:00', estimatedDuration: 10, recurrenceRule: 'FREQ=DAILY;INTERVAL=1' },
       { title: 'Exercicio', scheduledTime: '07:15', estimatedDuration: 30, recurrenceRule: 'FREQ=DAILY;INTERVAL=1' },
       { title: 'Journaling', scheduledTime: '07:45', estimatedDuration: 15, recurrenceRule: 'FREQ=DAILY;INTERVAL=1' },
     ],
@@ -61,7 +61,7 @@ const SYSTEM_TEMPLATES: RoutineTemplate[] = [
   },
   {
     id: 'health-basics',
-    name: 'Saude Basica',
+    name: 'Saúde Basica',
     icon: '\u{1F4AA}',
     description: 'Hidratacao, pausas e alimentacao consciente',
     isSystem: true,

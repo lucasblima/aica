@@ -9,7 +9,7 @@
  * Sponsor Deck Generator Types
  * Issue #98 - Gerador de Deck de Patrocinio
  *
- * Tipos TypeScript para geracao de apresentacoes PowerPoint (PPTX)
+ * Tipos TypeScript para geração de apresentacoes PowerPoint (PPTX)
  * para projetos culturais em busca de patrocinadores.
  *
  * @module modules/grants/types/sponsorDeck
@@ -404,22 +404,22 @@ export const DECK_WIZARD_STEPS: DeckWizardStepConfig[] = [
   {
     id: 'template',
     title: 'Escolher Template',
-    description: 'Selecione o estilo visual da apresentacao',
+    description: 'Selecione o estilo visual da apresentação',
   },
   {
     id: 'options',
     title: 'Personalizar',
-    description: 'Configure as opcoes do deck',
+    description: 'Configure as opções do deck',
   },
   {
     id: 'preview',
     title: 'Visualizar',
-    description: 'Confira a estrutura da apresentacao',
+    description: 'Confira a estrutura da apresentação',
   },
   {
     id: 'generating',
     title: 'Gerando',
-    description: 'Criando sua apresentacao...',
+    description: 'Criando sua apresentação...',
   },
   {
     id: 'done',
@@ -445,8 +445,8 @@ export const DEFAULT_SLIDE_STRUCTURE: SlidePreview[] = [
   { number: 1, type: 'cover', title: 'Capa', description: 'Nome do projeto e tagline' },
   { number: 2, type: 'organization', title: 'Proponente', description: 'Sobre a organizacao' },
   { number: 3, type: 'project', title: 'O Projeto', description: 'Resumo executivo e objetivos' },
-  { number: 4, type: 'previous-editions', title: 'Edicoes Anteriores', description: 'Historico e resultados' },
-  { number: 5, type: 'impact', title: 'Impacto', description: 'Metricas e alcance' },
+  { number: 4, type: 'previous-editions', title: 'Edições Anteriores', description: 'Histórico e resultados' },
+  { number: 5, type: 'impact', title: 'Impacto', description: 'Métricas e alcance' },
   { number: 6, type: 'incentive-law', title: 'Lei de Incentivo', description: 'Beneficios fiscais' },
   { number: 7, type: 'tiers', title: 'Cotas', description: 'Niveis de patrocinio' },
   { number: 8, type: 'deliverables', title: 'Contrapartidas', description: 'O que o patrocinador recebe' },

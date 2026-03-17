@@ -215,7 +215,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
               <div className="text-2xl font-bold text-ceramic-accent">
                 {stats?.available ?? 0}
               </div>
-              <div className="text-xs text-ceramic-text-tertiary">Disponiveis</div>
+              <div className="text-xs text-ceramic-text-tertiary">Disponíveis</div>
             </div>
             <div className="ceramic-concave p-3 text-center rounded-xl">
               <div className="text-2xl font-bold text-ceramic-text-primary">
@@ -261,7 +261,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                       {currentCode && (
                         <div>
                           <div className="text-[10px] text-ceramic-text-tertiary font-medium mb-1">
-                            Codigo
+                            Código
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-lg font-mono font-bold text-ceramic-text-primary tracking-wider">
@@ -270,7 +270,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                             <button
                               onClick={handleCopyCode}
                               className="p-1 rounded hover:bg-ceramic-cool transition-colors"
-                              title="Copiar codigo"
+                              title="Copiar código"
                             >
                               {copiedCode ? (
                                 <Check className="w-3.5 h-3.5 text-ceramic-success" />
@@ -346,10 +346,10 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
             <div className="ceramic-concave p-6 rounded-xl text-center">
               <div className="text-4xl mb-2">😢</div>
               <div className="text-ceramic-text-primary font-bold mb-1">
-                Sem convites disponiveis
+                Sem convites disponíveis
               </div>
               <div className="text-sm text-ceramic-text-secondary">
-                Voce ganha +2 convites quando alguem aceita seu convite!
+                Você ganha +2 convites quando alguem aceita seu convite!
               </div>
             </div>
           )}
@@ -359,7 +359,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
             <div className="flex items-center gap-2 mb-3">
               <Clock className="w-4 h-4 text-ceramic-text-tertiary" />
               <h3 className="text-sm font-bold text-ceramic-text-primary">
-                Historico de Convites
+                Histórico de Convites
               </h3>
               {enrichedReferrals.length > 0 && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-ceramic-cool text-ceramic-text-secondary">
@@ -491,7 +491,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                   Bonus por indicacao
                 </div>
                 <div className="text-xs text-ceramic-text-secondary">
-                  Quando alguem aceita seu convite, voce ganha{' '}
+                  Quando alguem aceita seu convite, você ganha{' '}
                   <strong>+50 XP</strong> e <strong>+2 convites</strong> extras!
                 </div>
               </div>

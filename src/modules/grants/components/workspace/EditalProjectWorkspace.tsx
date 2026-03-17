@@ -148,7 +148,7 @@ const WorkspaceContent: React.FC<{
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-[#5C554B]">
-                      Conteudo do Edital
+                      Conteúdo do Edital
                     </h2>
                     <p className="text-xs text-[#948D82]">
                       {Math.round(editalTextContent.length / 1000)}k caracteres extraidos do PDF

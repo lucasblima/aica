@@ -232,7 +232,7 @@ export const EntityInbox: React.FC<EntityInboxProps> = ({
         <div className="text-center py-8">
           <Inbox className="w-10 h-10 text-ceramic-text-secondary/30 mx-auto mb-3" />
           <p className="text-sm text-ceramic-text-secondary">
-            Nenhuma sugestao pendente. Clique em "Extrair" para analisar conversas recentes.
+            Nenhuma sugestão pendente. Clique em "Extrair" para analisar conversas recentes.
           </p>
         </div>
       ) : (

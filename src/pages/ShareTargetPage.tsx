@@ -86,7 +86,7 @@ export const ShareTargetPage: React.FC = () => {
           Recebendo arquivo...
         </h2>
         <p className="text-sm text-ceramic-text-secondary">
-          Preparando importacao da conversa do WhatsApp
+          Preparando importação da conversa do WhatsApp
         </p>
       </div>
     </div>

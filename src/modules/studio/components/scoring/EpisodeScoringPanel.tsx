@@ -52,11 +52,11 @@ function getReadinessScore(
   if (pct >= 80) return { score: pct, label: 'Pronto para gravar', color: 'text-ceramic-success' };
   if (pct >= 60) return { score: pct, label: 'Quase pronto', color: 'text-ceramic-info' };
   if (pct >= 40) return { score: pct, label: 'Precisa de ajustes', color: 'text-ceramic-warning' };
-  return { score: pct, label: 'Requer atencao', color: 'text-ceramic-error' };
+  return { score: pct, label: 'Requer atenção', color: 'text-ceramic-error' };
 }
 
 function getDurationLabel(durationMinutes: number): string {
-  if (durationMinutes <= 0) return 'Nao definido';
+  if (durationMinutes <= 0) return 'Não definido';
   if (durationMinutes < 15) return 'Curto';
   if (durationMinutes <= 30) return 'Otimo';
   if (durationMinutes <= 45) return 'Medio';
@@ -94,7 +94,7 @@ export const EpisodeScoringPanel: React.FC<EpisodeScoringPanelProps> = ({
           <BarChart3 className="w-5 h-5 text-ceramic-info" aria-hidden="true" />
           <div>
             <h2 className="text-base font-semibold text-ceramic-text-primary">
-              Score do Episodio
+              Score do Episódio
             </h2>
             {episodeTitle && (
               <p className="text-xs text-ceramic-text-secondary">{episodeTitle}</p>
@@ -124,7 +124,7 @@ export const EpisodeScoringPanel: React.FC<EpisodeScoringPanelProps> = ({
           aria-valuenow={readiness.score}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`Prontidao do episodio: ${readiness.score}%`}
+          aria-label={`Prontidão do episódio: ${readiness.score}%`}
         />
       </div>
 
@@ -164,7 +164,7 @@ export const EpisodeScoringPanel: React.FC<EpisodeScoringPanelProps> = ({
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-ceramic-text-secondary">
-              Duracao: {durationMinutes > 0 ? `${durationMinutes} min` : 'N/A'} ({durationLabel})
+              Duração: {durationMinutes > 0 ? `${durationMinutes} min` : 'N/A'} ({durationLabel})
             </span>
             <span className="text-xs text-ceramic-text-secondary">{durationPct}% otimo</span>
           </div>
@@ -197,7 +197,7 @@ export const EpisodeScoringPanel: React.FC<EpisodeScoringPanelProps> = ({
       {narrativeAnalysis && (
         <div className="space-y-2">
           <h3 className="text-xs font-medium text-ceramic-text-secondary uppercase tracking-wider">
-            Analise Narrativa
+            Análise Narrativa
           </h3>
           <NarrativeTensionChart
             analysis={narrativeAnalysis}

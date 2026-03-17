@@ -237,7 +237,7 @@ export const NarrativeTensionChart: React.FC<NarrativeTensionChartProps> = ({
 
       {/* Hook Strength */}
       <div className="flex items-center gap-2 mt-2 text-xs">
-        <span className="text-ceramic-text-secondary">Forca do Gancho:</span>
+        <span className="text-ceramic-text-secondary">Força do Gancho:</span>
         <div className="flex-1 h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
           <div
             className="h-full rounded-full bg-ceramic-warning transition-all"

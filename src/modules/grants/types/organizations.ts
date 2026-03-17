@@ -14,7 +14,7 @@ export type OrganizationType =
 
 export type RelationshipType =
   | 'parceria'
-  | 'execucao'
+  | 'execução'
   | 'financiamento'
   | 'fiscalizacao'
   | 'apoio'
@@ -51,7 +51,7 @@ export interface Organization {
   phone?: string;
   website?: string;
 
-  // Endereco
+  // Endereço
   address_street?: string;
   address_number?: string;
   address_complement?: string;
@@ -123,7 +123,7 @@ export interface OrganizationMember {
   updated_at: string;
 }
 
-// DTOs para criacao/atualizacao
+// DTOs para criação/atualização
 export type CreateOrganizationDTO = Omit<
   Organization,
   'id' | 'user_id' | 'is_verified' | 'profile_completeness' | 'created_at' | 'updated_at'
@@ -151,7 +151,7 @@ export const ORGANIZATION_TYPE_LABELS: Record<OrganizationType, string> = {
 
 export const RELATIONSHIP_TYPE_LABELS: Record<RelationshipType, string> = {
   parceria: 'Parceria',
-  execucao: 'Execucao',
+  execucao: 'Execução',
   financiamento: 'Financiamento',
   fiscalizacao: 'Fiscalizacao',
   apoio: 'Apoio',
@@ -161,8 +161,8 @@ export const RELATIONSHIP_TYPE_LABELS: Record<RelationshipType, string> = {
 
 export const AREAS_OF_ACTIVITY_OPTIONS = [
   { value: 'cultura', label: 'Cultura' },
-  { value: 'educacao', label: 'Educacao' },
-  { value: 'saude', label: 'Saude' },
+  { value: 'educação', label: 'Educação' },
+  { value: 'saúde', label: 'Saúde' },
   { value: 'meio_ambiente', label: 'Meio Ambiente' },
   { value: 'esporte', label: 'Esporte' },
   { value: 'assistencia_social', label: 'Assistencia Social' },

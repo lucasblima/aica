@@ -17,7 +17,7 @@ interface CategoryCompletion {
   percentage: number
 }
 
-const ALL_CATEGORIES: InterviewCategory[] = ['biografia', 'anamnese', 'censo', 'preferencias', 'conexoes', 'objetivos']
+const ALL_CATEGORIES: InterviewCategory[] = ['biografia', 'anamnese', 'censo', 'preferências', 'conexoes', 'objetivos']
 
 function CompletionRing({ percentage, color, size = 48 }: { percentage: number; color: string; size?: number }) {
   const radius = (size - 4) / 2
@@ -115,7 +115,7 @@ export function InterviewCategoryPicker({ onSessionStart }: InterviewCategoryPic
           Entrevista de Perfil
         </h2>
         <p className="text-sm text-ceramic-text-secondary">
-          Responda perguntas para que a AICA te conheca melhor. Cada resposta gera Pontos de Consciencia (CP) e personaliza sua experiencia.
+          Responda perguntas para que a AICA te conheca melhor. Cada resposta gera Pontos de Consciência (CP) e personaliza sua experiência.
         </p>
       </div>
 

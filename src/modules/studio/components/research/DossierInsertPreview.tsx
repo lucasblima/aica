@@ -10,7 +10,7 @@ interface DossierInsertPreviewProps {
 }
 
 export function DossierInsertPreview({ text, targetSection, onInsert, onDismiss }: DossierInsertPreviewProps) {
-  const sectionLabel = targetSection === 'bio' ? 'Biografia' : targetSection === 'ficha' ? 'Ficha Tecnica' : 'Noticias';
+  const sectionLabel = targetSection === 'bio' ? 'Biografia' : targetSection === 'ficha' ? 'Ficha Técnica' : 'Noticias';
 
   return (
     <motion.div

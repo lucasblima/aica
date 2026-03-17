@@ -30,7 +30,7 @@ export function QuickActions() {
           className="text-xs font-bold uppercase tracking-wider"
           style={{ color: 'var(--tg-hint-color)' }}
         >
-          Acoes rapidas
+          Ações rapidas
         </h3>
       </div>
       <div className="grid grid-cols-4 gap-2">

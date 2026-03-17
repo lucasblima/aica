@@ -284,7 +284,7 @@ describe('crossModuleService', () => {
     it('should create calendar event with correct title and guest label', async () => {
       mockInsertData['calendar_events'] = {
         id: 'cal-1',
-        title: 'Gravacao: Ep 1 com John Doe',
+        title: 'Gravação: Ep 1 com John Doe',
         start_time: '2026-03-15T14:00:00',
         end_time: expect.any(String),
         source: 'studio',
@@ -307,7 +307,7 @@ describe('crossModuleService', () => {
     it('should use default time 10:00 when scheduledTime is not provided', async () => {
       mockInsertData['calendar_events'] = {
         id: 'cal-2',
-        title: 'Gravacao: Ep 2',
+        title: 'Gravação: Ep 2',
         start_time: '2026-03-15T10:00:00',
         end_time: expect.any(String),
         source: 'studio',
@@ -370,7 +370,7 @@ describe('crossModuleService', () => {
       // Second call: insert returns new moment
       mockInsertData['moments'] = {
         id: 'moment-1',
-        content: 'Episodio publicado: Ep 1',
+        content: 'Episódio publicado: Ep 1',
         emotion: 'proud',
       }
       mockInsertError = null

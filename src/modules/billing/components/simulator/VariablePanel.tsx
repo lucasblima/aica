@@ -80,18 +80,18 @@ export function VariablePanel({ input, onUpdate }: VariablePanelProps) {
       <Section
         title="Pricing"
         icon={CreditCard}
-        tooltip="Defina os precos e limites de creditos de cada plano. Impacta diretamente a receita (MRR) e o valor percebido pelo cliente."
+        tooltip="Defina os preços e limites de créditos de cada plano. Impacta diretamente a receita (MRR) e o valor percebido pelo cliente."
       >
         <NumInput label="Pro (R$)" value={input.pricing.priceProBRL} onChange={v => updatePricing({ priceProBRL: v })} step={5} suffix="R$"
-          tooltip="Preco mensal do plano Pro. Aumentar pode elevar receita mas reduzir conversao." />
+          tooltip="Preço mensal do plano Pro. Aumentar pode elevar receita mas reduzir conversão." />
         <NumInput label="Teams (R$)" value={input.pricing.priceTeamsBRL} onChange={v => updatePricing({ priceTeamsBRL: v })} step={10} suffix="R$"
-          tooltip="Preco mensal do plano Teams (empresas). Geralmente 3-5x o Pro com mais creditos e recursos." />
-        <NumInput label="Creditos Free" value={input.pricing.creditsFree} onChange={v => updatePricing({ creditsFree: v })} step={100}
-          tooltip="Creditos de IA inclusos no plano gratuito por mes. Mais creditos atraem usuarios, mas aumentam custo de AI." />
-        <NumInput label="Creditos Pro" value={input.pricing.creditsPro} onChange={v => updatePricing({ creditsPro: v })} step={500}
-          tooltip="Creditos de IA inclusos no plano Pro por mes. Deve ser suficiente para uso ativo sem gerar custo excessivo." />
-        <NumInput label="Creditos Teams" value={input.pricing.creditsTeams} onChange={v => updatePricing({ creditsTeams: v })} step={1000}
-          tooltip="Creditos de IA inclusos no plano Teams por mes. Times consomem mais — equilibre volume com margem." />
+          tooltip="Preço mensal do plano Teams (empresas). Geralmente 3-5x o Pro com mais créditos e recursos." />
+        <NumInput label="Créditos Free" value={input.pricing.creditsFree} onChange={v => updatePricing({ creditsFree: v })} step={100}
+          tooltip="Créditos de IA inclusos no plano gratuito por mes. Mais créditos atraem usuarios, mas aumentam custo de AI." />
+        <NumInput label="Créditos Pro" value={input.pricing.creditsPro} onChange={v => updatePricing({ creditsPro: v })} step={500}
+          tooltip="Créditos de IA inclusos no plano Pro por mes. Deve ser suficiente para uso ativo sem gerar custo excessivo." />
+        <NumInput label="Créditos Teams" value={input.pricing.creditsTeams} onChange={v => updatePricing({ creditsTeams: v })} step={1000}
+          tooltip="Créditos de IA inclusos no plano Teams por mes. Times consomem mais — equilibre volume com margem." />
       </Section>
 
       <Section
@@ -101,9 +101,9 @@ export function VariablePanel({ input, onUpdate }: VariablePanelProps) {
         tooltip="Custos fixos de infraestrutura e custos variaveis de IA por uso. Valores em dolar sao convertidos pelo cambio abaixo."
       >
         <NumInput label="Supabase" value={input.costs.supabaseUSD} onChange={v => updateCosts({ supabaseUSD: v })} suffix="$/m"
-          tooltip="Custo mensal do Supabase (banco de dados, auth, storage). Custo fixo independente do numero de usuarios." />
+          tooltip="Custo mensal do Supabase (banco de dados, auth, storage). Custo fixo independente do número de usuarios." />
         <NumInput label="Cloud Run" value={input.costs.cloudRunUSD} onChange={v => updateCosts({ cloudRunUSD: v })} suffix="$/m"
-          tooltip="Custo mensal do Google Cloud Run (hosting da aplicacao). Escala com trafego, mas tem baseline fixo." />
+          tooltip="Custo mensal do Google Cloud Run (hosting da aplicação). Escala com trafego, mas tem baseline fixo." />
         <NumInput label="Flash In" value={input.costs.geminiFlashInputPer1M} onChange={v => updateCosts({ geminiFlashInputPer1M: v })} step={0.01} suffix="$/1M"
           tooltip="Custo por 1 milhao de tokens de entrada no Gemini Flash. Modelo rapido e barato para tarefas simples." />
         <NumInput label="Flash Out" value={input.costs.geminiFlashOutputPer1M} onChange={v => updateCosts({ geminiFlashOutputPer1M: v })} step={0.01} suffix="$/1M"
@@ -123,16 +123,16 @@ export function VariablePanel({ input, onUpdate }: VariablePanelProps) {
         tooltip="Projecao de crescimento da base de usuarios ao longo de 24 meses. Define a escala do negocio no simulador."
       >
         <NumInput label="Usuarios iniciais" value={input.growth.initialUsers} onChange={v => updateGrowth({ initialUsers: v })}
-          tooltip="Numero de usuarios ativos no mes 1 da simulacao. Base a partir da qual o crescimento e calculado." />
+          tooltip="Número de usuarios ativos no mes 1 da simulação. Base a partir da qual o crescimento e calculado." />
         <NumInput label="Crescimento mensal" value={Math.round(input.growth.monthlyGrowthRate * 100)} onChange={v => updateGrowth({ monthlyGrowthRate: v / 100 })} suffix="%"
           tooltip="Taxa de crescimento composto mensal (%). 10% significa que a base cresce 10% a cada mes sobre o total anterior." />
       </Section>
 
       <Section
-        title="Conversao"
+        title="Conversão"
         icon={Percent}
         defaultOpen={false}
-        tooltip="Taxas de conversao entre planos e churn (cancelamento). Determinam quanto da base gera receita e quanto se perde por mes."
+        tooltip="Taxas de conversão entre planos e churn (cancelamento). Determinam quanto da base gera receita e quanto se perde por mes."
       >
         <NumInput label="Free->Pro" value={Math.round(input.conversion.freeToProRate * 100)} onChange={v => updateConversion({ freeToProRate: v / 100 })} suffix="%"
           tooltip="Percentual de usuarios Free que convertem para Pro por mes. Benchmark SaaS: 2-5%." />
@@ -148,24 +148,24 @@ export function VariablePanel({ input, onUpdate }: VariablePanelProps) {
         title="Uso"
         icon={Users}
         defaultOpen={false}
-        tooltip="Padroes de consumo de IA pelos usuarios. Afetam diretamente o custo variavel de Gemini por usuario."
+        tooltip="Padrões de consumo de IA pelos usuarios. Afetam diretamente o custo variavel de Gemini por usuario."
       >
-        <NumInput label="Utilizacao creditos" value={Math.round(input.usage.avgCreditUtilization * 100)} onChange={v => updateUsage({ avgCreditUtilization: v / 100 })} suffix="%"
-          tooltip="Percentual medio dos creditos inclusos que os usuarios realmente consomem. 50% = metade dos creditos sao usados." />
+        <NumInput label="Utilizacao créditos" value={Math.round(input.usage.avgCreditUtilization * 100)} onChange={v => updateUsage({ avgCreditUtilization: v / 100 })} suffix="%"
+          tooltip="Percentual medio dos créditos inclusos que os usuarios realmente consomem. 50% = metade dos créditos sao usados." />
         <NumInput label="Mix Flash" value={Math.round(input.usage.flashVsProMix * 100)} onChange={v => updateUsage({ flashVsProMix: v / 100 })} suffix="%"
           tooltip="Percentual das chamadas de IA que usam o modelo Flash (barato) vs Pro (caro). 85% Flash = maioria das chamadas e barata." />
-        <NumInput label="Tokens/interacao" value={input.usage.avgTokensPerInteraction} onChange={v => updateUsage({ avgTokensPerInteraction: v })} step={100}
-          tooltip="Media de tokens consumidos por cada interacao com IA. Mais tokens = respostas mais longas = custo maior por chamada." />
+        <NumInput label="Tokens/interação" value={input.usage.avgTokensPerInteraction} onChange={v => updateUsage({ avgTokensPerInteraction: v })} step={100}
+          tooltip="Media de tokens consumidos por cada interação com IA. Mais tokens = respostas mais longas = custo maior por chamada." />
       </Section>
 
       <Section
-        title="Aquisicao"
+        title="Aquisição"
         icon={Megaphone}
         defaultOpen={false}
-        tooltip="Custo e canal de aquisicao de novos usuarios. Impacta o payback e a sustentabilidade do crescimento."
+        tooltip="Custo e canal de aquisição de novos usuarios. Impacta o payback e a sustentabilidade do crescimento."
       >
         <NumInput label="CAC" value={input.acquisition.cacBRL} onChange={v => updateAcquisition({ cacBRL: v })} step={5} suffix="R$"
-          tooltip="Custo de Aquisicao de Cliente (CAC) em reais. Quanto custa em marketing/vendas para trazer 1 novo usuario pagante." />
+          tooltip="Custo de Aquisição de Cliente (CAC) em reais. Quanto custa em marketing/vendas para trazer 1 novo usuario pagante." />
         <NumInput label="Organico" value={Math.round(input.acquisition.organicPct * 100)} onChange={v => updateAcquisition({ organicPct: v / 100 })} suffix="%"
           tooltip="Percentual de usuarios que chegam organicamente (sem custo de marketing). 70% organico = CAC efetivo e 30% do valor total." />
       </Section>

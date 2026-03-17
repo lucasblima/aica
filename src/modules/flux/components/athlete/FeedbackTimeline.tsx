@@ -85,7 +85,7 @@ export function FeedbackTimeline({
       >
         <MessageSquare className="w-8 h-8 text-ceramic-text-secondary/40 mx-auto" />
         <p className="text-sm font-medium text-ceramic-text-primary">
-          Nenhum treino disponivel
+          Nenhum treino disponível
         </p>
         <p className="text-xs text-ceramic-text-secondary leading-relaxed">
           Registre como foram seus treinos para ajudar seu coach a ajustar o plano.

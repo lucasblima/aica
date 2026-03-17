@@ -207,19 +207,19 @@ const SEVERITY_WEIGHTS = [10, 20, 40, 30]; // 10% critical, 20% high, etc.
 const ALERT_MESSAGES: Record<AlertType, string[]> = {
   health: [
     'Senti dor forte no treino de hoje. Precisei parar.',
-    'Estou com cansaco extremo, nao dormi bem.',
+    'Estou com cansaco extremo, não dormi bem.',
     'Minha lesao antiga voltou a incomodar.',
     'Fiz exame medico e preciso descansar.',
   ],
   motivation: [
-    'Nao to conseguindo manter o ritmo. Desanimado.',
-    'Estou pensando em desistir, nao vejo resultados.',
+    'Não to conseguindo manter o ritmo. Desanimado.',
+    'Estou pensando em desistir, não vejo resultados.',
     'Perdi a motivacao ultimamente.',
     'Muito dificil conciliar treino e trabalho.',
   ],
   absence: [
     'Faltei ao treino, tive imprevisto no trabalho.',
-    'Nao consegui ir treinar hoje.',
+    'Não consegui ir treinar hoje.',
     'Perdi o treino da semana passada.',
     'Viagem de trabalho, fiquei sem treinar.',
   ],
@@ -227,21 +227,21 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
     'Exame cardiologico pendente - vencido ha 30 dias.',
     'Atestado medico vencido - renovacao necessaria.',
     'Exame cardiologico pendente - nunca apresentado.',
-    'Documentacao incompleta para treino.',
+    'Documentação incompleta para treino.',
   ],
   financial: [
     'Pagamento da mensalidade em atraso.',
-    'Pendencia financeira - 2 meses sem pagamento.',
+    'Pendência financeira - 2 meses sem pagamento.',
     'Pagamento pendente para renovacao do plano.',
   ],
   custom: [
     'Preciso conversar sobre ajustes no treino.',
-    'Mudanca de horario nos treinos.',
+    'Mudanca de horário nos treinos.',
     'Ferias programadas, preciso pausar.',
   ],
   feedback_received: [
     'Atleta enviou feedback sobre o treino da semana.',
-    'Novo feedback recebido aguardando revisao.',
+    'Novo feedback recebido aguardando revisão.',
     'Feedback positivo do atleta sobre evolucao.',
   ],
 };
@@ -249,9 +249,9 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
 const CRITICAL_KEYWORDS: Record<AlertType, string[]> = {
   health: ['dor', 'parar', 'lesao', 'medico'],
   motivation: ['desistir', 'desanimado', 'dificil'],
-  absence: ['faltei', 'perdi', 'nao consegui'],
+  absence: ['faltei', 'perdi', 'não consegui'],
   documents: ['vencido', 'pendente', 'incompleta'],
-  financial: ['atraso', 'pagamento', 'pendencia'],
+  financial: ['atraso', 'pagamento', 'pendência'],
   custom: ['pausar', 'conversar'],
   feedback_received: ['feedback', 'evolucao', 'resultado'],
 };
@@ -317,7 +317,7 @@ const PENDING_EXAM_ALERTS: Alert[] = [
     alert_type: 'documents',
     severity: 'critical',
     keywords_detected: ['pendente', 'atestado'],
-    message_preview: 'Atestado medico nunca apresentado. Documentacao obrigatoria.',
+    message_preview: 'Atestado medico nunca apresentado. Documentação obrigatoria.',
     created_at: generateDate(3),
   },
   {
@@ -361,7 +361,7 @@ const PENDING_EXAM_ALERTS: Alert[] = [
     alert_type: 'documents',
     severity: 'high',
     keywords_detected: ['pendente', 'cardiologico'],
-    message_preview: 'Exame cardiologico pendente - atleta novo sem documentacao.',
+    message_preview: 'Exame cardiologico pendente - atleta novo sem documentação.',
     created_at: generateDate(2),
   },
   {
@@ -393,8 +393,8 @@ const PENDING_EXAM_ALERTS: Alert[] = [
     feedback_id: 'system-check',
     alert_type: 'documents',
     severity: 'medium',
-    keywords_detected: ['incompleta', 'documentacao'],
-    message_preview: 'Documentacao incompleta - falta exame cardiologico.',
+    keywords_detected: ['incompleta', 'documentação'],
+    message_preview: 'Documentação incompleta - falta exame cardiologico.',
     created_at: generateDate(7),
   },
   {
@@ -468,7 +468,7 @@ export const MOCK_WORKOUT_BLOCKS: WorkoutBlock[] = [
         },
       ],
     },
-    progression_notes: 'Foco em volume e tecnica',
+    progression_notes: 'Foco em volume e técnica',
     created_at: '2026-01-01T10:00:00Z',
   },
   {
@@ -532,7 +532,7 @@ export const MOCK_FEEDBACKS: Feedback[] = [
       summary: 'Atleta relatou dor no ombro durante crawl. Reducao de volume necessaria.',
       recommendations: [
         'Reduzir volume em 30%',
-        'Focar em tecnica de respiracao',
+        'Focar em técnica de respiracao',
         'Avaliar necessidade de fisioterapia',
       ],
       suggested_adjustments: {
@@ -592,7 +592,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     user_id: 'coach-1',
     name: 'Serie Principal - Crawl',
     category: 'main',
-    description: 'Serie principal em crawl com foco em tecnica',
+    description: 'Serie principal em crawl com foco em técnica',
     default_sets: 8,
     default_reps: '100m',
     default_rest: '20s',
