@@ -145,7 +145,7 @@ export function AthleteCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <h3 className="text-base font-bold text-ceramic-text-primary truncate">
-                {athlete.name}
+                {athlete.name === 'Atleta (pendente)' ? 'Convite pendente' : athlete.name}
               </h3>
               {/* Status Indicators — #389 */}
               {athlete.financial_status && athlete.financial_status !== 'ok' && (

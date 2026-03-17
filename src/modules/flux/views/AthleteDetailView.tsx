@@ -557,7 +557,7 @@ export default function AthleteDetailView() {
                 />
               ) : (
                 <h1 className="text-2xl font-black text-ceramic-text-primary mb-2 flex items-center gap-2">
-                  {athlete.name}
+                  {athlete.name === 'Atleta (pendente)' ? 'Convite pendente' : athlete.name}
                   {/* Status Indicators — #389 */}
                   {athlete.financial_status && athlete.financial_status !== 'ok' && (
                     <span
@@ -627,7 +627,7 @@ export default function AthleteDetailView() {
               ) : (
                 <>
                   <p className="text-xs text-ceramic-text-secondary truncate">
-                    {athlete.email || 'Sem email'}
+                    {athlete.email || 'Aguardando cadastro do atleta'}
                   </p>
                   <ConnectionStatusDot status={athlete.invitation_status} size="md" />
                 </>
@@ -645,7 +645,7 @@ export default function AthleteDetailView() {
                 />
               ) : (
                 <p className="text-xs text-ceramic-text-secondary truncate">
-                  {athlete.phone}
+                  {athlete.phone === '+0000000000' ? 'Aguardando cadastro' : athlete.phone}
                 </p>
               )}
             </div>
