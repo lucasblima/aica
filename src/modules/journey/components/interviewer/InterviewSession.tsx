@@ -16,6 +16,8 @@ import {
   RankedListRenderer,
 } from './renderers'
 import confetti from 'canvas-confetti'
+import { createNamespacedLogger } from '@/lib/logger'
+const log = createNamespacedLogger('InterviewSession')
 
 interface InterviewSessionProps {
   sessionId: string
@@ -139,7 +141,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
         }
       } catch (err) {
         // Silently fail — adaptive insights are optional
-        console.warn('Adaptive insight generation failed:', err)
+        log.warn('Adaptive insight generation failed:', err)
       } finally {
         setLoadingInsight(false)
       }

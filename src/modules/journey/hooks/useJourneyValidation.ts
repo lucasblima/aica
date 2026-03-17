@@ -231,50 +231,6 @@ export function useJourneyValidation(
 }
 
 /**
- * Hook to validate multiple journeys at once
- *
- * @param journeyIds - Array of journey IDs to validate
- * @param userContextData - Map of journeyId -> context data
- * @returns Results for all journeys
- */
-export function useMultipleJourneyValidation(
-  journeyIds: string[],
-  userContextData?: Record<string, Record<string, any>>
-) {
-  const validations = journeyIds.map(id => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useJourneyValidation(id, userContextData?.[id]);
-  });
-
-  // Aggregate results
-  const allBlocked = useMemo(() => {
-    return validations.some(v => v.isBlocked);
-  }, [validations]);
-
-  const blockedJourneys = useMemo(() => {
-    return validations.filter(v => v.isBlocked).map(v => v.journeyId);
-  }, [validations]);
-
-  const overallCompletion = useMemo(() => {
-    const totalPercentage = validations.reduce((sum, v) => sum + v.completionPercentage, 0);
-    return Math.round(totalPercentage / validations.length);
-  }, [validations]);
-
-  const totalMissingFields = useMemo(() => {
-    return validations.reduce((sum, v) => sum + v.missingFields.length, 0);
-  }, [validations]);
-
-  return {
-    validations,
-    allBlocked,
-    blockedJourneys,
-    overallCompletion,
-    totalMissingFields,
-    journeyCount: journeyIds.length,
-  };
-}
-
-/**
  * Hook to validate a single field
  * Useful for form inputs that need real-time validation
  *
