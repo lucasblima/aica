@@ -296,6 +296,9 @@ export interface MyAthleteProfile {
   status: AthleteStatus;
   allow_parq_onboarding: boolean;
   parq_clearance_status: 'pending' | 'cleared' | 'cleared_with_restrictions' | 'blocked' | 'expired' | null;
+  // Health doc requirements (set by coach)
+  requires_cardio_exam?: boolean;
+  requires_clearance_cert?: boolean;
   active_microcycle: {
     id: string;
     name: string;
