@@ -50,7 +50,7 @@ export interface UseAthleteFormOptions {
   mode: 'create' | 'edit';
   initialData?: Athlete;
   isOpen: boolean;
-  onSave: (athlete: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }) => Promise<void>;
+  onSave: (athlete: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }) => Promise<string | void>;
   onClose: () => void;
   autoCloseDelayMs?: number;
 }
@@ -65,6 +65,7 @@ export interface UseAthleteFormReturn {
   isLoadingProfiles: boolean;
   isFormValid: boolean;
   errorCount: number;
+  lastCreatedId: string | null;
   handleChange: (field: keyof AthleteFormData, value: string | boolean | undefined) => void;
   handleModalityToggle: (modality: TrainingModality) => void;
   handleLevelChange: (modality: TrainingModality, level: SimpleAthleteLevel) => void;
@@ -140,6 +141,7 @@ export function useAthleteForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
+  const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
 
   // Re-initialize form data when opening with new initialData
   useEffect(() => {
@@ -238,12 +240,15 @@ export function useAthleteForm({
   const validate = useCallback((): boolean => {
     const newErrors: AthleteFormErrors = {};
 
-    if (!formData.name || formData.name.trim().length < 2) {
-      newErrors.name = 'Nome e obrigatorio (min. 2 caracteres)';
-    }
+    // In create mode, name/phone are filled by the athlete during onboarding
+    if (mode === 'edit') {
+      if (!formData.name || formData.name.trim().length < 2) {
+        newErrors.name = 'Nome e obrigatorio (min. 2 caracteres)';
+      }
 
-    if (!formData.phone || formData.phone.length < 10) {
-      newErrors.phone = 'Telefone invalido (formato: +5511987654321)';
+      if (!formData.phone || formData.phone.length < 10) {
+        newErrors.phone = 'Telefone invalido (formato: +5511987654321)';
+      }
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -273,14 +278,16 @@ export function useAthleteForm({
       setIsSubmitting(true);
 
       try {
+        const isCreate = mode === 'create';
         const athleteData: Partial<Athlete> & { modalityLevels?: ModalityLevel[] } = {
-          name: formData.name.trim(),
+          name: isCreate ? 'Atleta (pendente)' : formData.name.trim(),
           email: formData.email.trim() || undefined,
-          phone: formData.phone.trim(),
+          phone: isCreate ? '+0000000000' : formData.phone.trim(),
           modality: formData.modalityLevels[0].modality,
           level: formData.modalityLevels[0].level as AthleteLevel,
           practiced_modalities: formData.modalityLevels.map((ml) => ml.modality),
-          status: 'active',
+          status: isCreate ? 'trial' : 'active',
+          invitation_status: isCreate ? 'pending' : formData.invitation_status,
           requires_cardio_exam: formData.requires_cardio_exam,
           requires_clearance_cert: formData.requires_clearance_cert,
           allow_parq_onboarding: formData.allow_parq_onboarding,
@@ -291,17 +298,23 @@ export function useAthleteForm({
           }),
         };
 
-        await onSave(athleteData);
+        const resultId = await onSave(athleteData);
 
         setSubmitSuccess(true);
+        setLastCreatedId(resultId || null);
         setIsDirty(false);
-        setFormData(getInitialFormData());
-        setErrors({});
 
-        setTimeout(() => {
-          setSubmitSuccess(false);
-          onClose();
-        }, autoCloseDelayMs);
+        // In create mode, don't auto-close — show invite link
+        if (mode === 'create') {
+          // Keep form open to display the invite link
+        } else {
+          setFormData(getInitialFormData());
+          setErrors({});
+          setTimeout(() => {
+            setSubmitSuccess(false);
+            onClose();
+          }, autoCloseDelayMs);
+        }
       } catch (error: unknown) {
         console.error('Error saving athlete:', error);
 
@@ -350,6 +363,7 @@ export function useAthleteForm({
     isLoadingProfiles,
     isFormValid,
     errorCount,
+    lastCreatedId,
     handleChange,
     handleModalityToggle,
     handleLevelChange,

@@ -529,7 +529,7 @@ export default function CRMCommandCenterView() {
   // ---- Athlete CRUD handlers (same pattern as FluxDashboard) ----
   const handleSaveAthlete = async (
     athleteData: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }
-  ) => {
+  ): Promise<string | void> => {
     try {
       const modalityLevels = athleteData.modalityLevels || [];
       if (modalityLevels.length === 0) {
@@ -584,6 +584,7 @@ export default function CRMCommandCenterView() {
 
       setAthleteModalOpen(false);
       setEditingAthlete(null);
+      return athleteId;
     } catch (err) {
       console.error('Error saving athlete:', err);
       throw err;
