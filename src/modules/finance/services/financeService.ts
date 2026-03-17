@@ -450,6 +450,76 @@ export async function getYearlyAggregates(
 }
 
 /**
+ * Normalize a transaction description for matching purposes.
+ * Lowercases, trims whitespace, and collapses multiple spaces.
+ */
+function normalizeDescription(description: string): string {
+    return description.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * Propagate a category change to all transactions with a matching
+ * normalized description for the given user. This "trains" the system
+ * so future imports with the same description get the correct category.
+ *
+ * Returns the count of additional rows updated (excluding the original).
+ */
+export async function propagateCategory(
+    userId: string,
+    description: string,
+    newCategory: string
+): Promise<{ propagatedCount: number; error?: string }> {
+    try {
+        const normalized = normalizeDescription(description);
+
+        if (!normalized) {
+            return { propagatedCount: 0 };
+        }
+
+        // Fetch IDs of all transactions with matching description for this user
+        // We use ilike for case-insensitive matching since Supabase doesn't have
+        // a built-in normalized description filter
+        const { data: matching, error: fetchErr } = await supabase
+            .from('finance_transactions')
+            .select('id, description')
+            .eq('user_id', userId)
+            .neq('category', newCategory);
+
+        if (fetchErr) throw fetchErr;
+
+        if (!matching || matching.length === 0) {
+            return { propagatedCount: 0 };
+        }
+
+        // Filter client-side by normalized description for exact matching
+        const matchingIds = matching
+            .filter(tx => normalizeDescription(tx.description) === normalized)
+            .map(tx => tx.id);
+
+        if (matchingIds.length === 0) {
+            return { propagatedCount: 0 };
+        }
+
+        // Update all matching transactions in one batch
+        const { error: updateErr } = await supabase
+            .from('finance_transactions')
+            .update({ category: newCategory })
+            .in('id', matchingIds);
+
+        if (updateErr) throw updateErr;
+
+        log.info(`[PropagateCategory] Updated ${matchingIds.length} transactions matching "${normalized}" to category "${newCategory}"`);
+        return { propagatedCount: matchingIds.length };
+    } catch (err) {
+        log.error('[PropagateCategory] Error:', err);
+        return {
+            propagatedCount: 0,
+            error: err instanceof Error ? err.message : 'Erro ao propagar categoria',
+        };
+    }
+}
+
+/**
  * Suggestion returned by AI for a single transaction re-categorization.
  */
 export interface CategorySuggestion {
@@ -587,6 +657,122 @@ export async function recategorizeTransactions(
 
     const { updated } = await applyCategorySuggestions(autoApproved);
     return { updated, total: suggestions.length };
+}
+
+// =====================================================
+// Monthly Digest Persistence
+// =====================================================
+
+export interface PersistedDigest {
+    id: string;
+    user_id: string;
+    year: number;
+    month: number;
+    digest_text: string;
+    generated_at: string;
+    transaction_count: number;
+    total_income: number;
+    total_expenses: number;
+}
+
+/**
+ * Fetch a cached monthly digest from the database.
+ * Returns null if no digest exists for the given month.
+ */
+export async function getPersistedDigest(
+    userId: string,
+    year: number,
+    month: number
+): Promise<PersistedDigest | null> {
+    try {
+        const { data, error } = await supabase
+            .from('finance_monthly_digests')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('year', year)
+            .eq('month', month)
+            .maybeSingle();
+
+        if (error) {
+            log.error('Error fetching persisted digest:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        log.error('Error fetching persisted digest:', error);
+        return null;
+    }
+}
+
+/**
+ * Save (upsert) a monthly digest to the database.
+ * Uses ON CONFLICT to update if one already exists for the same user/year/month.
+ */
+export async function savePersistedDigest(
+    userId: string,
+    year: number,
+    month: number,
+    digestText: string,
+    stats: { transactionCount: number; totalIncome: number; totalExpenses: number }
+): Promise<PersistedDigest | null> {
+    try {
+        const { data, error } = await supabase
+            .from('finance_monthly_digests')
+            .upsert(
+                {
+                    user_id: userId,
+                    year,
+                    month,
+                    digest_text: digestText,
+                    generated_at: new Date().toISOString(),
+                    transaction_count: stats.transactionCount,
+                    total_income: stats.totalIncome,
+                    total_expenses: stats.totalExpenses,
+                },
+                { onConflict: 'user_id,year,month' }
+            )
+            .select('*')
+            .single();
+
+        if (error) {
+            log.error('Error saving persisted digest:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        log.error('Error saving persisted digest:', error);
+        return null;
+    }
+}
+
+/**
+ * Delete a persisted digest (e.g., when user wants to force regeneration).
+ */
+export async function deletePersistedDigest(
+    userId: string,
+    year: number,
+    month: number
+): Promise<boolean> {
+    try {
+        const { error } = await supabase
+            .from('finance_monthly_digests')
+            .delete()
+            .eq('user_id', userId)
+            .eq('year', year)
+            .eq('month', month);
+
+        if (error) {
+            log.error('Error deleting persisted digest:', error);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        log.error('Error deleting persisted digest:', error);
+        return false;
+    }
 }
 
 /**
