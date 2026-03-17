@@ -116,7 +116,7 @@ export const INTERVIEW_CATEGORY_META: Record<InterviewCategory, {
     color: '#3B82F6', // blue
     description: 'Moradia, renda e contexto de vida',
   },
-  preferencias: {
+  'preferências': {
     label: 'Preferências',
     icon: '⚙️',
     color: '#F59E0B', // amber
