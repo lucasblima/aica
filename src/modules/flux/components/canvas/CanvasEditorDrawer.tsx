@@ -25,7 +25,7 @@ import type { WorkoutBlockData } from './WorkoutBlock';
 // ============================================
 
 const MODALITY_PT_LABELS: Record<string, string> = {
-  swimming: 'Natacao',
+  swimming: 'Natação',
   running: 'Corrida',
   cycling: 'Ciclismo',
   strength: 'Musculacao',
@@ -105,7 +105,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ mode, onChange, weeklyDisabled 
             }
           : {}
       }
-      title={weeklyDisabled ? 'Atleta ainda nao organizou os horarios na semana' : undefined}
+      title={weeklyDisabled ? 'Atleta ainda não organizou os horarios na semana' : undefined}
     >
       <List size={11} />
       Semana
@@ -243,12 +243,12 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
                   {athlete?.name}
                 </h1>
                 {hasFinancialPending && (
-                  <span title="Pendencia financeira">
+                  <span title="Pendência financeira">
                     <Receipt className="w-5 h-5 text-amber-500" />
                   </span>
                 )}
                 {hasHealthPending && (
-                  <span title="Pendencia de saude">
+                  <span title="Pendência de saúde">
                     <HeartPulse className="w-5 h-5 text-red-500" />
                   </span>
                 )}

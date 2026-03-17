@@ -54,7 +54,7 @@ export function useTelegramAuth(): UseTelegramAuthReturn {
         if (cancelled) return
 
         if (!result) {
-          setError('Nao foi possivel autenticar com o Telegram')
+          setError('Não foi possível autenticar com o Telegram')
           setIsLoading(false)
           return
         }
@@ -77,7 +77,7 @@ export function useTelegramAuth(): UseTelegramAuthReturn {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Erro de autenticacao')
+          setError(err instanceof Error ? err.message : 'Erro de autenticação')
         }
       } finally {
         if (!cancelled) setIsLoading(false)

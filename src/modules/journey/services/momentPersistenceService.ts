@@ -37,7 +37,7 @@ const log = createNamespacedLogger('MomentPersistence')
 /**
  * Create a new moment entry with full processing
  *
- * @param input - User moment input with content, audio, emotion, etc
+ * @param input - User moment input with content, áudio, emotion, etc
  * @returns Moment creation result with CP awards and streak info
  * @throws Error if validation fails or critical operations fail
  */
@@ -69,11 +69,11 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     // 3. TRANSCRIBE AUDIO IF PROVIDED
     let textFromAudio: string | undefined
     if (input.audioBlob && input.audioBlob.size > 0) {
-      log.debug('[momentPersistenceService] Transcribing audio input...')
+      log.debug('[momentPersistenceService] Transcribing áudio input...')
       textFromAudio = await transcribeAudio(input.audioBlob)
     }
 
-    // 4. VALIDATE CONTENT (text input or audio transcription)
+    // 4. VALIDATE CONTENT (text input or áudio transcription)
     const finalContent = (validatedInput.content?.trim() || textFromAudio?.trim())
 
     if (!finalContent) {
@@ -82,7 +82,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
 
     log.debug('[momentPersistenceService] Content validated, length:', finalContent.length)
 
-    // 5. ANALYZE SENTIMENT (Parallel with tagging) - renumbered after audio step
+    // 5. ANALYZE SENTIMENT (Parallel with tagging) - renumbered after áudio step
     const [sentimentResult, taggingResult] = await Promise.all([
       analyzeSentimentWithGemini(finalContent),
       generateAutoTags(finalContent, validatedInput.lifeAreas),
@@ -101,7 +101,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     // 7. PREPARE MOMENT DATA
     const processedData: ProcessedMomentData = {
       user_id: validatedInput.userId,
-      type: textFromAudio ? 'audio' : 'text',
+      type: textFromAudio ? 'áudio' : 'text',
       content: finalContent,
       emotion_selected: validatedInput.emotionSelected,
       emotion_intensity: validatedInput.emotionIntensity,
@@ -368,7 +368,7 @@ export async function describeImage(imageFile: File): Promise<string> {
       payload: {
         imageBase64,
         mimeType,
-        prompt: 'Descreva esta imagem em portugues brasileiro de forma concisa (max 200 caracteres). Foque no conteudo principal e no contexto emocional se houver.',
+        prompt: 'Descreva esta imagem em portugues brasileiro de forma concisa (max 200 caracteres). Foque no conteúdo principal e no contexto emocional se houver.',
       },
     })
 
@@ -415,7 +415,7 @@ async function generateAutoTags(content: string, lifeAreas: string[]): Promise<A
   const startTime = Date.now()
 
   try {
-    const prompt = `Analise este momento pessoal e gere tags relevantes.
+    const prompt = `Análise este momento pessoal e gere tags relevantes.
 
 Momento: "${content.substring(0, 500)}"
 Áreas de vida selecionadas: ${lifeAreas.join(', ')}

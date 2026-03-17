@@ -41,7 +41,7 @@ export function TimelineSlide({
           onChange={(v) => handleChange('title', v)}
           tag="h1"
           editMode={editMode}
-          placeholder="Titulo da Timeline"
+          placeholder="Título da Timeline"
         />
       </div>
 
@@ -67,7 +67,7 @@ export function TimelineSlide({
                   onChange={(v) => handleEventChange(index, 'title', v)}
                   tag="h3"
                   editMode={editMode}
-                  placeholder="Titulo do evento"
+                  placeholder="Título do evento"
                 />
                 {(event.description || editMode) && (
                   <EditableText
@@ -76,7 +76,7 @@ export function TimelineSlide({
                     tag="p"
                     className="mt-2 opacity-80"
                     editMode={editMode}
-                    placeholder="Descricao do evento"
+                    placeholder="Descrição do evento"
                     multiline
                   />
                 )}

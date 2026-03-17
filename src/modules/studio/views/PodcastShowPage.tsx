@@ -106,7 +106,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
       setEpisodes(episodesData || []);
     } catch (error) {
       log.error('Error fetching show data:', error);
-      setFetchError('Nao foi possivel carregar os dados do podcast. Verifique sua conexao e tente novamente.');
+      setFetchError('Não foi possível carregar os dados do podcast. Verifique sua conexão e tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -448,7 +448,7 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
       {/* Empty state */}
       {episodes.length === 0 && (
         <div className="text-center py-12 mt-8">
-          <p className="text-ceramic-text-secondary">Nenhum episodio encontrado com os filtros selecionados</p>
+          <p className="text-ceramic-text-secondary">Nenhum episódio encontrado com os filtros selecionados</p>
         </div>
       )}
     </div>
@@ -573,7 +573,7 @@ const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick, onDelete })
 
         {/* Content */}
         <h3 className="font-medium text-ceramic-text-primary line-clamp-2 group-hover:text-amber-600 transition-colors">
-          {episode.title || 'Sem titulo'}
+          {episode.title || 'Sem título'}
         </h3>
 
         <p className="text-sm text-ceramic-text-secondary mt-1 line-clamp-1">
@@ -690,7 +690,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ show, onRefresh, onSh
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Configuracoes do Podcast</h2>
+      <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Configurações do Podcast</h2>
       <div className="ceramic-card p-6 rounded-2xl space-y-4">
         {error && (
           <div className="p-3 rounded-lg bg-ceramic-error/10 border border-ceramic-error/30">
@@ -699,7 +699,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ show, onRefresh, onSh
         )}
         {saveSuccess && (
           <div className="p-3 rounded-lg bg-ceramic-success/10 border border-ceramic-success/30">
-            <p className="text-sm text-ceramic-success">Alteracoes salvas com sucesso!</p>
+            <p className="text-sm text-ceramic-success">Alterações salvas com sucesso!</p>
           </div>
         )}
         <div>
@@ -712,7 +712,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ show, onRefresh, onSh
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Descricao</label>
+          <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Descrição</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -732,7 +732,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ show, onRefresh, onSh
               : 'bg-ceramic-cool text-ceramic-text-secondary cursor-not-allowed'}
           `}
         >
-          {saving ? 'Salvando...' : 'Salvar Alteracoes'}
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
         </button>
       </div>
 
@@ -740,7 +740,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ show, onRefresh, onSh
       <div className="mt-8 ceramic-card p-6 rounded-2xl border border-ceramic-error/30">
         <h3 className="text-lg font-bold text-ceramic-error mb-2">Zona de Perigo</h3>
         <p className="text-sm text-ceramic-text-secondary mb-4">
-          Excluir o podcast ira remover permanentemente todos os episodios e dados associados.
+          Excluir o podcast irá remover permanentemente todos os episódios e dados associados.
         </p>
         {!showDeleteConfirm ? (
           <button
@@ -756,7 +756,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ show, onRefresh, onSh
               disabled={deleting}
               className="px-4 py-2 rounded-lg bg-ceramic-error text-white text-sm font-medium hover:bg-ceramic-error/90 transition-colors"
             >
-              {deleting ? 'Excluindo...' : 'Confirmar Exclusao'}
+              {deleting ? 'Excluindo...' : 'Confirmar Exclusão'}
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}

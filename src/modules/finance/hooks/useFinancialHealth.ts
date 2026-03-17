@@ -66,7 +66,7 @@ export function useFinancialHealth(): UseFinancialHealthReturn {
       setHistory(hist);
     } catch (err) {
       log.error('Error fetching financial health:', err);
-      setError('Erro ao carregar saude financeira');
+      setError('Erro ao carregar saúde financeira');
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export function useFinancialHealth(): UseFinancialHealthReturn {
       return healthResult;
     } catch (err) {
       log.error('Error computing financial health:', err);
-      setError('Erro ao calcular saude financeira');
+      setError('Erro ao calcular saúde financeira');
       return null;
     } finally {
       setLoading(false);

@@ -6,7 +6,7 @@ import { getCategoryCompletion } from '../../services/interviewerService'
 import type { InterviewCategory } from '../../types/interviewer'
 import { INTERVIEW_CATEGORY_META } from '../../types/interviewer'
 
-const ALL_CATEGORIES: InterviewCategory[] = ['biografia', 'anamnese', 'censo', 'preferencias', 'conexoes', 'objetivos']
+const ALL_CATEGORIES: InterviewCategory[] = ['biografia', 'anamnese', 'censo', 'preferências', 'conexoes', 'objetivos']
 
 interface CategoryCompletion {
   total: number

@@ -53,15 +53,15 @@ export function useLossFraming(): UseLossFramingReturn {
     return (todaySpend: number, dailyBudget: number): string => {
       const remaining = dailyBudget - todaySpend;
       if (remaining >= dailyBudget * 0.5) {
-        return `Voce ainda tem R$${remaining.toFixed(0)} disponiveis hoje. Continue assim!`;
+        return `Você ainda tem R$${remaining.toFixed(0)} disponíveis hoje. Continue assim!`;
       }
       if (remaining > 0) {
         const lossValue = remaining * 2.25;
-        return `Restam R$${remaining.toFixed(0)} do orcamento de hoje. Gastar agora equivale a perder R$${lossValue.toFixed(0)} em bem-estar.`;
+        return `Restam R$${remaining.toFixed(0)} do orçamento de hoje. Gastar agora equivale a perder R$${lossValue.toFixed(0)} em bem-estar.`;
       }
       const overspend = Math.abs(remaining);
       const lossValue = overspend * 2.25;
-      return `Voce ultrapassou o orcamento em R$${overspend.toFixed(0)}. Isso equivale a uma perda percebida de R$${lossValue.toFixed(0)}.`;
+      return `Você ultrapassou o orçamento em R$${overspend.toFixed(0)}. Isso equivale a uma perda percebida de R$${lossValue.toFixed(0)}.`;
     };
   }, []);
 

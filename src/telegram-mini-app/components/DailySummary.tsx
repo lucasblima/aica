@@ -180,7 +180,7 @@ export function DailySummary({ user, supabase }: DailySummaryProps) {
       </SummarySection>
 
       {/* Finance */}
-      <SummarySection icon="💰" title="Financas do mes" isLoading={loadingFinance}>
+      <SummarySection icon="💰" title="Finanças do mes" isLoading={loadingFinance}>
         {finance && (
           <div>
             <div className="flex justify-between text-sm mb-1">
@@ -211,7 +211,7 @@ export function DailySummary({ user, supabase }: DailySummaryProps) {
       <SummarySection icon="😊" title="Humor" isLoading={loadingMood}>
         {mood?.lastScore ? (
           <p className="text-sm">
-            Ultimo check-in: {moodEmoji[mood.lastScore] || '😐'} {mood.lastScore}/5
+            Último check-in: {moodEmoji[mood.lastScore] || '😐'} {mood.lastScore}/5
           </p>
         ) : (
           <p className="text-sm" style={{ color: 'var(--tg-hint-color)' }}>

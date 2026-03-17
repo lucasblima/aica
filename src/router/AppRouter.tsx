@@ -888,7 +888,7 @@ export function AppRouter() {
                <Route path="/google-hub" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Google Hub" />}><GoogleHubPage /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Guest Portal - Read-only episode view for podcast guests */}
-               <Route path="/meu-episodio" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Meu Episodio" />}><GuestPortalView /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/meu-episódio" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Meu Episódio" />}><GuestPortalView /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Platform Contacts - Unified contact management */}
                <Route path="/contatos" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Contatos" />}><ContactsPage /></ErrorBoundary></ProtectedRoute>} />

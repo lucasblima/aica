@@ -82,7 +82,7 @@ const ONBOARDING_ADVISORS: {
     id: 'diplomat',
     emoji: '\u{1F98C}', // deer
     childName: 'Cerva Harmonia',
-    greeting: 'Ola! Eu sou a Cerva Harmonia. Gosto de ajudar todo mundo!',
+    greeting: 'Olá! Eu sou a Cerva Harmonia. Gosto de ajudar todo mundo!',
   },
   {
     id: 'explorer',
@@ -96,7 +96,7 @@ const ONBOARDING_ADVISORS: {
 const TUTORIAL_SCENARIO = {
   title: 'O Rio Misterioso',
   description:
-    'Voce encontrou um rio largo no caminho. Do outro lado, tem uma aldeia com pessoas acenando. O que voce faz?',
+    'Você encontrou um rio largo no caminho. Do outro lado, tem uma aldeia com pessoas acenando. O que você faz?',
   advisorHints: {
     philosopher: 'Observe a correnteza antes de agir. Sabedoria e pensar antes!',
     diplomat: 'Podemos pedir ajuda para as pessoas do outro lado!',
@@ -107,13 +107,13 @@ const TUTORIAL_SCENARIO = {
       id: 'bridge',
       text: 'Construir uma ponte com troncos',
       emoji: '\u{1FAB5}', // wood
-      consequence: 'Incrivel! Voce construiu uma ponte e ajudou toda a aldeia! Ganhou +2 Coragem!',
+      consequence: 'Incrivel! Você construiu uma ponte e ajudou toda a aldeia! Ganhou +2 Coragem!',
     },
     {
       id: 'swim',
       text: 'Nadar devagar ate o outro lado',
       emoji: '\u{1F3CA}', // swimmer
-      consequence: 'Que bravura! Voce atravessou o rio e fez novos amigos! Ganhou +2 Conhecimento!',
+      consequence: 'Que bravura! Você atravessou o rio e fez novos amigos! Ganhou +2 Conhecimento!',
     },
     {
       id: 'ask',
@@ -243,7 +243,7 @@ export function EF_OnboardingScreen({
 
   const confirmVoiceAnswer = useCallback(() => {
     setVoiceTutorialPhase('success');
-    speak('Muito bem! Voce falou super bem!');
+    speak('Muito bem! Você falou super bem!');
   }, [speak]);
 
   const skipVoiceTutorial = useCallback(() => {
@@ -401,7 +401,7 @@ export function EF_OnboardingScreen({
       <button
         onClick={() => goToStep(2)}
         disabled={!canAdvanceStep1}
-        aria-label="Proximo passo: conhecer conselheiros"
+        aria-label="Próximo passo: conhecer conselheiros"
         className={`w-full py-4 min-h-[48px] rounded-xl font-bold text-lg transition-all duration-300 ${
           canAdvanceStep1
             ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-ceramic-emboss active:scale-[0.98]'
@@ -409,7 +409,7 @@ export function EF_OnboardingScreen({
         }`}
         style={fredoka}
       >
-        Proximo
+        Próximo
       </button>
     </div>
   );
@@ -525,7 +525,7 @@ export function EF_OnboardingScreen({
       <button
         onClick={() => goToStep(3)}
         disabled={!canAdvanceStep2}
-        aria-label="Proximo passo: tutorial de voz"
+        aria-label="Próximo passo: tutorial de voz"
         className={`w-full py-4 min-h-[48px] rounded-xl font-bold text-lg transition-all duration-300 ${
           canAdvanceStep2
             ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-ceramic-emboss active:scale-[0.98]'
@@ -533,7 +533,7 @@ export function EF_OnboardingScreen({
         }`}
         style={fredoka}
       >
-        {canAdvanceStep2 ? 'Proximo' : `Conheca todos (${advisorIntroduced.filter(Boolean).length}/3)`}
+        {canAdvanceStep2 ? 'Próximo' : `Conheca todos (${advisorIntroduced.filter(Boolean).length}/3)`}
       </button>
     </div>
   );
@@ -551,7 +551,7 @@ export function EF_OnboardingScreen({
         <p className="text-ceramic-text-secondary mt-1 text-sm" style={fredoka}>
           {voiceSupported
             ? 'Vamos testar sua voz!'
-            : 'Voz nao disponivel, mas tudo bem!'}
+            : 'Voz não disponível, mas tudo bem!'}
         </p>
       </div>
 
@@ -624,7 +624,7 @@ export function EF_OnboardingScreen({
                 {interimTranscript && (
                   <div className="bg-amber-50 rounded-lg p-3 animate-[ef-onboard-fade-in_0.3s_ease-out]">
                     <p className="text-amber-800 text-sm" style={fredoka}>
-                      Voce disse: &ldquo;{interimTranscript}&rdquo;
+                      Você disse: &ldquo;{interimTranscript}&rdquo;
                     </p>
                   </div>
                 )}
@@ -692,7 +692,7 @@ export function EF_OnboardingScreen({
             <p className="text-ceramic-text-secondary text-sm" style={fredoka}>
               {voiceSupported
                 ? 'Sua voz funciona perfeitamente!'
-                : 'Voce pode usar os botoes durante o jogo.'}
+                : 'Você pode usar os botoes durante o jogo.'}
             </p>
           </div>
         )}
@@ -702,11 +702,11 @@ export function EF_OnboardingScreen({
       {voiceTutorialPhase === 'success' ? (
         <button
           onClick={() => goToStep(4)}
-          aria-label="Proximo passo: primeira decisao"
+          aria-label="Próximo passo: primeira decisao"
           className="w-full py-4 min-h-[48px] bg-amber-500 hover:bg-amber-600 text-white font-bold text-lg rounded-xl shadow-ceramic-emboss transition-all active:scale-[0.98]"
           style={fredoka}
         >
-          Proximo
+          Próximo
         </button>
       ) : voiceTutorialPhase === 'intro' ? null : (
         <button
@@ -807,7 +807,7 @@ export function EF_OnboardingScreen({
       {tutorialPhase === 'choose' && (
         <div className="space-y-3 animate-[ef-onboard-fade-in_0.5s_ease-out]">
           <p className="text-xs font-semibold text-ceramic-text-secondary uppercase tracking-wide" style={fredoka}>
-            O que voce faz?
+            O que você faz?
           </p>
           {TUTORIAL_SCENARIO.choices.map((choice) => (
             <button

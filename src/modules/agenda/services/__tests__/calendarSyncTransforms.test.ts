@@ -256,7 +256,7 @@ describe('fluxSlotToGoogleEvent', () => {
     const result = fluxSlotToGoogleEvent(slot, '2026-03-09')
 
     expect(result!.description).toContain('Intensidade: Alta')
-    expect(result!.description).toContain('Duracao: 45min')
+    expect(result!.description).toContain('Duração: 45min')
     expect(result!.description).toContain('Sincronizado pelo AICA')
   })
 

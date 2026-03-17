@@ -15,11 +15,11 @@ export type IntentCategory =
   | 'response'    // Answering/confirming
   | 'scheduling'  // Calendar/meeting related
   | 'document'    // File/document shared
-  | 'audio'       // Voice message
+  | 'áudio'       // Voice message
   | 'social'      // Greetings, small talk
   | 'request'     // Asking for action
   | 'update'      // Status/progress info
-  | 'media';      // Photo/video/sticker
+  | 'media';      // Photo/vídeo/sticker
 
 export type IntentSentiment = 'positive' | 'neutral' | 'negative' | 'urgent';
 
@@ -51,7 +51,7 @@ export interface MessageIntent {
   /** Mentioned time if scheduling detected */
   mentionedTime?: string;
   /** Type of media if applicable */
-  mediaType?: 'image' | 'audio' | 'video' | 'document' | 'sticker';
+  mediaType?: 'image' | 'áudio' | 'vídeo' | 'document' | 'sticker';
   /** LLM confidence score 0-1 */
   confidence: number;
 }
@@ -185,7 +185,7 @@ export const INTENT_CATEGORY_LABELS: Record<IntentCategory, string> = {
   document: 'Documento',
   audio: 'Audio',
   social: 'Social',
-  request: 'Solicitacao',
-  update: 'Atualizacao',
-  media: 'Midia',
+  request: 'Solicitação',
+  update: 'Atualização',
+  media: 'Mídia',
 };

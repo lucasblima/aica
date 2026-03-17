@@ -3,7 +3,7 @@
  *
  * Generic wizard shell for creating new projects in the Studio module.
  * Routes to the appropriate form component based on projectType.
- * Currently supports podcast; video/article show a "coming soon" placeholder.
+ * Currently supports podcast; vídeo/article show a "coming soon" placeholder.
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -113,7 +113,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || 'Pesquisa nao retornou resultados');
+        throw new Error(data?.error || 'Pesquisa não retornou resultados');
       }
 
       const result = data.data as DeepResearchResult;
@@ -132,16 +132,16 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
     // Validate based on project type
     if (projectType === 'podcast') {
       if (!formData.guestName.trim()) {
-        setError('Nome do convidado e obrigatorio');
+        setError('Nome do convidado e obrigatório');
         return;
       }
       if (!showId || showId.trim() === '') {
-        setError('Erro: Podcast nao selecionado. Por favor, selecione um podcast primeiro.');
+        setError('Erro: Podcast não selecionado. Por favor, selecione um podcast primeiro.');
         return;
       }
     } else {
       if (!formData.title.trim()) {
-        setError('Titulo e obrigatorio');
+        setError('Título e obrigatório');
         return;
       }
     }
@@ -155,7 +155,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         const insertPayload: Record<string, any> = {
           show_id: showId,
           user_id: userId,
-          title: formData.title.trim() || `Episodio com ${formData.guestName.trim()}`,
+          title: formData.title.trim() || `Episódio com ${formData.guestName.trim()}`,
           description: formData.description || null,
           guest_name: formData.guestName || null,
           guest_reference: formData.guestContext || null,
@@ -183,7 +183,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
           .single();
 
         if (dbError) {
-          throw new Error(`Erro ao criar episodio: ${dbError.message}`);
+          throw new Error(`Erro ao criar episódio: ${dbError.message}`);
         }
 
         const project: StudioProject = {
@@ -318,18 +318,18 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
           />
         );
       case 'article':
-      case 'video':
+      case 'vídeo':
         return (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-ceramic-text-primary mb-1.5">
-                Titulo *
+                Título *
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={e => handleFieldChange('title', e.target.value)}
-                placeholder={projectType === 'article' ? 'Ex: Como a IA esta transformando a educacao' : 'Ex: Tutorial de React Hooks'}
+                placeholder={projectType === 'article' ? 'Ex: Como a IA esta transformando a educação' : 'Ex: Tutorial de React Hooks'}
                 className={inputClasses}
                 autoFocus
               />
@@ -342,18 +342,18 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 type="text"
                 value={formData.theme}
                 onChange={e => handleFieldChange('theme', e.target.value)}
-                placeholder="Tema principal do conteudo"
+                placeholder="Tema principal do conteúdo"
                 className={inputClasses}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-ceramic-text-primary mb-1.5">
-                Descricao
+                Descrição
               </label>
               <textarea
                 value={formData.description}
                 onChange={e => handleFieldChange('description', e.target.value)}
-                placeholder="Breve descricao do projeto (opcional)"
+                placeholder="Breve descrição do projeto (opcional)"
                 rows={3}
                 className={`${inputClasses} resize-none`}
               />
@@ -372,12 +372,12 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
   const stepLabels: Record<number, string> = {
     1: 'Quem e o convidado?',
     2: 'Pesquisando...',
-    3: 'Escolha tema e titulo',
+    3: 'Escolha tema e título',
     4: 'Confirmar e criar',
   };
 
   const headerTitle = projectType === 'podcast'
-    ? 'Novo Episodio'
+    ? 'Novo Episódio'
     : `Novo ${config.label}`;
 
   const headerSubtitle = projectType === 'podcast'
@@ -475,7 +475,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      {projectType === 'podcast' ? 'Criar Episodio' : `Criar ${config.label}`}
+                      {projectType === 'podcast' ? 'Criar Episódio' : `Criar ${config.label}`}
                     </>
                   )}
                 </button>
@@ -521,10 +521,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ceramic-text-primary">
-                    Cancelar criacao?
+                    Cancelar criação?
                   </h3>
                   <p className="text-sm text-ceramic-text-secondary mt-1">
-                    Voce perdera todas as informacoes preenchidas.
+                    Você perdera todas as informações preenchidas.
                   </p>
                 </div>
               </div>

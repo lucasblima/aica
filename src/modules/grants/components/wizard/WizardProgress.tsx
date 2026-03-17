@@ -1,6 +1,6 @@
 /**
  * WizardProgress Component
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Visual progress indicator with level badges and step indicators.
  */

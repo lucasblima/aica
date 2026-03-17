@@ -238,14 +238,14 @@ class PautaGeneratorService {
     try {
       // Step 1: Deep Research (0-25%)
       onProgress?.('Etapa 1/5: Iniciando pesquisa sobre o convidado...', 2)
-      onProgress?.('Etapa 1/5: Consultando fontes de informacao...', 8)
+      onProgress?.('Etapa 1/5: Consultando fontes de informação...', 8)
       let research: Awaited<ReturnType<typeof this.performDeepResearch>>
       try {
         research = await this.performDeepResearch(guestName.trim(), theme?.trim(), sources)
       } catch {
         stepsFailed.push('Pesquisa')
         research = {
-          biography: `${guestName} e uma personalidade a ser pesquisada. Informacoes detalhadas estarao disponiveis em breve.`,
+          biography: `${guestName} e uma personalidade a ser pesquisada. Informações detalhadas estarao disponíveis em breve.`,
           controversies: [],
           keyFacts: [
             `Pesquisa sobre ${guestName}`,
@@ -260,7 +260,7 @@ class PautaGeneratorService {
 
       // Step 2: Generate Outline (25-45%)
       onProgress?.('Etapa 2/5: Preparando estrutura da pauta...', 28)
-      onProgress?.('Etapa 2/5: Criando roteiro do episodio...', 33)
+      onProgress?.('Etapa 2/5: Criando roteiro do episódio...', 33)
       let outline: PautaOutline
       try {
         outline = await this.generateOutline(
@@ -276,7 +276,7 @@ class PautaGeneratorService {
           title: `Entrevista com ${guestName}: ${theme || research.suggestedTheme}`,
           introduction: {
             title: 'Abertura',
-            description: 'Apresentacao do convidado',
+            description: 'Apresentação do convidado',
             duration: 5,
             keyPoints: ['Apresentar convidado', 'Contextualizar tema']
           },
@@ -285,7 +285,7 @@ class PautaGeneratorService {
               title: 'Trajetoria',
               description: 'Historia e carreira',
               duration: 20,
-              keyPoints: ['Inicio da carreira', 'Momentos marcantes', 'Desafios superados']
+              keyPoints: ['Início da carreira', 'Momentos marcantes', 'Desafios superados']
             },
             {
               title: 'Atualidade',
@@ -320,21 +320,21 @@ class PautaGeneratorService {
         questions = [
           {
             id: 'q1',
-            text: `${guestName}, como voce descreveria sua trajetoria ate aqui?`,
+            text: `${guestName}, como você descreveria sua trajetoria ate aqui?`,
             category: 'abertura',
             followUps: ['O que te motivou a seguir esse caminho?'],
             priority: 'high'
           },
           {
             id: 'q2',
-            text: 'Qual foi o maior desafio que voce enfrentou na carreira?',
+            text: 'Qual foi o maior desafio que você enfrentou na carreira?',
             category: 'desenvolvimento',
-            followUps: ['Como voce superou?', 'O que aprendeu com isso?'],
+            followUps: ['Como você superou?', 'O que aprendeu com isso?'],
             priority: 'high'
           },
           {
             id: 'q3',
-            text: 'O que voce diria para quem esta comecando na area?',
+            text: 'O que você diria para quem esta comecando na area?',
             category: 'fechamento',
             followUps: [],
             priority: 'medium'
@@ -375,7 +375,7 @@ class PautaGeneratorService {
     } catch (error) {
       log.error('Error generating pauta:', error)
       const msg = error instanceof Error ? error.message : 'Erro desconhecido'
-      throw new Error(`Erro na geracao da pauta: ${msg}`)
+      throw new Error(`Erro na geração da pauta: ${msg}`)
     }
   }
 

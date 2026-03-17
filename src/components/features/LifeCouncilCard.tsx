@@ -274,7 +274,7 @@ export function LifeCouncilCard({
       {insight.actions && insight.actions.length > 0 && (
         <div className="px-5 pb-4">
           <p className="text-xs font-medium text-ceramic-text-secondary mb-2 uppercase tracking-wide">
-            Acoes Recomendadas
+            Ações Recomendadas
           </p>
           <div className="space-y-2">
             {insight.actions.map((action: CouncilAction, i: number) => {

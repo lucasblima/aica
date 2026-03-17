@@ -150,11 +150,11 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
             .single();
 
           if (currentPersona) {
-            const synthesisPrompt = `Informacao anterior: ${currentPersona.knowledge_summary || 'Nenhuma'}
+            const synthesisPrompt = `Informação anterior: ${currentPersona.knowledge_summary || 'Nenhuma'}
 Pergunta: ${questionForSynth.question}
 Resposta do usuario: ${answerForSynth}
 
-Atualize o resumo de conhecimento da entidade "${currentPersona.persona_name}" (tipo: ${currentPersona.entity_type}) incorporando a nova informacao. Mantenha o resumo conciso (max 500 caracteres). Responda SOMENTE com o texto atualizado, sem formatacao.`;
+Atualize o resumo de conhecimento da entidade "${currentPersona.persona_name}" (tipo: ${currentPersona.entity_type}) incorporando a nova informação. Mantenha o resumo conciso (max 500 caracteres). Responda SOMENTE com o texto atualizado, sem formatacao.`;
 
             const { data: synthData } = await supabase.functions.invoke('entity-agent-chat', {
               body: {

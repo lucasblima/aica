@@ -114,7 +114,7 @@ export default function PostProductionStage({
           );
         }
       } catch (err: any) {
-        setLoadError(err.message || 'Erro ao carregar dados de pos-producao');
+        setLoadError(err.message || 'Erro ao carregar dados de pos-produção');
       } finally {
         setIsLoading(false);
       }
@@ -127,7 +127,7 @@ export default function PostProductionStage({
   if (isLoading) {
     return (
       <div className="p-6">
-        <CeramicLoadingState module="studio" variant="card" lines={4} message="Carregando pos-producao..." />
+        <CeramicLoadingState module="studio" variant="card" lines={4} message="Carregando pos-produção..." />
       </div>
     );
   }

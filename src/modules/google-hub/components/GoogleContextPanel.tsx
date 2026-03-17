@@ -379,7 +379,7 @@ export function GoogleContextPanel({
                         <Link2 className="w-7 h-7 text-ceramic-text-secondary" />
                     </div>
                     <p className="text-sm text-ceramic-text-secondary mb-4 max-w-xs mx-auto leading-relaxed">
-                        Conecte Gmail ou Drive para ver conteudo relevante deste modulo
+                        Conecte Gmail ou Drive para ver conteúdo relevante deste módulo
                     </p>
                     <div className="flex items-center justify-center gap-3">
                         <button
@@ -499,7 +499,7 @@ export function GoogleContextPanel({
                                     <Mail className="w-8 h-8 text-ceramic-text-secondary/30 mx-auto mb-2" />
                                     <p className="text-sm text-ceramic-text-secondary">
                                         {!hasGmail
-                                            ? 'Gmail nao conectado'
+                                            ? 'Gmail não conectado'
                                             : results
                                                 ? 'Nenhum email relevante encontrado'
                                                 : 'Clique em Buscar para encontrar emails relevantes'
@@ -545,7 +545,7 @@ export function GoogleContextPanel({
                                     <HardDrive className="w-8 h-8 text-ceramic-text-secondary/30 mx-auto mb-2" />
                                     <p className="text-sm text-ceramic-text-secondary">
                                         {!hasDrive
-                                            ? 'Drive nao conectado'
+                                            ? 'Drive não conectado'
                                             : results
                                                 ? 'Nenhum arquivo relevante encontrado'
                                                 : 'Clique em Buscar para encontrar arquivos relevantes'

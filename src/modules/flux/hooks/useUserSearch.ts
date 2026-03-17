@@ -77,7 +77,7 @@ export function useUserSearch(debounceMs = 300): UseUserSearchReturn {
               '[useUserSearch] RPC search_aica_users not found. A migration is needed to enable user search.'
             );
             setError(
-              'Busca de usuarios ainda nao configurada. Use cadastro manual por enquanto.'
+              'Busca de usuarios ainda não configurada. Use cadastro manual por enquanto.'
             );
             setResults([]);
           } else {

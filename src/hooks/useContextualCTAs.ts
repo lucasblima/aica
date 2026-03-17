@@ -3,7 +3,7 @@
  *
  * Priority ordering:
  * 1. Overdue/urgent tasks -> "Concluir: {title}" or "Pesquisar sobre {title}"
- * 2. Finance alert (negative balance) -> "Revisar financas do mes"
+ * 2. Finance alert (negative balance) -> "Revisar finanças do mes"
  * 3. Streak at risk (no recent moments) -> "Registrar momento do dia"
  * 4. Upcoming event soon -> "Preparar para: {event}"
  * 5. Module CTAs fallback -> actionable shortcuts to AICA modules
@@ -60,7 +60,7 @@ const MODULE_CTAS: ContextualCTA[] = [
   },
   {
     id: 'mod-finance',
-    label: 'Revisar financas',
+    label: 'Revisar finanças',
     icon: 'DollarSign',
     action: 'navigate',
     actionPayload: 'finance',
@@ -147,7 +147,7 @@ function buildCTAs(context: UserAIContext, pendingTasks: PendingTask[]): Context
   if (context.financeSummary && context.financeSummary.balance < 0 && ctas.length < MAX_CTAS) {
     ctas.push({
       id: 'finance-alert',
-      label: 'Revisar financas do mes',
+      label: 'Revisar finanças do mes',
       icon: 'DollarSign',
       action: 'navigate',
       actionPayload: 'finance',

@@ -71,7 +71,7 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
       )}
       {!anyLoading && fatigueError && (
         <div className="px-4 py-3 rounded-xl bg-ceramic-warning/10 border border-ceramic-warning/20">
-          <p className="text-xs text-ceramic-warning">Avaliacao de fadiga indisponivel</p>
+          <p className="text-xs text-ceramic-warning">Avaliação de fadiga indisponivel</p>
         </div>
       )}
 
@@ -111,7 +111,7 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
               <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-border/30 space-y-3">
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-ceramic-success" />
-                  <span className="text-xs font-bold text-ceramic-text-primary">Avaliacao de Fadiga (AI)</span>
+                  <span className="text-xs font-bold text-ceramic-text-primary">Avaliação de Fadiga (AI)</span>
                   <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full ${
                     fatigueAssessment.fatigueRisk === 'low' ? 'bg-ceramic-success/15 text-ceramic-success' :
                     fatigueAssessment.fatigueRisk === 'moderate' ? 'bg-ceramic-warning/15 text-ceramic-warning' :
@@ -126,7 +126,7 @@ export function AthleteFeedbackView({ profile, onRefetch: _onRefetch, selectedWe
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   <div>
-                    <p className="text-[10px] text-ceramic-text-secondary">Prontidao</p>
+                    <p className="text-[10px] text-ceramic-text-secondary">Prontidão</p>
                     <p className="text-sm font-bold text-ceramic-text-primary">{fatigueAssessment.readinessScore}</p>
                   </div>
                   <div>

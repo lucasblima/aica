@@ -185,7 +185,7 @@ export function EmailDetailSheet({
                 </div>
               ) : (
                 <div className="text-sm text-ceramic-text-secondary italic">
-                  Nao foi possivel carregar o conteudo do email.
+                  Não foi possível carregar o conteúdo do email.
                 </div>
               )}
             </div>

@@ -1,8 +1,8 @@
 /**
  * Audio Utilities for Podcast Production
  *
- * Helper functions for audio processing, encoding, and streaming.
- * Used primarily for Gemini Live real-time audio streaming.
+ * Helper functions for áudio processing, encoding, and streaming.
+ * Used primarily for Gemini Live real-time áudio streaming.
  *
  * Migrated from: _deprecated/modules/podcast/services/audioUtils.ts
  * Wave 4.2: Utility Migration
@@ -70,12 +70,12 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
- * Downsample audio buffer from microphone sample rate to target rate
+ * Downsample áudio buffer from microphone sample rate to target rate
  *
- * Gemini API expects 16kHz audio, but most microphones output at 44.1kHz or 48kHz.
+ * Gemini API expects 16kHz áudio, but most microphones output at 44.1kHz or 48kHz.
  * This function performs simple linear interpolation downsampling.
  *
- * @param buffer - Input audio buffer
+ * @param buffer - Input áudio buffer
  * @param inputSampleRate - Source sample rate (e.g., 48000)
  * @param outputSampleRate - Target sample rate (default: 16000 for Gemini)
  * @returns Downsampled Float32Array
@@ -118,10 +118,10 @@ export function downsampleBuffer(
 }
 
 /**
- * Calculate audio level from buffer (for UI visualization)
+ * Calculate áudio level from buffer (for UI visualization)
  *
  * @param buffer - Audio buffer to analyze
- * @returns Average audio level (0-100)
+ * @returns Average áudio level (0-100)
  */
 export function calculateAudioLevel(buffer: Float32Array): number {
   const sum = buffer.reduce((acc, val) => acc + Math.abs(val), 0);

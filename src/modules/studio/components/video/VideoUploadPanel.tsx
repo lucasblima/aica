@@ -1,5 +1,5 @@
 /**
- * VideoUploadPanel - Drag & drop video upload with progress tracking
+ * VideoUploadPanel - Drag & drop vídeo upload with progress tracking
  *
  * Accepts mp4, webm, mov, avi files up to 2GB.
  * Shows warning for files >500MB.
@@ -37,11 +37,11 @@ interface VideoUploadPanelProps {
 }
 
 const ACCEPTED_FORMATS: Record<string, string> = {
-  'video/mp4': 'MP4',
-  'video/webm': 'WebM',
-  'video/quicktime': 'MOV',
-  'video/x-msvideo': 'AVI',
-  'video/avi': 'AVI',
+  'vídeo/mp4': 'MP4',
+  'vídeo/webm': 'WebM',
+  'vídeo/quicktime': 'MOV',
+  'vídeo/x-msvideo': 'AVI',
+  'vídeo/avi': 'AVI',
 };
 const ACCEPTED_TYPES = Object.keys(ACCEPTED_FORMATS);
 const ACCEPTED_EXTENSIONS = '.mp4,.webm,.mov,.avi';
@@ -100,7 +100,7 @@ export default function VideoUploadPanel({
         .insert({
           user_id: user?.id,
           project_id: projectId,
-          asset_type: 'video',
+          asset_type: 'vídeo',
           file_url: `uploads/videos/${file.name}`, // placeholder URL until real storage
           file_size: file.size,
           metadata: {
@@ -108,14 +108,14 @@ export default function VideoUploadPanel({
             mime_type: file.type,
             format,
           },
-          tags: ['video', format.toLowerCase()],
+          tags: ['vídeo', format.toLowerCase()],
         })
         .select('id')
         .single();
 
       if (dbError) {
-        log.warn('Falha ao salvar metadados do video:', dbError.message);
-        setWarning('Video carregado, mas os metadados nao foram salvos. Tente novamente mais tarde.');
+        log.warn('Falha ao salvar metadados do vídeo:', dbError.message);
+        setWarning('Video carregado, mas os metadados não foram salvos. Tente novamente mais tarde.');
       }
 
       const uploadedVideo: UploadedVideoFile = {
@@ -150,7 +150,7 @@ export default function VideoUploadPanel({
         // Allow AVI by extension
       } else {
         setError(
-          `Formato nao suportado: ${file.type || 'desconhecido'}. ` +
+          `Formato não suportado: ${file.type || 'desconhecido'}. ` +
           `Use MP4, WebM, MOV ou AVI.`
         );
         return;
@@ -160,7 +160,7 @@ export default function VideoUploadPanel({
     if (file.size > MAX_SIZE_BYTES) {
       setError(
         `Arquivo muito grande (${formatFileSize(file.size)}). ` +
-        `O tamanho maximo permitido e 2 GB.`
+        `O tamanho máximo permitido e 2 GB.`
       );
       return;
     }
@@ -168,7 +168,7 @@ export default function VideoUploadPanel({
     if (file.size > WARNING_SIZE_BYTES) {
       setWarning(
         `Arquivo grande (${formatFileSize(file.size)}). ` +
-        `O upload pode demorar mais. Recomendamos arquivos ate 500 MB para melhor experiencia.`
+        `O upload pode demorar mais. Recomendamos arquivos ate 500 MB para melhor experiência.`
       );
     }
 
@@ -305,8 +305,8 @@ export default function VideoUploadPanel({
                 />
                 <p className="text-sm font-medium text-ceramic-text-primary mb-1">
                   {isDragging
-                    ? 'Solte o video aqui'
-                    : 'Arraste um video ou clique para selecionar'}
+                    ? 'Solte o vídeo aqui'
+                    : 'Arraste um vídeo ou clique para selecionar'}
                 </p>
                 <p className="text-xs text-ceramic-text-secondary">
                   ou clique para selecionar

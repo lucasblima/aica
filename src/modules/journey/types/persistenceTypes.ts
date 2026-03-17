@@ -23,7 +23,7 @@ export type MomentCategory = 'reflection' | 'milestone' | 'challenge' | 'learnin
 export interface CreateMomentEntryInput {
   userId: string
   content?: string // Text optional
-  audioBlob?: Blob // Optional: audio recording for transcription
+  audioBlob?: Blob // Optional: áudio recording for transcription
   emotionSelected: string // Required: emotion value
   emotionIntensity: number // Required: 1-10 scale
   lifeAreas: LifeArea[] // Required: affected areas
@@ -116,10 +116,10 @@ export interface CPAwardDetails {
  * Life area labels for UI
  */
 export const LIFE_AREAS_LABELS: Record<LifeArea, string> = {
-  health: 'Saude e Bem-estar',
+  health: 'Saúde e Bem-estar',
   relationships: 'Relacionamentos',
   work: 'Trabalho e Carreira',
-  finance: 'Financas',
+  finance: 'Finanças',
   'personal-growth': 'Crescimento Pessoal',
   spirituality: 'Espiritualidade',
   creativity: 'Criatividade',
@@ -130,7 +130,7 @@ export const LIFE_AREAS_LABELS: Record<LifeArea, string> = {
  * Moment category labels for UI
  */
 export const MOMENT_CATEGORY_LABELS: Record<MomentCategory, string> = {
-  reflection: 'Reflexao',
+  reflection: 'Reflexão',
   milestone: 'Marco',
   challenge: 'Desafio',
   learning: 'Aprendizado',

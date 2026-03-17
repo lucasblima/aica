@@ -1,6 +1,6 @@
 /**
  * Organization Wizard Components
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Barrel export for wizard components.
  */

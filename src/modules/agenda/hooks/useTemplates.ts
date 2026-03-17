@@ -40,7 +40,7 @@ export function useTemplates(userId: string): UseTemplatesReturn {
 
   const applyTemplate = useCallback(async (template: RoutineTemplate): Promise<number> => {
     if (!userId) {
-      setError('Usuario nao autenticado');
+      setError('Usuario não autenticado');
       return 0;
     }
 

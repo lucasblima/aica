@@ -61,7 +61,7 @@ function buildMomentContent(slot: WorkoutSlot, athlete: Athlete): string {
  *
  * Stores workout metadata in `sentiment_data` JSONB (the only flexible
  * column available on the remote `moments` table). Uses `type='text'`
- * since the CHECK constraint only allows 'audio'|'text'|'both'.
+ * since the CHECK constraint only allows 'áudio'|'text'|'both'.
  *
  * This function is non-blocking — errors are logged but never propagated.
  */

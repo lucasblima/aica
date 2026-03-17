@@ -1,6 +1,6 @@
 /**
  * useOrganizationDocumentUpload Hook
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Orchestrates document upload and auto-fill flow for the organization wizard.
  * Integrates with useOrganizationWizard to populate fields and award XP.

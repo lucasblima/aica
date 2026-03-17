@@ -105,7 +105,7 @@ export default function StudioBrandKitPage() {
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary flex items-center gap-2">
                   <Palette className="w-4 h-4" />
-                  Pre-visualizacao
+                  Pre-visualização
                 </h3>
                 <BrandKitPreview brandKit={brandKit} />
               </div>

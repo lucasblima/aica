@@ -1,8 +1,8 @@
 /**
  * AthleteFormDrawer Component
  *
- * Drawer lateral (desktop) / bottom (mobile) para criacao/edicao de atletas.
- * Inspirado no design da Apple - transicoes suaves, contexto preservado.
+ * Drawer lateral (desktop) / bottom (mobile) para criação/edição de atletas.
+ * Inspirado no design da Apple - transições suaves, contexto preservado.
  *
  * Features:
  * - Desktop: Slide-in da direita (600-700px width)
@@ -147,7 +147,7 @@ export default function AthleteFormDrawer({
                 <p className="text-sm text-ceramic-text-secondary mt-1">
                   {mode === 'create'
                     ? 'Configure e gere um link de cadastro'
-                    : 'Atualize as informacoes do atleta'}
+                    : 'Atualize as informações do atleta'}
                 </p>
               </div>
               <button
@@ -197,7 +197,7 @@ export default function AthleteFormDrawer({
                         Como funciona
                       </p>
                       <p className="text-sm text-ceramic-text-primary leading-relaxed">
-                        Selecione as modalidades e requisitos de saude. Ao criar, voce
+                        Selecione as modalidades e requisitos de saúde. Ao criar, você
                         recebera um <strong>link de cadastro</strong> para enviar ao atleta.
                         Ele preenchera nome, email e telefone durante o onboarding.
                       </p>
@@ -254,7 +254,7 @@ export default function AthleteFormDrawer({
                           <UserIcon className="w-4 h-4 text-ceramic-text-primary" />
                         </div>
                         <span className="text-sm font-bold text-ceramic-text-primary">
-                          1. Informacoes Basicas
+                          1. Informações Basicas
                         </span>
                       </div>
                       <ChevronDown
@@ -473,8 +473,8 @@ export default function AthleteFormDrawer({
                           </p>
                           <p className="text-xs text-ceramic-text-secondary leading-relaxed">
                             Os documentos ativados abaixo serao <strong>exigidos durante o cadastro</strong> do
-                            atleta. Enquanto pendentes, o atleta <strong>nao conseguira visualizar a prescricao
-                            de treinos</strong>. Voce revisara e aprovara cada documento no perfil do atleta.
+                            atleta. Enquanto pendentes, o atleta <strong>não conseguira visualizar a prescrição
+                            de treinos</strong>. Você revisara e aprovara cada documento no perfil do atleta.
                           </p>
                         </div>
                       </div>
@@ -494,7 +494,7 @@ export default function AthleteFormDrawer({
                               </p>
                             </div>
                             <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                              Laudo medico atestando saude cardiovascular.
+                              Laudo médico atestando saúde cardiovascular.
                               {formData.requires_cardio_exam && (
                                 <span className="block mt-1 text-amber-700 font-medium">
                                   O atleta devera enviar o laudo antes de acessar os treinos.
@@ -522,7 +522,7 @@ export default function AthleteFormDrawer({
                         </div>
                       </div>
 
-                      {/* Atestado de Liberacao */}
+                      {/* Atestado de Liberação */}
                       <div className={`p-4 rounded-xl border-2 transition-all ${
                         formData.requires_clearance_cert
                           ? 'border-amber-400 bg-amber-50/50'
@@ -533,11 +533,11 @@ export default function AthleteFormDrawer({
                             <div className="flex items-center gap-2 mb-1">
                               <FileText className="w-4 h-4 text-ceramic-info" />
                               <p className="text-sm font-bold text-ceramic-text-primary">
-                                Atestado de Liberacao
+                                Atestado de Liberação
                               </p>
                             </div>
                             <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                              Certificado medico liberando para pratica de atividade fisica.
+                              Certificado médico liberando para pratica de atividade fisica.
                               {formData.requires_clearance_cert && (
                                 <span className="block mt-1 text-amber-700 font-medium">
                                   O atleta devera enviar o atestado antes de acessar os treinos.
@@ -580,7 +580,7 @@ export default function AthleteFormDrawer({
                               </p>
                             </div>
                             <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                              Avaliacao de prontidao para atividade fisica (7 perguntas + termo).
+                              Avaliação de prontidão para atividade fisica (7 perguntas + termo).
                               {formData.allow_parq_onboarding && (
                                 <span className="block mt-1 text-amber-700 font-medium">
                                   O atleta respondera o PAR-Q no cadastro. Prescricao liberada apos assinatura do termo.
@@ -618,13 +618,13 @@ export default function AthleteFormDrawer({
                             {formData.requires_cardio_exam && (
                               <li className="text-xs text-ceramic-text-primary flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-ceramic-error flex-shrink-0" />
-                                Enviar exame cardiologico (bloqueia prescricao ate aprovacao)
+                                Enviar exame cardiologico (bloqueia prescrição ate aprovacao)
                               </li>
                             )}
                             {formData.requires_clearance_cert && (
                               <li className="text-xs text-ceramic-text-primary flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-ceramic-info flex-shrink-0" />
-                                Enviar atestado de liberacao (bloqueia prescricao ate aprovacao)
+                                Enviar atestado de liberacao (bloqueia prescrição ate aprovacao)
                               </li>
                             )}
                             {formData.allow_parq_onboarding && (
@@ -655,7 +655,7 @@ export default function AthleteFormDrawer({
                 )}
                 {isDirty && !errorCount && (
                   <span className="text-xs text-ceramic-text-secondary">
-                    Alteracoes nao salvas
+                    Alteracoes não salvas
                   </span>
                 )}
               </div>
@@ -681,7 +681,7 @@ export default function AthleteFormDrawer({
                     </>
                   ) : (
                     <span>
-                      {mode === 'create' ? 'Gerar Link de Cadastro' : 'Salvar Alteracoes'}
+                      {mode === 'create' ? 'Gerar Link de Cadastro' : 'Salvar Alterações'}
                     </span>
                   )}
                 </button>

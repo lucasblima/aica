@@ -16,7 +16,7 @@ const PODCAST_CONFIG: ProjectTypeConfig = {
   type: 'podcast',
   label: 'Podcast',
   iconName: 'Mic2',
-  description: 'Producao completa de episodios de podcast com pesquisa, pauta e gravacao',
+  description: 'Produção completa de episodios de podcast com pesquisa, pauta e gravação',
   color: 'amber',
   requiredFields: ['title', 'guestName', 'theme'],
   optionalFields: ['description', 'scheduledDate', 'scheduledTime', 'location', 'season'],
@@ -28,10 +28,10 @@ const PODCAST_CONFIG: ProjectTypeConfig = {
 };
 
 const VIDEO_CONFIG: ProjectTypeConfig = {
-  type: 'video',
+  type: 'vídeo',
   label: 'Video',
   iconName: 'Video',
-  description: 'Producao de videos com roteiro, filmagem e edicao',
+  description: 'Produção de videos com roteiro, filmagem e edição',
   color: 'blue',
   requiredFields: ['title', 'theme'],
   optionalFields: ['description', 'scheduledDate'],
@@ -45,13 +45,13 @@ const ARTICLE_CONFIG: ProjectTypeConfig = {
   type: 'article',
   label: 'Artigo',
   iconName: 'FileText',
-  description: 'Escrita de artigos com pesquisa, rascunho e revisao',
+  description: 'Escrita de artigos com pesquisa, rascunho e revisão',
   color: 'emerald',
   requiredFields: ['title', 'theme'],
   optionalFields: ['description', 'targetPublication'],
   databaseTable: 'article_projects',
   hasParentHierarchy: false,
-  stages: ['pesquisa', 'outline', 'rascunho', 'revisao'],
+  stages: ['pesquisa', 'outline', 'rascunho', 'revisão'],
   comingSoon: false,
 };
 

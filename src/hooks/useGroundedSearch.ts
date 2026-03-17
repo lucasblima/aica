@@ -33,7 +33,7 @@ interface UseGroundedSearchReturn {
  * Hook para busca com Google Search grounding via Gemini.
  *
  * Conecta o Gemini a resultados de busca em tempo real,
- * retornando respostas com fontes verificaveis e citacoes.
+ * retornando respostas com fontes verificaveis e citações.
  *
  * @example
  * ```tsx

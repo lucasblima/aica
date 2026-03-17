@@ -115,7 +115,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
       setAiResult(result);
     } catch (err) {
       console.warn('[LoadCalculator] AI analysis failed, using local fallback:', err);
-      setAiError(err instanceof Error ? err.message : 'Erro na analise AI');
+      setAiError(err instanceof Error ? err.message : 'Erro na análise AI');
     } finally {
       setIsLoadingAI(false);
     }
@@ -186,7 +186,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5">
                   <p className="text-sm text-ceramic-text-secondary">
-                    Analise de volume e intensidade semanal
+                    Análise de volume e intensidade semanal
                   </p>
                   {isLoadingAI && (
                     <span className="inline-flex items-center gap-1 text-xs text-ceramic-info font-medium">
@@ -327,7 +327,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
             </ul>
             {aiError && (
               <p className="text-xs text-ceramic-text-secondary mt-3 italic">
-                Analise local (IA indisponivel: {aiError})
+                Análise local (IA indisponivel: {aiError})
               </p>
             )}
           </div>

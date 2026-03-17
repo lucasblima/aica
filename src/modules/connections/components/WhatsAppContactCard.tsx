@@ -288,7 +288,7 @@ export function WhatsAppContactCard({
               ) : contact.last_message_preview ? (
                 <div className="flex items-start gap-1 text-ceramic-text-secondary mt-1">
                   {contact.last_message_direction === 'outgoing' && (
-                    <span className="text-xs font-medium text-ceramic-text-tertiary flex-shrink-0">Voce:</span>
+                    <span className="text-xs font-medium text-ceramic-text-tertiary flex-shrink-0">Você:</span>
                   )}
                   <p className="text-xs truncate max-w-[220px]">
                     {contact.last_message_preview}
@@ -348,7 +348,7 @@ export function WhatsAppContactCard({
           <button
             onClick={handleMoreClick}
             className="p-1.5 rounded-lg bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool transition-colors"
-            aria-label="Mais opcoes"
+            aria-label="Mais opções"
           >
             <MoreVertical className="w-4 h-4" />
           </button>

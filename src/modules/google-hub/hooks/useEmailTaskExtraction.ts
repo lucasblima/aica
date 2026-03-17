@@ -79,7 +79,7 @@ export function useEmailTaskExtraction(): UseEmailTaskExtractionReturn {
     try {
       const userId = (await supabase.auth.getUser()).data.user?.id;
       if (!userId) {
-        setError('Usuario nao autenticado');
+        setError('Usuario não autenticado');
         return false;
       }
 

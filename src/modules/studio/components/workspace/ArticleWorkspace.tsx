@@ -1,8 +1,8 @@
 /**
  * ArticleWorkspace - 4-stage workflow for article creation
  *
- * Stages: Pesquisa -> Outline -> Rascunho -> Revisao
- * Uses emerald accent to differentiate from podcast (amber) and video (blue).
+ * Stages: Pesquisa -> Outline -> Rascunho -> Revisão
+ * Uses emerald accent to differentiate from podcast (amber) and vídeo (blue).
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -29,7 +29,7 @@ interface ArticleWorkspaceProps {
   onBack: () => void;
 }
 
-type ArticleStage = 'pesquisa' | 'outline' | 'rascunho' | 'revisao';
+type ArticleStage = 'pesquisa' | 'outline' | 'rascunho' | 'revisão';
 
 interface OutlineSection {
   heading: string;
@@ -41,7 +41,7 @@ const STAGES: { key: ArticleStage; label: string; icon: React.FC<{ className?: s
   { key: 'pesquisa', label: 'Pesquisa', icon: Search },
   { key: 'outline', label: 'Outline', icon: ListOrdered },
   { key: 'rascunho', label: 'Rascunho', icon: PenTool },
-  { key: 'revisao', label: 'Revisao', icon: CheckCircle },
+  { key: 'revisão', label: 'Revisão', icon: CheckCircle },
 ];
 
 /** Debounce delay for auto-analyze (5 seconds) */
@@ -125,7 +125,7 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
 
   // Auto-analyze on content change (debounced, 5s)
   useEffect(() => {
-    if (!autoAnalyze || !content.trim() || currentStage !== 'revisao') return;
+    if (!autoAnalyze || !content.trim() || currentStage !== 'revisão') return;
 
     if (autoAnalyzeTimerRef.current) {
       clearTimeout(autoAnalyzeTimerRef.current);
@@ -276,7 +276,7 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
                     onClick={() => setCurrentStage('outline')}
                     className="px-5 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition-colors"
                   >
-                    Proximo: Outline
+                    Próximo: Outline
                   </button>
                 </div>
               </div>
@@ -301,12 +301,12 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
               />
             )}
 
-            {currentStage === 'revisao' && (
+            {currentStage === 'revisão' && (
               <div className="flex h-full">
                 {/* Preview */}
                 <div className="flex-1 overflow-y-auto p-6 border-r border-ceramic-border">
                   <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">
-                    Pre-visualizacao
+                    Pre-visualização
                   </h2>
                   {content ? (
                     <div className="prose prose-sm max-w-none text-ceramic-text-primary">
@@ -316,7 +316,7 @@ export default function ArticleWorkspace({ project, onBack }: ArticleWorkspacePr
                     </div>
                   ) : (
                     <p className="text-sm text-ceramic-text-secondary italic">
-                      Nenhum conteudo escrito ainda. Volte a etapa "Rascunho" para escrever.
+                      Nenhum conteúdo escrito ainda. Volte a etapa "Rascunho" para escrever.
                     </p>
                   )}
                 </div>

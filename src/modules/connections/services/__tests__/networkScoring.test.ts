@@ -115,7 +115,7 @@ describe('getDunbarLayerLabel', () => {
   it('returns correct label for each layer', () => {
     expect(getDunbarLayerLabel(5)).toBe('Circulo Intimo');
     expect(getDunbarLayerLabel(15)).toBe('Grupo de Simpatia');
-    expect(getDunbarLayerLabel(50)).toBe('Grupo Proximo');
+    expect(getDunbarLayerLabel(50)).toBe('Grupo Próximo');
     expect(getDunbarLayerLabel(150)).toBe('Rede Ativa');
     expect(getDunbarLayerLabel(500)).toBe('Conhecidos');
   });

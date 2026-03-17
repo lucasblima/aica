@@ -118,11 +118,11 @@ export default function StudioMainView() {
 
   /**
    * Load a project by ID from URL parameters for deep-linking.
-   * Supports: /studio?project=<id>&type=podcast|article|video
+   * Supports: /studio?project=<id>&type=podcast|article|vídeo
    * Fetches project data from the appropriate table, then navigates to workspace.
    */
   const loadProjectFromUrl = useCallback(async (projectId: string, projectType: string) => {
-    const validTypes: ProjectType[] = ['podcast', 'video', 'article', 'newsletter', 'clip'];
+    const validTypes: ProjectType[] = ['podcast', 'vídeo', 'article', 'newsletter', 'clip'];
     const type = validTypes.includes(projectType as ProjectType) ? projectType : 'podcast';
 
     try {
@@ -163,7 +163,7 @@ export default function StudioMainView() {
 
         actions.goToWorkspace(project);
       } else {
-        // Non-podcast deep-links: article/video project tables not yet implemented
+        // Non-podcast deep-links: article/vídeo project tables not yet implemented
         log.info('[StudioMainView] Non-podcast deep-link not yet supported, type:', type);
         setSearchParams({});
         actions.goToLibrary();
@@ -186,7 +186,7 @@ export default function StudioMainView() {
     // If we're in LOADING mode and not actively loading, decide initial mode
     // This happens on first render only
     if (state.mode === 'LOADING' && !state.isLoading) {
-      // Check for project deep-link in URL: ?project=<id>&type=podcast|article|video
+      // Check for project deep-link in URL: ?project=<id>&type=podcast|article|vídeo
       const projectId = searchParams.get('project');
       const projectType = searchParams.get('type');
 
@@ -214,7 +214,7 @@ export default function StudioMainView() {
   /**
    * Handler for creating a new project
    * Transitions: LIBRARY -> WIZARD
-   * For podcasts, requires a currentShowId. For article/video, goes directly to wizard.
+   * For podcasts, requires a currentShowId. For article/vídeo, goes directly to wizard.
    */
   const handleCreateNew = useCallback((projectType?: ProjectType) => {
     const type = projectType || 'podcast';

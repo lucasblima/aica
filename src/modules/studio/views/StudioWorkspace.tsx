@@ -28,7 +28,7 @@ const log = createNamespacedLogger('StudioWorkspace');
  * Unsupported project type fallback — config-aware with back navigation
  */
 function UnsupportedProjectType({ type, onBack }: { type: string; onBack: () => void }) {
-  const KNOWN_TYPES: ProjectType[] = ['podcast', 'video', 'article'];
+  const KNOWN_TYPES: ProjectType[] = ['podcast', 'vídeo', 'article'];
   const config = KNOWN_TYPES.includes(type as ProjectType)
     ? getProjectTypeConfig(type as ProjectType)
     : null;
@@ -54,7 +54,7 @@ function UnsupportedProjectType({ type, onBack }: { type: string; onBack: () => 
         </div>
         <h2 className="text-2xl font-bold text-ceramic-text-primary mb-2">{label}</h2>
         <p className="text-ceramic-text-secondary mb-4">
-          {description || `O tipo "${type}" ainda nao esta disponivel.`}
+          {description || `O tipo "${type}" ainda não esta disponível.`}
         </p>
         {stages.length > 0 && (
           <div className="mb-6">
@@ -71,7 +71,7 @@ function UnsupportedProjectType({ type, onBack }: { type: string; onBack: () => 
           </div>
         )}
         <p className="text-sm text-ceramic-text-secondary mb-6">
-          Em breve disponivel no Estudio Aica.
+          Em breve disponível no Estudio Aica.
         </p>
         <button
           onClick={onBack}
@@ -123,7 +123,7 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
         </div>
       );
 
-    case 'video':
+    case 'vídeo':
       return (
         <div data-testid="studio-workspace">
           <VideoWorkspace project={project} onBack={onBack} />

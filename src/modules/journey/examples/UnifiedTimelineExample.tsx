@@ -189,7 +189,7 @@ function EventCard({ event }: { event: UnifiedEvent }) {
               {event.whatsapp.message_type === 'image' && (
                 <img src={event.whatsapp.media_url} alt="WhatsApp media" />
               )}
-              {event.whatsapp.message_type === 'audio' && (
+              {event.whatsapp.message_type === 'áudio' && (
                 <audio src={event.whatsapp.media_url} controls />
               )}
             </div>

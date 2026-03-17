@@ -1,7 +1,7 @@
 /**
- * MultiModalInput — Unified text + audio + photo input component
+ * MultiModalInput — Unified text + áudio + photo input component
  *
- * Combines auto-resizing textarea, audio recording with transcription,
+ * Combines auto-resizing textarea, áudio recording with transcription,
  * and photo capture into a single reusable input.
  *
  * States: idle | recording | transcribing | submitting
@@ -21,7 +21,7 @@ import { transcribeAudio } from '@/services/audioService'
 
 export interface MultiModalOutput {
   text: string
-  type: 'text' | 'audio' | 'photo'
+  type: 'text' | 'áudio' | 'photo'
   metadata?: {
     audioBlob?: Blob
     photoFile?: File
@@ -63,7 +63,7 @@ export function MultiModalInput({
 }: MultiModalInputProps) {
   const [text, setText] = useState('')
   const [state, setState] = useState<InputState>('idle')
-  const [inputType, setInputType] = useState<'text' | 'audio' | 'photo'>('text')
+  const [inputType, setInputType] = useState<'text' | 'áudio' | 'photo'>('text')
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -155,11 +155,11 @@ export function MultiModalInput({
       source.connect(analyser)
       analyserRef.current = analyser
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : 'audio/mp4'
+      const mimeType = MediaRecorder.isTypeSupported('áudio/webm;codecs=opus')
+        ? 'áudio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('áudio/webm')
+          ? 'áudio/webm'
+          : 'áudio/mp4'
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
@@ -177,7 +177,7 @@ export function MultiModalInput({
         }
 
         setAudioBlob(blob)
-        setInputType('audio')
+        setInputType('áudio')
         setState('transcribing')
 
         try {
@@ -185,7 +185,7 @@ export function MultiModalInput({
           setText(prev => prev ? `${prev}\n${transcription}` : transcription)
           setState('idle')
         } catch {
-          setError('Falha na transcricao. O audio foi mantido.')
+          setError('Falha na transcricao. O áudio foi mantido.')
           setState('idle')
         }
       }
@@ -210,7 +210,7 @@ export function MultiModalInput({
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setError('Permissao de microfone negada')
       } else if (error.name === 'NotFoundError') {
-        setError('Microfone nao encontrado')
+        setError('Microfone não encontrado')
       } else {
         setError('Erro ao acessar microfone')
       }
@@ -328,7 +328,7 @@ export function MultiModalInput({
             type="button"
             onClick={handleStopRecording}
             className="ceramic-concave p-2 rounded-lg hover:scale-95 active:scale-90 transition-all"
-            title="Parar gravacao"
+            title="Parar gravação"
           >
             <StopIcon className="w-4 h-4 text-ceramic-error" />
           </button>
@@ -371,7 +371,7 @@ export function MultiModalInput({
           onTextChange?.(e.target.value)
         }}
         onKeyDown={handleKeyDown}
-        placeholder={state === 'recording' ? 'Gravando audio...' : placeholder}
+        placeholder={state === 'recording' ? 'Gravando áudio...' : placeholder}
         disabled={state === 'recording' || state === 'submitting'}
         rows={minRows}
         className={`w-full bg-transparent text-ceramic-text-primary placeholder-ceramic-text-secondary/50 resize-none outline-none text-sm leading-6 ${compact ? 'px-1' : 'px-2'}`}
@@ -391,7 +391,7 @@ export function MultiModalInput({
                   ? 'bg-ceramic-error/10 text-ceramic-error'
                   : 'ceramic-concave text-ceramic-text-secondary hover:text-ceramic-text-primary hover:scale-95'
               } disabled:opacity-40 disabled:hover:scale-100`}
-              title={state === 'recording' ? 'Parar gravacao' : 'Gravar audio'}
+              title={state === 'recording' ? 'Parar gravação' : 'Gravar áudio'}
             >
               {state === 'recording' ? (
                 <StopIcon className="w-4 h-4" />

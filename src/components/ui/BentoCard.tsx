@@ -45,7 +45,7 @@ export function BentoCard({
 }: BentoCardProps) {
   const sizeStyles: Record<BentoSize, string> = {
     'large-square': 'aspect-square md:aspect-auto',
-    'wide-rectangle': 'aspect-video md:aspect-auto',
+    'wide-rectangle': 'aspect-vídeo md:aspect-auto',
   };
 
   return (

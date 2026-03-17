@@ -1,7 +1,7 @@
 /**
  * ComingSoonForm Component
  *
- * Placeholder form for project types not yet available (video, article).
+ * Placeholder form for project types not yet available (vídeo, article).
  * Shows the type icon, label, description, and "Em breve" message.
  */
 
@@ -53,7 +53,7 @@ export const ComingSoonForm: React.FC<ComingSoonFormProps> = ({ typeConfig }) =>
       </div>
 
       <div className="px-4 py-2 rounded-full bg-ceramic-cool text-ceramic-text-secondary text-sm font-medium">
-        Em breve disponivel
+        Em breve disponível
       </div>
     </div>
   );

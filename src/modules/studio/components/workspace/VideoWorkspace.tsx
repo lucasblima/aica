@@ -1,5 +1,5 @@
 /**
- * VideoWorkspace - 4-stage workflow for video content
+ * VideoWorkspace - 4-stage workflow for vídeo content
  *
  * Stages: Upload -> Transcricao -> Clips -> Review
  * Uses blue accent to differentiate from podcast (amber) and article (emerald).
@@ -63,7 +63,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
             .from('studio_assets')
             .select('*')
             .eq('project_id', project.id)
-            .eq('asset_type', 'video')
+            .eq('asset_type', 'vídeo')
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
@@ -85,7 +85,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
         if (assetRes.data) {
           const meta = (assetRes.data.metadata || {}) as Record<string, unknown>;
           setUploadedFile({
-            name: (meta.original_name as string) || 'video',
+            name: (meta.original_name as string) || 'vídeo',
             size: assetRes.data.file_size || 0,
             format: (meta.format as string) || 'Desconhecido',
             assetId: assetRes.data.id,
@@ -138,7 +138,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
           setCurrentStage('upload');
         }
       } catch (err) {
-        log.warn('Erro ao carregar dados existentes do video:', err);
+        log.warn('Erro ao carregar dados existentes do vídeo:', err);
       }
     };
 
@@ -258,7 +258,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
                   <Film className="w-10 h-10 text-ceramic-info" />
                 </div>
                 <h2 className="text-lg font-bold text-ceramic-text-primary mb-2">
-                  Revisao do Video
+                  Revisão do Video
                 </h2>
                 <p className="text-sm text-ceramic-text-secondary max-w-sm mb-6">
                   Revise o video editado, clips selecionados e transcricao antes de publicar.
@@ -300,7 +300,7 @@ export default function VideoWorkspace({ project, onBack }: VideoWorkspaceProps)
 
                   {!uploadedFile && !transcription && clips.length === 0 && (
                     <p className="text-sm text-ceramic-text-secondary/60">
-                      Nenhum conteudo para revisar ainda. Comece pelo upload do video.
+                      Nenhum conteúdo para revisar ainda. Comece pelo upload do video.
                     </p>
                   )}
                 </div>

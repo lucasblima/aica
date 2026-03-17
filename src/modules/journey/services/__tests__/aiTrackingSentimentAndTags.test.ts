@@ -48,8 +48,8 @@ vi.mock('@/services/supabaseClient', () => ({
     }),
     storage: {
       from: vi.fn().mockReturnValue({
-        upload: vi.fn().mockResolvedValue({ data: { path: 'audio/test.webm' }, error: null }),
-        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/audio.webm' } }),
+        upload: vi.fn().mockResolvedValue({ data: { path: 'áudio/test.webm' }, error: null }),
+        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/áudio.webm' } }),
       }),
     },
   },
@@ -68,7 +68,7 @@ vi.mock('@/integrations/geminiSentimentAnalysis', () => ({
 vi.mock('@/integrations/whisperTranscription', () => ({
   transcribeAudioWithWhisper: vi.fn().mockResolvedValue({
     success: true,
-    text: 'Transcribed audio content',
+    text: 'Transcribed áudio content',
     transcribedAt: new Date(),
   }),
   validateAudioFile: vi.fn().mockReturnValue({ valid: true }),

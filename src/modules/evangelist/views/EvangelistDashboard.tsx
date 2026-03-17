@@ -142,7 +142,7 @@ export function EvangelistDashboard() {
             Programa de Evangelistas
           </p>
           <p className="text-ceramic-text-secondary">
-            Voce ainda nao e um evangelista. Entre em contato para participar do programa.
+            Você ainda não e um evangelista. Entre em contato para participar do programa.
           </p>
         </div>
       </div>
@@ -171,7 +171,7 @@ export function EvangelistDashboard() {
               <TierBadge tier={profile.tier} size="lg" />
             </div>
             <h1 className="text-2xl font-semibold text-ceramic-text-primary">
-              Ola, Evangelista {tierConfig.name}!
+              Olá, Evangelista {tierConfig.name}!
             </h1>
             <TierProgress
               currentTier={profile.tier}
@@ -305,7 +305,7 @@ export function EvangelistDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ceramic-text-secondary border-b border-ceramic-border">
-                  <th className="px-6 py-3 font-medium">Periodo</th>
+                  <th className="px-6 py-3 font-medium">Período</th>
                   <th className="px-6 py-3 font-medium text-right">Valor Bruto</th>
                   <th className="px-6 py-3 font-medium text-right">Taxa</th>
                   <th className="px-6 py-3 font-medium text-right">Comissao</th>

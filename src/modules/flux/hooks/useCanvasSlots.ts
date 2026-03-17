@@ -93,7 +93,7 @@ export function useCanvasSlots({
 
           if (createMcError || !newMc) {
             log.error('Failed to create microcycle on demand:', createMcError);
-            setError(new Error('Nao foi possivel criar o microciclo'));
+            setError(new Error('Não foi possível criar o microciclo'));
             return null;
           }
 

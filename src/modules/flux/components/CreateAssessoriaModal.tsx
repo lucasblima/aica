@@ -42,7 +42,7 @@ export function CreateAssessoriaModal({
     e.preventDefault();
 
     if (!name.trim()) {
-      setError('Nome da assessoria e obrigatorio');
+      setError('Nome da assessoria e obrigatório');
       return;
     }
 
@@ -160,7 +160,7 @@ export function CreateAssessoriaModal({
                     htmlFor="assessoria-desc"
                     className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2"
                   >
-                    Descricao (opcional)
+                    Descrição (opcional)
                   </label>
                   <textarea
                     id="assessoria-desc"

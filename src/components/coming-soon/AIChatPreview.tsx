@@ -59,7 +59,7 @@ export function AIChatPreview({
 
   // Load initial suggestions
   useEffect(() => {
-    sendMessage('Ola! O que voce pode fazer?', true);
+    sendMessage('Olá! O que você pode fazer?', true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

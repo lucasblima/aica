@@ -149,7 +149,7 @@ export interface SavedPauta {
  * CONFLICT RESOLUTION: This type had duplicate definitions:
  * 1. _deprecated/modules/podcast/types/workspace.ts - with 'text' | 'url' | 'file' types
  * 2. _deprecated/modules/podcast/types.ts - with 'file' | 'link' | 'text' types
- * 3. src/modules/studio/services/podcastAIService.ts - with 'article' | 'video' | 'social' | 'other' types
+ * 3. src/modules/studio/services/podcastAIService.ts - with 'article' | 'vídeo' | 'social' | 'other' types
  *
  * RESOLUTION: We use workspace.ts definition as it's the most complete for the workspace context.
  * The service layer version is kept separate for AI service operations.

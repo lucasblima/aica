@@ -94,16 +94,16 @@ const DOCUMENT_TYPE_CONFIG: Record<string, TypeConfig> = {
     borderColor: 'border-ceramic-border',
   },
   relatorio: {
-    label: 'Relatorio',
-    fullLabel: 'Relatorio de Execucao',
+    label: 'Relatório',
+    fullLabel: 'Relatório de Execução',
     icon: FileBarChart,
     bgColor: 'bg-ceramic-success-bg',
     textColor: 'text-ceramic-success',
     borderColor: 'border-ceramic-success/30',
   },
   apresentacao: {
-    label: 'Apresentacao',
-    fullLabel: 'Apresentacao Institucional',
+    label: 'Apresentação',
+    fullLabel: 'Apresentação Institucional',
     icon: Presentation,
     bgColor: 'bg-ceramic-warning/10',
     textColor: 'text-ceramic-warning',
@@ -135,7 +135,7 @@ const DOCUMENT_TYPE_CONFIG: Record<string, TypeConfig> = {
   },
   ata: {
     label: 'Ata',
-    fullLabel: 'Ata de Reuniao',
+    fullLabel: 'Ata de Reunião',
     icon: Users,
     bgColor: 'bg-ceramic-success/10',
     textColor: 'text-ceramic-success',
@@ -155,8 +155,8 @@ const DOCUMENT_TYPE_CONFIG: Record<string, TypeConfig> = {
 const LEGACY_TYPE_MAPPING: Record<string, string> = {
   projeto_proac: 'proac',
   estatuto_social: 'estatuto',
-  relatorio_execucao: 'relatorio',
-  apresentacao_institucional: 'apresentacao',
+  relatorio_execucao: 'relatório',
+  apresentacao_institucional: 'apresentação',
   orcamento: 'proposta',
   outro: 'outros',
 };

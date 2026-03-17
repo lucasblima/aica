@@ -5,7 +5,7 @@ interface ReferralLinkCopierProps {
 }
 
 const SHARE_TEXT_TEMPLATE = (link: string) =>
-  `Estou usando o AICA, sistema de produtividade com IA. Acessa pelo meu link e ja comeca com acesso especial: ${link}`;
+  `Estou usando o AICA, sistema de produtividade com IA. Acessa pelo meu link e já comeca com acesso especial: ${link}`;
 
 export function ReferralLinkCopier({ referralCode }: ReferralLinkCopierProps) {
   const [copied, setCopied] = useState(false);

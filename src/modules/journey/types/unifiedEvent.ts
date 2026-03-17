@@ -51,7 +51,7 @@ export type IntentCategory =
   | 'response'
   | 'scheduling'
   | 'document'
-  | 'audio'
+  | 'áudio'
   | 'social'
   | 'request'
   | 'update'
@@ -73,7 +73,7 @@ export interface WhatsAppEvent extends BaseEvent {
   contact_name?: string
   contact_number?: string
   contact_id?: string
-  message_type: 'text' | 'audio' | 'image' | 'document' | 'video' | 'sticker'
+  message_type: 'text' | 'áudio' | 'image' | 'document' | 'vídeo' | 'sticker'
   direction: 'incoming' | 'outgoing'
   sentiment?: EventSentiment
   tags?: string[]

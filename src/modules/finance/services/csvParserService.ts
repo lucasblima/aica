@@ -243,7 +243,7 @@ export class CSVParserService {
     const columnsLower = columns.map(c => c.toLowerCase());
 
     // Common date column names (Portuguese and English)
-    const dateAliases = ['data', 'date', 'dt', 'data_transacao', 'data transacao', 'data_lancamento', 'data lancamento', 'dt_transacao'];
+    const dateAliases = ['data', 'date', 'dt', 'data_transacao', 'data transação', 'data_lancamento', 'data lancamento', 'dt_transacao'];
     const descAliases = ['descricao', 'descrição', 'description', 'titulo', 'título', 'title', 'lancamento', 'lançamento', 'historico', 'histórico', 'memo', 'detalhes'];
     const amountAliases = ['valor', 'amount', 'value', 'quantia', 'montante', 'vlr'];
     const balanceAliases = ['saldo', 'balance', 'saldo_final', 'saldo final'];

@@ -4,7 +4,7 @@
  * Real implementation of TTS (ElevenLabs via Edge Function) and
  * STT (Web Speech API) for child-friendly voice interactions.
  *
- * Security: NO audio data is stored. Audio blobs are revoked after playback.
+ * Security: NO áudio data is stored. Audio blobs are revoked after playback.
  */
 
 import { createNamespacedLogger } from '@/lib/logger';
@@ -73,7 +73,7 @@ export class EraforgeVoiceService {
 
   /**
    * Synthesize speech from text via eraforge-tts Edge Function.
-   * Returns an audio blob URL for playback.
+   * Returns an áudio blob URL for playback.
    */
   static async speak(
     text: string,
@@ -86,7 +86,7 @@ export class EraforgeVoiceService {
     }
 
     try {
-      // Stop any currently playing audio
+      // Stop any currently playing áudio
       EraforgeVoiceService.stopSpeaking();
 
       // Check cache first
@@ -124,7 +124,7 @@ export class EraforgeVoiceService {
           return { data: null, error: response.error.message || 'TTS request failed' };
         }
 
-        // The response data is the audio blob
+        // The response data is the áudio blob
         if (response.data instanceof Blob) {
           audioBlob = response.data;
         } else {
@@ -192,7 +192,7 @@ export class EraforgeVoiceService {
   }
 
   /**
-   * Stop any currently playing TTS audio.
+   * Stop any currently playing TTS áudio.
    */
   static stopSpeaking(): void {
     if (EraforgeVoiceService.currentAudio) {
@@ -296,7 +296,7 @@ export class EraforgeVoiceService {
           const errorMap: Record<string, string> = {
             'not-allowed': 'Permissao de microfone negada.',
             'no-speech': 'Nenhuma fala detectada. Tente novamente.',
-            'audio-capture': 'Microfone nao encontrado.',
+            'áudio-capture': 'Microfone não encontrado.',
             'network': 'Erro de rede no reconhecimento de voz.',
           };
           const message = errorMap[event.error] || `Erro de reconhecimento: ${event.error}`;

@@ -146,9 +146,9 @@ export function ExerciseQuestionnaireSheet({
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      const mimeType = blob.type || 'audio/webm';
+      const mimeType = blob.type || 'áudio/webm';
 
-      log.debug('Transcribing audio', { mimeType, sizeBytes: blob.size });
+      log.debug('Transcribing áudio', { mimeType, sizeBytes: blob.size });
 
       // Call gemini-chat directly via supabase.functions.invoke (#723)
       // This bypasses GeminiClient's raw fetch — supabase-js handles auth reliably

@@ -212,8 +212,8 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
               type: ratio >= 1 ? 'exceeded' as const : 'warning' as const,
               category: b.category,
               message: ratio >= 1
-                ? `${b.category} estourou o orcamento (${Math.round(ratio * 100)}%)`
-                : `${b.category} atingiu ${Math.round(ratio * 100)}% do orcamento`,
+                ? `${b.category} estourou o orçamento (${Math.round(ratio * 100)}%)`
+                : `${b.category} atingiu ${Math.round(ratio * 100)}% do orçamento`,
               amount: b.spent,
               threshold: b.budget_amount,
               created_at: new Date().toISOString(),
@@ -699,10 +699,10 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-bold text-ceramic-text-primary">
-                          {poorlyCategorized.length} {poorlyCategorized.length === 1 ? 'transacao precisa' : 'transacoes precisam'} de categorizacao
+                          {poorlyCategorized.length} {poorlyCategorized.length === 1 ? 'transação precisa' : 'transações precisam'} de categorizacao
                         </h3>
                         <p className="text-xs text-ceramic-text-secondary mt-1">
-                          Transacoes classificadas como &quot;transfer&quot; ou &quot;other&quot; podem ser re-categorizadas pela IA.
+                          Transações classificadas como &quot;transfer&quot; ou &quot;other&quot; podem ser re-categorizadas pela IA.
                         </p>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button

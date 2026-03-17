@@ -139,7 +139,7 @@ export default function ArticleSEOPanel({
           </h3>
           <p className="text-sm text-ceramic-text-secondary mt-1">
             {seoScore == null
-              ? 'Analise SEO nao executada ainda.'
+              ? 'Análise SEO não executada ainda.'
               : seoScore >= 70
                 ? 'Bom! O artigo esta otimizado.'
                 : seoScore >= 40
@@ -174,7 +174,7 @@ export default function ArticleSEOPanel({
             onChange={e => onAutoAnalyzeChange(e.target.checked)}
             className="w-3.5 h-3.5 rounded border-ceramic-border text-emerald-500 focus:ring-emerald-500/30"
           />
-          <span>Auto-analise (analisa ao editar, com atraso de 5s)</span>
+          <span>Auto-análise (analisa ao editar, com atraso de 5s)</span>
         </label>
       )}
 
@@ -289,7 +289,7 @@ export default function ArticleSEOPanel({
                       ? 'border-ceramic-success/30 bg-ceramic-success/5'
                       : 'border-ceramic-border bg-ceramic-base hover:bg-ceramic-cool'
                   }`}
-                  aria-label={`${isChecked ? 'Desmarcar' : 'Marcar'} sugestao: ${suggestion}`}
+                  aria-label={`${isChecked ? 'Desmarcar' : 'Marcar'} sugestão: ${suggestion}`}
                 >
                   {isChecked ? (
                     <CheckCircle2 className="w-4 h-4 text-ceramic-success flex-shrink-0 mt-0.5" aria-hidden="true" />
@@ -327,7 +327,7 @@ export default function ArticleSEOPanel({
       {/* Meta Description */}
       <div>
         <h4 className="text-sm font-bold text-ceramic-text-primary mb-2">
-          Meta descricao
+          Meta descrição
         </h4>
         <div className="relative">
           <textarea
@@ -337,9 +337,9 @@ export default function ArticleSEOPanel({
                 onDescriptionChange(e.target.value);
               }
             }}
-            placeholder="Descricao para mecanismos de busca (max 160 caracteres)"
+            placeholder="Descrição para mecanismos de busca (max 160 caracteres)"
             className="w-full h-24 resize-none rounded-lg border border-ceramic-border bg-ceramic-base p-3 text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-            aria-label="Meta descricao para SEO"
+            aria-label="Meta descrição para SEO"
           />
           <span className={`absolute bottom-2 right-2 text-xs ${
             seoDescription.length > 150 ? 'text-ceramic-error' : 'text-ceramic-text-secondary/60'

@@ -183,7 +183,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
       await setDefaultAccount(userId, id);
       await loadAccounts();
     } catch {
-      setError('Erro ao definir conta padrao. Tente novamente.');
+      setError('Erro ao definir conta padrão. Tente novamente.');
     }
   };
 
@@ -394,7 +394,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
                     </p>
                     {account.is_default && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-ceramic-accent/10 text-ceramic-accent font-bold uppercase">
-                        Padrao
+                        Padrão
                       </span>
                     )}
                   </div>
@@ -409,7 +409,7 @@ export const AccountManagement: React.FC<AccountManagementProps> = ({
                     <button
                       onClick={() => handleSetDefault(account.id)}
                       className="p-1.5 rounded-lg hover:bg-ceramic-cool transition-colors"
-                      title="Definir como padrao"
+                      title="Definir como padrão"
                     >
                       <Star className="w-3.5 h-3.5 text-ceramic-text-secondary" />
                     </button>

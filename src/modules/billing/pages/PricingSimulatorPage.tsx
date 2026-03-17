@@ -18,7 +18,7 @@ const TABS = ['P&L Mensal', 'Unit Economics', 'Cenarios'] as const;
 
 const TAB_TOOLTIPS: Record<typeof TABS[number], string> = {
   'P&L Mensal': 'Demonstrativo de Resultados — veja receita, custos e margem mes a mes por 24 meses.',
-  'Unit Economics': 'Metricas por usuario — LTV, CAC, payback e indicadores de saude do negocio SaaS.',
+  'Unit Economics': 'Métricas por usuario — LTV, CAC, payback e indicadores de saúde do negocio SaaS.',
   'Cenarios': 'Compare ate 3 estrategias de pricing lado a lado e veja qual gera mais receita.',
 };
 
@@ -89,7 +89,7 @@ export function PricingSimulatorPage() {
               <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-ceramic-text-primary leading-tight" title="Ferramenta de simulacao financeira para testar diferentes estrategias de pricing do AICA">Simulador de Pricing</h1>
+              <h1 className="text-2xl font-bold text-ceramic-text-primary leading-tight" title="Ferramenta de simulação financeira para testar diferentes estrategias de pricing do AICA">Simulador de Pricing</h1>
               <p className="text-sm text-ceramic-text-secondary">
                 Ajuste as variaveis na barra lateral e veja o impacto em tempo real.
               </p>

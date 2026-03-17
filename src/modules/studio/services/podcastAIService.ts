@@ -301,7 +301,7 @@ export async function deepResearchGuest(
   });
 
   if (error) throw new Error(error.message || 'Falha na pesquisa');
-  if (!data?.success) throw new Error(data?.error || 'Pesquisa nao retornou resultados');
+  if (!data?.success) throw new Error(data?.error || 'Pesquisa não retornou resultados');
 
   log.debug('[podcastAIService] Deep research completed:', {
     sourcesCount: data.data?.sources?.length,

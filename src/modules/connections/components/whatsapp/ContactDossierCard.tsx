@@ -121,7 +121,7 @@ const ContextSection: React.FC<ContextSectionProps> = ({ context }) => {
 
           {context.notable_patterns.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Padroes notaveis</p>
+              <p className="text-xs font-medium text-ceramic-text-secondary mb-1">Padrões notaveis</p>
               <ul className="space-y-1">
                 {context.notable_patterns.map((pattern, i) => (
                   <li key={i} className="text-xs text-ceramic-text-secondary flex items-start gap-1.5">
@@ -274,7 +274,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
         {dossier?.health_score != null && (
           <span className="flex items-center gap-1">
             <Heart className="w-3.5 h-3.5" />
-            Saude: {dossier.health_score}/100
+            Saúde: {dossier.health_score}/100
           </span>
         )}
         {dossier?.relationship_type === 'group' && (

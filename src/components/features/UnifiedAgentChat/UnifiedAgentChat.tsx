@@ -23,9 +23,9 @@ const SELECTABLE_MODULES = Object.keys(MODULE_AGENT_CONFIGS) as Exclude<AgentMod
 const STORAGE_KEY = 'aica-unified-chat-module'
 
 const TRUST_DESCRIPTIONS: Record<string, string> = {
-  suggest_confirm: 'O agente sugere acoes e aguarda sua confirmacao antes de executar.',
-  execute_validate: 'O agente executa acoes automaticamente e voce valida os resultados.',
-  jarvis: 'Modo autonomo — o agente age proativamente com base nos seus padroes.',
+  suggest_confirm: 'O agente sugere ações e aguarda sua confirmacao antes de executar.',
+  execute_validate: 'O agente executa ações automaticamente e você valida os resultados.',
+  jarvis: 'Modo autonomo — o agente age proativamente com base nos seus padrões.',
 }
 
 interface UnifiedAgentChatProps {

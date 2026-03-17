@@ -51,7 +51,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
   const handleRecordingComplete = useCallback(async (blob: Blob) => {
     try {
       setIsTranscribing(true)
-      log.debug('Transcribing audio for question answer', { size: blob.size })
+      log.debug('Transcribing áudio for question answer', { size: blob.size })
       const text = await transcribeAudio(blob)
       if (text) {
         setResponseText(prev => prev ? `${prev}\n${text}` : text)

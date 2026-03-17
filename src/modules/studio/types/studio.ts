@@ -2,7 +2,7 @@
  * Studio Module Types
  *
  * Defines the core types for the Studio module, which is a generic
- * content creation hub (currently supports podcasts, extensible to video/articles).
+ * content creation hub (currently supports podcasts, extensible to vídeo/articles).
  *
  * Key Pattern: Finite State Machine (FSM)
  * - StudioMode defines the current view state
@@ -37,7 +37,7 @@ export type StudioMode = 'LOADING' | 'LIBRARY' | 'SHOW_PAGE' | 'WIZARD' | 'WORKS
  * Types of projects supported by Studio.
  * Extensible for future content types.
  */
-export type ProjectType = 'podcast' | 'video' | 'article' | 'newsletter' | 'clip';
+export type ProjectType = 'podcast' | 'vídeo' | 'article' | 'newsletter' | 'clip';
 
 /**
  * Generic project representation in Studio.
@@ -81,7 +81,7 @@ export interface PodcastProjectMetadata {
 }
 
 export interface VideoProjectMetadata {
-  type: 'video';
+  type: 'vídeo';
   // Future extension
 }
 
@@ -391,7 +391,7 @@ export interface EpisodeProduction {
   updatedAt: string;
 }
 
-/** Metadata for a generated video/audio clip */
+/** Metadata for a generated vídeo/áudio clip */
 export interface CutMetadata {
   start_time: number;
   end_time: number;
@@ -527,8 +527,8 @@ export interface StudioAsset {
   userId: string;
   /** DB column: `project_id` (UUID, nullable) */
   projectId?: string;
-  /** DB column: `asset_type` (TEXT, CHECK: 'audio'|'video'|'image'|'document'|'transcript') */
-  assetType: 'audio' | 'video' | 'image' | 'document' | 'transcript';
+  /** DB column: `asset_type` (TEXT, CHECK: 'áudio'|'vídeo'|'image'|'document'|'transcript') */
+  assetType: 'áudio' | 'vídeo' | 'image' | 'document' | 'transcript';
   /** DB column: `file_url` (TEXT, NOT NULL) */
   fileUrl: string;
   /**

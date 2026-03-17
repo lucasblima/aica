@@ -52,7 +52,7 @@ export interface CouponRedemption {
 export async function redeemCoupon(code: string): Promise<RedeemResult> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, credits_earned: 0, new_balance: 0, message: 'Nao autenticado' };
+    if (!user) return { success: false, credits_earned: 0, new_balance: 0, message: 'Não autenticado' };
 
     const { data, error } = await supabase.rpc('redeem_coupon', {
       p_user_id: user.id,
@@ -104,7 +104,7 @@ export async function adminTopUp(
 ): Promise<AdminTopUpResult> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, new_balance: 0, message: 'Nao autenticado' };
+    if (!user) return { success: false, new_balance: 0, message: 'Não autenticado' };
 
     const { data, error } = await supabase.rpc('admin_top_up', {
       p_admin_id: user.id,
@@ -115,7 +115,7 @@ export async function adminTopUp(
 
     if (error) {
       log.error('admin_top_up RPC error:', error);
-      return { success: false, new_balance: 0, message: 'Erro ao adicionar creditos' };
+      return { success: false, new_balance: 0, message: 'Erro ao adicionar créditos' };
     }
 
     const result = data?.[0] ?? data;
@@ -142,7 +142,7 @@ export async function adminCreateCoupon(params: {
 }): Promise<CreateCouponResult> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, coupon_id: null, message: 'Nao autenticado' };
+    if (!user) return { success: false, coupon_id: null, message: 'Não autenticado' };
 
     const { data, error } = await supabase.rpc('admin_create_coupon', {
       p_admin_id: user.id,
@@ -199,7 +199,7 @@ export async function adminToggleCoupon(
 ): Promise<{ success: boolean; message: string }> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, message: 'Nao autenticado' };
+    if (!user) return { success: false, message: 'Não autenticado' };
 
     const { data, error } = await supabase.rpc('admin_toggle_coupon', {
       p_admin_id: user.id,

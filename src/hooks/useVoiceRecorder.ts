@@ -2,7 +2,7 @@
  * useVoiceRecorder — MediaRecorder + Gemini transcription hook
  *
  * Drop-in replacement for useSpeechRecognition that actually works on mobile Safari.
- * Uses MediaRecorder to capture audio, then transcribeAudio() via Gemini Edge Function.
+ * Uses MediaRecorder to capture áudio, then transcribeAudio() via Gemini Edge Function.
  *
  * API mirrors useSpeechRecognition: { isListening, isSupported, toggle }
  * plus isTranscribing for loading state and audioLevel for waveform visualization.
@@ -18,9 +18,9 @@ interface UseVoiceRecorderOptions {
 }
 
 interface UseVoiceRecorderReturn {
-  /** Currently recording audio */
+  /** Currently recording áudio */
   isListening: boolean
-  /** Transcribing recorded audio via Gemini */
+  /** Transcribing recorded áudio via Gemini */
   isTranscribing: boolean
   /** Browser supports MediaRecorder + getUserMedia */
   isSupported: boolean
@@ -104,7 +104,7 @@ export function useVoiceRecorder({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      // Set up audio analyser for waveform
+      // Set up áudio analyser for waveform
       const audioContext = new AudioContext()
       audioContextRef.current = audioContext
       const source = audioContext.createMediaStreamSource(stream)
@@ -113,11 +113,11 @@ export function useVoiceRecorder({
       source.connect(analyser)
       analyserRef.current = analyser
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : 'audio/mp4'
+      const mimeType = MediaRecorder.isTypeSupported('áudio/webm;codecs=opus')
+        ? 'áudio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('áudio/webm')
+          ? 'áudio/webm'
+          : 'áudio/mp4'
 
       const recorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = recorder
@@ -168,7 +168,7 @@ export function useVoiceRecorder({
         setRecordSeconds(s => s + 1)
       }, 1000)
 
-      // Start audio level monitoring
+      // Start áudio level monitoring
       updateAudioLevel()
 
       // Auto-stop after maxSeconds

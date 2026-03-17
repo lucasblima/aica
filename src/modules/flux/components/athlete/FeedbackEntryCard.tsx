@@ -23,7 +23,7 @@ function getRpeLabel(rpe: number): string {
   if (rpe <= 3) return 'Leve';
   if (rpe <= 6) return 'Moderado';
   if (rpe <= 8) return 'Intenso';
-  return 'Maximo';
+  return 'Máximo';
 }
 
 const DAY_NAMES_SHORT: Record<number, string> = {
@@ -78,7 +78,7 @@ export function FeedbackEntryCard({ entry, index = 0, modality }: FeedbackEntryC
                 Semana {entry.weekNumber}
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-ceramic-cool text-ceramic-text-secondary">
-                {entry.type === 'weekly' ? 'Semanal' : 'Diario'}
+                {entry.type === 'weekly' ? 'Semanal' : 'Diário'}
               </span>
             </div>
             {dateFormatted && (

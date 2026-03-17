@@ -342,7 +342,7 @@ export default function SetupStage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-amber-800">Buscando perfil com IA...</p>
-                        <p className="text-xs text-amber-600 mt-0.5">Analisando informacoes sobre {setup.guestName}</p>
+                        <p className="text-xs text-amber-600 mt-0.5">Analisando informações sobre {setup.guestName}</p>
                       </div>
                     </div>
                     <div className="mt-3 flex gap-1.5">

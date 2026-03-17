@@ -26,7 +26,7 @@ interface GoalTemplate {
 
 const TEMPLATES: GoalTemplate[] = [
   {
-    title: 'Reserva de Emergencia (3 meses)',
+    title: 'Reserva de Emergência (3 meses)',
     goal_type: 'emergency_fund',
     suggested_amount: 15000,
     description: '3 meses de despesas',
@@ -137,7 +137,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onClose }) => 
           {/* Title */}
           <div>
             <label className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider">
-              Titulo da Meta
+              Título da Meta
             </label>
             <input
               type="text"
@@ -247,7 +247,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onClose }) => 
               disabled={saving || !title.trim() || !targetAmount}
               className="flex-1 px-4 py-2.5 rounded-lg bg-ceramic-accent text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Salvando...' : goal ? 'Salvar Alteracoes' : 'Criar Meta'}
+              {saving ? 'Salvando...' : goal ? 'Salvar Alterações' : 'Criar Meta'}
             </button>
             <button
               type="button"

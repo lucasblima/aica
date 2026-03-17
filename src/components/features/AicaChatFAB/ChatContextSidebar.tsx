@@ -10,7 +10,7 @@ interface ChatContextSidebarProps {
 function getModuleLabel(module: string): string {
   const labels: Record<string, string> = {
     atlas: 'Atlas',
-    finance: 'Financas',
+    finance: 'Finanças',
     journey: 'Jornada',
     agenda: 'Agenda',
     studio: 'Studio',
@@ -68,17 +68,17 @@ const PATTERN_LABELS: Record<string, string> = {
   emotional: 'Emocional',
   routine: 'Rotina',
   social: 'Social',
-  health: 'Saude',
+  health: 'Saúde',
   learning: 'Aprendizado',
   trigger: 'Gatilho',
-  strength: 'Forca',
+  strength: 'Força',
 }
 
 function PatternsCard({ patterns }: { patterns: UserPattern[] }) {
   if (!patterns.length) return null
   return (
     <div className="aica-context-card">
-      <p className="aica-context-card__title text-violet-500">Seus Padroes</p>
+      <p className="aica-context-card__title text-violet-500">Seus Padrões</p>
       <ul className="aica-context-card__list">
         {patterns.map((p, i) => (
           <li key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
@@ -160,7 +160,7 @@ function ContextSummaryCard({ context }: { context: UserAIContext }) {
     <div className="aica-context-card">
       <p className="aica-context-card__title text-cyan-600">Resumo do Dia</p>
       <p style={{ fontSize: 12, margin: '4px 0 2px' }}>
-        Voce tem {summaryParts.join(', ')}.
+        Você tem {summaryParts.join(', ')}.
       </p>
       <p className="aica-context-card__label">
         Pergunte ao AICA para analisar seu dia
@@ -252,7 +252,7 @@ export function ChatContextSidebar({ activeModule, context, isLoading }: ChatCon
       <div className="aica-context-sidebar">
         <div className="aica-context-sidebar__header">Contexto</div>
         <p style={{ fontSize: 12, color: 'rgba(0,0,0,0.3)', padding: '0 4px' }}>
-          Sem dados disponiveis
+          Sem dados disponíveis
         </p>
       </div>
     )

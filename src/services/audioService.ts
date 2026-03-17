@@ -1,6 +1,6 @@
 /**
  * Audio Service
- * Shared audio transcription service — module-agnostic.
+ * Shared áudio transcription service — module-agnostic.
  * Extracted from Journey's momentPersistenceService to respect DDD bounded contexts.
  */
 
@@ -24,7 +24,7 @@ function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * Transcribe audio blob to text using Gemini via gemini-chat Edge Function
+ * Transcribe áudio blob to text using Gemini via gemini-chat Edge Function
  *
  * @param audioBlob - Audio Blob from MediaRecorder or file input
  * @returns Transcribed text string
@@ -34,9 +34,9 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
 
   try {
     const audioBase64 = await blobToBase64(audioBlob)
-    const mimeType = audioBlob.type || 'audio/webm'
+    const mimeType = audioBlob.type || 'áudio/webm'
 
-    log.debug('[audioService] Transcribing audio', {
+    log.debug('[audioService] Transcribing áudio', {
       mimeType,
       sizeBytes: audioBlob.size,
     })
@@ -78,7 +78,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
 
     return transcription
   } catch (error) {
-    log.error('[audioService] Error transcribing audio:', error)
-    throw new Error('Falha na transcricao do audio. Tente novamente.')
+    log.error('[audioService] Error transcribing áudio:', error)
+    throw new Error('Falha na transcricao do áudio. Tente novamente.')
   }
 }

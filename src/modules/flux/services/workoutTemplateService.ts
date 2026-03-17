@@ -419,7 +419,7 @@ export class WorkoutTemplateService {
         .single();
 
       if (existing && existing.usage_count > 0) {
-        return { data: null, error: new Error('Este exercicio foi prescrito e nao pode ser editado. Duplique-o para criar uma versao editavel.') };
+        return { data: null, error: new Error('Este exercicio foi prescrito e não pode ser editado. Duplique-o para criar uma versão editavel.') };
       }
 
       const dbUpdates: Record<string, any> = {

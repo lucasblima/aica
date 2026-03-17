@@ -221,7 +221,7 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
         </div>
 
         <div>
-          <label className="text-xs text-ceramic-text-secondary block mb-1">Preco compra (R$)</label>
+          <label className="text-xs text-ceramic-text-secondary block mb-1">Preço compra (R$)</label>
           <input
             type="number"
             min={0}
@@ -288,7 +288,7 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
               />
             </div>
             <div>
-              <label className="text-xs text-ceramic-text-secondary block mb-1">Potencia (W)</label>
+              <label className="text-xs text-ceramic-text-secondary block mb-1">Potência (W)</label>
               <input
                 type="number"
                 value={(values.attributes.power_watts as number) || ''}

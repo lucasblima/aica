@@ -86,7 +86,7 @@ const MATCH_REASON_CONFIG: Record<
   pronac: {
     icon: FileSearch,
     label: 'PRONAC',
-    description: 'Numero PRONAC identificado',
+    description: 'Número PRONAC identificado',
   },
   context: {
     icon: MessageSquare,
@@ -259,7 +259,7 @@ export function LinkSuggestionsPanel({
   isLoading = false,
   onConfirm,
   onReject,
-  emptyMessage = 'Nenhuma sugestao de vinculacao encontrada',
+  emptyMessage = 'Nenhuma sugestão de vinculacao encontrada',
   className = '',
 }: LinkSuggestionsPanelProps) {
   // Loading state
@@ -313,7 +313,7 @@ export function LinkSuggestionsPanel({
           <Link2 className="w-5 h-5 text-ceramic-info" />
           <span className="font-medium text-ceramic-text-primary">Sugestoes de Vinculacao</span>
           <span className="text-xs text-ceramic-text-secondary bg-ceramic-base px-2 py-0.5 rounded-full">
-            {suggestions.length} {suggestions.length === 1 ? 'sugestao' : 'sugestoes'}
+            {suggestions.length} {suggestions.length === 1 ? 'sugestão' : 'sugestoes'}
           </span>
         </div>
       </div>
@@ -335,7 +335,7 @@ export function LinkSuggestionsPanel({
 
       {/* Helper text */}
       <p className="mt-4 text-xs text-ceramic-text-secondary text-center">
-        Vincule documentos a organizacoes ou projetos para facilitar a busca e organizacao.
+        Vincule documentos a organizações ou projetos para facilitar a busca e organizacao.
       </p>
     </div>
   );

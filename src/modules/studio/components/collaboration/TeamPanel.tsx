@@ -9,7 +9,7 @@ const log = createNamespacedLogger('TeamPanel');
 
 const ROLE_OPTIONS: { value: string; label: string; description: string; className: string }[] = [
   { value: 'admin', label: 'Admin', description: 'Acesso total ao projeto', className: 'bg-purple-100 text-purple-700' },
-  { value: 'editor', label: 'Editor', description: 'Pode editar conteudo e midias', className: 'bg-blue-100 text-blue-700' },
+  { value: 'editor', label: 'Editor', description: 'Pode editar conteúdo e midias', className: 'bg-blue-100 text-blue-700' },
   { value: 'designer', label: 'Designer', description: 'Pode editar elementos visuais', className: 'bg-pink-100 text-pink-700' },
   { value: 'viewer', label: 'Visualizador', description: 'Somente leitura', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
 ];
@@ -143,7 +143,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
       ));
     } catch (err) {
       log.error('Role change failed:', err);
-      setError('Falha ao alterar funcao do membro.');
+      setError('Falha ao alterar função do membro.');
     } finally {
       setChangingRole(null);
     }
@@ -222,7 +222,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ projectId }) => {
             </div>
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary mb-1 block">
-                Funcao
+                Função
               </label>
               <select
                 value={inviteRole}

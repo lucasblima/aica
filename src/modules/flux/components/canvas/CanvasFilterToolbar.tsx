@@ -20,7 +20,7 @@ export const MODALITY_ICONS: Record<string, string> = {
 };
 
 export const MODALITY_PT_LABELS: Record<string, string> = {
-  swimming: 'Natacao',
+  swimming: 'Natação',
   running: 'Corrida',
   cycling: 'Ciclismo',
   strength: 'Musculacao',

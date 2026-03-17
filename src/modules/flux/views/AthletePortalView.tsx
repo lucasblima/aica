@@ -370,11 +370,11 @@ export default function AthletePortalView() {
           <div className="w-16 h-16 rounded-full bg-ceramic-error/10 flex items-center justify-center mx-auto">
             <Dumbbell className="w-8 h-8 text-ceramic-error" />
           </div>
-          <h1 className="text-xl font-black text-ceramic-text-primary">Liberacao Medica Necessaria</h1>
+          <h1 className="text-xl font-black text-ceramic-text-primary">Liberação Medica Necessaria</h1>
           <p className="text-sm text-ceramic-text-secondary leading-relaxed">
-            Suas respostas no questionario PAR-Q+ indicaram condicoes que requerem liberacao medica antes de iniciar os treinos. Seu coach foi notificado.
+            Suas respostas no questionario PAR-Q+ indicaram condições que requerem liberacao medica antes de iniciar os treinos. Seu coach foi notificado.
           </p>
-          <p className="text-xs text-ceramic-text-secondary">Envie o atestado medico pelo portal ou entre em contato com seu coach.</p>
+          <p className="text-xs text-ceramic-text-secondary">Envie o atestado médico pelo portal ou entre em contato com seu coach.</p>
           <button onClick={() => navigate('/')} className="flex items-center gap-2 mx-auto px-4 py-2 bg-ceramic-base rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
             <ArrowLeft className="w-4 h-4" />Voltar
           </button>
@@ -507,7 +507,7 @@ export default function AthletePortalView() {
                 <h2 id="leave-training-title" className="text-lg font-black text-ceramic-text-primary">Sair do treino?</h2>
               </div>
               <p className="text-sm text-ceramic-text-secondary leading-relaxed">
-                Voce sera desvinculado da prescricao do seu coach. Os exercicios serao removidos da sua agenda. Essa acao nao pode ser desfeita.
+                Você sera desvinculado da prescrição do seu coach. Os exercicios serao removidos da sua agenda. Essa ação não pode ser desfeita.
               </p>
               {leaveTraining.error && (
                 <div className="px-3 py-2 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
@@ -570,12 +570,12 @@ export default function AthletePortalView() {
                 {/* Alert badges for health/financial pending */}
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {profile.parq_clearance_status && ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
-                    <span className="w-5 h-5 rounded-full bg-ceramic-error/10 flex items-center justify-center" title="Pendencia de saude">
+                    <span className="w-5 h-5 rounded-full bg-ceramic-error/10 flex items-center justify-center" title="Pendência de saúde">
                       <Heart className="w-3 h-3 text-ceramic-error" />
                     </span>
                   )}
                   {(profile as unknown as Record<string, unknown>).hasPendingPayment && (
-                    <span className="w-5 h-5 rounded-full bg-amber-500/10 flex items-center justify-center" title="Pendencia financeira">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/10 flex items-center justify-center" title="Pendência financeira">
                       <DollarSign className="w-3 h-3 text-amber-600" />
                     </span>
                   )}
@@ -596,7 +596,7 @@ export default function AthletePortalView() {
             <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
               <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
               <span className="text-sm font-bold text-amber-700">Treino Pendente</span>
-              <span className="text-xs text-amber-600">Aguardando liberacao do coach</span>
+              <span className="text-xs text-amber-600">Aguardando liberação do coach</span>
             </div>
           )}
           {micro && micro.status === 'active' && (
@@ -628,10 +628,10 @@ export default function AthletePortalView() {
               <p className="text-sm font-bold text-ceramic-info">Documentos Pendentes</p>
               <p className="text-xs text-ceramic-info">
                 {profile.parq_clearance_status === 'expired'
-                  ? 'Seus documentos de saude expiraram'
+                  ? 'Seus documentos de saúde expiraram'
                   : profile.parq_clearance_status === 'blocked'
-                  ? 'Liberacao medica necessaria'
-                  : 'Complete seus documentos de saude'}
+                  ? 'Liberação medica necessaria'
+                  : 'Complete seus documentos de saúde'}
               </p>
             </div>
           </div>
@@ -688,7 +688,7 @@ export default function AthletePortalView() {
             <motion.div className="px-5 mb-4" custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
                 <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700 leading-relaxed">Este plano de treino esta sendo preparado pelo seu coach e pode sofrer alteracoes.</p>
+                <p className="text-xs text-amber-700 leading-relaxed">Este plano de treino esta sendo preparado pelo seu coach e pode sofrer alterações.</p>
               </div>
             </motion.div>
           )}
@@ -701,7 +701,7 @@ export default function AthletePortalView() {
                   <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
                     <MoveHorizontal className="w-4 h-4 text-ceramic-info flex-shrink-0" />
                     <p className="text-xs text-ceramic-info leading-relaxed">
-                      <span className="font-bold">Organize seus horarios!</span> Arraste os treinos para os horarios que funcionam melhor para voce.
+                      <span className="font-bold">Organize seus horarios!</span> Arraste os treinos para os horarios que funcionam melhor para você.
                       {!calendarConnected && ' Conecte o Google Calendar para ver seus compromissos.'}
                     </p>
                     {!calendarConnected && (
@@ -774,7 +774,7 @@ export default function AthletePortalView() {
                               return (
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-ceramic-cool/40 opacity-50">
                                   <Lock className="w-3.5 h-3.5 text-ceramic-text-secondary/50 flex-shrink-0" />
-                                  <span className="text-xs text-ceramic-text-secondary">Feedback disponivel no dia</span>
+                                  <span className="text-xs text-ceramic-text-secondary">Feedback disponível no dia</span>
                                 </div>
                               );
                             }
@@ -809,7 +809,7 @@ export default function AthletePortalView() {
               <div className="bg-ceramic-cool/50 rounded-2xl p-8 text-center space-y-3">
                 <Dumbbell className="w-10 h-10 text-ceramic-text-secondary/40 mx-auto" />
                 <p className="text-sm font-medium text-ceramic-text-primary">Nenhum treino prescrito ainda</p>
-                <p className="text-xs text-ceramic-text-secondary leading-relaxed">Seu coach ainda nao prescreveu treinos. Fique tranquilo, voce sera notificado quando houver novidades!</p>
+                <p className="text-xs text-ceramic-text-secondary leading-relaxed">Seu coach ainda não prescreveu treinos. Fique tranquilo, você sera notificado quando houver novidades!</p>
               </div>
             </motion.section>
           )}

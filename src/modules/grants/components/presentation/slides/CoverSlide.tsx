@@ -6,7 +6,7 @@
  */
 
 /**
- * CoverSlide - Capa com logo e titulo
+ * CoverSlide - Capa com logo e título
  * Issue #117 - Presentation Generator
  */
 
@@ -54,7 +54,7 @@ export function CoverSlide({
           onChange={(v) => handleChange('title', v)}
           tag="h1"
           editMode={editMode}
-          placeholder="Titulo do Projeto"
+          placeholder="Título do Projeto"
         />
 
         {/* Subtitle */}
@@ -88,7 +88,7 @@ export function CoverSlide({
               tag="p"
               className="text-xl opacity-70"
               editMode={editMode}
-              placeholder="Numero de aprovacao"
+              placeholder="Número de aprovacao"
             />
           </div>
         )}

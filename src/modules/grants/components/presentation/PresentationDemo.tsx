@@ -27,7 +27,7 @@ const DEMO_SLIDES: DeckSlide[] = [
       type: 'cover',
       title: 'Projeto Cultural 2024',
       subtitle: 'Transformando vidas atraves da arte',
-      tagline: 'Uma iniciativa que faz a diferenca',
+      tagline: 'Uma iniciativa que faz a diferença',
       approvalNumber: 'PRONAC 123456',
     },
     customCss: null,
@@ -43,9 +43,9 @@ const DEMO_SLIDES: DeckSlide[] = [
     content: {
       type: 'organization',
       name: 'Instituto Cultural ABC',
-      description: 'Organizacao dedicada a promover o acesso a cultura e educacao para todas as idades.',
+      description: 'Organizacao dedicada a promover o acesso a cultura e educação para todas as idades.',
       mission: 'Democratizar o acesso a cultura e arte.',
-      vision: 'Ser referencia em projetos culturais transformadores.',
+      vision: 'Ser referência em projetos culturais transformadores.',
       achievements: [
         'Mais de 10.000 pessoas impactadas',
         '15 premios nacionais e internacionais',
@@ -134,7 +134,7 @@ export function PresentationDemo() {
                 : 'bg-ceramic-cool text-ceramic-text-primary'
             }`}
           >
-            {editMode ? 'Modo Edicao: ON' : 'Modo Edicao: OFF'}
+            {editMode ? 'Modo Edição: ON' : 'Modo Edição: OFF'}
           </button>
         </div>
       </div>

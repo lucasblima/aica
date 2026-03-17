@@ -25,7 +25,7 @@ const TEMPLATE_CONFIG: Record<string, { label: string; className: string }> = {
   editorial: { label: 'Editorial', className: 'bg-violet-100 text-violet-700' },
   destaque: { label: 'Destaque', className: 'bg-amber-100 text-amber-700' },
   resumo: { label: 'Resumo', className: 'bg-ceramic-info/10 text-ceramic-info' },
-  default: { label: 'Padrao', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
+  default: { label: 'Padrão', className: 'bg-ceramic-cool text-ceramic-text-secondary' },
 };
 
 // =============================================================================

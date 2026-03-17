@@ -84,7 +84,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({ result
             <Heart className="w-4 h-4 text-amber-600" />
           </div>
           <h3 className="text-sm font-bold text-ceramic-text-primary">
-            Saude Financeira
+            Saúde Financeira
           </h3>
         </div>
         {trend && <TrendBadge trend={trend} />}

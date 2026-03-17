@@ -22,15 +22,15 @@ const MODULE_KEYWORDS: Record<Exclude<AgentModule, 'coordinator'>, string[]> = {
     'lista', 'checklist',
   ],
   journey: [
-    'momento', 'emocao', 'sentimento', 'diario', 'reflexao',
-    'autoconhecimento', 'consciencia', 'meditacao', 'gratidao', 'humor',
+    'momento', 'emoção', 'sentimento', 'diário', 'reflexão',
+    'autoconhecimento', 'consciência', 'meditação', 'gratidão', 'humor',
   ],
   connections: [
     'contato', 'pessoa', 'whatsapp', 'rede', 'amigo', 'colega',
     'crm', 'relacionamento', 'networking', 'telefone',
   ],
   finance: [
-    'dinheiro', 'conta', 'orcamento', 'extrato', 'investimento',
+    'dinheiro', 'conta', 'orçamento', 'extrato', 'investimento',
     'gasto', 'receita', 'saldo', 'transferencia', 'boleto', 'pix', 'cartao',
   ],
   flux: [
@@ -38,15 +38,15 @@ const MODULE_KEYWORDS: Record<Exclude<AgentModule, 'coordinator'>, string[]> = {
     'carga', 'academia', 'corrida', 'musculacao',
   ],
   studio: [
-    'podcast', 'episodio', 'convidado', 'gravacao', 'pauta',
-    'entrevista', 'microfone', 'audio',
+    'podcast', 'episódio', 'convidado', 'gravação', 'pauta',
+    'entrevista', 'microfone', 'áudio',
   ],
   captacao: [
     'edital', 'grant', 'faperj', 'cnpq', 'finep', 'proposta',
     'captacao', 'patrocinio', 'incentivo', 'lei',
   ],
   agenda: [
-    'reuniao', 'evento', 'calendario', 'horario', 'compromisso',
+    'reunião', 'evento', 'calendário', 'horário', 'compromisso',
     'agendar', 'marcar', 'encontro', 'call',
   ],
 }
@@ -55,7 +55,7 @@ const ACTION_HINTS: Record<Exclude<AgentModule, 'coordinator'>, string> = {
   atlas: 'Gerenciar tarefas e prioridades',
   journey: 'Registrar momentos e reflexoes',
   connections: 'Gerenciar contatos e rede',
-  finance: 'Analisar financas',
+  finance: 'Analisar finanças',
   flux: 'Gerenciar treinos e atletas',
   studio: 'Produzir podcast',
   captacao: 'Buscar editais e captacao',
@@ -112,7 +112,7 @@ export function classifyIntent(message: string): IntentResult {
     return {
       module: 'coordinator',
       confidence: 0,
-      actionHint: 'Classificacao generica',
+      actionHint: 'Classificação generica',
       needsServerClassification: true,
     }
   }

@@ -34,7 +34,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     <ErrorBoundary
       fallback={
         <div className="p-6 text-center text-ceramic-text-secondary">
-          Erro ao carregar Calendario.{' '}
+          Erro ao carregar Calendário.{' '}
           <button
             onClick={() => window.location.reload()}
             className="underline text-amber-600"

@@ -173,7 +173,7 @@ describe('workspaceDatabaseService — Normalized Schema', () => {
           recording_started_at: '2026-03-09T10:00:00Z',
           recording_finished_at: null,
           recording_duration: 1200,
-          recording_file_path: '/audio/ep1.mp3',
+          recording_file_path: '/áudio/ep1.mp3',
           recording_file_size: 5000000,
           transcript: 'Hello world',
           transcript_generated_at: '2026-03-09T11:00:00Z',
@@ -190,7 +190,7 @@ describe('workspaceDatabaseService — Normalized Schema', () => {
       expect(result!.episodeId).toBe('ep-1')
       expect(result!.recordingStatus).toBe('recording')
       expect(result!.recordingDuration).toBe(1200)
-      expect(result!.recordingFilePath).toBe('/audio/ep1.mp3')
+      expect(result!.recordingFilePath).toBe('/áudio/ep1.mp3')
       expect(result!.transcript).toBe('Hello world')
     })
 
@@ -256,7 +256,7 @@ describe('workspaceDatabaseService — Normalized Schema', () => {
           recording_started_at: '2026-03-09T10:00:00Z',
           recording_finished_at: '2026-03-09T11:30:00Z',
           recording_duration: 5400,
-          recording_file_path: '/audio/ep1.mp3',
+          recording_file_path: '/áudio/ep1.mp3',
           recording_file_size: 12000000,
           transcript: null,
           transcript_generated_at: null,

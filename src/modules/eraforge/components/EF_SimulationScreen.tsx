@@ -2,7 +2,7 @@
  * EF_SimulationScreen - Cinematic 14-day simulation summary
  *
  * Shows an animated timeline of simulated events with:
- * - "Enquanto voce esteve fora..." animated title
+ * - "Enquanto você esteve fora..." animated title
  * - Horizontal scrollable day timeline (Dia 1-14)
  * - Progressive event reveal with auto-play (3s delay)
  * - TTS narration per event via onSpeak callback

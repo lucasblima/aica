@@ -73,7 +73,7 @@ export { ModulePulse } from './ModulePulse';
 // Vida Chat Hero — Inline chat with expand/collapse
 export { VidaChatHero } from './VidaChatHero';
 
-// Universal Input Funnel — Multi-modal input (text + audio + photo)
+// Universal Input Funnel — Multi-modal input (text + áudio + photo)
 export { MultiModalInput } from './MultiModalInput';
 export type { MultiModalOutput } from './MultiModalInput';
 
