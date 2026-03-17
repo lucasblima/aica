@@ -2,19 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { initSentry } from './src/lib/sentry';
+// Error tracking: Sentry self-initializes on import (top-level side effect)
+import './src/lib/sentry';
 import App from './App';
 import './index.css';
 import { cleanExpiredOAuthParams, suppressExpiredSessionWarnings } from './src/utils/authUrlCleaner';
 import { validateEnv, logEnvStatus } from './src/lib/envCheck';
 import { registerFluxDomainProvider } from './src/modules/flux/services';
-
-// =============================================================================
-// ERROR TRACKING
-// Initialize Sentry before anything else to capture early errors.
-// Requires VITE_SENTRY_DSN env var. No-op if not configured.
-// =============================================================================
-initSentry();
 
 // =============================================================================
 // ENVIRONMENT VALIDATION

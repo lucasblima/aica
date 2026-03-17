@@ -2,14 +2,9 @@ import * as Sentry from '@sentry/react';
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
-export function initSentry() {
-  if (!SENTRY_DSN) {
-    if (import.meta.env.DEV) {
-      console.debug('[Sentry] No DSN configured, skipping initialization');
-    }
-    return;
-  }
-
+// Self-initializing module: Sentry.init() runs on first import.
+// This is a top-level side effect so the bundler cannot tree-shake it.
+if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: import.meta.env.PROD ? 'production' : 'development',
@@ -17,7 +12,6 @@ export function initSentry() {
     tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0.5,
-    // Capture all unhandled errors and promise rejections
     autoSessionTracking: true,
     beforeSend(event) {
       // Strip PII from breadcrumbs
@@ -37,6 +31,8 @@ export function initSentry() {
       return event;
     },
   });
+} else if (import.meta.env.DEV) {
+  console.debug('[Sentry] No DSN configured, skipping initialization');
 }
 
 /**
