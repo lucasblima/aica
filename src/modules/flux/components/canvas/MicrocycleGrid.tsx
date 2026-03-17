@@ -384,23 +384,6 @@ export const MicrocycleGrid: React.FC<MicrocycleGridProps> = ({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Microcycle Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[11px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-            Resumo do Mes
-          </p>
-          <h2 className="text-lg font-bold text-ceramic-text-primary">
-            {microcycle.title}
-          </h2>
-          {microcycle.focus && (
-            <p className="text-xs text-ceramic-text-tertiary mt-0.5">
-              Foco: {microcycle.focus}
-            </p>
-          )}
-        </div>
-      </div>
-
       {/* 4 Week Strips */}
       <motion.div
         className="space-y-4"

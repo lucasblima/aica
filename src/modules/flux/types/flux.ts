@@ -124,6 +124,9 @@ export interface Athlete {
   practice_duration_months?: number;
   training_zones?: Record<string, unknown>;
 
+  // Custom level assignment (FK to coach_levels)
+  custom_level_id?: string;
+
   created_at: string;
   updated_at: string;
 }
@@ -324,12 +327,35 @@ export interface MyAthleteProfile {
 }
 
 // ============================================
-// ATHLETE GROUPS (localStorage-based, no migration)
+// CUSTOM COACH LEVELS (Supabase: coach_levels)
 // ============================================
 
 /**
- * Athlete group for coach organization (stored in localStorage)
- * Key: `flux_athlete_groups_${coachUserId}`
+ * Custom level defined by a coach.
+ * Coaches can create up to 10 custom levels to replace the default 3.
+ */
+export interface CoachLevel {
+  id: string;
+  user_id: string;
+  name: string;
+  display_order: number;
+  color: string;
+  min_consistency?: number;
+  min_weekly_volume?: number;
+  max_weekly_volume?: number;
+  min_weeks_active?: number;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
+// ATHLETE GROUPS (Supabase: athlete_groups + athlete_group_members)
+// ============================================
+
+/**
+ * Athlete group data structure (in-memory representation)
+ * Persisted in Supabase tables: athlete_groups, athlete_group_members
  */
 export interface AthleteGroupData {
   groups: AthleteGroup[];

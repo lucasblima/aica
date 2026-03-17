@@ -12,7 +12,7 @@ import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } fr
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
-import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, Dumbbell } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, ClipboardEdit } from 'lucide-react';
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
@@ -401,19 +401,6 @@ export function AthleteCard({
               <span className="text-xs font-bold text-ceramic-success">WhatsApp</span>
             </button>
           )}
-          {onPrescreverClick && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPrescreverClick();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors"
-              title="Prescrever treino"
-            >
-              <Dumbbell className="w-4 h-4 text-amber-600" />
-              <span className="text-xs font-bold text-amber-600">Prescrever</span>
-            </button>
-          )}
         </div>
 
         {/* Alert Preview (if critical) */}
@@ -421,6 +408,21 @@ export function AthleteCard({
           <div className="pt-2 border-t border-ceramic-error/20">
             <AlertBadge alert={activeAlerts[0]} compact />
           </div>
+        )}
+
+        {/* Prescrever Treino — Primary CTA */}
+        {onPrescreverClick && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrescreverClick();
+            }}
+            className="w-full mt-3 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-md"
+            title="Prescrever treino"
+          >
+            <ClipboardEdit className="w-4 h-4" />
+            Prescrever Treino
+          </button>
         )}
       </div>
     </div>
