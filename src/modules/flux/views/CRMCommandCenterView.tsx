@@ -422,7 +422,7 @@ export default function CRMCommandCenterView() {
       const isCustomLevel = coachLevels.some((l) => l.id === selectedLevel);
       if (isCustomLevel) {
         result = result.filter(
-          (a) => (a as Athlete & { custom_level_id?: string }).custom_level_id === selectedLevel
+          (a) => a.custom_level_id === selectedLevel
         );
       } else {
         const levelCategory = LEVEL_CATEGORIES.find((c) => c.id === selectedLevel);
@@ -906,7 +906,7 @@ export default function CRMCommandCenterView() {
                   {coachLevels.map((level) => {
                     const colors = getGroupColorClasses(level.color);
                     const count = allAthletes.filter(
-                      (a) => (a as Athlete & { custom_level_id?: string }).custom_level_id === level.id
+                      (a) => a.custom_level_id === level.id
                     ).length;
                     const isSelected = selectedLevel === level.id;
 

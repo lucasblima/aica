@@ -12,7 +12,7 @@ import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } fr
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
-import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, Dumbbell, ClipboardEdit } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, ClipboardEdit } from 'lucide-react';
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',

@@ -124,6 +124,9 @@ export interface Athlete {
   practice_duration_months?: number;
   training_zones?: Record<string, unknown>;
 
+  // Custom level assignment (FK to coach_levels)
+  custom_level_id?: string;
+
   created_at: string;
   updated_at: string;
 }
