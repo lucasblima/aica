@@ -24,6 +24,7 @@ const log = createNamespacedLogger('QuestionService')
 // Configuration for question system
 const QUESTION_CONFIG = {
   MIN_UNANSWERED_THRESHOLD: 3, // Trigger generation when below this
+  GENERATION_TIMEOUT_MS: 5000, // Max wait for AI question generation
 }
 
 /**
@@ -50,11 +51,23 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
     if (!unansweredQuestions || unansweredQuestions.length === 0) {
       log.info('No unanswered questions available, generating new ones...')
 
-      // Await generation (forceRegenerate bypasses 12h cooldown and daily limit)
-      const genResult = await triggerQuestionGeneration({ batchSize: 5, forceRegenerate: true })
-      log.info('Generation result:', { success: genResult.success, generated: genResult.questionsGenerated })
+      // Await generation with timeout to prevent UI blocking (P1-1 fix)
+      // If circuit breaker is open or generation takes >5s, we gracefully return null
+      let genResult: { success: boolean; questionsGenerated: number } | null = null
+      try {
+        genResult = await Promise.race([
+          triggerQuestionGeneration({ batchSize: 5, forceRegenerate: true }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Question generation timeout')), QUESTION_CONFIG.GENERATION_TIMEOUT_MS)
+          ),
+        ])
+        log.info('Generation result:', { success: genResult.success, generated: genResult.questionsGenerated })
+      } catch (err) {
+        log.warn('Question generation timed out or failed, returning null:', err)
+        return null
+      }
 
-      if (genResult.success && genResult.questionsGenerated > 0) {
+      if (genResult?.success && genResult.questionsGenerated > 0) {
         // Retry RPC to get newly generated question
         const { data: newQuestions } = await supabase.rpc(
           'get_unanswered_question',

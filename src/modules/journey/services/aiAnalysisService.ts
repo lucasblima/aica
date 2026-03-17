@@ -15,6 +15,9 @@ import { trackAIUsage } from '@/services/aiUsageTrackingService';
 
 const log = createNamespacedLogger('AIAnalysis');
 
+/** Module-level debounce timer for rate-limit protection */
+let analysisTimer: ReturnType<typeof setTimeout> | null = null;
+
 export interface AISuggestion {
   type: 'reflection' | 'question' | 'pattern';
   message: string;
@@ -101,6 +104,32 @@ Seja conciso e empático. Máximo 2 linhas.`,
 
     // Fallback suggestions based on content length and keywords
     return generateFallbackSuggestion(content);
+  }
+}
+
+/**
+ * Debounced version of analyzeContentRealtime.
+ * Prevents rapid-fire Gemini calls (e.g., on fast typing).
+ * Waits 1s after the last call before executing.
+ */
+export function analyzeContentRealtimeDebounced(
+  content: string,
+  callback: (result: AISuggestion | null) => void
+): void {
+  if (analysisTimer) clearTimeout(analysisTimer);
+  analysisTimer = setTimeout(async () => {
+    const result = await analyzeContentRealtime(content);
+    callback(result);
+  }, 1000);
+}
+
+/**
+ * Cancels any pending debounced analysis.
+ */
+export function cancelDebouncedAnalysis(): void {
+  if (analysisTimer) {
+    clearTimeout(analysisTimer);
+    analysisTimer = null;
   }
 }
 

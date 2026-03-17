@@ -64,6 +64,7 @@ export function useJourneyPatterns(userId?: string) {
     total: 0,
     failed: 0,
   })
+  const [isBackfillFailed, setIsBackfillFailed] = useState(false)
   const backfillTriggeredRef = useRef(false)
   const backfillAbortRef = useRef(false)
 
@@ -170,121 +171,128 @@ export function useJourneyPatterns(userId?: string) {
    */
   const runBackfill = useCallback(async (uid: string) => {
     backfillAbortRef.current = false
+    setIsBackfillFailed(false)
 
-    // Count total untagged moments
-    const { count, error: countErr } = await supabase
-      .from('moments')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', uid)
-      .is('tags', null)
-      .not('content', 'is', null)
+    try {
+      // Count total untagged moments
+      const { count, error: countErr } = await supabase
+        .from('moments')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', uid)
+        .is('tags', null)
+        .not('content', 'is', null)
 
-    if (countErr || !count || count === 0) {
-      log.debug('No untagged moments to backfill')
-      return
-    }
-
-    const totalToProcess = Math.min(count, BACKFILL_MAX_PER_SESSION)
-    log.debug(`Backfill starting: ${totalToProcess} of ${count} untagged moments`)
-
-    setBackfillProgress({ isRunning: true, processed: 0, total: totalToProcess, failed: 0 })
-
-    // Fetch the batch
-    const { data: untagged, error: fetchErr } = await supabase
-      .from('moments')
-      .select('id, content')
-      .eq('user_id', uid)
-      .is('tags', null)
-      .not('content', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(totalToProcess)
-
-    if (fetchErr || !untagged || untagged.length === 0) {
-      setBackfillProgress(prev => ({ ...prev, isRunning: false }))
-      return
-    }
-
-    let processed = 0
-    let failed = 0
-
-    for (const moment of untagged) {
-      if (backfillAbortRef.current) {
-        log.debug('Backfill aborted by user')
-        break
+      if (countErr || !count || count === 0) {
+        log.debug('No untagged moments to backfill')
+        return
       }
 
-      if (!moment.content || moment.content.trim().length < 3) {
-        processed++
-        setBackfillProgress(prev => ({ ...prev, processed }))
-        continue
+      const totalToProcess = Math.min(count, BACKFILL_MAX_PER_SESSION)
+      log.debug(`Backfill starting: ${totalToProcess} of ${count} untagged moments`)
+
+      setBackfillProgress({ isRunning: true, processed: 0, total: totalToProcess, failed: 0 })
+
+      // Fetch the batch
+      const { data: untagged, error: fetchErr } = await supabase
+        .from('moments')
+        .select('id, content')
+        .eq('user_id', uid)
+        .is('tags', null)
+        .not('content', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(totalToProcess)
+
+      if (fetchErr || !untagged || untagged.length === 0) {
+        setBackfillProgress(prev => ({ ...prev, isRunning: false }))
+        return
       }
 
-      try {
-        const response = await geminiClient.call({
-          action: 'analyze_moment',
-          payload: { content: moment.content },
-          model: 'fast',
-        })
+      let processed = 0
+      let failed = 0
 
-        const result = response.result as {
-          tags: string[]
-          mood: { emoji: string; label: string }
-          sentiment: string
-          sentimentScore: number
-          emotions: string[]
-          triggers: string[]
-          energyLevel: number
+      for (const moment of untagged) {
+        if (backfillAbortRef.current) {
+          log.debug('Backfill aborted by user')
+          break
         }
 
-        const { error: updateErr } = await supabase
-          .from('moments')
-          .update({
-            tags: result.tags,
-            emotion: result.mood.value || mapAIMoodToValue(result.mood),
-            sentiment_data: {
-              timestamp: new Date().toISOString(),
-              sentiment: result.sentiment,
-              sentimentScore: result.sentimentScore,
-              emotions: result.emotions,
-              triggers: result.triggers,
-              energyLevel: result.energyLevel,
-            },
-          })
-          .eq('id', moment.id)
-          .eq('user_id', uid)
-
-        if (updateErr) {
-          log.warn(`Backfill DB update failed for moment ${moment.id}:`, updateErr)
-          failed++
+        if (!moment.content || moment.content.trim().length < 3) {
           processed++
-          setBackfillProgress(prev => ({ ...prev, processed, failed }))
+          setBackfillProgress(prev => ({ ...prev, processed }))
           continue
         }
 
-        processed++
-        setBackfillProgress(prev => ({ ...prev, processed }))
-      } catch (err) {
-        processed++
-        failed++
-        setBackfillProgress(prev => ({ ...prev, processed, failed }))
-        log.warn(`Backfill failed for moment ${moment.id}:`, err)
+        try {
+          const response = await geminiClient.call({
+            action: 'analyze_moment',
+            payload: { content: moment.content },
+            model: 'fast',
+          })
+
+          const result = response.result as {
+            tags: string[]
+            mood: { emoji: string; label: string }
+            sentiment: string
+            sentimentScore: number
+            emotions: string[]
+            triggers: string[]
+            energyLevel: number
+          }
+
+          const { error: updateErr } = await supabase
+            .from('moments')
+            .update({
+              tags: result.tags,
+              emotion: result.mood.value || mapAIMoodToValue(result.mood),
+              sentiment_data: {
+                timestamp: new Date().toISOString(),
+                sentiment: result.sentiment,
+                sentimentScore: result.sentimentScore,
+                emotions: result.emotions,
+                triggers: result.triggers,
+                energyLevel: result.energyLevel,
+              },
+            })
+            .eq('id', moment.id)
+            .eq('user_id', uid)
+
+          if (updateErr) {
+            log.warn(`Backfill DB update failed for moment ${moment.id}:`, updateErr)
+            failed++
+            processed++
+            setBackfillProgress(prev => ({ ...prev, processed, failed }))
+            continue
+          }
+
+          processed++
+          setBackfillProgress(prev => ({ ...prev, processed }))
+        } catch (err) {
+          processed++
+          failed++
+          setBackfillProgress(prev => ({ ...prev, processed, failed }))
+          log.warn(`Backfill failed for moment ${moment.id}:`, err)
+        }
+
+        // Rate limit: wait between calls
+        if (processed < untagged.length) {
+          await new Promise(resolve => setTimeout(resolve, BACKFILL_DELAY_MS))
+        }
       }
 
-      // Rate limit: wait between calls
-      if (processed < untagged.length) {
-        await new Promise(resolve => setTimeout(resolve, BACKFILL_DELAY_MS))
+      setBackfillProgress(prev => ({ ...prev, isRunning: false }))
+      log.debug(`Backfill complete: ${processed} processed, ${failed} failed`)
+
+      // Refresh patterns to show newly tagged data
+      if (processed > failed) {
+        // Small delay to let DB settle
+        await new Promise(resolve => setTimeout(resolve, 500))
+        // Re-fetch without triggering another backfill
+        fetchPatternsOnly(uid)
       }
-    }
-
-    setBackfillProgress(prev => ({ ...prev, isRunning: false }))
-    log.debug(`Backfill complete: ${processed} processed, ${failed} failed`)
-
-    // Refresh patterns to show newly tagged data
-    if (processed > failed) {
-      // Small delay to let DB settle
-      await new Promise(resolve => setTimeout(resolve, 500))
-      // Re-fetch without triggering another backfill
-      fetchPatternsOnly(uid)
+    } catch (err) {
+      log.error('Backfill crashed:', err)
+      setIsBackfillFailed(true)
+      setBackfillProgress(prev => ({ ...prev, isRunning: false }))
     }
   }, [])
 
@@ -357,12 +365,20 @@ export function useJourneyPatterns(userId?: string) {
     backfillAbortRef.current = true
   }, [])
 
+  const retryBackfill = useCallback(() => {
+    setIsBackfillFailed(false)
+    backfillTriggeredRef.current = false
+    // The next call to fetchPatterns (via refresh) will re-trigger the backfill
+  }, [])
+
   return {
     ...data,
     isLoading,
     error,
     backfillProgress,
+    isBackfillFailed,
     stopBackfill,
+    retryBackfill,
     refresh: fetchPatterns,
   }
 }
