@@ -106,6 +106,11 @@ export async function fetchChatNonStreaming(
       actions: Array.isArray(json.suggestedActions) ? json.suggestedActions : [],
       usage: json.usage,
     }
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new Error('Tempo limite excedido. Tente novamente.')
+    }
+    throw err
   } finally {
     clearTimeout(timeout)
   }
@@ -209,8 +214,8 @@ export async function* streamChat(
           try {
             const event = JSON.parse(line.slice(6)) as StreamEvent
             yield event
-          } catch {
-            // Skip malformed SSE events
+          } catch (parseErr) {
+            console.warn('[streamChat] Malformed SSE event:', line, parseErr)
           }
         }
       }

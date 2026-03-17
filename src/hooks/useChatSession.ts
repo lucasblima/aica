@@ -167,8 +167,8 @@ export function useChatSession(): UseChatSessionReturn {
           setError(`Seus creditos mensais acabaram. ${limit.remaining} creditos restantes de ${limit.plan}.`)
           return
         }
-      } catch {
-        // Fail-open: if the check throws, let the message through
+      } catch (limitErr) {
+        console.warn('[useChatSession] Billing check failed, failing open:', limitErr)
       }
 
       const userId = await getUserId()
@@ -222,8 +222,8 @@ export function useChatSession(): UseChatSessionReturn {
             latestInsight: ctx.latestInsight,
           }
         }
-      } catch {
-        // Context enrichment is best-effort
+      } catch (ctxErr) {
+        console.warn('[useChatSession] Context enrichment failed:', ctxErr)
       }
 
       // Build history for context (last 10 messages)
@@ -298,6 +298,7 @@ export function useChatSession(): UseChatSessionReturn {
       setError(null)
       setLastFailedMessage(null)
     } catch (err) {
+      console.error('[useChatSession] sendMessage failed:', err)
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
       setError(message)
       setLastFailedMessage(trimmed)
@@ -311,8 +312,7 @@ export function useChatSession(): UseChatSessionReturn {
   const retryLastMessage = useCallback(async () => {
     if (!lastFailedMessage) return
     const msg = lastFailedMessage
-    setError(null)
-    setLastFailedMessage(null)
+    // Don't clear error/lastFailedMessage here — sendMessage clears on success
     await sendMessage(msg)
   }, [lastFailedMessage, sendMessage])
 
@@ -336,7 +336,8 @@ export function useChatSession(): UseChatSessionReturn {
       setError(null)
       setLastFailedMessage(null)
       setActiveAgent(null)
-    } catch {
+    } catch (err) {
+      console.error('[useChatSession] Failed to switch session:', sessionId, err)
       setError('Erro ao carregar conversa')
     }
   }, [sessions])
@@ -351,7 +352,8 @@ export function useChatSession(): UseChatSessionReturn {
         setMessages([])
         setActiveAgent(null)
       }
-    } catch {
+    } catch (err) {
+      console.error('[useChatSession] Failed to archive session:', sessionId, err)
       setError('Erro ao arquivar conversa')
     }
   }, [session])

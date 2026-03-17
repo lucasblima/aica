@@ -11,6 +11,7 @@ describe('chatStreamService', () => {
   const originalFetch = globalThis.fetch
 
   beforeEach(() => {
+    vi.resetModules()
     vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co')
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key')
   })
@@ -18,6 +19,7 @@ describe('chatStreamService', () => {
   afterEach(() => {
     globalThis.fetch = originalFetch
     vi.unstubAllEnvs()
+    vi.useRealTimers()
   })
 
   describe('streamChat — non-SSE response detection (fix 0.3)', () => {

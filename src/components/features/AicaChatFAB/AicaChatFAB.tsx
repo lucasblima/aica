@@ -2,7 +2,7 @@
  * AicaChatFAB - Floating Action Button for Aica Chat
  *
  * Chat interface with persistent sessions (chat_sessions + chat_messages).
- * Uses useChatSession hook for lifecycle, ADK agent-proxy for AI calls.
+ * Uses useChatSession hook for lifecycle, gemini-chat Edge Function for AI calls.
  * Supports expand to fullscreen with context sidebar.
  */
 
