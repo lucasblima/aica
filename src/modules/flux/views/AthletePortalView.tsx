@@ -542,73 +542,193 @@ export default function AthletePortalView() {
         )}
       </AnimatePresence>
 
-      {/* Profile Card */}
-      <motion.section className="px-5 mb-4" custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
-        <div className="bg-ceramic-base rounded-2xl shadow-sm p-5 space-y-3">
+      {/* Health Actions Card — FIRST element when athlete has pending health docs (#925) */}
+      {profile.parq_clearance_status &&
+       ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
+        <motion.section className="px-5 mb-4" custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
+          <div className="bg-amber-50 border border-amber-200/60 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                <Heart className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-base font-black text-ceramic-text-primary">
+                  Documentacao de Saude
+                </h2>
+                <p className="text-xs text-amber-700">
+                  {profile.parq_clearance_status === 'blocked'
+                    ? 'Liberacao medica necessaria para acessar treinos'
+                    : profile.parq_clearance_status === 'expired'
+                    ? 'Documentos expirados — envie novos para manter acesso'
+                    : 'Complete os itens abaixo para liberar sua prescricao de treinos'}
+                </p>
+              </div>
+            </div>
+
+            {/* PAR-Q action */}
+            {parq && !parqCleared && (
+              <button
+                type="button"
+                onClick={() => {
+                  // Trigger PAR-Q wizard
+                  parq.resetWizard();
+                  setShowWelcome(false);
+                }}
+                className="w-full flex items-center gap-3 p-3 bg-white/80 border border-amber-200/60 rounded-xl hover:bg-white transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-ceramic-success/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-ceramic-success" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-bold text-ceramic-text-primary">Questionario PAR-Q+</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">7 perguntas sobre prontidao para atividade fisica</p>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-ceramic-warning/10 text-ceramic-warning">Pendente</span>
+              </button>
+            )}
+            {parqCleared && (
+              <div className="flex items-center gap-3 p-3 bg-white/80 border border-ceramic-success/20 rounded-xl">
+                <div className="w-8 h-8 rounded-lg bg-ceramic-success/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-ceramic-success" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-ceramic-text-primary">Questionario PAR-Q+</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Concluido</p>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-ceramic-success/10 text-ceramic-success">OK</span>
+              </div>
+            )}
+
+            {/* Document uploads */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Exame Cardiologico */}
+              {(() => {
+                const cardioDoc = docs.documents.find(d => d.document_type === 'exame_cardiologico');
+                const status = cardioDoc?.review_status;
+                return (
+                  <div className="bg-white/80 border border-amber-200/40 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-ceramic-error" />
+                      <span className="text-xs font-bold text-ceramic-text-primary">Exame Cardiologico</span>
+                    </div>
+                    {cardioDoc ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
+                          status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
+                          'bg-ceramic-warning/10 text-ceramic-warning'
+                        }`}>
+                          {status === 'approved' ? 'Aprovado' : status === 'rejected' ? 'Rejeitado' : 'Em analise'}
+                        </span>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center gap-1.5 py-2 border border-dashed border-ceramic-border rounded-lg cursor-pointer hover:border-amber-400 hover:bg-amber-50/50 transition-colors">
+                        <Upload className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                        <span className="text-[10px] font-medium text-ceramic-text-secondary">Enviar</span>
+                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) docs.uploadDocument({ document_type: 'exame_cardiologico', title: 'Exame Cardiologico', file });
+                          e.target.value = '';
+                        }} />
+                      </label>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Atestado de Liberacao */}
+              {(() => {
+                const libDoc = docs.documents.find(d => d.document_type === 'liberacao_atividade');
+                const status = libDoc?.review_status;
+                return (
+                  <div className="bg-white/80 border border-amber-200/40 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-ceramic-info" />
+                      <span className="text-xs font-bold text-ceramic-text-primary">Atestado Liberacao</span>
+                    </div>
+                    {libDoc ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
+                          status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
+                          'bg-ceramic-warning/10 text-ceramic-warning'
+                        }`}>
+                          {status === 'approved' ? 'Aprovado' : status === 'rejected' ? 'Rejeitado' : 'Em analise'}
+                        </span>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center gap-1.5 py-2 border border-dashed border-ceramic-border rounded-lg cursor-pointer hover:border-amber-400 hover:bg-amber-50/50 transition-colors">
+                        <Upload className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                        <span className="text-[10px] font-medium text-ceramic-text-secondary">Enviar</span>
+                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) docs.uploadDocument({ document_type: 'liberacao_atividade', title: 'Atestado de Liberacao', file });
+                          e.target.value = '';
+                        }} />
+                      </label>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {docs.isUploading && (
+              <div className="flex items-center justify-center gap-2 py-1">
+                <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                <span className="text-xs text-ceramic-text-secondary">Enviando...</span>
+              </div>
+            )}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Profile Card — compact */}
+      <motion.section className="px-5 mb-4" custom={0.5} initial="hidden" animate="visible" variants={sectionVariants}>
+        <div className="bg-ceramic-base rounded-2xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            {/* Avatar with fallback to initials */}
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={profile.athlete_name}
-                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ${getAvatarColor(profile.athlete_name)}`}>
-                <span className="text-white font-bold">{getInitials(profile.athlete_name)}</span>
+              <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${getAvatarColor(profile.athlete_name)}`}>
+                <span className="text-white font-bold text-sm">{getInitials(profile.athlete_name)}</span>
               </div>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <h1 className="text-xl font-black text-ceramic-text-primary truncate">
+                <h1 className="text-lg font-black text-ceramic-text-primary truncate">
                   {profile.athlete_name}
                 </h1>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   {prescribedModalities.map((mod) => (
-                    <span key={mod} className="text-base" title={MODALITY_CONFIG[mod]?.label}>
+                    <span key={mod} className="text-sm" title={MODALITY_CONFIG[mod]?.label}>
                       {MODALITY_CONFIG[mod]?.icon}
                     </span>
                   ))}
                 </div>
-                {/* Alert badges for health/financial pending */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {profile.parq_clearance_status && ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
-                    <span className="w-5 h-5 rounded-full bg-ceramic-error/10 flex items-center justify-center" title="Pendência de saúde">
-                      <Heart className="w-3 h-3 text-ceramic-error" />
-                    </span>
-                  )}
-                  {(profile as unknown as Record<string, unknown>).hasPendingPayment && (
-                    <span className="w-5 h-5 rounded-full bg-amber-500/10 flex items-center justify-center" title="Pendência financeira">
-                      <DollarSign className="w-3 h-3 text-amber-600" />
-                    </span>
-                  )}
-                </div>
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-xs text-ceramic-text-secondary">Prescrito por {profile.coach_name}</p>
-                <span className="text-ceramic-border">·</span>
-                <p className="text-xs text-ceramic-text-secondary">
-                  {prescribedModalities.map((mod) => MODALITY_CONFIG[mod]?.label).join(', ')}
-                </p>
-              </div>
+              <p className="text-[10px] text-ceramic-text-secondary">
+                Prescrito por {profile.coach_name} · {prescribedModalities.map((mod) => MODALITY_CONFIG[mod]?.label).join(', ')}
+              </p>
             </div>
+
+            {/* Compact status badge */}
+            {micro && micro.status === 'active' && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-ceramic-success/10 rounded-lg flex-shrink-0">
+                <CheckCircle className="w-3 h-3 text-ceramic-success" />
+                <span className="text-[10px] font-bold text-ceramic-success">Liberado</span>
+              </span>
+            )}
+            {micro && micro.status === 'draft' && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-amber-500/10 rounded-lg flex-shrink-0">
+                <Clock className="w-3 h-3 text-amber-600" />
+                <span className="text-[10px] font-bold text-amber-700">Pendente</span>
+              </span>
+            )}
           </div>
-
-          {/* Microcycle Status Badge — inside profile card */}
-          {micro && micro.status === 'draft' && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span className="text-sm font-bold text-amber-700">Treino Pendente</span>
-              <span className="text-xs text-amber-600">Aguardando liberação do coach</span>
-            </div>
-          )}
-          {micro && micro.status === 'active' && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
-              <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0" />
-              <span className="text-sm font-bold text-ceramic-success">Treino Liberado</span>
-            </div>
-          )}
-
         </div>
       </motion.section>
 
@@ -619,95 +739,7 @@ export default function AthletePortalView() {
         </motion.section>
       )}
 
-      {/* Health Documents Section — #381, #925 */}
-      {profile.parq_clearance_status &&
-       ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
-        <motion.div className="px-5 mb-3" custom={1.6} initial="hidden" animate="visible" variants={sectionVariants}>
-          <div className="bg-ceramic-info/5 border border-ceramic-info/20 rounded-xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setShowDocUpload(!showDocUpload)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ceramic-info/10 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-full bg-ceramic-info/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-ceramic-info" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-bold text-ceramic-info">Documentos de Saude</p>
-                <p className="text-xs text-ceramic-info">
-                  {profile.parq_clearance_status === 'expired'
-                    ? 'Seus documentos de saúde expiraram'
-                    : profile.parq_clearance_status === 'blocked'
-                    ? 'Liberação medica necessaria'
-                    : 'Envie seus documentos para liberar treinos'}
-                </p>
-              </div>
-              <ChevronDown className={`w-4 h-4 text-ceramic-info transition-transform ${showDocUpload ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showDocUpload && (
-              <div className="px-4 pb-4 space-y-3">
-                {/* Existing documents */}
-                {docs.documents.length > 0 && (
-                  <div className="space-y-2">
-                    {docs.documents.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-2.5 ceramic-inset rounded-lg">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <FileText className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
-                          <span className="text-xs text-ceramic-text-primary truncate">{doc.title || doc.file_name}</span>
-                        </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex-shrink-0 ${
-                          doc.review_status === 'approved' ? 'bg-ceramic-success/10 text-ceramic-success' :
-                          doc.review_status === 'rejected' ? 'bg-ceramic-error/10 text-ceramic-error' :
-                          'bg-ceramic-warning/10 text-ceramic-warning'
-                        }`}>
-                          {doc.review_status === 'approved' ? 'Aprovado' :
-                           doc.review_status === 'rejected' ? 'Rejeitado' : 'Pendente'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Upload buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex flex-col items-center gap-1.5 p-3 border-2 border-dashed border-ceramic-border rounded-xl cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-colors">
-                    <Heart className="w-5 h-5 text-ceramic-error" />
-                    <span className="text-[10px] font-bold text-ceramic-text-primary text-center">Exame Cardiologico</span>
-                    <span className="text-[9px] text-ceramic-text-secondary">Enviar laudo</span>
-                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file && profile.athlete_id) {
-                        docs.uploadDocument({ document_type: 'exame_cardiologico', title: 'Exame Cardiologico', file });
-                      }
-                      e.target.value = '';
-                    }} />
-                  </label>
-                  <label className="flex flex-col items-center gap-1.5 p-3 border-2 border-dashed border-ceramic-border rounded-xl cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-colors">
-                    <FileText className="w-5 h-5 text-ceramic-info" />
-                    <span className="text-[10px] font-bold text-ceramic-text-primary text-center">Atestado de Liberacao</span>
-                    <span className="text-[9px] text-ceramic-text-secondary">Enviar atestado</span>
-                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file && profile.athlete_id) {
-                        docs.uploadDocument({ document_type: 'liberacao_atividade', title: 'Atestado de Liberacao', file });
-                      }
-                      e.target.value = '';
-                    }} />
-                  </label>
-                </div>
-
-                {docs.isUploading && (
-                  <div className="flex items-center justify-center gap-2 py-2">
-                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
-                    <span className="text-xs text-ceramic-text-secondary">Enviando documento...</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
+      {/* Old health docs section removed — now at top of page (#925) */}
 
       {/* Week viewing indicator */}
       {micro && selectedWeek !== (micro.current_week || 1) && (
