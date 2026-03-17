@@ -1429,7 +1429,7 @@ export default function AthleteDetailView() {
           <div className="ceramic-card p-4 mb-4 space-y-4">
             <FeedbackRadarChart
               questionnaire={aggregatedQuestionnaire}
-              size={220}
+              size={300}
               title="Visao Geral"
               subtitle="Media dos feedbacks do atleta"
             />
