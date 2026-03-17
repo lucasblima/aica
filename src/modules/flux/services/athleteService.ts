@@ -13,9 +13,9 @@ export interface CreateAthleteInput {
   name: string;
   email?: string;
   phone: string;
-  level: AthleteLevel;
+  level?: AthleteLevel;
   status?: AthleteStatus;
-  modality: TrainingModality;
+  modality?: TrainingModality;
   trial_expires_at?: string;
   onboarding_data?: Record<string, unknown>;
   anamnesis?: Athlete['anamnesis'];

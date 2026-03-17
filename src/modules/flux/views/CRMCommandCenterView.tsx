@@ -532,12 +532,15 @@ export default function CRMCommandCenterView() {
   ): Promise<string | void> => {
     try {
       const modalityLevels = athleteData.modalityLevels || [];
-      if (modalityLevels.length === 0) {
+
+      // In edit mode, modality is required. In create mode, it's optional
+      // (athlete chooses modality later, coach assigns during prescription)
+      if (editingAthlete && modalityLevels.length === 0) {
         throw new Error('Selecione pelo menos uma modalidade');
       }
 
       const modalities = modalityLevels.map((ml) => ml.modality);
-      const primaryModality = modalities[0];
+      const primaryModality = modalities[0] || undefined;
       const { modalityLevels: _, ...athletePayload } = athleteData;
       const athleteWithModality = { ...athletePayload, modality: primaryModality };
 
@@ -561,25 +564,27 @@ export default function CRMCommandCenterView() {
         trackAthleteCreated().catch(() => {});
       }
 
-      // Sync athlete profiles
-      const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
-        athleteId,
-        modalities,
-        {
-          level: athleteData.level as AthleteLevel,
-          anamnesis: athleteData.anamnesis,
-          ftp: athleteData.ftp,
-          pace_threshold: athleteData.pace_threshold,
-          css: athleteData.swim_css,
-          modalityLevels: modalityLevels as Array<{
-            modality: TrainingModality;
-            level: AthleteLevel;
-          }>,
-        }
-      );
+      // Sync athlete profiles (skip if no modalities — create mode without modalities)
+      if (modalities.length > 0) {
+        const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
+          athleteId,
+          modalities,
+          {
+            level: athleteData.level as AthleteLevel,
+            anamnesis: athleteData.anamnesis,
+            ftp: athleteData.ftp,
+            pace_threshold: athleteData.pace_threshold,
+            css: athleteData.swim_css,
+            modalityLevels: modalityLevels as Array<{
+              modality: TrainingModality;
+              level: AthleteLevel;
+            }>,
+          }
+        );
 
-      if (profileError) {
-        console.error('Error syncing athlete profiles:', profileError);
+        if (profileError) {
+          console.error('Error syncing athlete profiles:', profileError);
+        }
       }
 
       setAthleteModalOpen(false);
