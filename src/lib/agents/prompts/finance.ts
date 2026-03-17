@@ -5,7 +5,7 @@
  * savings suggestions, and anomaly detection.
  *
  * Note: This prompt consolidates the SYSTEM_PROMPT previously
- * defined in src/modules/finance/services/financeAgentService.ts
+ * defined in the deprecated financeAgentService (now removed)
  */
 
 import type { AgentConfig } from '../types'

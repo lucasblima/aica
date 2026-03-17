@@ -4,7 +4,7 @@
  * Manages finance transactions with filtering and pagination.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '../../../services/supabaseClient';
 
@@ -29,7 +29,7 @@ interface UseTransactionsReturn {
 
 export function useTransactions(
   userId: string,
-  initialFilters?: TransactionFilters
+  externalFilters?: TransactionFilters
 ): UseTransactionsReturn {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,11 +37,22 @@ export function useTransactions(
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [filters, setFilters] = useState<TransactionFilters>(initialFilters || {});
+  const [internalFilters, setInternalFilters] = useState<TransactionFilters>(externalFilters || {});
+
+  // Use external filters when provided, otherwise use internal state
+  const filters = externalFilters ?? internalFilters;
+
+  // Stable serialized key so fetchTransactions reacts to filter changes
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
+
+  // Race condition protection: discard stale responses when filters change rapidly
+  const requestIdRef = useRef(0);
 
   const fetchTransactions = useCallback(
     async (pageNum: number, reset: boolean = false) => {
       if (!userId) return;
+
+      const currentRequestId = ++requestIdRef.current;
 
       try {
         setLoading(true);
@@ -54,7 +65,7 @@ export function useTransactions(
           .order('transaction_date', { ascending: false })
           .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
-        // Apply filters
+        // Apply filters (captured from outer scope; filtersKey in deps ensures freshness)
         if (filters.startDate) {
           query = query.gte('transaction_date', filters.startDate);
         }
@@ -76,11 +87,17 @@ export function useTransactions(
         if (filters.statementId) {
           query = query.eq('statement_id', filters.statementId);
         }
+        if (filters.accountId) {
+          query = query.eq('account_id', filters.accountId);
+        }
         if (filters.searchTerm) {
           query = query.ilike('description', `%${filters.searchTerm}%`);
         }
 
         const { data, error: queryError, count } = await query;
+
+        // Discard stale response if a newer request has been fired
+        if (currentRequestId !== requestIdRef.current) return;
 
         if (queryError) throw queryError;
 
@@ -96,13 +113,18 @@ export function useTransactions(
         setHasMore(newTransactions.length === PAGE_SIZE);
         setPage(pageNum);
       } catch (err) {
+        // Discard errors from stale requests
+        if (currentRequestId !== requestIdRef.current) return;
         log.error('Error fetching transactions:', err);
         setError('Erro ao carregar transacoes');
       } finally {
-        setLoading(false);
+        // Only clear loading if this is still the current request
+        if (currentRequestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     },
-    [userId, filters]
+    [userId, filters, filtersKey]
   );
 
   // Initial fetch and refetch on filter change
@@ -159,9 +181,9 @@ export function useTransactions(
     }
   }, []);
 
-  // Update filters handler
+  // Update filters handler (for callers that use setFilters directly)
   const handleSetFilters = useCallback((newFilters: TransactionFilters) => {
-    setFilters(newFilters);
+    setInternalFilters(newFilters);
   }, []);
 
   return {

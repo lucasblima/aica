@@ -162,12 +162,16 @@ export async function logAttribution(attribution: {
   metadata?: Record<string, unknown>;
 }): Promise<void> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const delta =
       attribution.previousScore != null
         ? attribution.newScore - attribution.previousScore
         : null;
 
     const { error } = await supabase.from('score_attribution_log').insert({
+      user_id: user.id,
       model_id: attribution.modelId,
       previous_score: attribution.previousScore,
       new_score: attribution.newScore,

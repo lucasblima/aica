@@ -56,7 +56,7 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({ data, totalExpenses 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [chartSize, setChartSize] = useState(192);
+  const [chartSize, setChartSize] = useState(140);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 50);
@@ -68,19 +68,23 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({ data, totalExpenses 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = entry.contentRect.width;
-        // On mobile, use more of the width; on desktop, cap at 192
-        setChartSize(Math.min(w * 0.45, 192));
+        // On mobile, use more of the width; on desktop, cap at 140
+        setChartSize(Math.min(w * 0.35, 140));
       }
     });
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
 
-  // Calculate donut segments
+  // Sort data by amount descending and calculate donut segments
   const segments = useMemo(() => {
+    const sorted = [...data]
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 6);
+
     let startAngle = 0;
 
-    return data.slice(0, 6).map((item) => {
+    return sorted.map((item) => {
       const angle = (item.percentage / 100) * 360;
       const segment = {
         category: item.category,
@@ -174,14 +178,14 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({ data, totalExpenses 
   const hoveredSeg = hoveredIndex !== null ? segments[hoveredIndex] : null;
 
   return (
-    <div className="ceramic-card p-6" ref={containerRef}>
-      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">
+    <div className="ceramic-card p-4" ref={containerRef}>
+      <h3 className="text-sm font-semibold text-ceramic-text-primary mb-3">
         Gastos por Categoria
       </h3>
 
-      <div className="flex flex-col md:flex-row items-center gap-6">
-        {/* Donut Chart */}
-        <div className="relative" style={{ width: chartSize, height: chartSize }}>
+      <div className="flex items-start gap-4">
+        {/* Donut Chart — compact */}
+        <div className="relative flex-shrink-0" style={{ width: Math.min(chartSize, 140), height: Math.min(chartSize, 140) }}>
           <svg
             viewBox="0 0 100 100"
             className="w-full h-full transform -rotate-90"
@@ -225,18 +229,18 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({ data, totalExpenses 
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {hoveredSeg ? (
               <>
-                <p className="text-[10px] text-ceramic-text-secondary">{hoveredSeg.label}</p>
-                <p className="text-sm font-bold text-ceramic-text-primary">
+                <p className="text-[9px] text-ceramic-text-secondary leading-tight">{hoveredSeg.label}</p>
+                <p className="text-xs font-bold text-ceramic-text-primary leading-tight">
                   {formatCurrency(hoveredSeg.amount)}
                 </p>
-                <p className="text-[10px] text-ceramic-text-secondary">
+                <p className="text-[9px] text-ceramic-text-secondary leading-tight">
                   {hoveredSeg.percentage.toFixed(1)}%
                 </p>
               </>
             ) : (
               <>
-                <p className="text-xs text-ceramic-text-secondary">Total</p>
-                <p className="text-lg font-bold text-ceramic-text-primary">
+                <p className="text-[10px] text-ceramic-text-secondary leading-tight">Total</p>
+                <p className="text-sm font-bold text-ceramic-text-primary leading-tight">
                   {formatCurrency(totalExpenses)}
                 </p>
               </>
@@ -244,29 +248,30 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({ data, totalExpenses 
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex-1 grid grid-cols-2 gap-2">
+        {/* Category list — sorted descending by amount */}
+        <div className="flex-1 min-w-0 space-y-1">
           {segments.map((segment, index) => (
             <button
               key={index}
-              className={`flex items-center gap-2 text-left rounded-lg px-1.5 py-1 transition-colors ${
+              className={`flex items-center gap-2 w-full text-left rounded-lg px-2 py-1.5 transition-colors ${
                 hoveredIndex === index ? 'bg-ceramic-cool' : ''
               }`}
               onMouseEnter={() => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
               <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: segment.color }}
               />
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-ceramic-text-primary truncate">
-                  {segment.label}
-                </p>
-                <p className="text-xs text-ceramic-text-secondary">
-                  {segment.percentage.toFixed(1)}%
-                </p>
-              </div>
+              <span className="text-xs font-medium text-ceramic-text-primary truncate">
+                {segment.label}
+              </span>
+              <span className="ml-auto text-xs tabular-nums text-ceramic-text-secondary whitespace-nowrap">
+                {formatCurrency(segment.amount)}
+              </span>
+              <span className="text-[10px] tabular-nums text-ceramic-text-secondary w-10 text-right flex-shrink-0">
+                {segment.percentage.toFixed(1)}%
+              </span>
             </button>
           ))}
         </div>

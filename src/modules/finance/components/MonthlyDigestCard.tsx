@@ -5,10 +5,15 @@
  * Displays grade, highlights, savings opportunities, risk alerts,
  * and a tip for the next month.
  *
+ * For closed months: auto-loads persisted digest from DB, or generates
+ * and persists one if not found.
+ * For the current month: shows a placeholder — analysis is only
+ * available when the month closes.
+ *
  * Ceramic Design System + Jony Ive inspired.
  */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import {
   Sparkles,
   TrendingDown,
@@ -17,13 +22,12 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  Calendar,
+  Loader2,
+  Database,
 } from 'lucide-react'
 import { AIThinkingState } from '@/components/ui'
-import {
-  getMonthlyDigest,
-  type MonthlyDigest,
-  type DigestStats,
-} from '../services/financeDigestService'
+import { useMonthlyDigest } from '../hooks/useMonthlyDigest'
 
 // =============================================================================
 // Types
@@ -31,6 +35,8 @@ import {
 
 interface MonthlyDigestCardProps {
   userId: string
+  selectedYear: number
+  selectedMonth: number // 1-indexed (1=Jan, 12=Dec)
 }
 
 // =============================================================================
@@ -56,48 +62,66 @@ function formatCurrency(value: number): string {
 // Component
 // =============================================================================
 
-export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) => {
-  const [digest, setDigest] = useState<MonthlyDigest | null>(null)
-  const [stats, setStats] = useState<DigestStats | null>(null)
-  const [monthName, setMonthName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [noData, setNoData] = useState(false)
+export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({
+  userId,
+  selectedYear,
+  selectedMonth,
+}) => {
+  const {
+    digest,
+    stats,
+    isLoading,
+    isGenerating,
+    isCurrentMonth,
+    error,
+    isCached,
+    regenerate,
+    monthName,
+  } = useMonthlyDigest(userId, selectedYear, selectedMonth)
+
   const [savingsExpanded, setSavingsExpanded] = useState(false)
-  const [generated, setGenerated] = useState(false)
 
-  const handleGenerate = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    setNoData(false)
+  // ── Current month — show placeholder ──
+  if (isCurrentMonth) {
+    return (
+      <div className="ceramic-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+            <Calendar className="w-5 h-5 text-ceramic-info" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-ceramic-text-primary">
+              Resumo Mensal IA
+            </h3>
+            <p className="text-xs text-ceramic-text-secondary">
+              {monthName}
+            </p>
+          </div>
+        </div>
 
-    try {
-      const response = await getMonthlyDigest()
+        <div className="ceramic-inset p-4">
+          <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+            O resumo com analise de IA estara disponivel quando o mes fechar.
+            Navegue para um mes anterior para ver a analise completa.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
-      if (!response.success) {
-        setError(response.error || 'Erro ao gerar resumo')
-        return
-      }
+  // ── Loading state ──
+  if (isLoading || isGenerating) {
+    return (
+      <div className="ceramic-card p-6">
+        <AIThinkingState
+          message={isGenerating ? 'Gerando analise com IA...' : 'Carregando resumo...'}
+        />
+      </div>
+    )
+  }
 
-      if (!response.digest) {
-        setNoData(true)
-        setMonthName(response.monthName || '')
-        return
-      }
-
-      setDigest(response.digest)
-      setStats(response.stats || null)
-      setMonthName(response.monthName || '')
-      setGenerated(true)
-    } catch {
-      setError('Erro inesperado. Tente novamente.')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  // Not yet generated — show CTA
-  if (!generated && !loading) {
+  // ── Error state ──
+  if (error && !digest) {
     return (
       <div className="ceramic-card p-6 space-y-4">
         <div className="flex items-center gap-3">
@@ -109,56 +133,52 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
               Resumo Mensal IA
             </h3>
             <p className="text-xs text-ceramic-text-secondary">
-              Analise inteligente dos seus gastos
+              {monthName}
             </p>
           </div>
         </div>
 
-        {error && (
-          <div className="ceramic-inset p-3 bg-ceramic-error/5">
-            <p className="text-xs text-ceramic-error">{error}</p>
-            <button
-              onClick={handleGenerate}
-              className="mt-2 text-sm text-ceramic-info hover:underline"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        )}
+        <div className="ceramic-inset p-3 bg-ceramic-error/5">
+          <p className="text-xs text-ceramic-error">{error}</p>
+          <button
+            onClick={regenerate}
+            className="mt-2 text-sm text-ceramic-info hover:underline"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-        {noData && (
-          <div className="ceramic-inset p-3">
+  // ── No digest available ──
+  if (!digest) {
+    return (
+      <div className="ceramic-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-ceramic-accent" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-ceramic-text-primary">
+              Resumo Mensal IA
+            </h3>
             <p className="text-xs text-ceramic-text-secondary">
-              Nenhuma transacao encontrada{monthName ? ` para ${monthName}` : ''}. Faca upload de um extrato primeiro.
+              {monthName}
             </p>
           </div>
-        )}
+        </div>
 
-        <button
-          onClick={handleGenerate}
-          className="w-full ceramic-tray p-4 flex items-center justify-center gap-2 hover:scale-[1.01] transition-transform"
-        >
-          <Sparkles className="w-4 h-4 text-ceramic-accent" />
-          <span className="text-sm font-bold text-ceramic-accent">
-            Gerar Resumo do Mes
-          </span>
-        </button>
+        <div className="ceramic-inset p-3">
+          <p className="text-xs text-ceramic-text-secondary">
+            Nenhuma transacao encontrada para {monthName}. Faca upload de um extrato primeiro.
+          </p>
+        </div>
       </div>
     )
   }
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="ceramic-card p-6">
-        <AIThinkingState message="Analisando suas financas" />
-      </div>
-    )
-  }
-
-  // Digest loaded
-  if (!digest) return null
-
+  // ── Digest loaded ──
   const gradeConfig = GRADE_CONFIG[digest.month_grade] || GRADE_CONFIG.C
 
   return (
@@ -173,23 +193,35 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
             <h3 className="text-sm font-bold text-ceramic-text-primary">
               Resumo de {monthName}
             </h3>
-            {stats && (
-              <p className="text-xs text-ceramic-text-secondary">
-                {stats.transactionCount} transacoes analisadas
-              </p>
-            )}
+            <div className="flex items-center gap-2">
+              {stats && (
+                <p className="text-xs text-ceramic-text-secondary">
+                  {stats.transactionCount} transacoes analisadas
+                </p>
+              )}
+              {isCached && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-ceramic-info" title="Carregado do cache">
+                  <Database className="w-2.5 h-2.5" />
+                  cache
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Refresh button */}
           <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="ceramic-inset w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform"
+            onClick={regenerate}
+            disabled={isGenerating}
+            className="ceramic-inset w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
             title="Regenerar resumo"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+            {isGenerating ? (
+              <Loader2 className="w-3.5 h-3.5 text-ceramic-text-secondary animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+            )}
           </button>
 
           {/* Grade badge */}
@@ -232,21 +264,23 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
       )}
 
       {/* Highlights */}
-      <div className="space-y-2">
-        <p className="text-xs font-bold text-ceramic-text-primary uppercase tracking-wider">
-          Destaques
-        </p>
+      {digest.highlights.length > 0 && (
         <div className="space-y-2">
-          {digest.highlights.map((highlight, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <div className="ceramic-inset w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-[10px] font-bold text-ceramic-accent">{i + 1}</span>
+          <p className="text-xs font-bold text-ceramic-text-primary uppercase tracking-wider">
+            Destaques
+          </p>
+          <div className="space-y-2">
+            {digest.highlights.map((highlight, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <div className="ceramic-inset w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-[10px] font-bold text-ceramic-accent">{i + 1}</span>
+                </div>
+                <p className="text-xs text-ceramic-text-secondary leading-relaxed">{highlight}</p>
               </div>
-              <p className="text-xs text-ceramic-text-secondary leading-relaxed">{highlight}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Savings opportunities — collapsible */}
       {digest.savings_opportunities.length > 0 && (
@@ -302,21 +336,23 @@ export const MonthlyDigestCard: React.FC<MonthlyDigestCardProps> = ({ userId }) 
       )}
 
       {/* Next month tip */}
-      <div className="ceramic-tray p-4 bg-gradient-to-br from-ceramic-accent/5 to-transparent">
-        <div className="flex items-start gap-3">
-          <div className="ceramic-concave w-8 h-8 flex items-center justify-center flex-shrink-0">
-            <Lightbulb className="w-4 h-4 text-ceramic-accent" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider mb-1">
-              Dica para o proximo mes
-            </p>
-            <p className="text-xs text-ceramic-text-primary leading-relaxed">
-              {digest.next_month_tip}
-            </p>
+      {digest.next_month_tip && (
+        <div className="ceramic-tray p-4 bg-gradient-to-br from-ceramic-accent/5 to-transparent">
+          <div className="flex items-start gap-3">
+            <div className="ceramic-concave w-8 h-8 flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-4 h-4 text-ceramic-accent" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider mb-1">
+                Dica para o proximo mes
+              </p>
+              <p className="text-xs text-ceramic-text-primary leading-relaxed">
+                {digest.next_month_tip}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

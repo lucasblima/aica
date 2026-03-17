@@ -16,12 +16,17 @@ import {
   ChevronsRight,
   Receipt,
   Calendar,
+  Tags,
+  Download,
 } from 'lucide-react';
 import { createNamespacedLogger } from '@/lib/logger';
+import { supabase } from '@/services/supabaseClient';
 import { useTransactions } from '../hooks/useTransactions';
 import type { FinanceTransaction, TransactionFilters } from '../types';
-import { TRANSACTION_CATEGORIES } from '../types';
 import { CATEGORY_LABELS, CATEGORY_COLORS, formatCurrency } from '../constants';
+import { useFinanceContext } from '../contexts/FinanceContext';
+import { exportToCSV, exportToPDF } from '../services/exportService';
+import { propagateCategory } from '../services/financeService';
 
 const log = createNamespacedLogger('TransactionListView');
 
@@ -58,6 +63,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -69,12 +75,37 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // Propagation notice state
+  const [propagationNotice, setPropagationNotice] = useState<string | null>(null);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'recategorize' | 'delete' | null>(null);
+  const [bulkCategory, setBulkCategory] = useState<string>('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   // Debounce search input (400ms)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     debounceRef.current = setTimeout(() => setSearchTerm(searchInput.trim()), 400);
     return () => clearTimeout(debounceRef.current);
   }, [searchInput]);
+
+  const { accounts, selectedMonth, selectedYear } = useFinanceContext();
+
+  // Compute the default date range for the selected month (stable reference via useMemo)
+  const defaultMonthRange = useMemo(() => {
+    const firstDay = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
+    const lastDayDate = new Date(selectedYear, selectedMonth, 0);
+    const lastDay = `${lastDayDate.getFullYear()}-${String(lastDayDate.getMonth() + 1).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
+    return { firstDay, lastDay };
+  }, [selectedMonth, selectedYear]);
+
+  // Auto-set date filters to the selected month from FinanceContext
+  useEffect(() => {
+    setStartDate(defaultMonthRange.firstDay);
+    setEndDate(defaultMonthRange.lastDay);
+  }, [defaultMonthRange]);
 
   // All categories that exist in CATEGORY_LABELS (superset of TRANSACTION_CATEGORIES)
   const allCategories = useMemo(() =>
@@ -91,8 +122,9 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     if (categoryFilter) f.category = categoryFilter;
     if (startDate) f.startDate = startDate;
     if (endDate) f.endDate = endDate;
+    if (selectedAccountId) f.accountId = selectedAccountId;
     return f;
-  }, [searchTerm, typeFilter, categoryFilter, startDate, endDate]);
+  }, [searchTerm, typeFilter, categoryFilter, startDate, endDate, selectedAccountId]);
 
   const {
     transactions,
@@ -126,11 +158,34 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     async (id: string) => {
       try {
         setSaving(true);
+        const originalTx = transactions.find((t) => t.id === id);
+        const categoryChanged = originalTx && originalTx.category !== editData.category;
+
         await updateTransaction(id, {
           category: editData.category,
           description: editData.description,
           notes: editData.notes || undefined,
         });
+
+        // Propagate category to matching transactions when category changed
+        if (categoryChanged && originalTx) {
+          const { propagatedCount } = await propagateCategory(
+            userId,
+            originalTx.description,
+            editData.category
+          );
+          if (propagatedCount > 0) {
+            const label = CATEGORY_LABELS[editData.category] || editData.category;
+            setPropagationNotice(
+              `Categoria "${label}" aplicada a ${propagatedCount} lancamento${propagatedCount !== 1 ? 's' : ''} similar${propagatedCount !== 1 ? 'es' : ''}`
+            );
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => setPropagationNotice(null), 5000);
+            // Refresh list to reflect propagated changes
+            refresh();
+          }
+        }
+
         setExpandedId(null);
       } catch (err) {
         log.error('Failed to save transaction', err);
@@ -138,7 +193,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         setSaving(false);
       }
     },
-    [editData, updateTransaction]
+    [editData, updateTransaction, transactions, userId, refresh]
   );
 
   const handleDelete = useCallback(
@@ -153,6 +208,104 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
     },
     [deleteTransaction]
   );
+
+  // ── Clear bulk selection when filters change ──
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [typeFilter, categoryFilter, startDate, endDate, searchTerm, selectedAccountId]);
+
+  // ── Bulk selection helpers ──
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === transactions.length && transactions.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map((tx) => tx.id)));
+    }
+  }, [selectedIds.size, transactions]);
+
+  // ── Bulk recategorize ──
+  const handleBulkRecategorize = useCallback(async () => {
+    if (!bulkCategory || selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error: updateError } = await supabase
+        .from('finance_transactions')
+        .update({ category: bulkCategory })
+        .in('id', ids);
+      if (updateError) throw updateError;
+
+      // Propagate category to matching descriptions for each selected transaction
+      const selectedTxs = transactions.filter((tx) => selectedIds.has(tx.id));
+      const uniqueDescriptions = new Set(selectedTxs.map((tx) => tx.description));
+      let totalPropagated = 0;
+      for (const desc of uniqueDescriptions) {
+        const { propagatedCount } = await propagateCategory(userId, desc, bulkCategory);
+        totalPropagated += propagatedCount;
+      }
+
+      if (totalPropagated > 0) {
+        const label = CATEGORY_LABELS[bulkCategory] || bulkCategory;
+        setPropagationNotice(
+          `Categoria "${label}" propagada para ${totalPropagated} lancamento${totalPropagated !== 1 ? 's' : ''} similar${totalPropagated !== 1 ? 'es' : ''}`
+        );
+        setTimeout(() => setPropagationNotice(null), 5000);
+      }
+
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      setBulkCategory('');
+      refresh();
+    } catch (err) {
+      log.error('Bulk recategorize failed', err);
+    } finally {
+      setBulkLoading(false);
+    }
+  }, [bulkCategory, selectedIds, transactions, userId, refresh]);
+
+  // ── Bulk delete ──
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Deletar ${selectedIds.size} transação${selectedIds.size !== 1 ? 'ões' : ''}? Esta ação não pode ser desfeita.`)) return;
+    setBulkLoading(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error: deleteError } = await supabase
+        .from('finance_transactions')
+        .delete()
+        .in('id', ids);
+      if (deleteError) throw deleteError;
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      refresh();
+    } catch (err) {
+      log.error('Bulk delete failed', err);
+    } finally {
+      setBulkLoading(false);
+    }
+  }, [selectedIds, refresh]);
+
+  const handleExportCSV = useCallback(() => {
+    exportToCSV(transactions, `transacoes-aica-${new Date().toISOString().slice(0, 10)}.csv`);
+  }, [transactions]);
+
+  const handleExportPDF = useCallback(() => {
+    const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+    const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+    exportToPDF(transactions, { totalIncome: income, totalExpenses: expenses, balance: income - expenses });
+  }, [transactions]);
 
   // ── Loading skeleton ──
   const renderSkeleton = () => (
@@ -218,6 +371,21 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           </button>
         )}
       </div>
+
+      {/* ── Propagation notice ── */}
+      {propagationNotice && (
+        <div className="flex items-center justify-between mb-3 px-3 py-2.5 rounded-lg bg-ceramic-success/10 border border-ceramic-success/20">
+          <span className="text-xs font-medium text-ceramic-success">
+            {propagationNotice}
+          </span>
+          <button
+            onClick={() => setPropagationNotice(null)}
+            className="text-ceramic-success/60 hover:text-ceramic-success transition-colors ml-2"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ── Search bar ── */}
       <div className="relative mb-3">
@@ -302,7 +470,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         <button
           onClick={() => setShowDateFilter(!showDateFilter)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-            startDate || endDate
+            startDate !== defaultMonthRange.firstDay || endDate !== defaultMonthRange.lastDay
               ? 'bg-amber-500 text-white'
               : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
           }`}
@@ -311,16 +479,57 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           {startDate || endDate ? 'Período' : 'Período'}
         </button>
 
+        {/* Account filter */}
+        {accounts.length > 0 && (
+          <select
+            value={selectedAccountId || ''}
+            onChange={e => setSelectedAccountId(e.target.value || null)}
+            className="text-xs p-2 rounded-lg border border-ceramic-border bg-ceramic-base text-ceramic-text-primary"
+          >
+            <option value="">Todas as contas</option>
+            {accounts.map(a => (
+              <option key={a.id} value={a.id}>{a.account_name} ({a.bank_name})</option>
+            ))}
+          </select>
+        )}
+
+        {/* Export */}
+        {transactions.length > 0 && (
+          <div className="relative group">
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+            >
+              <Download className="w-3 h-3" />
+              Exportar
+            </button>
+            <div className="absolute right-0 top-full mt-1 bg-ceramic-base border border-ceramic-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-30 min-w-[120px]">
+              <button
+                onClick={handleExportCSV}
+                className="w-full text-left px-3 py-2 text-xs text-ceramic-text-primary hover:bg-ceramic-cool rounded-t-lg"
+              >
+                CSV
+              </button>
+              <button
+                onClick={handleExportPDF}
+                className="w-full text-left px-3 py-2 text-xs text-ceramic-text-primary hover:bg-ceramic-cool rounded-b-lg"
+              >
+                PDF (imprimir)
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Clear filters */}
-        {(typeFilter !== 'all' || categoryFilter || searchInput || startDate || endDate) && (
+        {(typeFilter !== 'all' || categoryFilter || searchInput || startDate !== defaultMonthRange.firstDay || endDate !== defaultMonthRange.lastDay || selectedAccountId) && (
           <button
             onClick={() => {
               setTypeFilter('all');
               setCategoryFilter('');
               setSearchInput('');
               setSearchTerm('');
-              setStartDate('');
-              setEndDate('');
+              setStartDate(defaultMonthRange.firstDay);
+              setEndDate(defaultMonthRange.lastDay);
+              setSelectedAccountId(null);
               setShowDateFilter(false);
             }}
             className="px-3 py-1.5 rounded-full text-xs font-medium text-ceramic-error hover:bg-ceramic-error/10 transition-colors"
@@ -347,6 +556,52 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
             onChange={(e) => setEndDate(e.target.value)}
             className="flex-1 text-xs ceramic-card px-2 py-1.5 rounded text-ceramic-text-primary bg-transparent"
           />
+        </div>
+      )}
+
+      {/* ── Bulk selection header ── */}
+      {transactions.length > 0 && (
+        <div className="flex items-center justify-between ceramic-card p-2.5 mb-3 rounded-lg">
+          <div className="flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              checked={selectedIds.size === transactions.length && transactions.length > 0}
+              ref={(el) => {
+                if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < transactions.length;
+              }}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-ceramic-border text-amber-500 focus:ring-amber-500/30 cursor-pointer"
+            />
+            <span className="text-xs text-ceramic-text-secondary">
+              {selectedIds.size > 0
+                ? `${selectedIds.size} selecionada${selectedIds.size !== 1 ? 's' : ''}`
+                : 'Selecionar todas'}
+            </span>
+          </div>
+
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setBulkCategory('');
+                  setBulkAction('recategorize');
+                }}
+                disabled={bulkLoading}
+                className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                <Tags className="w-3.5 h-3.5" />
+                Re-categorizar
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
+                className="flex items-center gap-1.5 text-xs bg-ceramic-error hover:bg-ceramic-error/90 text-white px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Deletar
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -381,10 +636,21 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                   className="ceramic-card overflow-hidden transition-all duration-200"
                 >
                   {/* ── Row ── */}
-                  <button
-                    onClick={() => handleExpand(tx)}
-                    className="w-full flex items-center justify-between p-3 hover:bg-ceramic-cool/50 transition-colors text-left"
-                  >
+                  <div className="w-full flex items-center p-3 hover:bg-ceramic-cool/50 transition-colors text-left">
+                    {/* Bulk checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(tx.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(tx.id);
+                      }}
+                      className="w-4 h-4 mr-3 shrink-0 rounded border-ceramic-border text-amber-500 focus:ring-amber-500/30 cursor-pointer"
+                    />
+                    <button
+                      onClick={() => handleExpand(tx)}
+                      className="flex items-center justify-between flex-1 min-w-0"
+                    >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
                         className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -430,7 +696,8 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                         <ChevronDown className="w-4 h-4 text-ceramic-text-secondary" />
                       )}
                     </div>
-                  </button>
+                    </button>
+                  </div>
 
                   {/* ── Expanded edit panel ── */}
                   {isExpanded && (
@@ -458,7 +725,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                             }
                             className="w-full text-sm ceramic-inset px-3 py-2 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-transparent"
                           >
-                            {TRANSACTION_CATEGORIES.map((cat) => (
+                            {allCategories.map((cat) => (
                               <option key={cat} value={cat}>
                                 {CATEGORY_LABELS[cat] || cat}
                               </option>
@@ -576,6 +843,114 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           </>
         )}
       </div>
+
+      {/* ── Bulk recategorize modal (smart — grouped by description) ── */}
+      {bulkAction === 'recategorize' && (() => {
+        // Group selected transactions by normalized description
+        const selectedTxs = transactions.filter((tx) => selectedIds.has(tx.id));
+        const descGroups: { description: string; count: number; totalAmount: number; currentCategory: string }[] = [];
+        const seen = new Map<string, number>();
+        for (const tx of selectedTxs) {
+          const key = tx.description.toLowerCase().trim().replace(/\s+/g, ' ');
+          const idx = seen.get(key);
+          if (idx !== undefined) {
+            descGroups[idx].count++;
+            descGroups[idx].totalAmount += Math.abs(Number(tx.amount));
+          } else {
+            seen.set(key, descGroups.length);
+            descGroups.push({
+              description: tx.description,
+              count: 1,
+              totalAmount: Math.abs(Number(tx.amount)),
+              currentCategory: tx.category,
+            });
+          }
+        }
+        descGroups.sort((a, b) => b.count - a.count);
+
+        return (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="ceramic-card p-6 rounded-xl w-full max-w-md shadow-lg space-y-4">
+            <h3 className="text-base font-bold text-ceramic-text-primary">
+              Re-categorizar {selectedIds.size} transação{selectedIds.size !== 1 ? 'ões' : ''}
+            </h3>
+
+            {/* Smart grouping summary */}
+            {descGroups.length > 0 && (
+              <div className="max-h-40 overflow-y-auto space-y-1.5 ceramic-inset p-3 rounded-lg">
+                <p className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mb-1">
+                  {descGroups.length} descrição{descGroups.length !== 1 ? 'ões' : ''} única{descGroups.length !== 1 ? 's' : ''}
+                </p>
+                {descGroups.map((g, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-medium text-ceramic-text-primary truncate">
+                        {g.description}
+                      </span>
+                      {g.count > 1 && (
+                        <span className="shrink-0 bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          ×{g.count}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-ceramic-text-secondary tabular-nums whitespace-nowrap">
+                      {formatCurrency(g.totalAmount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs text-ceramic-text-secondary block mb-1.5">
+                Nova categoria
+              </label>
+              <select
+                value={bulkCategory}
+                onChange={(e) => setBulkCategory(e.target.value)}
+                className="w-full text-sm ceramic-inset px-3 py-2.5 rounded-lg text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-transparent"
+              >
+                <option value="">Selecione uma categoria...</option>
+                {allCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {CATEGORY_LABELS[cat] || cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <p className="text-[10px] text-ceramic-text-secondary">
+              A categoria também será aplicada a lançamentos futuros com a mesma descrição.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setBulkAction(null);
+                  setBulkCategory('');
+                }}
+                disabled={bulkLoading}
+                className="flex items-center gap-1.5 text-xs ceramic-inset px-4 py-2 rounded-lg text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleBulkRecategorize}
+                disabled={!bulkCategory || bulkLoading}
+                className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {bulkLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Tags className="w-3.5 h-3.5" />
+                )}
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
     </div>
   );
 };
