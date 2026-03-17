@@ -22,7 +22,7 @@ const STATUS_CONFIG: Record<StageCompletionStatus, {
     icon: Circle,
     bgColor: 'bg-[#948D82]/20',
     textColor: 'text-[#948D82]',
-    label: 'Nao iniciado',
+    label: 'Não iniciado',
   },
   partial: {
     icon: AlertCircle,

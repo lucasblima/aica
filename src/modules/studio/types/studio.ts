@@ -2,7 +2,7 @@
  * Studio Module Types
  *
  * Defines the core types for the Studio module, which is a generic
- * content creation hub (currently supports podcasts, extensible to video/articles).
+ * content creation hub (currently supports podcasts, extensible to vídeo/articles).
  *
  * Key Pattern: Finite State Machine (FSM)
  * - StudioMode defines the current view state
@@ -391,7 +391,7 @@ export interface EpisodeProduction {
   updatedAt: string;
 }
 
-/** Metadata for a generated video/audio clip */
+/** Metadata for a generated vídeo/áudio clip */
 export interface CutMetadata {
   start_time: number;
   end_time: number;

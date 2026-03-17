@@ -89,7 +89,7 @@ export interface IncentiveLaw {
   // Datas importantes
   fiscal_year_deadline: string | null;
 
-  // Conteudo para IA
+  // Conteúdo para IA
   description: string | null;
   benefits_summary: string | null;
   how_it_works: string | null;
@@ -122,7 +122,7 @@ export interface IncentiveLawFilters {
 }
 
 /**
- * Opcoes de ordenacao
+ * Opções de ordenacao
  */
 export type IncentiveLawSortField =
   | 'name'

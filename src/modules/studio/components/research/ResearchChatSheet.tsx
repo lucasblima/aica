@@ -67,7 +67,7 @@ export function ResearchChatSheet({
         {messages.length === 0 && (
           <div className="text-center py-8">
             <MessageCircle className="w-8 h-8 text-ceramic-text-secondary/30 mx-auto mb-2" />
-            <p className="text-sm text-ceramic-text-secondary">Pergunte sobre o convidado, sugira perguntas para a entrevista, ou peca para aprofundar algum topico.</p>
+            <p className="text-sm text-ceramic-text-secondary">Pergunte sobre o convidado, sugira perguntas para a entrevista, ou peca para aprofundar algum tópico.</p>
           </div>
         )}
 

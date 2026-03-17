@@ -10,8 +10,8 @@ import type { AgentConfig } from '../types'
 export const agendaAgentConfig: AgentConfig = {
   module: 'agenda',
   displayName: 'Agenda',
-  description: 'Especialista em calendario, reunioes e gestao de tempo',
-  systemPrompt: 'Voce e o agente Agenda do AICA Life OS. Ajude com agendamento de reunioes, gestao de calendario e organizacao de compromissos.',
+  description: 'Especialista em calendário, reunioes e gestao de tempo',
+  systemPrompt: 'Você e o agente Agenda do AICA Life OS. Ajude com agendamento de reunioes, gestao de calendário e organizacao de compromissos.',
   defaultModel: 'fast',
   tools: [],
   maxOutputTokens: 4096,

@@ -71,7 +71,7 @@ export function UnitEconomicsTab({ economics, cacBRL }: UnitEconomicsTabProps) {
           subtitle={`CAC: ${formatBRL(cacBRL)}`}
           icon={Clock}
           color="text-amber-500"
-          tooltip="Meses para recuperar o investimento de aquisicao de um cliente (CAC). Ideal: menos de 12 meses. Acima disso, o crescimento consome muito caixa."
+          tooltip="Meses para recuperar o investimento de aquisição de um cliente (CAC). Ideal: menos de 12 meses. Acima disso, o crescimento consome muito caixa."
         />
         <MetricCard
           label="LTV/CAC Ratio"
@@ -79,7 +79,7 @@ export function UnitEconomicsTab({ economics, cacBRL }: UnitEconomicsTabProps) {
           subtitle={economics.ltvCacRatio >= 3 ? 'Saudavel (>3x)' : 'Abaixo do ideal (<3x)'}
           icon={Target}
           color={economics.ltvCacRatio >= 3 ? 'text-ceramic-success' : 'text-ceramic-warning'}
-          tooltip="Razao entre o valor do cliente (LTV) e o custo para adquiri-lo (CAC). Benchmark saudavel: acima de 3x. Abaixo de 3x indica que o custo de aquisicao esta alto demais."
+          tooltip="Razao entre o valor do cliente (LTV) e o custo para adquiri-lo (CAC). Benchmark saudavel: acima de 3x. Abaixo de 3x indica que o custo de aquisição esta alto demais."
         />
       </div>
 
@@ -99,8 +99,8 @@ export function UnitEconomicsTab({ economics, cacBRL }: UnitEconomicsTabProps) {
       {/* Additional Metrics List */}
       <div className="bg-ceramic-base rounded-xl p-4 shadow-ceramic-emboss">
         <h3 className="text-sm font-medium text-ceramic-text-primary mb-3 flex items-center">
-          Metricas SaaS
-          <InfoTip text="Indicadores-chave de performance para negocio SaaS. Acompanhe estes numeros para avaliar a saude financeira do produto." />
+          Métricas SaaS
+          <InfoTip text="Indicadores-chave de performance para negocio SaaS. Acompanhe estes numeros para avaliar a saúde financeira do produto." />
         </h3>
         <div className="grid grid-cols-2 gap-y-2 text-sm">
           <Tooltip text="Monthly Recurring Revenue — receita recorrente mensal total de todos os planos pagos.">
@@ -118,7 +118,7 @@ export function UnitEconomicsTab({ economics, cacBRL }: UnitEconomicsTabProps) {
           </Tooltip>
           <span className="text-right font-medium">{formatBRL(economics.arpu)}</span>
 
-          <Tooltip text="Quantos usuarios Free um unico usuario Pro subsidia com sua assinatura. Menor = mais eficiente.">
+          <Tooltip text="Quantos usuarios Free um único usuario Pro subsidia com sua assinatura. Menor = mais eficiente.">
             <span className="text-ceramic-text-secondary cursor-help">Free users / 1 Pro subsidia</span>
           </Tooltip>
           <span className="text-right font-medium">{economics.freeSubsidyRatio} usuarios</span>

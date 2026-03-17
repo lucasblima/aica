@@ -127,7 +127,7 @@ export function ProspectCard({
         </div>
       )}
 
-      {/* Proxima acao */}
+      {/* Proxima ação */}
       {sponsor.next_action && (
         <div
           className={`
@@ -138,7 +138,7 @@ export function ProspectCard({
           <div className="flex items-start gap-1">
             {isOverdue && <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />}
             <div>
-              <span className="font-medium">Proxima acao:</span> {sponsor.next_action}
+              <span className="font-medium">Proxima ação:</span> {sponsor.next_action}
               {sponsor.next_action_date && (
                 <span className="block mt-0.5">
                   <Calendar className="w-3 h-3 inline mr-1" />
@@ -150,7 +150,7 @@ export function ProspectCard({
         </div>
       )}
 
-      {/* Footer com acoes rapidas */}
+      {/* Footer com ações rapidas */}
       <div className="flex items-center justify-between pt-2 border-t border-ceramic-border">
         <div className="flex items-center gap-1 text-ceramic-text-secondary">
           <span className="text-xs">
@@ -185,7 +185,7 @@ export function ProspectCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            title="Mais opcoes"
+            title="Mais opções"
           >
             <MoreVertical className="w-4 h-4 text-ceramic-text-secondary" />
           </button>

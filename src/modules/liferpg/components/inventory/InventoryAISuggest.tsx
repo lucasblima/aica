@@ -195,7 +195,7 @@ export const InventoryAISuggest: React.FC<InventoryAISuggestProps> = ({
             >
               <div className="text-xs font-medium text-ceramic-text-primary">{item.current_item}</div>
               <p className="text-[10px] text-ceramic-text-secondary mt-0.5">{item.reason}</p>
-              <p className="text-[10px] text-amber-600 mt-0.5">Sugestao: {item.suggestion}</p>
+              <p className="text-[10px] text-amber-600 mt-0.5">Sugestão: {item.suggestion}</p>
             </div>
           ))}
         </SectionWrapper>

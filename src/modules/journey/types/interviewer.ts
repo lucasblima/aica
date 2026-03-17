@@ -7,7 +7,7 @@
 export type InterviewQuestionType = 'free_text' | 'long_text' | 'single_choice' | 'multi_choice' | 'scale' | 'date' | 'ranked_list'
 
 // Category enum - 6 categories
-export type InterviewCategory = 'biografia' | 'anamnese' | 'censo' | 'preferencias' | 'conexoes' | 'objetivos'
+export type InterviewCategory = 'biografia' | 'anamnese' | 'censo' | 'preferências' | 'conexoes' | 'objetivos'
 
 // Session status
 export type InterviewSessionStatus = 'not_started' | 'in_progress' | 'completed' | 'paused'

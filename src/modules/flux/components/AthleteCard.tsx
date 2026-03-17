@@ -159,7 +159,7 @@ export function AthleteCard({
                 <span
                   className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse flex-shrink-0"
                   title={
-                    athlete.parq_clearance_status === 'blocked' ? 'Liberacao medica necessaria' :
+                    athlete.parq_clearance_status === 'blocked' ? 'Liberação medica necessaria' :
                     athlete.parq_clearance_status === 'expired' ? 'Documentos expirados' :
                     'Documentos pendentes'
                   }
@@ -192,10 +192,10 @@ export function AthleteCard({
               athlete.status === 'active'
                 ? 'Atleta conectado ao Aica e seguindo treinos prescritos'
                 : athlete.status === 'churned'
-                  ? 'Atleta inativo — nao esta seguindo treinos prescritos'
+                  ? 'Atleta inativo — não esta seguindo treinos prescritos'
                   : athlete.status === 'paused'
                     ? 'Atleta com treinos pausados temporariamente'
-                    : 'Atleta em periodo de teste'
+                    : 'Atleta em período de teste'
             }
           >
             {statusConfig.label}
@@ -344,7 +344,7 @@ export function AthleteCard({
               </div>
               <div>
                 <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
-                  Ultimo Feedback
+                  Último Feedback
                 </p>
                 <p className="text-xs font-bold text-ceramic-text-primary">
                   {new Date(recentFeedbacks[0].completed_at).toLocaleDateString('pt-BR', {

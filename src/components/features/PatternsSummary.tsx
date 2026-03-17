@@ -31,10 +31,10 @@ const PATTERN_TYPE_CONFIG: Record<PatternType, { label: string; icon: typeof Bra
   emotional: { label: 'Emocional', icon: Heart, color: 'text-rose-500' },
   routine: { label: 'Rotina', icon: Clock, color: 'text-amber-500' },
   social: { label: 'Social', icon: Users, color: 'text-purple-500' },
-  health: { label: 'Saude', icon: Activity, color: 'text-green-500' },
+  health: { label: 'Saúde', icon: Activity, color: 'text-green-500' },
   learning: { label: 'Aprendizado', icon: BookOpen, color: 'text-cyan-500' },
   trigger: { label: 'Gatilho', icon: Zap, color: 'text-ceramic-warning' },
-  strength: { label: 'Forca', icon: Shield, color: 'text-ceramic-success' },
+  strength: { label: 'Força', icon: Shield, color: 'text-ceramic-success' },
 }
 
 // =============================================================================
@@ -96,7 +96,7 @@ export function PatternsSummary({
         <div className="flex items-center gap-2">
           <Brain className="w-4.5 h-4.5 text-amber-500" />
           <h3 className="text-sm font-semibold text-ceramic-text-primary">
-            Seus Padroes
+            Seus Padrões
           </h3>
           {patterns.length > 0 && (
             <span className="text-[10px] font-medium text-ceramic-text-tertiary bg-ceramic-cool px-1.5 py-0.5 rounded-full">
@@ -136,11 +136,11 @@ export function PatternsSummary({
         <div className="text-center py-4">
           <Brain className="w-7 h-7 text-ceramic-text-tertiary mx-auto mb-2" />
           <p className="text-xs text-ceramic-text-secondary">
-            Nenhum padrao identificado ainda.
+            Nenhum padrão identificado ainda.
           </p>
           {!compact && (
             <p className="text-xs text-ceramic-text-tertiary mt-1">
-              Gere insights diarios para que a IA descubra seus padroes.
+              Gere insights diarios para que a IA descubra seus padrões.
             </p>
           )}
         </div>

@@ -1,7 +1,7 @@
 /**
  * SettingsView — Finance module settings with 4 sub-tabs.
  *
- * Sub-tabs: Contas, Categorias, Extratos, Preferencias
+ * Sub-tabs: Contas, Categorias, Extratos, Preferências
  */
 
 import React, { useState } from 'react';
@@ -29,7 +29,7 @@ const SETTINGS_TABS = [
   { key: 'accounts' as const, label: 'Contas', icon: Building2 },
   { key: 'categories' as const, label: 'Categorias', icon: Tag },
   { key: 'statements' as const, label: 'Extratos', icon: FileText },
-  { key: 'preferences' as const, label: 'Preferencias', icon: Settings },
+  { key: 'preferences' as const, label: 'Preferências', icon: Settings },
 ];
 
 // =====================================================
@@ -71,7 +71,7 @@ const CategoryManager: React.FC<{ userId: string }> = ({ userId }) => {
   };
 
   const handleDelete = async (catId: string) => {
-    if (!confirm(`Deletar categoria "${categories.find(c => c.id === catId)?.label}"? Transacoes serao movidas para "Outros".`)) return;
+    if (!confirm(`Deletar categoria "${categories.find(c => c.id === catId)?.label}"? Transações serao movidas para "Outros".`)) return;
     try {
       setSaving(true);
       await deleteCategoryWithMigration(catId, 'other');
@@ -200,7 +200,7 @@ const StatementManager: React.FC<{ userId: string }> = ({ userId }) => {
   };
 
   const handleDeleteStatement = async (statementId: string) => {
-    if (!confirm('Deletar este extrato e todas as suas transacoes?')) return;
+    if (!confirm('Deletar este extrato e todas as suas transações?')) return;
     try {
       setDeleting(true);
       await statementService.deleteStatement(statementId);
@@ -249,7 +249,7 @@ const StatementManager: React.FC<{ userId: string }> = ({ userId }) => {
                 </p>
                 <div className="flex gap-3 text-xs text-ceramic-text-secondary mt-1">
                   {s.bank_name && <span>{s.bank_name}</span>}
-                  <span>{s.transaction_count} transacoes</span>
+                  <span>{s.transaction_count} transações</span>
                   <span
                     className={`font-medium ${
                       s.processing_status === 'completed'
@@ -312,9 +312,9 @@ const PreferencesPanel: React.FC = () => {
 
   return (
     <div className="ceramic-card p-6 space-y-4">
-      <h3 className="text-sm font-bold text-ceramic-text-primary">Preferencias</h3>
+      <h3 className="text-sm font-bold text-ceramic-text-primary">Preferências</h3>
       <label className="flex items-center justify-between cursor-pointer">
-        <span className="text-sm text-ceramic-text-primary">Ocultar valores por padrao</span>
+        <span className="text-sm text-ceramic-text-primary">Ocultar valores por padrão</span>
         <input
           type="checkbox"
           checked={hideValues}

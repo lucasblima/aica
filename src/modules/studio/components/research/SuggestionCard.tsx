@@ -68,7 +68,7 @@ export function SuggestionCard({ card, onExpand, onCollapse, onInsert, onDiscard
             <p className="text-sm text-ceramic-text-primary whitespace-pre-wrap">{card.fullText}</p>
           )}
           <p className="mt-1 text-xs text-ceramic-text-secondary">
-            Secao: {card.targetSection === 'bio' ? 'Biografia' : card.targetSection === 'ficha' ? 'Ficha Tecnica' : 'Noticias'}
+            Seção: {card.targetSection === 'bio' ? 'Biografia' : card.targetSection === 'ficha' ? 'Ficha Técnica' : 'Noticias'}
           </p>
         </div>
 

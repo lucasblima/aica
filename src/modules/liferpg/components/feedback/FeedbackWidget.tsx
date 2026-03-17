@@ -92,11 +92,11 @@ export const FeedbackWidget: React.FC = () => {
               Sim
             </button>
             <button
-              onClick={() => handleYesNo('Nao')}
+              onClick={() => handleYesNo('Não')}
               disabled={submitting}
               className="flex-1 text-sm py-2 rounded-lg bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-border transition-colors disabled:opacity-50"
             >
-              Nao
+              Não
             </button>
           </div>
         ) : (

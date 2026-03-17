@@ -51,7 +51,7 @@ export function MediaSlide({
             tag="p"
             className="mt-4 text-xl"
             editMode={editMode}
-            placeholder="Descricao da galeria"
+            placeholder="Descrição da galeria"
             multiline
           />
         )}

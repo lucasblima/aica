@@ -306,7 +306,7 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
           <ol className="text-xs text-ceramic-text-secondary space-y-1 list-decimal list-inside">
             <li>Abra a conversa no WhatsApp</li>
             <li>Toque nos 3 pontos (Android) ou nome do contato (iOS)</li>
-            <li>Selecione "Exportar conversa" → "Sem midia"</li>
+            <li>Selecione "Exportar conversa" → "Sem mídia"</li>
             <li>Salve o arquivo .txt ou .zip</li>
           </ol>
         </div>
@@ -413,7 +413,7 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
               >
                 <CheckCircle className="w-10 h-10 text-ceramic-success mx-auto mb-3" />
                 <p className="text-sm font-bold text-ceramic-success mb-3">
-                  Importacao concluida!
+                  Importação concluida!
                 </p>
                 <div className="flex items-center justify-center gap-4 text-xs text-ceramic-text-secondary">
                   <span className="flex items-center gap-1">
@@ -487,8 +487,8 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
         {/* Privacy Notice */}
         <div className="mt-4 p-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
           <p className="text-xs text-ceramic-info">
-            Suas mensagens originais nao sao armazenadas. O AICA extrai apenas resumos
-            anonimizados e vetores semanticos para analise.
+            Suas mensagens originais não sao armazenadas. O AICA extrai apenas resumos
+            anonimizados e vetores semanticos para análise.
           </p>
         </div>
       </div>
@@ -499,7 +499,7 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
           <div className="flex items-center gap-3 mb-4">
             <Clock className="w-5 h-5 text-ceramic-accent" />
             <h3 className="text-lg font-bold text-ceramic-text-primary">
-              Historico de Importacoes
+              Histórico de Importacoes
             </h3>
             <span className="text-xs text-ceramic-text-secondary">({imports.length})</span>
           </div>

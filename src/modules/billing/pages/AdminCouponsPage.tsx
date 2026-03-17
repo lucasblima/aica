@@ -116,7 +116,7 @@ export function AdminCouponsPage() {
               type="number"
               value={topUpAmount}
               onChange={(e) => setTopUpAmount(e.target.value)}
-              placeholder="Creditos"
+              placeholder="Créditos"
               min="1"
               className="border border-ceramic-border rounded-lg px-3 py-2 text-sm bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
             />
@@ -135,7 +135,7 @@ export function AdminCouponsPage() {
               disabled={topUpLoading || !topUpUserId.trim() || !topUpAmount}
               className="bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50"
             >
-              {topUpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Adicionar Creditos'}
+              {topUpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Adicionar Créditos'}
             </button>
             {topUpMessage && (
               <span className={`text-sm font-medium ${topUpMessage.success ? 'text-ceramic-success' : 'text-ceramic-error'}`}>
@@ -156,7 +156,7 @@ export function AdminCouponsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Codigo</label>
+              <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Código</label>
               <input
                 type="text"
                 value={newCode}
@@ -166,7 +166,7 @@ export function AdminCouponsPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Creditos</label>
+              <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Créditos</label>
               <input
                 type="number"
                 value={newCredits}
@@ -280,10 +280,10 @@ export function AdminCouponsPage() {
                 <thead>
                   <tr className="border-b border-ceramic-text-secondary/10">
                     <th className="text-left px-5 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                      Codigo
+                      Código
                     </th>
                     <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                      Creditos
+                      Créditos
                     </th>
                     <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
                       Usos

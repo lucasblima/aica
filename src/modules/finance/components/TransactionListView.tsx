@@ -298,7 +298,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
   }, [selectedIds, refresh]);
 
   const handleExportCSV = useCallback(() => {
-    exportToCSV(transactions, `transacoes-aica-${new Date().toISOString().slice(0, 10)}.csv`);
+    exportToCSV(transactions, `transações-aica-${new Date().toISOString().slice(0, 10)}.csv`);
   }, [transactions]);
 
   const handleExportPDF = useCallback(() => {
@@ -335,7 +335,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
           <AlertCircle className="w-8 h-8 text-ceramic-error" />
         </div>
         <p className="text-ceramic-text-primary font-medium mb-1">
-          Erro ao carregar transacoes
+          Erro ao carregar transações
         </p>
         <p className="text-ceramic-text-secondary text-sm mb-4">{error}</p>
         <button
@@ -354,7 +354,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-bold text-ceramic-text-primary">Transacoes</h2>
+          <h2 className="text-lg font-bold text-ceramic-text-primary">Transações</h2>
           {totalCount > 0 && (
             <p className="text-xs text-ceramic-text-secondary">
               {totalCount} transacao{totalCount !== 1 ? 'es' : ''} encontrada
@@ -392,7 +392,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-secondary" />
         <input
           type="text"
-          placeholder="Buscar por descricao..."
+          placeholder="Buscar por descrição..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 rounded-lg ceramic-inset text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
@@ -616,11 +616,11 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
               <Receipt className="w-8 h-8 text-ceramic-text-secondary" />
             </div>
             <p className="text-ceramic-text-primary font-medium mb-1">
-              Nenhuma transacao encontrada
+              Nenhuma transação encontrada
             </p>
             <p className="text-ceramic-text-secondary text-sm text-center">
               {searchTerm || typeFilter !== 'all' || categoryFilter
-                ? 'Tente ajustar os filtros para encontrar transacoes.'
+                ? 'Tente ajustar os filtros para encontrar transações.'
                 : 'Importe um extrato para comecar.'}
             </p>
           </div>
@@ -737,7 +737,7 @@ export const TransactionListView: React.FC<TransactionListViewProps> = ({
                       {/* Description */}
                       <div>
                         <label className="text-xs text-ceramic-text-secondary block mb-1">
-                          Descricao
+                          Descrição
                         </label>
                         <input
                           type="text"

@@ -116,7 +116,7 @@ export function useTransactions(
         // Discard errors from stale requests
         if (currentRequestId !== requestIdRef.current) return;
         log.error('Error fetching transactions:', err);
-        setError('Erro ao carregar transacoes');
+        setError('Erro ao carregar transações');
       } finally {
         // Only clear loading if this is still the current request
         if (currentRequestId === requestIdRef.current) {
@@ -158,7 +158,7 @@ export function useTransactions(
         );
       } catch (err) {
         log.error('Error updating transaction:', err);
-        throw new Error('Erro ao atualizar transacao');
+        throw new Error('Erro ao atualizar transação');
       }
     },
     []
@@ -177,7 +177,7 @@ export function useTransactions(
       setTotalCount((prev) => prev - 1);
     } catch (err) {
       log.error('Error deleting transaction:', err);
-      throw new Error('Erro ao deletar transacao');
+      throw new Error('Erro ao deletar transação');
     }
   }, []);
 

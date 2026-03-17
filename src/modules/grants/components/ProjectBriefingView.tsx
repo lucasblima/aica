@@ -245,7 +245,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   /**
    * Handle auto-generation of briefing with AI
    *
-   * IMPORTANTE: Esta funcao agora usa o documento fonte para EXTRAIR informacoes,
+   * IMPORTANTE: Esta função agora usa o documento fonte para EXTRAIR informações,
    * em vez de gerar dados ficticios.
    */
   const handleGenerateBriefing = async () => {

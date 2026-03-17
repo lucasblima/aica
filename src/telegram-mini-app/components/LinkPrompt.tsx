@@ -29,7 +29,7 @@ export function LinkPrompt({ telegramFirstName }: LinkPromptProps) {
         className="text-2xl font-bold mb-2"
         style={{ fontFamily: "'Fredoka', sans-serif" }}
       >
-        {telegramFirstName ? `Ola, ${telegramFirstName}!` : 'Bem-vindo a AICA!'}
+        {telegramFirstName ? `Olá, ${telegramFirstName}!` : 'Bem-vindo a AICA!'}
       </h1>
 
       {/* Description */}
@@ -57,7 +57,7 @@ export function LinkPrompt({ telegramFirstName }: LinkPromptProps) {
         className="text-xs mt-6 max-w-xs"
         style={{ color: 'var(--tg-hint-color)' }}
       >
-        Voce tambem pode enviar <strong>/vincular</strong> no chat do bot para gerar um codigo de vinculacao.
+        Você também pode enviar <strong>/vincular</strong> no chat do bot para gerar um código de vinculacao.
       </p>
     </div>
   )

@@ -385,7 +385,7 @@ export function useProjectSponsors(projectId: string | null): UseProjectSponsors
       grouped[status] = [];
     }
 
-    // Adicionar status que nao estao no pipeline (declined, churned)
+    // Adicionar status que não estão no pipeline (declined, churned)
     grouped.declined = [];
     grouped.churned = [];
 

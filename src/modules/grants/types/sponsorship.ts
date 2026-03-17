@@ -50,7 +50,7 @@ export type SponsorStatus =
 
 /** Labels para status de captacao */
 export const CAPTURE_STATUS_LABELS: Record<CaptureStatus, string> = {
-  not_started: 'Nao Iniciada',
+  not_started: 'Não Iniciada',
   in_progress: 'Em Captacao',
   paused: 'Pausada',
   completed: 'Concluida',
@@ -69,12 +69,12 @@ export const CAPTURE_STATUS_COLORS: Record<CaptureStatus, string> = {
 /** Labels para categorias de contrapartida */
 export const DELIVERABLE_CATEGORY_LABELS: Record<DeliverableCategory, string> = {
   logo_exposure: 'Exposicao de Logo',
-  media_mention: 'Mencao em Midia',
+  media_mention: 'Menção em Mídia',
   event_presence: 'Presenca em Evento',
-  content_production: 'Producao de Conteudo',
+  content_production: 'Produção de Conteúdo',
   networking: 'Networking',
   report_access: 'Acesso a Relatorios',
-  exclusive_experience: 'Experiencia Exclusiva',
+  exclusive_experience: 'Experiência Exclusiva',
   product_sample: 'Amostra de Produto',
   other: 'Outra',
 };
@@ -83,7 +83,7 @@ export const DELIVERABLE_CATEGORY_LABELS: Record<DeliverableCategory, string> = 
 export const SPONSOR_STATUS_LABELS: Record<SponsorStatus, string> = {
   lead: 'Lead',
   contacted: 'Contatado',
-  meeting_scheduled: 'Reuniao Agendada',
+  meeting_scheduled: 'Reunião Agendada',
   proposal_sent: 'Proposta Enviada',
   negotiating: 'Em Negociacao',
   committed: 'Comprometido',
@@ -192,7 +192,7 @@ export interface SponsorshipTier {
   color: string | null;
   icon: string | null;
 
-  // Configuracoes
+  // Configurações
   is_active: boolean;
   is_highlighted: boolean;
 
@@ -217,7 +217,7 @@ export interface TierDeliverable {
   id: string;
   tier_id: string;
 
-  // Conteudo
+  // Conteúdo
   category: DeliverableCategory;
   title: string;
   description: string | null;
@@ -389,7 +389,7 @@ export interface ProjectSponsorshipContext {
     tax_type: string;
   } | null;
 
-  // Organizacoes
+  // Organizações
   proponent: {
     id: string;
     name: string;

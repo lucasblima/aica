@@ -83,7 +83,7 @@ export function AudioRecorder({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      // Set up audio analyser for waveform
+      // Set up áudio analyser for waveform
       const audioContext = new AudioContext()
       const source = audioContext.createMediaStreamSource(stream)
       const analyser = audioContext.createAnalyser()
@@ -141,7 +141,7 @@ export function AudioRecorder({
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setErrorMessage('Permissao de microfone negada')
       } else if (error.name === 'NotFoundError') {
-        setErrorMessage('Microfone nao encontrado')
+        setErrorMessage('Microfone não encontrado')
       } else {
         setErrorMessage('Erro ao acessar microfone')
       }
@@ -211,7 +211,7 @@ export function AudioRecorder({
           type="button"
           onClick={handleStop}
           className="ceramic-concave p-2 rounded-lg hover:scale-95 active:scale-90 transition-all"
-          title="Parar gravacao"
+          title="Parar gravação"
         >
           <StopIcon className="w-4 h-4 text-ceramic-error" />
         </button>
@@ -226,7 +226,7 @@ export function AudioRecorder({
       onClick={startRecording}
       disabled={disabled}
       className="ceramic-concave p-2 rounded-lg hover:scale-95 active:scale-90 transition-all disabled:opacity-50 disabled:hover:scale-100"
-      title="Gravar audio"
+      title="Gravar áudio"
     >
       <MicrophoneIcon className="w-4 h-4 text-ceramic-text-secondary" />
     </button>

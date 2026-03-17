@@ -9,7 +9,7 @@ interface ResearchLoadingStateProps {
 const PHASES = [
   {
     icon: Search,
-    text: 'Buscando informacoes na web...',
+    text: 'Buscando informações na web...',
   },
   {
     icon: Brain,

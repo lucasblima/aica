@@ -1,6 +1,6 @@
 /**
  * WhatsAppStepContent Component
- * Issue #100 - Step de conexao WhatsApp no wizard de organizacoes
+ * Issue #100 - Step de conexão WhatsApp no wizard de organizações
  *
  * Permite importar conversas do WhatsApp durante o wizard,
  * com gamificacao e feedback visual.
@@ -29,11 +29,11 @@ import { STEP_COMPLETION_BONUS } from '../../types/wizard';
 interface WhatsAppStepContentProps {
   /** Telefone da organizacao (do step de contato) */
   organizationPhone?: string;
-  /** Callback quando importacao e bem-sucedida */
+  /** Callback quando importação e bem-sucedida */
   onConnectionSuccess?: () => void;
   /** Callback para conceder XP */
   onAwardXP?: (xp: number) => void;
-  /** Se a importacao ja foi feita anteriormente */
+  /** Se a importação já foi feita anteriormente */
   isAlreadyConnected?: boolean;
 }
 
@@ -46,12 +46,12 @@ const WHATSAPP_IMPORT_XP = 50;
 const BENEFITS = [
   {
     icon: Users,
-    title: 'Analise de Contatos',
+    title: 'Análise de Contatos',
     description: 'Descubra insights sobre seus parceiros e colaboradores',
   },
   {
     icon: Clock,
-    title: 'Deteccao de Tarefas',
+    title: 'Detecção de Tarefas',
     description: 'Tarefas e compromissos detectados automaticamente',
   },
   {
@@ -87,7 +87,7 @@ export function WhatsAppStepContent({
 
   return (
     <div className="space-y-6">
-      {/* Header com XP disponivel */}
+      {/* Header com XP disponível */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-ceramic-success-bg flex items-center justify-center">
@@ -186,10 +186,10 @@ export function WhatsAppStepContent({
           {/* Skip Option */}
           <div className="text-center pt-4 border-t border-ceramic-border">
             <p className="text-sm text-ceramic-text-secondary mb-2">
-              Voce pode pular esta etapa e importar depois
+              Você pode pular esta etapa e importar depois
             </p>
             <p className="text-xs text-ceramic-text-secondary">
-              A importacao pode ser feita a qualquer momento em Conexoes &gt; Importar
+              A importação pode ser feita a qualquer momento em Conexoes &gt; Importar
             </p>
           </div>
         </>

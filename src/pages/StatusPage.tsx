@@ -71,14 +71,14 @@ const STATUS_CONFIG: Record<
     icon: CheckCircle2,
   },
   degraded: {
-    label: 'Degradacao parcial do servico',
+    label: 'Degradação parcial do serviço',
     color: 'text-ceramic-warning',
     bgColor: 'bg-ceramic-warning/10',
     borderColor: 'border-ceramic-warning',
     icon: AlertTriangle,
   },
   outage: {
-    label: 'Interrupcao do servico',
+    label: 'Interrupção do serviço',
     color: 'text-ceramic-error',
     bgColor: 'bg-ceramic-error/10',
     borderColor: 'border-ceramic-error',
@@ -96,7 +96,7 @@ const SEVERITY_CONFIG: Record<
     textColor: 'text-ceramic-error',
   },
   degraded: {
-    label: 'Degradacao',
+    label: 'Degradação',
     dotColor: 'bg-ceramic-warning',
     textColor: 'text-ceramic-warning',
   },
@@ -116,7 +116,7 @@ const CHANGE_TYPE_CONFIG: Record<
   improvement: { label: 'Melhoria', bgColor: 'bg-ceramic-info/10', textColor: 'text-ceramic-info' },
   security: { label: 'Seguranca', bgColor: 'bg-rose-100', textColor: 'text-rose-700' },
   infra: { label: 'Infra', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
-  docs: { label: 'Documentacao', bgColor: 'bg-ceramic-cool', textColor: 'text-ceramic-text-secondary' },
+  docs: { label: 'Documentação', bgColor: 'bg-ceramic-cool', textColor: 'text-ceramic-text-secondary' },
   perf: { label: 'Performance', bgColor: 'bg-emerald-100', textColor: 'text-emerald-700' },
 };
 
@@ -569,7 +569,7 @@ export function StatusPage() {
         </header>
         <main className="max-w-[900px] mx-auto px-6 md:px-8 py-12">
           <h1 className="text-4xl md:text-5xl font-bold text-ceramic-text-primary mb-8">
-            Status do Servico
+            Status do Serviço
           </h1>
           <CeramicErrorState
             title="Status indisponivel"
@@ -603,10 +603,10 @@ export function StatusPage() {
       {/* Main Content */}
       <main className="max-w-[900px] mx-auto px-6 md:px-8 py-12">
         <h1 className="text-4xl md:text-5xl font-bold text-ceramic-text-primary mb-4">
-          Status do Servico
+          Status do Serviço
         </h1>
         <p className="text-sm text-ceramic-text-secondary mb-8">
-          Ultima atualizacao: {formatDate(new Date().toISOString().split('T')[0])}
+          Ultima atualização: {formatDate(new Date().toISOString().split('T')[0])}
         </p>
 
         {/* Status Banner + 24h Timeline */}

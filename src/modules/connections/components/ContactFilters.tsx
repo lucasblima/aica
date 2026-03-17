@@ -101,7 +101,7 @@ const FILTER_OPTIONS: {
 const SORT_OPTIONS: { value: ContactSortField; label: string }[] = [
   { value: 'name', label: 'Nome' },
   { value: 'health_score', label: 'Score' },
-  { value: 'last_interaction', label: 'Ultima Interacao' },
+  { value: 'last_interaction', label: 'Ultima Interação' },
   { value: 'relationship_type', label: 'Tipo' },
 ];
 

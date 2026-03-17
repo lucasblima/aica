@@ -87,7 +87,7 @@ export const FlowZoneIndicator: React.FC<FlowZoneIndicatorProps> = ({
         <div className="mt-2 flex items-center gap-1 text-xs text-ceramic-text-secondary">
           <Clock className="w-3 h-3" />
           <span>
-            Proximo flow: {formatHour(nextFlowWindow.start % 24)}h -
+            Próximo flow: {formatHour(nextFlowWindow.start % 24)}h -
             {formatHour(nextFlowWindow.end % 24)}h
           </span>
         </div>

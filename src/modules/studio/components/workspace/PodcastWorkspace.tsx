@@ -199,7 +199,7 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
     },
     onSaveError: (error) => {
       setIsSaving(false);
-      setSaveError('Erro ao salvar automaticamente. Suas alteracoes serao salvas na proxima tentativa.');
+      setSaveError('Erro ao salvar automaticamente. Suas alterações serao salvas na proxima tentativa.');
       log.error('Auto-save error:', error);
     },
   });

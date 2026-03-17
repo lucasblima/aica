@@ -2,7 +2,7 @@
  * Studio Module Public API
  *
  * This module provides a generic content creation hub.
- * Currently supports podcasts, extensible to video/articles.
+ * Currently supports podcasts, extensible to vídeo/articles.
  */
 
 // Types

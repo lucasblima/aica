@@ -380,7 +380,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               type="button"
               onClick={handleSearchContacts}
               disabled={isSearchingContacts}
-              aria-label="Buscar nos contatos do modulo Conexoes"
+              aria-label="Buscar nos contatos do módulo Conexoes"
               className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-ceramic-border bg-ceramic-cool hover:bg-ceramic-surface-hover text-ceramic-text-primary text-sm font-medium transition-colors disabled:opacity-50"
             >
               {isSearchingContacts ? (
@@ -413,7 +413,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
                         <p className="text-xs text-ceramic-text-secondary mt-0.5 line-clamp-2">{contact.bio}</p>
                       )}
                       <span className="inline-block mt-1 text-xs text-ceramic-tertiary">
-                        {contact.source === 'contact_network' ? 'WhatsApp' : 'Espaco'}
+                        {contact.source === 'contact_network' ? 'WhatsApp' : 'Espaço'}
                       </span>
                     </div>
                   </button>

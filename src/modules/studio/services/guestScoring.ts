@@ -85,7 +85,7 @@ export function scoreGuest(profile: GuestProfile): GuestScoreResult {
     tier === 'ideal' ? 'Convidado ideal — alta expertise e relevancia para o tema.' :
     tier === 'strong' ? 'Convidado forte — boa combinacao de fatores.' :
     tier === 'good' ? 'Convidado adequado — considere complementar com outro perfil.' :
-    'Avalie se este convidado se alinha com os objetivos do episodio.';
+    'Avalie se este convidado se alinha com os objetivos do episódio.';
 
   return {
     composite,
@@ -143,7 +143,7 @@ export function analyzeNarrativeArc(moments: NarrativeMoment[], durationMinutes:
       peakEndScore: 0,
       hookStrength: 0,
       durationOptimality: computeDurationOptimality(durationMinutes),
-      suggestions: ['Adicione marcadores de momentos-chave ao episodio para analise.'],
+      suggestions: ['Adicione marcadores de momentos-chave ao episódio para análise.'],
     };
   }
 
@@ -195,10 +195,10 @@ export function analyzeNarrativeArc(moments: NarrativeMoment[], durationMinutes:
     suggestions.push('O encerramento esta fraco. Pelo Peak-End Rule (Kahneman), termine com impacto.');
   }
   if (durationMinutes > 45) {
-    suggestions.push('Episodio longo (>45 min). Pesquisas indicam queda de atencao apos 20 min.');
+    suggestions.push('Episódio longo (>45 min). Pesquisas indicam queda de atenção apos 20 min.');
   }
   if (dynamism < 0.3) {
-    suggestions.push('Episodio monotono. Varie o ritmo com perguntas provocativas, historias e mudancas de tom.');
+    suggestions.push('Episódio monotono. Varie o ritmo com perguntas provocativas, historias e mudancas de tom.');
   }
 
   return {

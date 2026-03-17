@@ -27,7 +27,7 @@ export default function ParQFormView() {
         <p className="text-sm text-ceramic-text-secondary leading-relaxed">
           O questionario PAR-Q+ deve ser preenchido exclusivamente pelo atleta
           atraves do portal do atleta (<strong>/meu-treino</strong>).
-          O coach pode acompanhar o status e revisar documentos na pagina do atleta.
+          O coach pode acompanhar o status e revisar documentos na página do atleta.
         </p>
         <button
           onClick={() => navigate(athleteId ? `/flux/athlete/${athleteId}` : '/flux')}

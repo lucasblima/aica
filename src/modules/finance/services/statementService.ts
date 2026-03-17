@@ -163,13 +163,13 @@ export const statementService = {
     }
 
     if (file.type !== 'application/pdf') {
-      throw new Error('Tipo de arquivo invalido. Apenas PDF e aceito.');
+      throw new Error('Tipo de arquivo inválido. Apenas PDF e aceito.');
     }
 
     // Validate PDF magic bytes to prevent MIME type spoofing
     const isValidPDF = await validatePDFFile(file);
     if (!isValidPDF) {
-      throw new Error('Arquivo nao e um PDF valido');
+      throw new Error('Arquivo não e um PDF válido');
     }
 
     const timestamp = Date.now();
@@ -378,7 +378,7 @@ export const statementService = {
 
     if (error) {
       log.error('[statementService] Save transactions error:', error);
-      throw new Error('Erro ao salvar transacoes');
+      throw new Error('Erro ao salvar transações');
     }
 
     const insertedCount = upsertResult?.length || 0;
@@ -444,7 +444,7 @@ export const statementService = {
 
     if (error) {
       log.error('[statementService] Get transactions error:', error);
-      throw new Error('Erro ao buscar transacoes');
+      throw new Error('Erro ao buscar transações');
     }
 
     return (data || []) as FinanceTransaction[];

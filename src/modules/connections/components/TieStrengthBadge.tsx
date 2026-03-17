@@ -61,7 +61,7 @@ function getTieLevel(strength: number): {
 function getDunbarLabel(layer: number): string {
   switch (layer) {
     case 5: return 'Intimo';
-    case 15: return 'Proximo';
+    case 15: return 'Próximo';
     case 50: return 'Regular';
     case 150: return 'Ativo';
     case 500: return 'Conhecido';
@@ -93,7 +93,7 @@ export function TieStrengthBadge({
         isSm ? 'px-2 py-0.5' : 'px-3 py-1'
       } ${className}`}
       style={{ backgroundColor: bgColor }}
-      title={`Forca do vinculo: ${(tieStrength * 100).toFixed(0)}% (${label})`}
+      title={`Força do vinculo: ${(tieStrength * 100).toFixed(0)}% (${label})`}
     >
       <Link2
         className={isSm ? 'w-3 h-3' : 'w-4 h-4'}

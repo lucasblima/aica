@@ -145,26 +145,26 @@ export interface TrendChartDataPoint {
  * for any action not listed here.
  */
 export const OPERATION_TYPE_LABELS: Record<string, string> = {
-  text_generation: 'Geracao de Texto',
-  image_generation: 'Geracao de Imagem',
-  video_generation: 'Geracao de Video',
-  audio_generation: 'Geracao de Audio',
+  text_generation: 'Geração de Texto',
+  image_generation: 'Geração de Imagem',
+  video_generation: 'Geração de Video',
+  audio_generation: 'Geração de Audio',
   transcription: 'Transcricao',
   file_indexing: 'Indexacao de Arquivos',
   file_search_query: 'Busca em Arquivos',
-  image_analysis: 'Analise de Imagem',
+  image_analysis: 'Análise de Imagem',
   embedding: 'Embeddings',
   chat: 'Chat',
-  suggest_guest_name: 'Sugestao de Convidado',
-  generate_briefing: 'Geracao de Briefing',
-  analyze_moment: 'Analise de Momento',
-  generate_report: 'Geracao de Relatorio',
+  suggest_guest_name: 'Sugestão de Convidado',
+  generate_briefing: 'Geração de Briefing',
+  analyze_moment: 'Análise de Momento',
+  generate_report: 'Geração de Relatório',
   life_council: 'Conselho de Vida',
-  pattern_synthesis: 'Sintese de Padroes',
+  pattern_synthesis: 'Síntese de Padrões',
   build_contact_dossier: 'Dossie de Contato',
   build_conversation_threads: 'Threads de Conversa',
   route_entities_to_modules: 'Roteamento de Entidades',
-  classify_intent: 'Classificacao de Intencao',
+  classify_intent: 'Classificação de Intenção',
 };
 
 // =====================================================
@@ -313,7 +313,7 @@ export function getModelLabel(model: string): string {
  * Format credits display (Portuguese)
  */
 export function formatCredits(n: number): string {
-  return n === 1 ? '1 credito' : `${n} creditos`;
+  return n === 1 ? '1 credito' : `${n} créditos`;
 }
 
 /**
@@ -356,14 +356,14 @@ export function getAlertLevelFromPercentage(percentage: number): AlertLevel {
 export function getAlertMessage(level: AlertLevel, percentage: number): string {
   switch (level) {
     case 'danger':
-      return `Voce ultrapassou seu orcamento mensal em ${formatPercentage(percentage - 100)}!`;
+      return `Você ultrapassou seu orçamento mensal em ${formatPercentage(percentage - 100)}!`;
     case 'critical':
-      return `Voce esta usando ${formatPercentage(percentage)} do seu orcamento mensal!`;
+      return `Você esta usando ${formatPercentage(percentage)} do seu orçamento mensal!`;
     case 'warning':
-      return `Atencao: ${formatPercentage(percentage)} do orcamento mensal usado.`;
+      return `Atenção: ${formatPercentage(percentage)} do orçamento mensal usado.`;
     case 'ok':
-      return `Voce esta usando ${formatPercentage(percentage)} do seu orcamento.`;
+      return `Você esta usando ${formatPercentage(percentage)} do seu orçamento.`;
     default:
-      return 'Nenhum orcamento definido.';
+      return 'Nenhum orçamento definido.';
   }
 }

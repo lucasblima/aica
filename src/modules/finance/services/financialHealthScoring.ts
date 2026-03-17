@@ -322,12 +322,12 @@ export function assessBrazilianRatios(
 
 /**
  * Frame a savings message using loss aversion.
- * "Nao economizar R$X equivale a perder R$2.25X em bem-estar"
+ * "Não economizar R$X equivale a perder R$2.25X em bem-estar"
  */
 export function frameSavingsMessage(amount: number): LossFrameMessage {
   const lossEquivalent = amount * LOSS_AVERSION_LAMBDA;
   return {
-    message: `Nao economizar R$${amount.toFixed(0)} por mes equivale a uma perda percebida de R$${lossEquivalent.toFixed(0)}`,
+    message: `Não economizar R$${amount.toFixed(0)} por mes equivale a uma perda percebida de R$${lossEquivalent.toFixed(0)}`,
     lossEquivalent,
     frameType: 'loss',
   };
@@ -343,14 +343,14 @@ export function frameGoalProgress(
   const gap = current - target;
   if (gap >= 0) {
     return {
-      message: `Voce esta R$${gap.toFixed(0)} acima da meta!`,
+      message: `Você esta R$${gap.toFixed(0)} acima da meta!`,
       lossEquivalent: 0,
       frameType: 'gain',
     };
   }
   const lossEquivalent = Math.abs(gap) * LOSS_AVERSION_LAMBDA;
   return {
-    message: `Voce esta R$${Math.abs(gap).toFixed(0)} abaixo da meta — isso equivale a uma perda percebida de R$${lossEquivalent.toFixed(0)}`,
+    message: `Você esta R$${Math.abs(gap).toFixed(0)} abaixo da meta — isso equivale a uma perda percebida de R$${lossEquivalent.toFixed(0)}`,
     lossEquivalent,
     frameType: 'loss',
   };
@@ -362,7 +362,7 @@ export function frameGoalProgress(
 
 export const TIER_LABELS: Record<FinHealthTier, string> = {
   healthy: 'Saudavel',
-  coping: 'Atencao',
+  coping: 'Atenção',
   vulnerable: 'Vulneravel',
 };
 

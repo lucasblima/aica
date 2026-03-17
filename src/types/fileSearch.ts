@@ -51,7 +51,7 @@ export interface StoreConfig {
   /** Index image files (extract text from images) */
   index_images?: boolean;
 
-  /** Index video files (extract text from videos) */
+  /** Index vídeo files (extract text from videos) */
   index_videos?: boolean;
 
   /** Maximum file size in MB */

@@ -138,7 +138,7 @@ export function getDunbarLayerLabel(layer: DunbarLayer): string {
   switch (layer) {
     case 5: return 'Circulo Intimo';
     case 15: return 'Grupo de Simpatia';
-    case 50: return 'Grupo Proximo';
+    case 50: return 'Grupo Próximo';
     case 150: return 'Rede Ativa';
     case 500: return 'Conhecidos';
   }
@@ -146,11 +146,11 @@ export function getDunbarLayerLabel(layer: DunbarLayer): string {
 
 export function getDunbarLayerDescription(layer: DunbarLayer): string {
   switch (layer) {
-    case 5: return 'Pessoas com quem voce fala quase diariamente e pode confiar em momentos criticos.';
-    case 15: return 'Amigos proximos com quem voce mantem contato regular semanal.';
-    case 50: return 'Contatos com quem voce se encontra pelo menos mensalmente.';
-    case 150: return 'Sua rede social ativa — voce reconhece e se lembra de cada pessoa.';
-    case 500: return 'Conhecidos que voce reconhece mas com quem mantem pouco contato.';
+    case 5: return 'Pessoas com quem você fala quase diariamente e pode confiar em momentos criticos.';
+    case 15: return 'Amigos proximos com quem você mantem contato regular semanal.';
+    case 50: return 'Contatos com quem você se encontra pelo menos mensalmente.';
+    case 150: return 'Sua rede social ativa — você reconhece e se lembra de cada pessoa.';
+    case 500: return 'Conhecidos que você reconhece mas com quem mantem pouco contato.';
   }
 }
 
@@ -450,7 +450,7 @@ export function scoreContact(input: ContactScoreInput): RelationshipScoreResult 
       confidence: Math.min(input.interactionCount / 10, 1),
       computedAt,
       trend,
-      explainer: `Forca do vinculo: ${(tieStrength * 100).toFixed(0)}%`,
+      explainer: `Força do vinculo: ${(tieStrength * 100).toFixed(0)}%`,
       sufficiency: getSufficiencyLevel(tieStrength),
       isContested: false,
     },
@@ -475,7 +475,7 @@ export function scoreContact(input: ContactScoreInput): RelationshipScoreResult 
       computedAt,
       trend,
       explainer: gottmanRatio
-        ? `Razao positivo/negativo: ${gottmanRatio.toFixed(1)}:1 (${gottmanHealthy ? 'saudavel' : 'atencao'})`
+        ? `Razao positivo/negativo: ${gottmanRatio.toFixed(1)}:1 (${gottmanHealthy ? 'saudavel' : 'atenção'})`
         : 'Dados insuficientes para calcular razao Gottman',
       sufficiency: getSufficiencyLevel(gottmanHealthy ? 0.9 : 0.3),
       isContested: true,

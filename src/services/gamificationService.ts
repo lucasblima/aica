@@ -213,8 +213,8 @@ export const BADGES_CATALOG: Record<string, Badge> = {
   },
   'budget_master': {
     id: 'budget_master',
-    name: 'Mestre do Orcamento',
-    description: 'Crie um orcamento mensal completo',
+    name: 'Mestre do Orçamento',
+    description: 'Crie um orçamento mensal completo',
     icon: '💰',
     rarity: 'rare',
     xp_reward: 50,
@@ -224,7 +224,7 @@ export const BADGES_CATALOG: Record<string, Badge> = {
   'saver_streak': {
     id: 'saver_streak',
     name: 'Sequencia de Economia',
-    description: 'Fique abaixo do orcamento por 3 meses seguidos',
+    description: 'Fique abaixo do orçamento por 3 meses seguidos',
     icon: '🏆',
     rarity: 'epic',
     xp_reward: 100,
@@ -234,7 +234,7 @@ export const BADGES_CATALOG: Record<string, Badge> = {
   'financial_analyst': {
     id: 'financial_analyst',
     name: 'Analista Financeiro',
-    description: 'Analise 10 extratos com o agente de IA',
+    description: 'Análise 10 extratos com o agente de IA',
     icon: '📊',
     rarity: 'rare',
     xp_reward: 75,

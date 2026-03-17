@@ -1,5 +1,5 @@
 /**
- * VideoTranscriptionPanel - Transcription display for video projects
+ * VideoTranscriptionPanel - Transcription display for vídeo projects
  *
  * Reuses the podcast TranscriptionPanel patterns:
  * - Calls studio-transcribe Edge Function
@@ -77,7 +77,7 @@ export default function VideoTranscriptionPanel({
 
       onTranscriptionGenerated(data.data);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao transcrever video.';
+      const message = err instanceof Error ? err.message : 'Erro ao transcrever vídeo.';
       setError(message);
     } finally {
       setIsGenerating(false);
@@ -90,7 +90,7 @@ export default function VideoTranscriptionPanel({
     setTimeout(() => setCopiedSection(null), 2000);
   }, []);
 
-  // No video uploaded yet
+  // No vídeo uploaded yet
   if (!hasVideo) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -112,7 +112,7 @@ export default function VideoTranscriptionPanel({
           module="studio"
           variant="list"
           lines={5}
-          message="Transcrevendo video... Isso pode levar alguns minutos."
+          message="Transcrevendo vídeo... Isso pode levar alguns minutos."
         />
       </div>
     );
@@ -130,7 +130,7 @@ export default function VideoTranscriptionPanel({
           <FileText className="w-8 h-8 text-ceramic-info" />
         </div>
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
-          Nenhuma transcricao disponivel
+          Nenhuma transcricao disponível
         </h3>
         <p className="text-sm text-ceramic-text-secondary text-center mb-6 max-w-sm">
           Gere a transcricao automatica do video para desbloquear clips e legendas.

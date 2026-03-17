@@ -253,7 +253,7 @@ export function EfficiencyFlowCard({
         <EmptyState
           type="insufficient_data"
           customTitle="Dados em Preparacao"
-          customMessage="Continue registrando seus momentos para visualizar tendencias."
+          customMessage="Continue registrando seus momentos para visualizar tendências."
         />
       </div>
     )
@@ -276,7 +276,7 @@ export function EfficiencyFlowCard({
             <TrendingUp className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-bold text-ceramic-text-primary">Fluxo de Eficiencia</h3>
+            <h3 className="font-bold text-ceramic-text-primary">Fluxo de Eficiência</h3>
             <p className="text-xs text-ceramic-text-secondary">Ultimos {selectedRange} dias</p>
           </div>
         </div>
@@ -292,7 +292,7 @@ export function EfficiencyFlowCard({
           </div>
           <div className="text-center">
             <span className="text-2xl font-black text-ceramic-text-primary">{stats.maxScore}%</span>
-            <p className="text-xs text-ceramic-text-secondary">Maximo</p>
+            <p className="text-xs text-ceramic-text-secondary">Máximo</p>
           </div>
           <div className="text-center">
             <span className="text-2xl font-black text-amber-600">{stats.excellentDays}</span>

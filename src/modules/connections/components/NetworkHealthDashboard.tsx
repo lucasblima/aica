@@ -37,7 +37,7 @@ interface NetworkHealthDashboardProps {
 function getConstraintLevel(constraint: number): { label: string; color: string } {
   if (constraint <= 0.3) return { label: 'Baixa (bom)', color: '#6B7B5C' };
   if (constraint <= 0.6) return { label: 'Moderada', color: '#D97706' };
-  return { label: 'Alta (atencao)', color: '#9B4D3A' };
+  return { label: 'Alta (atenção)', color: '#9B4D3A' };
 }
 
 function getDiversityLevel(index: number): { label: string; color: string } {
@@ -49,7 +49,7 @@ function getDiversityLevel(index: number): { label: string; color: string } {
 const LAYER_LABELS: Record<DunbarLayer, string> = {
   5: 'Intimo',
   15: 'Simpatia',
-  50: 'Proximo',
+  50: 'Próximo',
   150: 'Ativo',
   500: 'Conhecido',
 };
@@ -217,7 +217,7 @@ export function NetworkHealthDashboard({
           </div>
           <div>
             <h3 className="text-lg font-bold text-ceramic-text-primary">
-              Saude da Rede
+              Saúde da Rede
             </h3>
             {lastComputedAt && (
               <p className="text-xs text-ceramic-text-secondary">
@@ -236,7 +236,7 @@ export function NetworkHealthDashboard({
           onClick={refresh}
           disabled={isRefreshing}
           className="ceramic-inset p-2 rounded-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
-          aria-label="Recalcular metricas"
+          aria-label="Recalcular métricas"
         >
           {isRefreshing ? (
             <Loader2 className="w-4 h-4 text-ceramic-accent animate-spin" />

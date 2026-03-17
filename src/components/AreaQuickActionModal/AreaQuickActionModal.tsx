@@ -44,7 +44,7 @@ const STATUS_CONFIG = {
     icon: AlertTriangle,
     color: 'text-ceramic-warning',
     bg: 'bg-ceramic-warning/10',
-    label: 'Atencao',
+    label: 'Atenção',
   },
   critical: {
     icon: AlertCircle,

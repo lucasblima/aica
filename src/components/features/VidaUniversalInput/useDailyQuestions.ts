@@ -24,18 +24,18 @@ const CAROUSEL_SIZE = 8
  * These match the dailyQuestionService pool but are kept minimal for the carousel.
  */
 const FALLBACK_QUESTIONS: Pick<DailyQuestion, 'id' | 'question_text' | 'category'>[] = [
-  { id: 'fb-1', question_text: 'O que voce quer conquistar hoje?', category: 'change' },
-  { id: 'fb-2', question_text: 'Como voce esta se sentindo neste momento?', category: 'reflection' },
-  { id: 'fb-3', question_text: 'Qual area da sua vida precisa de mais atencao?', category: 'reflection' },
+  { id: 'fb-1', question_text: 'O que você quer conquistar hoje?', category: 'change' },
+  { id: 'fb-2', question_text: 'Como você esta se sentindo neste momento?', category: 'reflection' },
+  { id: 'fb-3', question_text: 'Qual area da sua vida precisa de mais atenção?', category: 'reflection' },
   { id: 'fb-4', question_text: 'O que te deixaria orgulhoso hoje?', category: 'gratitude' },
-  { id: 'fb-5', question_text: 'Como voce pode se cuidar melhor agora?', category: 'energy' },
+  { id: 'fb-5', question_text: 'Como você pode se cuidar melhor agora?', category: 'energy' },
   { id: 'fb-6', question_text: 'Qual foi a melhor parte do seu dia?', category: 'gratitude' },
-  { id: 'fb-7', question_text: 'O que voce aprendeu recentemente?', category: 'learning' },
-  { id: 'fb-8', question_text: 'Como voce quer se sentir nesta semana?', category: 'energy' },
-  { id: 'fb-9', question_text: 'Com quem voce gostaria de se reconectar?', category: 'connection' },
+  { id: 'fb-7', question_text: 'O que você aprendeu recentemente?', category: 'learning' },
+  { id: 'fb-8', question_text: 'Como você quer se sentir nesta semana?', category: 'energy' },
+  { id: 'fb-9', question_text: 'Com quem você gostaria de se reconectar?', category: 'connection' },
   { id: 'fb-10', question_text: 'O que da sentido ao seu dia a dia?', category: 'purpose' },
   { id: 'fb-11', question_text: 'Que ideia tem ocupado sua mente?', category: 'creativity' },
-  { id: 'fb-12', question_text: 'Voce tem se movimentado o suficiente?', category: 'health' },
+  { id: 'fb-12', question_text: 'Você tem se movimentado o suficiente?', category: 'health' },
 ]
 
 /**

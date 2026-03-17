@@ -62,12 +62,12 @@ const EMPTY_MESSAGES: Record<string, { icon: string; title: string; description:
   at_risk: {
     icon: '💚',
     title: 'Nenhum contato em risco',
-    description: 'Otimo! Todos os relacionamentos estao saudaveis.',
+    description: 'Otimo! Todos os relacionamentos estão saudaveis.',
   },
   inactive: {
     icon: '😴',
     title: 'Nenhum contato inativo',
-    description: 'Todos os contatos tiveram interacao recente.',
+    description: 'Todos os contatos tiveram interação recente.',
   },
   search: {
     icon: '🔍',

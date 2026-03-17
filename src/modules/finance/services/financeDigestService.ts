@@ -108,7 +108,7 @@ export async function getMonthlyDigest(
         month: month || 0,
         year: year || 0,
         monthName: '',
-        error: 'Resposta invalida do servico de digest',
+        error: 'Resposta invalida do serviço de digest',
       }
     }
 

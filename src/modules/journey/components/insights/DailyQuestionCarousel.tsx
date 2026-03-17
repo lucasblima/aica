@@ -296,7 +296,7 @@ export function DailyQuestionCarousel({
                 </button>
 
                 <p className="mt-2 text-center text-xs text-ceramic-text-secondary">
-                  Responda quando se sentir confortavel. Nao e obrigatorio!
+                  Responda quando se sentir confortavel. Não e obrigatório!
                 </p>
               </form>
             )}

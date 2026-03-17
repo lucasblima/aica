@@ -43,9 +43,9 @@ export const OperationBreakdownChart: React.FC<OperationBreakdownChartProps> = (
   if (data.length === 0) {
     return (
       <div className="ceramic-card p-6">
-        <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operacao</h3>
+        <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operação</h3>
         <div className="ceramic-inset p-8 rounded-xl text-center">
-          <p className="text-sm text-ceramic-text-secondary">Nenhum dado disponivel</p>
+          <p className="text-sm text-ceramic-text-secondary">Nenhum dado disponível</p>
         </div>
       </div>
     );
@@ -53,7 +53,7 @@ export const OperationBreakdownChart: React.FC<OperationBreakdownChartProps> = (
 
   return (
     <div className="ceramic-card p-6">
-      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operacao</h3>
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operação</h3>
       <div className="flex flex-col md:flex-row items-center gap-6">
         <div className="relative w-48 h-48">
           <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">

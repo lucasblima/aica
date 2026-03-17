@@ -1,5 +1,5 @@
 /**
- * Budget View - Orcamento Tab
+ * Budget View - Orçamento Tab
  *
  * Compact month navigation, Resumo do Mes, BurnRateCard,
  * budget per category with progress bars & inline editing,
@@ -250,7 +250,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
           <button
             onClick={goToNextMonth}
             className="w-10 h-10 rounded-full hover:bg-ceramic-cool flex items-center justify-center transition-colors"
-            aria-label="Proximo mes"
+            aria-label="Próximo mes"
           >
             <ChevronRight className="w-5 h-5 text-ceramic-text-secondary" />
           </button>
@@ -274,7 +274,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
             <p className="text-lg font-black text-ceramic-error">{formatCurrency(totalSpent)}</p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wider text-ceramic-text-secondary">Disponivel</p>
+            <p className="text-[10px] uppercase tracking-wider text-ceramic-text-secondary">Disponível</p>
             <p className={`text-lg font-black ${(totalBudget - totalSpent) >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}>
               {formatCurrency(totalBudget - totalSpent)}
             </p>
@@ -372,7 +372,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
                     <button
                       onClick={() => startEditing(cat.category, cat.budget)}
                       className="group/edit flex items-center gap-1 mt-1 justify-end hover:opacity-80 transition-opacity"
-                      title="Clique para editar orcamento"
+                      title="Clique para editar orçamento"
                     >
                       <p className="text-sm text-ceramic-text-secondary">
                         de{' '}
@@ -384,7 +384,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
                       </p>
                       <Pencil className="w-3 h-3 text-ceramic-text-secondary opacity-0 group-hover:opacity-50 group-hover/edit:opacity-100 transition-opacity" />
                       {!cat.fromDb && (
-                        <span className="text-[9px] text-ceramic-text-secondary/50">(padrao)</span>
+                        <span className="text-[9px] text-ceramic-text-secondary/50">(padrão)</span>
                       )}
                     </button>
                   )}
@@ -407,7 +407,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
                   <span className="text-xl">{'\u26A0\uFE0F'}</span>
                   <div>
                     <p className="text-sm font-medium text-ceramic-error">
-                      Voce ultrapassou o orcamento desta categoria
+                      Você ultrapassou o orçamento desta categoria
                     </p>
                     <p className="text-xs text-ceramic-error mt-1">
                       {percentage.toFixed(0)}% do orcamento usado
@@ -420,18 +420,18 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
                 <div className="flex items-start gap-3 p-4 bg-ceramic-warning/10 rounded-2xl border border-ceramic-warning/20">
                   <span className="text-xl">{'\uD83D\uDCA1'}</span>
                   <p className="text-sm text-ceramic-warning">
-                    Voce ja gastou {percentage.toFixed(0)}% do orcamento desta categoria
+                    Você já gastou {percentage.toFixed(0)}% do orcamento desta categoria
                   </p>
                 </div>
               )}
 
-              {/* "Definir orcamento" for categories with spending but no DB budget */}
+              {/* "Definir orçamento" for categories with spending but no DB budget */}
               {!cat.fromDb && cat.spent > 0 && !isEditing && (
                 <button
                   onClick={() => startEditing(cat.category, cat.budget)}
                   className="mt-3 text-xs text-ceramic-accent hover:text-amber-600 transition-colors font-medium"
                 >
-                  Definir orcamento personalizado
+                  Definir orçamento personalizado
                 </button>
               )}
 
@@ -556,14 +556,14 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
               <div className="flex gap-6">
                 <div className="text-5xl">{'\u26A0\uFE0F'}</div>
                 <div>
-                  <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Orcamento Excedido</h4>
+                  <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Orçamento Excedido</h4>
                   <p className="text-ceramic-text-secondary leading-relaxed">
                     {budgetCategories
                       .filter(c => c.spent > c.budget)
                       .map(c => c.label)
                       .join(', ')}{' '}
                     {budgetCategories.filter(c => c.spent > c.budget).length === 1
-                      ? 'ultrapassou o orcamento definido'
+                      ? 'ultrapassou o orçamento definido'
                       : 'ultrapassaram os orcamentos definidos'}.
                     Considere revisar seus gastos nestas categorias.
                   </p>

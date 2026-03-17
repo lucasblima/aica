@@ -53,7 +53,7 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
           </div>
           <div>
             <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Creditos Mensais
+              Créditos Mensais
             </p>
             <h2 className="text-2xl font-black text-ceramic-text-primary text-etched">
               {credits_used} / {credits_total}
@@ -153,7 +153,7 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
           <div className="mt-4 ceramic-inset p-3 rounded-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-ceramic-text-secondary uppercase">
-                {credits_used > credits_total ? 'Excedido' : 'Disponivel'}
+                {credits_used > credits_total ? 'Excedido' : 'Disponível'}
               </span>
               <span
                 className={`text-lg font-black text-etched ${

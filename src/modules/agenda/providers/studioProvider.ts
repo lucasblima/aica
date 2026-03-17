@@ -61,7 +61,7 @@ export const studioProvider: TimelineProvider = {
 
       return {
         id: `studio-${ep.id}`,
-        title: `Gravacao: ${ep.title}`,
+        title: `Gravação: ${ep.title}`,
         start: startISO,
         end: endISO,
         allDay: false,

@@ -781,7 +781,7 @@ function TemplateCard({
           {currentUserId && template.user_id === currentUserId && template.usage_count > 0 && (
             <div
               className="flex items-center gap-1 px-2 py-2 text-ceramic-text-secondary"
-              title="Prescrito — nao pode ser editado"
+              title="Prescrito — não pode ser editado"
             >
               <Lock className="w-3.5 h-3.5" />
               <span className="text-[10px] font-medium">Prescrito</span>

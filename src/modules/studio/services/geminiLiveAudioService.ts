@@ -1,5 +1,5 @@
 /**
- * Gemini Live Audio Service - Real-time audio streaming for interview preparation
+ * Gemini Live Audio Service - Real-time áudio streaming for interview preparation
  *
  * Manages WebSocket connection to Gemini Multimodal Live API for real-time
  * voice-based interview preparation during podcast research.
@@ -8,7 +8,7 @@
  * 1. Edge Function `gemini-live-token` creates ephemeral token (server-side)
  * 2. Client connects directly to Gemini Live API via @google/genai SDK
  * 3. Audio captured via getUserMedia → PCM 16kHz 16-bit mono → Gemini
- * 4. Gemini responds with PCM 24kHz audio → AudioContext → speakers
+ * 4. Gemini responds with PCM 24kHz áudio → AudioContext → speakers
  *
  * @module studio/services/geminiLiveAudioService
  */
@@ -61,14 +61,14 @@ export interface AudioServiceCallbacks {
 // CONSTANTS
 // ============================================
 
-const GEMINI_LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
+const GEMINI_LIVE_MODEL = 'gemini-2.5-flash-native-áudio-preview-12-2025';
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
 const AUDIO_CHANNELS = 1; // mono
 const RECONNECT_MAX_RETRIES = 3;
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 30000;
-const AUDIO_CHUNK_INTERVAL_MS = 100; // send audio chunks every 100ms
+const AUDIO_CHUNK_INTERVAL_MS = 100; // send áudio chunks every 100ms
 
 // ============================================
 // SERVICE CLASS
@@ -100,7 +100,7 @@ export class GeminiLiveAudioService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
-   * Connect to Gemini Live API with audio streaming
+   * Connect to Gemini Live API with áudio streaming
    */
   async connect(config: AudioSessionConfig, callbacks: AudioServiceCallbacks): Promise<void> {
     if (this.session) {
@@ -167,7 +167,7 @@ export class GeminiLiveAudioService {
         },
       });
 
-      // 3. Start audio capture
+      // 3. Start áudio capture
       await this.startAudioCapture();
       this.setStatus('streaming');
       log.info('Audio streaming started');
@@ -238,7 +238,7 @@ export class GeminiLiveAudioService {
     this.audioContext = new AudioContext({ sampleRate: INPUT_SAMPLE_RATE });
     this.sourceNode = this.audioContext.createMediaStreamSource(this.mediaStream);
 
-    // Analyser for audio level monitoring
+    // Analyser for áudio level monitoring
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = 256;
     this.sourceNode.connect(this.analyserNode);
@@ -263,7 +263,7 @@ export class GeminiLiveAudioService {
     this.sourceNode.connect(this.processorNode);
     this.processorNode.connect(this.audioContext.destination);
 
-    // Start audio level monitoring
+    // Start áudio level monitoring
     this.startLevelMonitoring();
   }
 
@@ -292,7 +292,7 @@ export class GeminiLiveAudioService {
         },
       });
     } catch (error) {
-      log.warn('Failed to send audio chunk:', error);
+      log.warn('Failed to send áudio chunk:', error);
     }
   }
 
@@ -303,7 +303,7 @@ export class GeminiLiveAudioService {
   private async playAudioData(base64Audio: string): Promise<void> {
     const pcmData = this.base64ToArrayBuffer(base64Audio);
 
-    // Notify callback of raw audio data
+    // Notify callback of raw áudio data
     this.callbacks?.onAudioResponse(pcmData);
 
     // Queue for playback
@@ -415,7 +415,7 @@ export class GeminiLiveAudioService {
       return;
     }
 
-    // Handle audio data from model
+    // Handle áudio data from model
     if (content.modelTurn?.parts) {
       for (const part of content.modelTurn.parts) {
         if (part.inlineData?.data && part.inlineData.mimeType?.startsWith('audio/')) {
@@ -453,11 +453,11 @@ export class GeminiLiveAudioService {
   // ============================================
 
   private handleDisconnection(): void {
-    // Auto-reconnection not supported for live audio sessions (ephemeral tokens are single-use).
+    // Auto-reconnection not supported for live áudio sessions (ephemeral tokens are single-use).
     // Transition to error immediately so the user can reconnect manually.
     log.warn('Connection lost — manual reconnect required (ephemeral tokens are single-use)');
     this.setStatus('error');
-    this.callbacks?.onError(new Error('Conexao perdida. Clique em Iniciar Conversa para reconectar.'));
+    this.callbacks?.onError(new Error('Conexão perdida. Clique em Iniciar Conversa para reconectar.'));
     this.cleanup();
   }
 
@@ -507,13 +507,13 @@ export class GeminiLiveAudioService {
       this.reconnectTimer = null;
     }
 
-    // Stop audio level monitoring
+    // Stop áudio level monitoring
     if (this.levelAnimationFrame) {
       cancelAnimationFrame(this.levelAnimationFrame);
       this.levelAnimationFrame = null;
     }
 
-    // Stop audio capture
+    // Stop áudio capture
     if (this.processorNode) {
       this.processorNode.disconnect();
       this.processorNode.onaudioprocess = null;
@@ -536,7 +536,7 @@ export class GeminiLiveAudioService {
       this.mediaStream = null;
     }
 
-    // Stop audio playback
+    // Stop áudio playback
     this.clearPlaybackQueue();
     if (this.playbackContext) {
       this.playbackContext.close().catch(() => {});

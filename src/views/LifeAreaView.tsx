@@ -31,8 +31,8 @@ interface ModuleConfig {
 // Configuration for each life area module
 const MODULE_CONFIG: Record<LifeAreaModuleId, ModuleConfig> = {
   health: {
-    title: 'Saude',
-    subtitle: 'Habitos, metricas e bem-estar',
+    title: 'Saúde',
+    subtitle: 'Habitos, métricas e bem-estar',
     icon: Heart,
     color: 'orange',
     accentBg: 'bg-ceramic-warning/10',
@@ -40,7 +40,7 @@ const MODULE_CONFIG: Record<LifeAreaModuleId, ModuleConfig> = {
     accentText: 'text-ceramic-warning'
   },
   education: {
-    title: 'Educacao',
+    title: 'Educação',
     subtitle: 'Cursos, aprendizado continuo',
     icon: BookOpen,
     color: 'blue',
@@ -123,7 +123,7 @@ export function LifeAreaView({ moduleId, onBack }: LifeAreaViewProps) {
           </motion.button>
           <div>
             <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Modulo
+              Módulo
             </p>
             <h1 className="text-lg font-bold text-ceramic-text-primary">
               {config.title}

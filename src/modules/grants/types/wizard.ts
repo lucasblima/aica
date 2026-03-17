@@ -1,6 +1,6 @@
 /**
  * Organization Wizard Types
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Defines types for the multi-step wizard with gamification features.
  */
@@ -75,7 +75,7 @@ export const COMPLETION_LEVELS: CompletionLevelConfig[] = [
     color: '#C0C0C0',
     bgColor: '#F5F5F5',
     icon: '🥈',
-    description: 'Perfil basico - continue preenchendo para destaque',
+    description: 'Perfil básico - continue preenchendo para destaque',
   },
   {
     level: 'gold',
@@ -95,7 +95,7 @@ export const COMPLETION_LEVELS: CompletionLevelConfig[] = [
     color: '#B9F2FF',
     bgColor: '#F0FDFF',
     icon: '💎',
-    description: 'Perfil premium - destaque maximo em buscas e matchmaking',
+    description: 'Perfil premium - destaque máximo em buscas e matchmaking',
   },
 ];
 
@@ -166,7 +166,7 @@ export const WIZARD_STEPS: WizardStep[] = [
   {
     id: 'identification',
     title: 'Identificacao',
-    description: 'Informacoes basicas da organizacao',
+    description: 'Informações basicas da organizacao',
     xpReward: STEP_COMPLETION_BONUS,
     fields: [
       { name: 'name', label: 'Nome da Organizacao', type: 'text', required: true, xpValue: 10, placeholder: 'Ex: Instituto Cultural Brasil' },
@@ -196,12 +196,12 @@ export const WIZARD_STEPS: WizardStep[] = [
   },
   {
     id: 'address',
-    title: 'Endereco',
+    title: 'Endereço',
     description: 'Localizacao da sede',
     xpReward: STEP_COMPLETION_BONUS,
     fields: [
       { name: 'address_street', label: 'Rua', type: 'text', required: false, xpValue: 5, placeholder: 'Av. Paulista' },
-      { name: 'address_number', label: 'Numero', type: 'text', required: false, xpValue: 5, placeholder: '1000' },
+      { name: 'address_number', label: 'Número', type: 'text', required: false, xpValue: 5, placeholder: '1000' },
       { name: 'address_complement', label: 'Complemento', type: 'text', required: false, xpValue: 5, placeholder: 'Sala 101' },
       { name: 'address_neighborhood', label: 'Bairro', type: 'text', required: false, xpValue: 5, placeholder: 'Bela Vista' },
       { name: 'address_city', label: 'Cidade', type: 'text', required: false, xpValue: 5, placeholder: 'Sao Paulo' },
@@ -215,14 +215,14 @@ export const WIZARD_STEPS: WizardStep[] = [
     description: 'Missao, visao e areas de atuacao',
     xpReward: STEP_COMPLETION_BONUS,
     fields: [
-      { name: 'description', label: 'Descricao', type: 'textarea', required: false, xpValue: 15, placeholder: 'Descreva brevemente sua organizacao...' },
+      { name: 'description', label: 'Descrição', type: 'textarea', required: false, xpValue: 15, placeholder: 'Descreva brevemente sua organizacao...' },
       { name: 'mission', label: 'Missao', type: 'textarea', required: false, xpValue: 15, placeholder: 'Qual a missao da organizacao?' },
       { name: 'vision', label: 'Visao', type: 'textarea', required: false, xpValue: 10, placeholder: 'Qual a visao de futuro?' },
       { name: 'values', label: 'Valores', type: 'textarea', required: false, xpValue: 10, placeholder: 'Quais os valores que norteiam?' },
       { name: 'areas_of_activity', label: 'Areas de Atuacao', type: 'multiselect', required: true, xpValue: 10, options: [
         { value: 'cultura', label: 'Cultura' },
-        { value: 'educacao', label: 'Educacao' },
-        { value: 'saude', label: 'Saude' },
+        { value: 'educação', label: 'Educação' },
+        { value: 'saúde', label: 'Saúde' },
         { value: 'meio_ambiente', label: 'Meio Ambiente' },
         { value: 'esporte', label: 'Esporte' },
         { value: 'assistencia_social', label: 'Assistencia Social' },
@@ -251,11 +251,11 @@ export const WIZARD_STEPS: WizardStep[] = [
     xpReward: STEP_COMPLETION_BONUS,
     fields: [],
     // Note: Este step usa um componente customizado (WhatsAppStepContent)
-    // em vez de campos padrao. O XP e concedido ao conectar com sucesso.
+    // em vez de campos padrão. O XP e concedido ao conectar com sucesso.
   },
   {
     id: 'review',
-    title: 'Revisao',
+    title: 'Revisão',
     description: 'Revise e finalize o cadastro',
     xpReward: WIZARD_COMPLETION_BONUS,
     fields: [],

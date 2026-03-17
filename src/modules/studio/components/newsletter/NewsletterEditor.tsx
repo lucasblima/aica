@@ -32,8 +32,8 @@ type NewsletterTemplate = 'minimalista' | 'editorial' | 'destaque' | 'resumo';
 const TEMPLATE_OPTIONS: { value: NewsletterTemplate; label: string; description: string }[] = [
   { value: 'minimalista', label: 'Minimalista', description: 'Limpo e direto ao ponto' },
   { value: 'editorial', label: 'Editorial', description: 'Estilo revista, mais elaborado' },
-  { value: 'destaque', label: 'Destaque', description: 'Foco nos highlights e citacoes' },
-  { value: 'resumo', label: 'Resumo', description: 'Resumo compacto do episodio' },
+  { value: 'destaque', label: 'Destaque', description: 'Foco nos highlights e citações' },
+  { value: 'resumo', label: 'Resumo', description: 'Resumo compacto do episódio' },
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -86,7 +86,7 @@ export default function NewsletterEditor({
 
   const handleGenerate = useCallback(async () => {
     if (!topic.trim()) {
-      setGenerateError('Informe um topico para gerar a newsletter.');
+      setGenerateError('Informe um tópico para gerar a newsletter.');
       return;
     }
 
@@ -123,7 +123,7 @@ export default function NewsletterEditor({
 
   const handleSave = useCallback(async () => {
     if (!subject.trim()) {
-      setSaveError('O assunto e obrigatorio.');
+      setSaveError('O assunto e obrigatório.');
       return;
     }
 
@@ -132,7 +132,7 @@ export default function NewsletterEditor({
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Nao autenticado');
+      if (!user) throw new Error('Não autenticado');
 
       const computedStatus = scheduledAt ? 'scheduled' : 'draft';
 
@@ -238,13 +238,13 @@ export default function NewsletterEditor({
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">
-              Topico *
+              Tópico *
             </label>
             <input
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="Ex: Lancamento do episodio sobre IA generativa"
+              placeholder="Ex: Lancamento do episódio sobre IA generativa"
               className="w-full px-3 py-2 text-sm rounded-xl border border-ceramic-border bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
             />
           </div>
@@ -333,12 +333,12 @@ export default function NewsletterEditor({
         {/* Content */}
         <div>
           <label className="block text-xs font-bold text-ceramic-text-primary mb-1.5">
-            Conteudo
+            Conteúdo
           </label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Conteudo da newsletter em markdown..."
+            placeholder="Conteúdo da newsletter em markdown..."
             rows={12}
             className="w-full px-4 py-3 text-sm rounded-xl border border-ceramic-border bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-400/50 resize-y font-mono"
           />

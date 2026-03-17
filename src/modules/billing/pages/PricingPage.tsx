@@ -50,9 +50,9 @@ const PLANS: PricingPlan[] = [
     price_brl_monthly: 0,
     monthly_credits: 500,
     features: [
-      '500 creditos por mes',
+      '500 créditos por mes',
       'Todos os 8 modulos',
-      'Chat com IA basico',
+      'Chat com IA básico',
       'Exportacao de dados',
     ],
     is_active: true,
@@ -65,11 +65,11 @@ const PLANS: PricingPlan[] = [
     monthly_credits: 2500,
     multiplier: '5x',
     features: [
-      '2.500 creditos por mes',
+      '2.500 créditos por mes',
       'Chat com IA avancado',
-      'Analise profunda com Gemini Pro',
+      'Análise profunda com Gemini Pro',
       'Suporte prioritario',
-      'Integracao WhatsApp completa',
+      'Integração WhatsApp completa',
     ],
     is_active: true,
   },
@@ -81,7 +81,7 @@ const PLANS: PricingPlan[] = [
     monthly_credits: 10000,
     multiplier: '20x',
     features: [
-      '10.000 creditos por mes',
+      '10.000 créditos por mes',
       'Tudo do Pro incluido',
       'Acesso via API',
       'Dashboard de uso avancado',
@@ -95,44 +95,44 @@ const CREDIT_TIERS: CreditTier[] = [
   {
     cost: 1,
     label: '1 credito',
-    examples: 'Analise de sentimento, classificacao, resumo rapido',
+    examples: 'Análise de sentimento, classificação, resumo rapido',
     icon: <Zap className="w-5 h-5 text-amber-500" />,
   },
   {
     cost: 2,
-    label: '2 creditos',
-    examples: 'Chat com IA, analise de tarefas, sugestoes',
+    label: '2 créditos',
+    examples: 'Chat com IA, análise de tarefas, sugestoes',
     icon: <MessageSquare className="w-5 h-5 text-amber-500" />,
   },
   {
     cost: 3,
-    label: '3 creditos',
+    label: '3 créditos',
     examples: 'Relatorios diarios, briefings, dossie de contato',
     icon: <Brain className="w-5 h-5 text-amber-500" />,
   },
   {
     cost: 5,
-    label: '5 creditos',
-    examples: 'Conselho de Vida, sintese de padroes, analise profunda',
+    label: '5 créditos',
+    examples: 'Conselho de Vida, síntese de padrões, análise profunda',
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
 ];
 
 const FAQ_ITEMS: FAQItem[] = [
   {
-    question: 'Como funcionam os creditos?',
+    question: 'Como funcionam os créditos?',
     answer:
-      'Cada acao de IA consome creditos. Acoes simples custam 1 credito, chat e analises custam 2, relatorios custam 3, e acoes avancadas como Conselho de Vida custam 5 creditos. Seus creditos renovam todo mes.',
+      'Cada ação de IA consome créditos. Ações simples custam 1 credito, chat e analises custam 2, relatorios custam 3, e ações avancadas como Conselho de Vida custam 5 créditos. Seus créditos renovam todo mes.',
   },
   {
     question: 'Posso trocar de plano a qualquer momento?',
     answer:
-      'Sim. Ao fazer upgrade, a diferenca proporcional sera cobrada. Ao fazer downgrade, o novo preco sera aplicado no proximo ciclo de cobranca.',
+      'Sim. Ao fazer upgrade, a diferença proporcional sera cobrada. Ao fazer downgrade, o novo preço sera aplicado no próximo ciclo de cobrança.',
   },
   {
-    question: 'O que acontece se meus creditos acabarem?',
+    question: 'O que acontece se meus créditos acabarem?',
     answer:
-      'Voce continua usando o AICA, mas funcionalidades de IA ficam limitadas. Faca upgrade para mais creditos ou aguarde a renovacao mensal.',
+      'Você continua usando o AICA, mas funcionalidades de IA ficam limitadas. Faca upgrade para mais créditos ou aguarde a renovacao mensal.',
   },
   {
     question: 'Quais formas de pagamento sao aceitas?',
@@ -142,7 +142,7 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     question: 'Posso cancelar minha assinatura?',
     answer:
-      'Sim, cancele a qualquer momento sem multa. Voce mantem acesso ao plano pago ate o final do ciclo e depois retorna ao Free.',
+      'Sim, cancele a qualquer momento sem multa. Você mantem acesso ao plano pago ate o final do ciclo e depois retorna ao Free.',
   },
 ];
 
@@ -217,7 +217,7 @@ export function PricingPage() {
       const { data: sessionData } = await supabase.auth.getSession();
 
       if (!sessionData.session?.access_token) {
-        throw new Error('Sessao expirada. Faca login novamente.');
+        throw new Error('Sessão expirada. Faca login novamente.');
       }
 
       const { data, error: fnError } = await supabase.functions.invoke(
@@ -248,7 +248,7 @@ export function PricingPage() {
         // Redirect to Asaas hosted checkout
         window.location.href = data.checkout_url;
       } else {
-        throw new Error('Nao foi possivel criar a sessao de checkout.');
+        throw new Error('Não foi possível criar a sessão de checkout.');
       }
     } catch (err) {
       const message =
@@ -306,10 +306,10 @@ export function PricingPage() {
       <div className="mt-20 max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-xl font-bold text-ceramic-text-primary tracking-tight">
-            O que custa cada acao?
+            O que custa cada ação?
           </h2>
           <p className="mt-2 text-sm text-ceramic-text-secondary">
-            Acoes mais simples custam menos. Voce decide como usar seus creditos.
+            Ações mais simples custam menos. Você decide como usar seus créditos.
           </p>
         </div>
 
@@ -354,7 +354,7 @@ export function PricingPage() {
       {/* Footer */}
       <div className="text-center mt-16 pb-8">
         <p className="text-xs text-ceramic-text-secondary/60 leading-relaxed">
-          Precos em Reais (BRL).{PAYMENTS_ENABLED ? ' Cobranca mensal segura via PIX, cartao ou boleto.' : ' Planos pagos disponiveis em breve.'}
+          Preços em Reais (BRL).{PAYMENTS_ENABLED ? ' Cobrança mensal segura via PIX, cartao ou boleto.' : ' Planos pagos disponíveis em breve.'}
           <br />
           Cancelamento a qualquer momento, sem multa.
         </p>

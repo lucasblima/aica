@@ -1,6 +1,6 @@
 /**
  * CompletionBadge Component
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Visual badge showing organization profile completion level.
  */
@@ -164,7 +164,7 @@ export function LevelProgressCard({
       {nextLevel && (
         <div>
           <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-ceramic-text-secondary">Proximo nivel</span>
+            <span className="text-ceramic-text-secondary">Próximo nivel</span>
             <span className="font-medium" style={{ color: nextLevel.color }}>
               {nextLevel.name} {nextLevel.icon}
             </span>
@@ -193,7 +193,7 @@ export function LevelProgressCard({
         <div className="text-center py-2">
           <span className="text-2xl">🎉</span>
           <p className="text-sm text-ceramic-text-secondary mt-1">
-            Nivel maximo alcancado!
+            Nivel máximo alcancado!
           </p>
         </div>
       )}

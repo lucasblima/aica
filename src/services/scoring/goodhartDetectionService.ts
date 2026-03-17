@@ -106,8 +106,8 @@ export function detectScoreHealthDivergence(
 
   const domainNames = affectedDomains.join(', ');
   const message = severity === 'critical'
-    ? `Atencao: seu Life Score subiu, mas ${decliningDomains.length} areas estao em declinio (${domainNames}). O score pode nao refletir sua situacao real.`
-    : `Seu Life Score esta subindo, mas as areas de ${domainNames} estao em declinio. Considere equilibrar sua atencao entre as areas.`;
+    ? `Atenção: seu Life Score subiu, mas ${decliningDomains.length} areas estão em declinio (${domainNames}). O score pode não refletir sua situação real.`
+    : `Seu Life Score esta subindo, mas as areas de ${domainNames} estão em declinio. Considere equilibrar sua atenção entre as areas.`;
 
   return {
     alertType: 'score_health_divergence',
@@ -157,7 +157,7 @@ export function detectSingleDomainInflation(
   const severity: GoodhartSeverity = inflatedScore / mean >= 2.5 ? 'warning' : 'info';
 
   const lowNames = lowDomains.map(([d]) => d).join(', ');
-  const message = `A area "${inflatedName}" esta muito acima da media (${(inflatedScore * 100).toFixed(0)}%), enquanto ${lowNames} estao abaixo. Tente distribuir sua atencao de forma mais equilibrada.`;
+  const message = `A area "${inflatedName}" esta muito acima da media (${(inflatedScore * 100).toFixed(0)}%), enquanto ${lowNames} estão abaixo. Tente distribuir sua atenção de forma mais equilibrada.`;
 
   return {
     alertType: 'single_domain_inflation',
@@ -208,7 +208,7 @@ export function detectMetricGaming(
   const severity: GoodhartSeverity = suspiciousDomains.length >= 2 ? 'warning' : 'info';
 
   const domainNames = affectedDomains.join(', ');
-  const message = `Detectamos um padrao de acoes repetitivas em ${domainNames}. Acoes rapidas e repetitivas podem inflar o score sem beneficio real. Tente focar em atividades mais significativas.`;
+  const message = `Detectamos um padrão de ações repetitivas em ${domainNames}. Ações rapidas e repetitivas podem inflar o score sem beneficio real. Tente focar em atividades mais significativas.`;
 
   return {
     alertType: 'metric_gaming',

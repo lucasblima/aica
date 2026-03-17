@@ -56,15 +56,15 @@ export interface TRLAssessment {
 
 // TRL criteria per level (ISO 16290:2013 adapted for research context)
 export const TRL_CRITERIA: Record<number, string[]> = {
-  1: ['Principios basicos observados e reportados', 'Revisao de literatura realizada'],
-  2: ['Conceito de tecnologia formulado', 'Aplicacao potencial identificada'],
+  1: ['Principios basicos observados e reportados', 'Revisão de literatura realizada'],
+  2: ['Conceito de tecnologia formulado', 'Aplicação potencial identificada'],
   3: ['Prova de conceito experimental', 'Funcoes criticas demonstradas em laboratorio'],
   4: ['Validacao em laboratorio de componentes integrados', 'Resultados consistentes em ambiente controlado'],
-  5: ['Validacao em ambiente relevante', 'Prototipo testado em condicoes reais'],
+  5: ['Validacao em ambiente relevante', 'Prototipo testado em condições reais'],
   6: ['Demonstracao em ambiente relevante', 'Sistema representativo testado'],
   7: ['Demonstracao em ambiente operacional', 'Prototipo perto da escala final'],
   8: ['Sistema completo qualificado', 'Testes em ambiente operacional real'],
-  9: ['Sistema provado em operacao', 'Documentacao completa e pronto para producao'],
+  9: ['Sistema provado em operação', 'Documentação completa e pronto para produção'],
 };
 
 // ============================================================================

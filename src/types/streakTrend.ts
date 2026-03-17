@@ -228,8 +228,8 @@ export function getCompassionateMessage(status: Omit<StreakStatus, 'message'>): 
   if (status.isInGracePeriod) {
     return {
       type: 'grace_period_active',
-      title: 'Periodo de Descanso',
-      message: `Cuide-se! Voce tem ${status.gracePeriodRemaining} dias de descanso restantes este mes.`,
+      title: 'Período de Descanso',
+      message: `Cuide-se! Você tem ${status.gracePeriodRemaining} dias de descanso restantes este mes.`,
       emoji: '💚',
     };
   }
@@ -239,9 +239,9 @@ export function getCompassionateMessage(status: Omit<StreakStatus, 'message'>): 
     return {
       type: 'grace_period_available',
       title: 'Tudo Bem!',
-      message: 'A vida acontece. Use um periodo de descanso ou complete algumas tarefas para continuar.',
+      message: 'A vida acontece. Use um período de descanso ou complete algumas tarefas para continuar.',
       emoji: '🌱',
-      actionLabel: 'Usar Periodo de Descanso',
+      actionLabel: 'Usar Período de Descanso',
       actionType: 'use_grace_period',
     };
   }
@@ -263,7 +263,7 @@ export function getCompassionateMessage(status: Omit<StreakStatus, 'message'>): 
     return {
       type: 'comeback_celebration',
       title: 'Que Bom Te Ver!',
-      message: 'Nao importa quanto tempo passou. O que importa e que voce voltou.',
+      message: 'Não importa quanto tempo passou. O que importa e que você voltou.',
       emoji: '🌟',
       actionLabel: 'Recomeccar',
       actionType: 'start_recovery',
@@ -295,7 +295,7 @@ export function getCompassionateMessage(status: Omit<StreakStatus, 'message'>): 
     return {
       type: 'gentle_reminder',
       title: 'Cada Dia Conta',
-      message: `${status.currentTrend}/${status.trendWindow} dias. Voce esta construindo algo.`,
+      message: `${status.currentTrend}/${status.trendWindow} dias. Você esta construindo algo.`,
       emoji: '🌱',
     };
   }

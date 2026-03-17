@@ -25,7 +25,7 @@ export interface WeeklyDay {
   day: string;
   /** Full day name in Portuguese: 'Segunda', 'Terca', etc. */
   label: string;
-  /** Workout modality label: 'Forca', 'Cardio', 'Mobilidade', etc. */
+  /** Workout modality label: 'Força', 'Cardio', 'Mobilidade', etc. */
   modality: string;
   /** Hex color for this modality/day block */
   color: string;

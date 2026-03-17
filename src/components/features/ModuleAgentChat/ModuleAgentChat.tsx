@@ -140,7 +140,7 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
 
   if (!isOpen) return null;
 
-  const defaultWelcome = `Ola! Sou o assistente de **${displayName}**. Como posso ajudar?`;
+  const defaultWelcome = `Olá! Sou o assistente de **${displayName}**. Como posso ajudar?`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-end p-4 sm:p-6 pointer-events-none">
@@ -163,7 +163,7 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
               )}
               <div>
                 <h3 className="text-sm font-semibold text-ceramic-text-primary">
-                  {showSessions ? 'Historico' : `Agente ${displayName}`}
+                  {showSessions ? 'Histórico' : `Agente ${displayName}`}
                 </h3>
                 <p className="text-xs text-ceramic-text-secondary">
                   {showSessions
@@ -178,7 +178,7 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
                 <button
                   onClick={() => setShowSessions(true)}
                   className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors rounded-lg hover:bg-ceramic-cool"
-                  title="Historico de conversas"
+                  title="Histórico de conversas"
                 >
                   <Clock className="w-4 h-4" />
                 </button>
@@ -222,7 +222,7 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ceramic-text-primary truncate">
-                        {s.title || 'Conversa sem titulo'}
+                        {s.title || 'Conversa sem título'}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-ceramic-text-secondary">

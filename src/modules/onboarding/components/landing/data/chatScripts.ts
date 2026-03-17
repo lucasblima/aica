@@ -136,7 +136,7 @@ export const chatScripts: ChatScript[] = [
     ],
   },
   {
-    id: 'padroes',
+    id: 'padrões',
     label: 'Meus padrões',
     messages: [
       {

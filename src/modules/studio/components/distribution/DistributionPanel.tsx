@@ -183,7 +183,7 @@ export const DistributionPanel: React.FC<DistributionPanelProps> = ({ projectId,
       setCaptions(prev => prev.map(c => ({ ...c, status: c.scheduledAt ? 'scheduled' : c.status })));
     } catch (err) {
       log.error('Schedule failed:', err);
-      setError('Falha ao agendar conteudo. Tente novamente.');
+      setError('Falha ao agendar conteúdo. Tente novamente.');
     } finally {
       setScheduling(false);
     }
@@ -246,7 +246,7 @@ export const DistributionPanel: React.FC<DistributionPanelProps> = ({ projectId,
             )}
           </button>
           {!content.trim() && (
-            <p className="text-xs text-ceramic-text-secondary mt-2">Adicione conteudo base para gerar captions.</p>
+            <p className="text-xs text-ceramic-text-secondary mt-2">Adicione conteúdo base para gerar captions.</p>
           )}
         </motion.div>
       )}

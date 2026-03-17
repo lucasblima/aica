@@ -1,6 +1,6 @@
 /**
  * DocumentDropZone Component
- * Issue #100 - Wizard gamificado para cadastro completo de organizacoes
+ * Issue #100 - Wizard gamificado para cadastro completo de organizações
  *
  * Drag-and-drop zone for uploading organization documents.
  * Processes documents to auto-fill wizard fields.
@@ -63,7 +63,7 @@ export function DocumentDropZone({
     // Validate file
     const validation = validateFile(file);
     if (!validation.valid) {
-      onError?.(validation.error || 'Arquivo invalido');
+      onError?.(validation.error || 'Arquivo inválido');
       return;
     }
 
