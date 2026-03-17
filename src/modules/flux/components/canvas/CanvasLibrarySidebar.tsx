@@ -23,6 +23,24 @@ const INTENSITY_COLORS: Record<string, string> = {
   high: 'bg-[#9B4D3A]/15 text-[#9B4D3A]',
 };
 
+const MODALITY_ICONS: Record<string, string> = {
+  swimming: '🏊',
+  running: '🏃',
+  cycling: '🚴',
+  strength: '💪',
+  walking: '🚶',
+  triathlon: '🏅',
+};
+
+const MODALITY_BORDER_COLORS: Record<string, string> = {
+  swimming: '#60A5FA',
+  running: '#FB923C',
+  cycling: '#34D399',
+  strength: '#C084FC',
+  walking: '#38BDF8',
+  triathlon: '#FB7185',
+};
+
 // ============================================
 // CanvasLibrarySidebar (exported)
 // ============================================
@@ -141,17 +159,21 @@ export const CanvasLibrarySidebar: React.FC<CanvasLibrarySidebarProps> = ({
                 e.dataTransfer.setData('templateId', template.id);
                 e.dataTransfer.setData('text/plain', JSON.stringify(template));
               }}
-              className="group relative flex flex-col gap-2 rounded-[16px] p-3 cursor-grab active:cursor-grabbing transition-all"
+              className="group relative flex flex-col gap-2 rounded-[16px] p-3 cursor-grab active:cursor-grabbing transition-all overflow-hidden"
               style={{
                 background: '#F0EFE9',
                 boxShadow:
                   '3px 3px 8px rgba(163,158,145,0.12), -3px -3px 8px rgba(255,255,255,0.9)',
+                borderLeft: `3px solid ${MODALITY_BORDER_COLORS[template.modality] || '#A39E91'}`,
               }}
             >
               <span className="text-[9px] font-bold uppercase tracking-wider text-ceramic-text-tertiary">
                 {template.category}
               </span>
               <h4 className="font-semibold text-ceramic-text-primary text-sm leading-tight line-clamp-2">
+                {MODALITY_ICONS[template.modality] && (
+                  <span className="mr-1">{MODALITY_ICONS[template.modality]}</span>
+                )}
                 {template.name}
               </h4>
               <div className="flex items-center gap-2 flex-wrap">
