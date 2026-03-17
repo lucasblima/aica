@@ -32,6 +32,7 @@ import { PdfPreviewDrawer } from './PdfPreviewDrawer';
 import { uploadEditalPDF, deleteEditalPDF, updateProjectName } from '../services/grantService';
 
 import { createNamespacedLogger } from '@/lib/logger';
+import { GenerateAudioButton } from '@/components/features/notebooklm';
 
 const log = createNamespacedLogger('Editaldetailview');
 
@@ -386,6 +387,26 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Generate Audio Study Guide */}
+        <GenerateAudioButton
+          params={{
+            module: 'grants',
+            content: `Edital: ${opportunity?.title || ''}.
+Agência: ${opportunity?.funding_agency || ''}.
+Programa: ${opportunity?.program_name || ''}.
+Financiamento: R$ ${opportunity?.min_funding || 0} - R$ ${opportunity?.max_funding || 0}.
+Prazo: ${opportunity?.submission_deadline ? new Date(opportunity.submission_deadline).toLocaleDateString('pt-BR') : 'Não definido'}.
+Campos: ${(opportunity?.form_fields || []).length} campos de aplicação.`,
+            title: `Study Guide - ${opportunity?.title || 'Edital'}`,
+            format: 'deep-dive',
+            length: 'default',
+            language: 'pt-BR',
+            instructions: 'Análise detalhada do edital. Cubra: critérios de avaliação, temas prioritários, dicas de preparação, erros comuns a evitar, checklist de documentos necessários.',
+          }}
+          label="Gerar Study Guide"
+          className="mt-6 mb-8"
+        />
+
         {/* Active Projects */}
         {activeProjects.length > 0 && (
           <div className="mb-8">
