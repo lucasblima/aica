@@ -55,6 +55,8 @@ interface ExtendedAthleteCardProps extends Omit<AthleteCardProps, 'recentFeedbac
   inviteStatus?: 'none' | 'sent' | 'delivered' | 'bounced' | 'failed';
   /** Group tags assigned to this athlete (from localStorage groups) */
   groupTags?: AthleteGroup[];
+  /** Number of unread feedback entries from this athlete */
+  unreadFeedbackCount?: number;
 }
 
 export function AthleteCard({
@@ -71,6 +73,7 @@ export function AthleteCard({
   onPrescreverClick,
   inviteStatus = 'none',
   groupTags = [],
+  unreadFeedbackCount = 0,
 }: ExtendedAthleteCardProps) {
   // Menu dropdown state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -311,16 +314,25 @@ export function AthleteCard({
 
         {/* Metrics Row — feedbacks + status indicators */}
         <div className="flex items-center gap-3 pt-2 border-t border-ceramic-text-secondary/10 flex-wrap">
-          {/* Feedbacks summary */}
+          {/* Feedbacks summary + unread badge */}
           <div className="flex items-center gap-2">
-            <div className="ceramic-inset p-1.5">
-              <MessageSquare className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+            <div className="relative ceramic-inset p-1.5">
+              <MessageSquare className={`w-3.5 h-3.5 ${unreadFeedbackCount > 0 ? 'text-ceramic-accent' : 'text-ceramic-text-secondary'}`} />
+              {unreadFeedbackCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-ceramic-accent text-white text-[9px] font-bold shadow-sm">
+                  {unreadFeedbackCount > 9 ? '9+' : unreadFeedbackCount}
+                </span>
+              )}
             </div>
             <div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
                 Feedbacks
               </p>
-              {recentFeedbacks.length > 0 && recentFeedbacks[0].completed_at ? (
+              {unreadFeedbackCount > 0 ? (
+                <p className="text-xs font-bold text-ceramic-accent">
+                  {unreadFeedbackCount} novo{unreadFeedbackCount > 1 ? 's' : ''}
+                </p>
+              ) : recentFeedbacks.length > 0 && recentFeedbacks[0].completed_at ? (
                 <p className="text-xs font-bold text-ceramic-text-primary">
                   {recentFeedbacks.length} · {new Date(recentFeedbacks[0].completed_at).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
                 </p>
