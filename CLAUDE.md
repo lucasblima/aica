@@ -36,7 +36,7 @@ npx supabase functions serve  # Local Edge Functions
 | **Connections** | `src/modules/connections/` | `connection_spaces`, `connection_members` |
 | **Studio** | `src/modules/studio/` | `podcast_shows`, `podcast_episodes` |
 | **Finance** | `src/modules/finance/` | `finance_transactions` |
-| **Flux** | `src/modules/flux/` | `athletes`, `workout_blocks`, `alerts` |
+| **Flux** | `src/modules/flux/` | `athletes`, `workout_slots`, `microcycles`, `alerts` |
 
 ## Solo Dev Workflow
 

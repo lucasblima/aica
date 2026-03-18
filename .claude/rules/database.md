@@ -68,7 +68,7 @@ $$;
 | Connections | `connection_spaces`, `connection_members`, `contact_network`, `whatsapp_messages` |
 | Studio | `podcast_shows`, `podcast_episodes` |
 | Finance | `finance_transactions` |
-| Flux | `athletes`, `workout_blocks`, `alerts` |
+| Flux | `athletes`, `workout_slots`, `microcycles`, `alerts` |
 
 ## OpenClaw Tables
 
