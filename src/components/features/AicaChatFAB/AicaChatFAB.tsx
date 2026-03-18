@@ -88,6 +88,7 @@ export function AicaChatFAB({
     setShowSessions,
     activeAgent,
     lastFailedMessage,
+    connectionStatus,
   } = useChatSession()
 
   const activeModule = activeAgent
@@ -312,6 +313,20 @@ export function AicaChatFAB({
                     ? `via ${formatAgentName(activeAgent)}`
                     : 'Assistente pessoal'}
                 </p>
+                {connectionStatus !== 'connected' && (
+                  <span className={cn(
+                    'inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                    connectionStatus === 'degraded' && 'bg-ceramic-warning/10 text-ceramic-warning',
+                    connectionStatus === 'offline' && 'bg-ceramic-error/10 text-ceramic-error',
+                  )}>
+                    <span className={cn(
+                      'w-1.5 h-1.5 rounded-full',
+                      connectionStatus === 'degraded' && 'bg-ceramic-warning',
+                      connectionStatus === 'offline' && 'bg-ceramic-error',
+                    )} />
+                    {connectionStatus === 'degraded' ? 'Modo fallback' : 'Sem conexao'}
+                  </span>
+                )}
               </div>
               <button
                 className="aica-fab-header__action"

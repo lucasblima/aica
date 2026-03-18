@@ -1,5 +1,5 @@
 import React from 'react'
-import type { UserAIContext, UserPattern, LifeCouncilInsight } from '@/services/userAIContextService'
+import type { UserAIContext, UserPattern, LifeCouncilInsight, LifeScoreContext } from '@/services/userAIContextService'
 
 interface ChatContextSidebarProps {
   activeModule: string
@@ -147,6 +147,104 @@ function InsightCard({ insight }: { insight: LifeCouncilInsight }) {
   )
 }
 
+const DOMAIN_LABELS: Record<string, string> = {
+  atlas: 'Produtividade',
+  journey: 'Bem-estar',
+  connections: 'Relacionamentos',
+  finance: 'Financas',
+  grants: 'Captacao',
+  studio: 'Producao',
+  flux: 'Treinamento',
+}
+
+function getScoreColorClass(score: number): string {
+  // Score is 0-1, convert thresholds accordingly: >0.7 green, 0.4-0.7 yellow, <0.4 red
+  if (score >= 0.7) return 'text-ceramic-success'
+  if (score >= 0.4) return 'text-ceramic-warning'
+  return 'text-ceramic-error'
+}
+
+function getScoreBgClass(score: number): string {
+  if (score >= 0.7) return 'rgba(107,123,92,0.12)'
+  if (score >= 0.4) return 'rgba(217,119,6,0.12)'
+  return 'rgba(155,77,58,0.12)'
+}
+
+function getTrendArrow(trend: string | null): string {
+  if (trend === 'improving') return ' \u2191'
+  if (trend === 'declining') return ' \u2193'
+  return ''
+}
+
+function LifeScoreCard({ lifeScore }: { lifeScore: LifeScoreContext }) {
+  const displayScore = Math.round(lifeScore.compositeScore * 100)
+  const domainEntries = Object.entries(lifeScore.domainScores)
+    .map(([key, val]) => ({
+      key,
+      label: DOMAIN_LABELS[key] || key,
+      score: typeof val === 'number' ? val : 0,
+    }))
+    .sort((a, b) => b.score - a.score)
+
+  const computedDate = new Date(lifeScore.computedAt).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  return (
+    <div className="aica-context-card">
+      <p className="aica-context-card__title text-amber-600">
+        Life Score
+        {lifeScore.spiralDetected && (
+          <span style={{
+            marginLeft: 6,
+            fontSize: 10,
+            padding: '1px 6px',
+            borderRadius: 8,
+            background: 'rgba(155,77,58,0.15)',
+            color: 'var(--color-ceramic-error, #9B4D3A)',
+          }}>
+            Espiral detectada
+          </span>
+        )}
+      </p>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '4px 0 6px' }}>
+        <span className={getScoreColorClass(lifeScore.compositeScore)} style={{ fontSize: 22, fontWeight: 600 }}>
+          {displayScore}
+        </span>
+        <span className="text-ceramic-text-secondary" style={{ fontSize: 12 }}>
+          /100{getTrendArrow(lifeScore.trend)}
+        </span>
+      </div>
+      {domainEntries.length > 0 && (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {domainEntries.map(d => {
+            const pct = Math.round(d.score * 100)
+            return (
+              <li key={d.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+                <span className="text-ceramic-text-secondary">{d.label}</span>
+                <span style={{
+                  fontSize: 10,
+                  padding: '1px 5px',
+                  borderRadius: 8,
+                  background: getScoreBgClass(d.score),
+                }} className={getScoreColorClass(d.score)}>
+                  {pct}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <p className="aica-context-card__label" style={{ marginTop: 6 }}>
+        Calculado em: {computedDate}
+      </p>
+    </div>
+  )
+}
+
 function ContextSummaryCard({ context }: { context: UserAIContext }) {
   const summaryParts: string[] = []
   if (context.pendingTasks > 0) summaryParts.push(`${context.pendingTasks} tarefa${context.pendingTasks > 1 ? 's' : ''} pendente${context.pendingTasks > 1 ? 's' : ''}`)
@@ -193,6 +291,7 @@ function renderCards(module: string, context: UserAIContext): React.ReactNode {
     case 'journey':
       return (
         <>
+          {context.lifeScore && <LifeScoreCard lifeScore={context.lifeScore} />}
           <ListCard title="Momentos Recentes" items={context.recentMoments} accentColor="text-teal-500" />
           {context.latestInsight ? <InsightCard insight={context.latestInsight} /> : <ContextSummaryCard context={context} />}
           <PatternsCard patterns={context.patterns.filter(p => ['emotional', 'trigger', 'strength'].includes(p.patternType))} />
@@ -217,6 +316,7 @@ function renderCards(module: string, context: UserAIContext): React.ReactNode {
     default: // coordinator overview
       return (
         <>
+          {context.lifeScore && <LifeScoreCard lifeScore={context.lifeScore} />}
           {context.latestInsight ? <InsightCard insight={context.latestInsight} /> : <ContextSummaryCard context={context} />}
           <StatCard title="Tarefas Pendentes" value={context.pendingTasks} label="no Atlas" accentColor="text-blue-500" />
           {context.financeSummary && (
