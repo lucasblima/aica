@@ -51,35 +51,8 @@ function isClientRateLimited(userId: string): boolean {
   return false
 }
 
-// =====================================================
-// CP AWARD SERIALIZATION (P0-2 race condition fix)
-// Same pattern as momentService.ts — prevents concurrent
-// award_consciousness_points RPCs from this code path too.
-// =====================================================
-let cpAwardInProgress = false
-const cpAwardQueue: Array<() => void> = []
-
-async function serializedCPAward<T>(fn: () => Promise<T>): Promise<T> {
-  if (cpAwardInProgress) {
-    return new Promise<T>((resolve, reject) => {
-      cpAwardQueue.push(async () => {
-        try {
-          resolve(await fn())
-        } catch (e) {
-          reject(e)
-        }
-      })
-    })
-  }
-  cpAwardInProgress = true
-  try {
-    return await fn()
-  } finally {
-    cpAwardInProgress = false
-    const next = cpAwardQueue.shift()
-    if (next) next()
-  }
-}
+// P0-2: Shared singleton mutex for CP award serialization
+import { serializedCPAward } from './cpAwardLock'
 
 /**
  * Create a new moment entry with full processing

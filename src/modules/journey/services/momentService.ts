@@ -21,34 +21,18 @@ import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluati
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentService')
 
-// =====================================================
-// CP AWARD SERIALIZATION (P0-2 race condition fix)
-// Prevents concurrent award_consciousness_points RPCs
-// from producing inconsistent CP totals.
-// =====================================================
-let cpAwardInProgress = false
-const cpAwardQueue: Array<() => void> = []
+// P0-2: Shared singleton mutex for CP award serialization
+import { serializedCPAward } from './cpAwardLock'
 
-async function serializedCPAward<T>(fn: () => Promise<T>): Promise<T> {
-  if (cpAwardInProgress) {
-    return new Promise<T>((resolve, reject) => {
-      cpAwardQueue.push(async () => {
-        try {
-          resolve(await fn())
-        } catch (e) {
-          reject(e)
-        }
-      })
-    })
-  }
-  cpAwardInProgress = true
-  try {
-    return await fn()
-  } finally {
-    cpAwardInProgress = false
-    const next = cpAwardQueue.shift()
-    if (next) next()
-  }
+// P0-3: Client-side rate limit guard (same pattern as momentPersistenceService)
+const recentCreations = new Map<string, number>()
+
+function isClientRateLimited(userId: string): boolean {
+  const lastCreation = recentCreations.get(userId) || 0
+  const now = Date.now()
+  if (now - lastCreation < 1000) return true
+  recentCreations.set(userId, now)
+  return false
 }
 
 /**
@@ -59,6 +43,11 @@ export async function createMoment(
   input: CreateMomentInput
 ): Promise<MomentWithCP> {
   try {
+    // P0-3: Client-side rate limit check
+    if (isClientRateLimited(userId)) {
+      log.warn('Client-side rate limit hit for user', { userId })
+      throw new Error('Rate limited: please wait before creating another moment')
+    }
     // Transcribe áudio if provided (must complete before insert)
     let finalContent = input.content
     let momentType: 'text' | 'audio' = input.type || 'text'
