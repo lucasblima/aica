@@ -238,6 +238,72 @@ export function computeStudioDomainScore(
 }
 
 // ============================================================================
+// DOMAIN PROVIDER (for Life Score)
+// ============================================================================
+
+/**
+ * Compute Studio domain score for the scoring engine.
+ * Fetches episode data and guest scores to build a composite score.
+ */
+async function computeStudioDomainScoreProvider(): Promise<import('@/services/scoring/types').DomainScore | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Fetch episodes with their shows
+    const { data: episodes } = await supabase
+      .from('podcast_episodes')
+      .select('id, status, show_id, podcast_shows!inner(user_id)')
+      .eq('podcast_shows.user_id', user.id);
+
+    if (!episodes || episodes.length === 0) return null;
+
+    const totalEpisodes = episodes.length;
+    const published = episodes.filter(e => e.status === 'published').length;
+
+    // Production consistency: published episodes / total (proxy)
+    const productionConsistency = totalEpisodes > 0 ? published / totalEpisodes : 0;
+
+    // Fetch guest scores for average
+    const { data: guestScores } = await supabase
+      .from('guest_scores')
+      .select('composite_score')
+      .eq('user_id', user.id);
+
+    const avgGuestScore = guestScores && guestScores.length > 0
+      ? guestScores.reduce((s, g) => s + (g.composite_score || 0), 0) / guestScores.length / 100
+      : 0.5; // neutral default
+
+    // Use production consistency as proxy for narrative quality too
+    const avgNarrativeScore = productionConsistency;
+
+    const normalized = computeStudioDomainScore(avgGuestScore, avgNarrativeScore, productionConsistency);
+
+    return {
+      module: 'studio' as const,
+      normalized: Math.max(0, Math.min(1, normalized)),
+      raw: Math.round(normalized * 100),
+      label: 'Producao',
+      confidence: Math.min(1, totalEpisodes / 10),
+      trend: 'stable' as const,
+    };
+  } catch (err) {
+    log.warn('Studio domain score computation failed (non-critical):', err);
+    return null;
+  }
+}
+
+/**
+ * Register the Studio domain provider with the scoring engine.
+ * Call this once during app initialization.
+ */
+export function registerStudioDomainProvider(): void {
+  import('@/services/scoring/scoringEngine').then(({ registerDomainProvider }) => {
+    registerDomainProvider('studio', computeStudioDomainScoreProvider);
+  });
+}
+
+// ============================================================================
 // SUPABASE PERSISTENCE
 // ============================================================================
 
