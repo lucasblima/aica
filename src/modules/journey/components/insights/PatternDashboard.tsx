@@ -22,8 +22,8 @@ function PatternDashboardSkeleton() {
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3].map((i) => (
         <div key={i} className="ceramic-tile p-4">
-          <div className="h-4 w-32 bg-[#E0DDD5] rounded mb-3" />
-          <div className="h-24 w-full bg-[#E0DDD5] rounded" />
+          <div className="h-4 w-32 bg-ceramic-cool rounded mb-3" />
+          <div className="h-24 w-full bg-ceramic-cool rounded" />
         </div>
       ))}
     </div>
@@ -47,7 +47,7 @@ function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onSt
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <SparklesIcon className={`h-4 w-4 ${isDone ? 'text-ceramic-success' : 'text-ceramic-accent'}`} />
-            <span className="text-sm font-medium text-[#5C554B]">
+            <span className="text-sm font-medium text-ceramic-text-primary">
               {isDone
                 ? `Análise concluida: ${progress.processed - progress.failed} momentos atualizados`
                 : `Analisando histórico com IA... ${progress.processed} de ${progress.total}`
@@ -57,17 +57,17 @@ function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onSt
           {progress.isRunning && (
             <button
               onClick={onStop}
-              className="p-1 hover:bg-[#E0DDD5] rounded transition-colors"
+              className="p-1 hover:bg-ceramic-cool rounded transition-colors"
               title="Parar análise"
             >
-              <XMarkIcon className="h-4 w-4 text-[#948D82]" />
+              <XMarkIcon className="h-4 w-4 text-ceramic-text-secondary" />
             </button>
           )}
         </div>
 
         {/* Progress bar */}
         {progress.total > 0 && (
-          <div className="w-full bg-[#E0DDD5] rounded-full h-1.5">
+          <div className="w-full bg-ceramic-cool rounded-full h-1.5">
             <motion.div
               className={`h-1.5 rounded-full ${isDone ? 'bg-ceramic-success' : 'bg-ceramic-accent'}`}
               initial={{ width: 0 }}
@@ -78,7 +78,7 @@ function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onSt
         )}
 
         {progress.failed > 0 && (
-          <p className="text-xs text-[#948D82] mt-1">
+          <p className="text-xs text-ceramic-text-secondary mt-1">
             {progress.failed} momento(s) nao puderam ser analisados
           </p>
         )}
@@ -152,7 +152,7 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-base font-semibold text-[#5C554B]">Padrões da Jornada</h3>
+      <h3 className="text-base font-semibold text-ceramic-text-primary">Padrões da Jornada</h3>
 
       {/* Backfill progress banner */}
       {showBackfillBanner && (

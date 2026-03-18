@@ -223,12 +223,46 @@ const INSTRUMENTS: Record<string, AssessmentInstrument> = {
 };
 
 // ============================================================================
+// VALIDATION
+// ============================================================================
+
+/**
+ * Validate that all required items are present and values are within valid ranges.
+ */
+export function validateResponses(
+  instrument: AssessmentInstrument,
+  responses: Record<string, number>
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  for (const item of instrument.items) {
+    if (!(item.code in responses)) {
+      errors.push(`Missing response for item: ${item.code}`);
+    } else {
+      const value = responses[item.code];
+      const min = item.scaleMin ?? 0;
+      const max = item.scaleMax ?? 10;
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        errors.push(`Invalid value for ${item.code}: expected a finite number, got ${String(value)}`);
+      } else if (value < min || value > max) {
+        errors.push(`Out of range for ${item.code}: ${value} (expected ${min}-${max})`);
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+// ============================================================================
 // SCORING FUNCTIONS
 // ============================================================================
 
 /**
  * Score a completed assessment.
  * Returns subscale scores and composite score.
+ *
+ * Validates that all required items are present and values are within
+ * each item's valid range before scoring. Throws if validation fails.
  */
 export function scoreAssessment(
   instrumentId: string,
@@ -237,6 +271,14 @@ export function scoreAssessment(
   const instrument = INSTRUMENTS[instrumentId];
   if (!instrument) {
     throw new Error(`Unknown instrument: ${instrumentId}`);
+  }
+
+  // Validate all responses before scoring
+  const validation = validateResponses(instrument, responses);
+  if (!validation.valid) {
+    throw new Error(
+      `Invalid assessment responses for ${instrumentId}: ${validation.errors.join('; ')}`
+    );
   }
 
   const subscaleScores: Record<string, number> = {};
