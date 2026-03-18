@@ -25,6 +25,7 @@ export interface DisplayMessage {
   actions?: ChatAction[]
   sources?: Array<{ title: string; url: string }>
   isStreaming?: boolean
+  parentMessageId?: string | null
 }
 
 export interface UseChatSessionReturn {
@@ -38,7 +39,7 @@ export interface UseChatSessionReturn {
   limitReached: boolean
   limitInfo: InteractionLimitResult | null
   suggestedQuestions: string[]
-  sendMessage: (text: string, interviewMeta?: InterviewMeta) => Promise<void>
+  sendMessage: (text: string, interviewMeta?: InterviewMeta, parentMessageId?: string) => Promise<void>
   retryLastMessage: () => Promise<void>
   createNewSession: () => void
   switchSession: (sessionId: string) => Promise<void>
@@ -48,6 +49,8 @@ export interface UseChatSessionReturn {
   activeAgent: string | null
   lastFailedMessage: string | null
   connectionStatus: 'connected' | 'degraded' | 'offline'
+  replyTo: DisplayMessage | null
+  setReplyTo: (msg: DisplayMessage | null) => void
 }
 
 function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
@@ -56,6 +59,7 @@ function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
     role: msg.direction === 'inbound' ? 'user' : 'assistant',
     content: msg.content,
     created_at: msg.created_at,
+    parentMessageId: msg.parent_message_id,
   }
 }
 
@@ -74,6 +78,7 @@ export function useChatSession(): UseChatSessionReturn {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'degraded' | 'offline'>('connected')
+  const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null)
   const initRef = useRef(false)
   const streamedTextRef = useRef('')
   const streamingMsgIdRef = useRef<string | null>(null)
@@ -155,6 +160,7 @@ export function useChatSession(): UseChatSessionReturn {
     history: Array<{ role: string; content: string }>,
     context?: Record<string, unknown>,
     interviewMeta?: InterviewMeta,
+    parentMessageId?: string,
   ): Promise<{
     text: string
     agent: string
@@ -172,7 +178,7 @@ export function useChatSession(): UseChatSessionReturn {
     let usage: { input: number; output: number } | undefined
     let suggestedQs: string[] = []
 
-    for await (const event of streamChat(sessionId, message, history, context, interviewMeta)) {
+    for await (const event of streamChat(sessionId, message, history, context, interviewMeta, parentMessageId)) {
       if (event.type === 'token') {
         fullText += event.content
         setStreamedText(fullText)
@@ -198,7 +204,7 @@ export function useChatSession(): UseChatSessionReturn {
     return { text: fullText, agent, actions, usage, suggestedQuestions: suggestedQs }
   }, [])
 
-  const sendMessage = useCallback(async (text: string, interviewMeta?: InterviewMeta) => {
+  const sendMessage = useCallback(async (text: string, interviewMeta?: InterviewMeta, parentMessageId?: string) => {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
 
@@ -233,12 +239,18 @@ export function useChatSession(): UseChatSessionReturn {
         setSessions(prev => [currentSession!, ...prev])
       }
 
+      // Resolve reply target
+      const replyTargetId = parentMessageId || replyTo?.id || undefined
+      // Clear replyTo after capturing
+      if (replyTo) setReplyTo(null)
+
       // Optimistic user message
       const tempUserMsg: DisplayMessage = {
         id: `temp-${Date.now()}`,
         role: 'user',
         content: trimmed,
         created_at: new Date().toISOString(),
+        parentMessageId: replyTargetId,
       }
       setMessages(prev => [...prev, tempUserMsg])
 
@@ -248,6 +260,7 @@ export function useChatSession(): UseChatSessionReturn {
         userId,
         content: trimmed,
         direction: 'inbound',
+        parentMessageId: replyTargetId,
       })
 
       // Replace temp with saved
@@ -279,7 +292,17 @@ export function useChatSession(): UseChatSessionReturn {
       }
 
       // Build history for context (last 10 messages)
-      const history = [...messages, { role: 'user' as const, content: trimmed }]
+      // If replying to a specific message, prepend context about the reply target
+      let historyMessages = [...messages, { role: 'user' as const, content: trimmed, id: '', created_at: '' }]
+      if (replyTargetId) {
+        const parentMsg = messages.find(m => m.id === replyTargetId)
+        if (parentMsg) {
+          // Insert a context note so the AI knows this is a reply
+          const replyContext = `[Respondendo à mensagem: "${parentMsg.content.substring(0, 200)}"]`
+          historyMessages = [...messages, { role: 'user' as const, content: `${replyContext}\n\n${trimmed}`, id: '', created_at: '' }]
+        }
+      }
+      const history = historyMessages
         .slice(-10)
         .map(m => ({ role: m.role, content: m.content }))
 
@@ -309,6 +332,7 @@ export function useChatSession(): UseChatSessionReturn {
           history,
           userContext,
           interviewMeta,
+          replyTargetId,
         )
         finalText = streamResult.text
         respondingAgent = streamResult.agent
@@ -480,7 +504,7 @@ export function useChatSession(): UseChatSessionReturn {
       streamedTextRef.current = ''
       streamingMsgIdRef.current = null
     }
-  }, [session, messages, isLoading, getUserId, tryStreaming])
+  }, [session, messages, isLoading, getUserId, tryStreaming, replyTo])
 
   const retryLastMessage = useCallback(async () => {
     if (!lastFailedMessage) return
@@ -561,5 +585,7 @@ export function useChatSession(): UseChatSessionReturn {
     activeAgent,
     lastFailedMessage,
     connectionStatus,
+    replyTo,
+    setReplyTo,
   }
 }

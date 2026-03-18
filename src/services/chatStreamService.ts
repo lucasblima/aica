@@ -184,6 +184,7 @@ export async function* streamChat(
   history: Array<{ role: string; content: string }>,
   context?: Record<string, unknown>,
   interview?: InterviewMeta,
+  parentMessageId?: string,
 ): AsyncGenerator<StreamEvent> {
   // Get auth token
   const { session } = await getCachedSession()
@@ -208,6 +209,7 @@ export async function* streamChat(
           history,
           context,
           ...(interview ? { interview } : {}),
+          ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
         },
       }),
       signal: controller.signal,
