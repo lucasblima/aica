@@ -6,6 +6,9 @@ import { getCategoryCompletion } from '../../services/interviewerService'
 import type { InterviewCategory } from '../../types/interviewer'
 import { INTERVIEW_CATEGORY_META } from '../../types/interviewer'
 import { InterviewProgress } from './InterviewProgress'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('InterviewCategoryPicker')
 
 interface InterviewCategoryPickerProps {
   onSessionStart: (sessionId: string) => void
@@ -64,7 +67,7 @@ export function InterviewCategoryPicker({ onSessionStart }: InterviewCategoryPic
       const data = await getCategoryCompletion(user.id)
       setCompletions(data)
     } catch (err) {
-      console.warn('Failed to load category completions:', err)
+      log.warn('Failed to load category completions:', err)
       setCompletionError('Não foi possível carregar o progresso das categorias')
     }
   }, [user?.id])
