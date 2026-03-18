@@ -1,8 +1,15 @@
 /**
  * Life Council — Fan-out/Fan-in AI Daily Insight Generator
  *
- * Executes 3 AI personas in parallel (Philosopher, Strategist, Bio-Hacker)
+ * Executes up to 5 AI personas dynamically based on available module data,
  * then synthesizes their outputs into a single Daily Insight.
+ *
+ * Personas:
+ * - Philosopher (Journey) — emotional pattern analysis
+ * - Strategist (Atlas) — productivity & task analysis
+ * - Bio-Hacker (Journey activity + Flux) — sleep, routine, training
+ * - Financial Advisor (Finance) — spending, income/expense ratio
+ * - Relationship Coach (Connections) — contact health, attention needs
  *
  * Architecture adapted from OpenClaw's Council of Agents pattern.
  *
@@ -82,41 +89,110 @@ Responda APENAS em JSON valido:
   "tacticalAdvice": "string - sugestao pratica para amanha em portugues"
 }`
 
-const BIOHACKER_PROMPT = `Voce e um coach de performance e biohacker. Analise os horarios de atividade do usuario nas ultimas 48 horas.
+const BIOHACKER_PROMPT = `Voce e um coach de performance e biohacker. Analise os horarios de atividade e dados de treinamento do usuario.
 
-HORARIOS DE ATIVIDADE (timestamps dos registros):
+HORARIOS DE ATIVIDADE (timestamps dos registros, ultimas 48h):
 {activity_times}
+
+DADOS DE TREINAMENTO (Flux, se disponivel):
+{flux_data}
 
 Analise:
 1. Horario estimado do primeiro e ultimo registro do dia (proxy para acordar/dormir)
 2. Distribuicao de atividade: manha (6-12h), tarde (12-18h), noite (18-24h), madrugada (0-6h)
-3. Sinais de privacao de sono (registros muito tarde/muito cedo) ou excesso de trabalho (atividade continua por muitas horas)
-4. Uma sugestao de otimizacao de rotina baseada nos dados
+3. Sinais de privacao de sono ou excesso de trabalho
+4. Se houver dados de treino: avalie consistencia (completion rate), variedade de modalidades, e equilibrio treino/recuperacao
+5. Uma sugestao de otimizacao de rotina integrada (sono + treino + energia)
 
 Responda APENAS em JSON valido:
 {
   "sleepEstimate": "string - ex: Dormiu ~23h, acordou ~7h (8h estimadas)",
   "activityDistribution": {"manha": 0, "tarde": 0, "noite": 0, "madrugada": 0},
   "overworkSignals": ["string - sinais de sobrecarga identificados"],
+  "trainingInsight": "string ou null - insight sobre treinamento se dados disponíveis",
   "routineAdvice": "string - sugestao de otimizacao em portugues"
 }`
 
-const SYNTHESIS_PROMPT = `Voce e o Conselheiro-Chefe do usuario. Recebeu 3 analises independentes de especialistas:
+const FINANCIAL_ADVISOR_PROMPT = `Voce e um consultor financeiro pessoal. Analise os dados financeiros dos ultimos 30 dias do usuario.
 
-FILOSOFO/TERAPEUTA:
-{philosopher}
+RESUMO FINANCEIRO:
+{finance_data}
 
-ESTRATEGISTA/COO:
-{strategist}
+Analise:
+1. Relacao receita/despesa (income/expense ratio) — saudavel se > 1.2
+2. Top categorias de gasto e se ha concentracao excessiva
+3. Padrao de gastos (crescente, estavel, decrescente)
+4. Uma sugestao financeira pratica e especifica para o proximo mes
 
-BIO-HACKER/COACH:
-{biohacker}
-{life_score_context}
+Responda APENAS em JSON valido:
+{
+  "incomeExpenseRatio": "string - ex: 1.35 (saudavel)",
+  "topExpenseCategories": ["string - categoria: valor"],
+  "spendingPattern": "string - crescente | estavel | decrescente",
+  "financialAdvice": "string - sugestao pratica em portugues"
+}`
+
+const RELATIONSHIP_COACH_PROMPT = `Voce e um coach de relacionamentos e inteligencia social. Analise a saude da rede de contatos do usuario.
+
+DADOS DE CONEXOES:
+{connections_data}
+
+Analise:
+1. Saude geral da rede (score medio de saude dos contatos)
+2. Quantos contatos precisam de atencao (health_score < 40)
+3. Equilibrio entre manter contatos existentes e cultivar novos
+4. Uma sugestao pratica de quem/como reconectar esta semana
+
+Responda APENAS em JSON valido:
+{
+  "networkHealth": "string - ex: 72/100 (boa)",
+  "contactsNeedingAttention": "number",
+  "balanceAssessment": "string - avaliacao do equilibrio da rede",
+  "reconnectionAdvice": "string - sugestao pratica de reconexao em portugues"
+}`
+
+// ============================================================================
+// DYNAMIC SYNTHESIS PROMPT BUILDER
+// ============================================================================
+
+function buildSynthesisPrompt(
+  personaOutputs: Record<string, unknown>,
+  availableModules: string[],
+  allModules: string[],
+  lifeScoreContext: string,
+): string {
+  const personaCount = Object.keys(personaOutputs).length
+  const missingModules = allModules.filter(m => !availableModules.includes(m))
+
+  let personaSections = ''
+  if (personaOutputs.philosopher) {
+    personaSections += `\nFILOSOFO/TERAPEUTA (Journey):\n${JSON.stringify(personaOutputs.philosopher, null, 2)}\n`
+  }
+  if (personaOutputs.strategist) {
+    personaSections += `\nESTRATEGISTA/COO (Atlas):\n${JSON.stringify(personaOutputs.strategist, null, 2)}\n`
+  }
+  if (personaOutputs.biohacker) {
+    personaSections += `\nBIO-HACKER/COACH (Saude + Treino):\n${JSON.stringify(personaOutputs.biohacker, null, 2)}\n`
+  }
+  if (personaOutputs.financial_advisor) {
+    personaSections += `\nCONSULTOR FINANCEIRO (Finance):\n${JSON.stringify(personaOutputs.financial_advisor, null, 2)}\n`
+  }
+  if (personaOutputs.relationship_coach) {
+    personaSections += `\nCOACH DE RELACIONAMENTOS (Connections):\n${JSON.stringify(personaOutputs.relationship_coach, null, 2)}\n`
+  }
+
+  return `Voce e o Conselheiro-Chefe do usuario. Recebeu ${personaCount} analises independentes de especialistas:
+${personaSections}
+${lifeScoreContext}
+Modulos com dados: ${availableModules.join(', ')}
+Modulos sem dados (NAO opine sobre estes): ${missingModules.length > 0 ? missingModules.join(', ') : 'nenhum'}
+
 Sintetize um "Daily Insight" unico que:
 1. RESOLVA CONFLITOS entre perspectivas (ex: Estrategista quer mais trabalho, mas Filosofo detectou burnout → sugira descanso estrategico)
-2. Priorize na ordem: SAUDE > CONSCIENCIA > PRODUTIVIDADE
-3. Gere 1-3 acoes concretas e realizaveis para hoje/amanha
+2. Priorize na ordem: SAUDE > CONSCIENCIA > PRODUTIVIDADE > FINANCAS > RELACIONAMENTOS
+3. Gere 1-3 acoes concretas e realizaveis para hoje/amanha — somente para modulos COM dados
 4. Tom: acolhedor, pratico, motivador. Em portugues brasileiro.
+5. NAO faca sugestoes sobre modulos listados como "sem dados"
 
 Responda APENAS em JSON valido:
 {
@@ -124,10 +200,25 @@ Responda APENAS em JSON valido:
   "headline": "string max 100 chars - titulo do insight do dia",
   "synthesis": "string - 2-3 paragrafos com a sintese integrada",
   "actions": [
-    {"action": "string - acao concreta", "module": "journey | atlas | connections | flux", "priority": "high | medium"}
+    {"action": "string - acao concreta", "module": "journey | atlas | connections | flux | finance | studio | grants", "priority": "high | medium"}
   ],
   "conflictsResolved": ["string - conflitos que foram resolvidos entre as perspectivas"]
 }`
+}
+
+// ============================================================================
+// PERSONA TYPES & HELPERS
+// ============================================================================
+
+interface PersonaResult {
+  name: string
+  output: Record<string, unknown>
+  tokens: { input: number; output: number }
+  model: string
+  wasEscalated: boolean
+}
+
+const ALL_MODULES = ['journey', 'atlas', 'finance', 'connections', 'flux', 'studio', 'grants']
 
 // ============================================================================
 // MAIN HANDLER
@@ -172,22 +263,27 @@ serve(async (req: Request) => {
       )
     }
 
-    // Minimum data requirement: at least 1 moment or 1 task
+    // Dynamic module availability from RPC
+    const availableModules: string[] = context?.available_modules || []
     const momentsCount = context?.moments_count || 0
     const tasksCount = context?.tasks_count || 0
 
-    if (momentsCount === 0 && tasksCount === 0) {
+    // Minimum data: at least 1 module with data
+    if (availableModules.length === 0) {
       return new Response(
         JSON.stringify({
           success: false,
           error: 'insufficient_data',
-          message: 'Precisamos de pelo menos 1 momento no Journey ou 1 tarefa no Atlas para gerar o insight.',
+          message: 'Precisamos de dados em pelo menos 1 modulo para gerar o insight. Registre momentos no Journey, tarefas no Atlas, transacoes no Finance, ou dados em qualquer outro modulo.',
+          availableModules,
           momentsCount,
           tasksCount,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log(`[LIFE-COUNCIL] Available modules: ${availableModules.join(', ')}`)
 
     // =====================================================================
     // STEP 1b: Fetch Life Score for holistic context
@@ -206,8 +302,8 @@ serve(async (req: Request) => {
       if (latestScore) {
         const domains = latestScore.domain_scores as Record<string, number> || {}
         const domainLabels: Record<string, string> = {
-          atlas: 'Produtividade', journey: 'Bem-estar', finance: 'Finanças',
-          flux: 'Treinamento', connections: 'Relacionamentos', grants: 'Captação', studio: 'Produção',
+          atlas: 'Produtividade', journey: 'Bem-estar', finance: 'Financas',
+          flux: 'Treinamento', connections: 'Relacionamentos', grants: 'Captacao', studio: 'Producao',
         }
         const domainLines = Object.entries(domains)
           .filter(([, v]) => v > 0)
@@ -216,100 +312,199 @@ serve(async (req: Request) => {
 
         lifeScoreContext = `\n\nLIFE SCORE ATUAL (dados reais do sistema):\n`
           + `Score composto: ${Math.round(latestScore.composite_score * 100)}/100\n`
-          + `Domínios: ${domainLines}\n`
-          + `Tendência: ${latestScore.trend || 'estável'}\n`
-          + `Alerta de espiral: ${latestScore.spiral_detected ? `SIM — domínios em declínio: ${(latestScore.spiral_domains || []).join(', ')}` : 'Não detectado'}\n`
-          + `Última atualização: ${latestScore.computed_at}\n`
+          + `Dominios: ${domainLines}\n`
+          + `Tendencia: ${latestScore.trend || 'estavel'}\n`
+          + `Alerta de espiral: ${latestScore.spiral_detected ? `SIM — dominios em declinio: ${(latestScore.spiral_domains || []).join(', ')}` : 'Nao detectado'}\n`
+          + `Ultima atualizacao: ${latestScore.computed_at}\n`
       }
     } catch (err) {
       console.warn('[LIFE-COUNCIL] Life Score fetch failed (non-critical):', err)
     }
 
     // =====================================================================
-    // STEP 2: Fan-out — 3 Personas in Parallel (Gemini Flash)
+    // STEP 2: Fan-out — Dynamic Personas in Parallel
     // =====================================================================
 
     const momentsStr = JSON.stringify(context.moments || [], null, 2)
     const tasksStr = JSON.stringify(context.tasks || [], null, 2)
     const reportStr = JSON.stringify(context.daily_report || {}, null, 2)
     const activityStr = JSON.stringify(context.activity_times || [], null, 2)
+    const financeStr = JSON.stringify(context.finance || {}, null, 2)
+    const connectionsStr = JSON.stringify(context.connections || {}, null, 2)
+    const fluxStr = JSON.stringify(context.flux || {}, null, 2)
 
-    const personaPromises = [
-      // Persona 1: Philosopher
-      withHealthTracking(
-        { functionName: 'run-life-council', actionName: 'philosopher' },
-        supabaseClient,
-        () => callAI({
-          prompt: PHILOSOPHER_PROMPT.replace('{moments}', momentsStr),
-          complexity: 'low',
-          expectJson: true,
-          temperature: 0.3,
-        })
-      ),
-      // Persona 2: Strategist
-      withHealthTracking(
-        { functionName: 'run-life-council', actionName: 'strategist' },
-        supabaseClient,
-        () => callAI({
-          prompt: STRATEGIST_PROMPT
-            .replace('{tasks}', tasksStr)
-            .replace('{daily_report}', reportStr),
-          complexity: 'low',
-          expectJson: true,
-          temperature: 0.2,
-        })
-      ),
-      // Persona 3: Bio-Hacker
-      withHealthTracking(
-        { functionName: 'run-life-council', actionName: 'biohacker' },
-        supabaseClient,
-        () => callAI({
-          prompt: BIOHACKER_PROMPT.replace('{activity_times}', activityStr),
-          complexity: 'low',
-          expectJson: true,
-          temperature: 0.2,
-        })
-      ),
-    ]
+    // Build persona list based on available modules
+    const personaTasks: Array<{
+      name: string
+      promise: Promise<{ text: string; tokens: { input: number; output: number }; model: string; wasEscalated: boolean }>
+      fallback: Record<string, unknown>
+    }> = []
 
-    const [philosopherResult, strategistResult, biohackerResult] = await Promise.all(personaPromises)
-
-    // Parse persona outputs
-    let philosopherOutput, strategistOutput, biohackerOutput
-    try {
-      philosopherOutput = extractJSON(philosopherResult.text)
-    } catch {
-      philosopherOutput = { pattern: 'unknown', triggers: [], misalignment: null, reflection: 'Dados insuficientes para analise emocional.' }
+    // Philosopher — requires Journey data
+    if (availableModules.includes('journey')) {
+      personaTasks.push({
+        name: 'philosopher',
+        promise: withHealthTracking(
+          { functionName: 'run-life-council', actionName: 'philosopher' },
+          supabaseClient,
+          () => callAI({
+            prompt: PHILOSOPHER_PROMPT.replace('{moments}', momentsStr),
+            complexity: 'low',
+            expectJson: true,
+            temperature: 0.3,
+          })
+        ),
+        fallback: { pattern: 'unknown', triggers: [], misalignment: null, reflection: 'Dados insuficientes para analise emocional.' },
+      })
     }
-    try {
-      strategistOutput = extractJSON(strategistResult.text)
-    } catch {
-      strategistOutput = { completionRate: 'N/A', quadrantFocus: 'unknown', bottlenecks: [], tacticalAdvice: 'Continue focando nas prioridades.' }
+
+    // Strategist — requires Atlas data
+    if (availableModules.includes('atlas')) {
+      personaTasks.push({
+        name: 'strategist',
+        promise: withHealthTracking(
+          { functionName: 'run-life-council', actionName: 'strategist' },
+          supabaseClient,
+          () => callAI({
+            prompt: STRATEGIST_PROMPT
+              .replace('{tasks}', tasksStr)
+              .replace('{daily_report}', reportStr),
+            complexity: 'low',
+            expectJson: true,
+            temperature: 0.2,
+          })
+        ),
+        fallback: { completionRate: 'N/A', quadrantFocus: 'unknown', bottlenecks: [], tacticalAdvice: 'Continue focando nas prioridades.' },
+      })
     }
-    try {
-      biohackerOutput = extractJSON(biohackerResult.text)
-    } catch {
-      biohackerOutput = { sleepEstimate: 'N/A', activityDistribution: {}, overworkSignals: [], routineAdvice: 'Mantenha sua rotina atual.' }
+
+    // Bio-Hacker — runs if Journey OR Flux has data (activity times from journey, training from flux)
+    if (availableModules.includes('journey') || availableModules.includes('flux')) {
+      personaTasks.push({
+        name: 'biohacker',
+        promise: withHealthTracking(
+          { functionName: 'run-life-council', actionName: 'biohacker' },
+          supabaseClient,
+          () => callAI({
+            prompt: BIOHACKER_PROMPT
+              .replace('{activity_times}', activityStr)
+              .replace('{flux_data}', availableModules.includes('flux') ? fluxStr : 'Sem dados de treinamento disponiveis.'),
+            complexity: 'low',
+            expectJson: true,
+            temperature: 0.2,
+          })
+        ),
+        fallback: { sleepEstimate: 'N/A', activityDistribution: {}, overworkSignals: [], trainingInsight: null, routineAdvice: 'Mantenha sua rotina atual.' },
+      })
+    }
+
+    // Financial Advisor — requires Finance data
+    if (availableModules.includes('finance')) {
+      personaTasks.push({
+        name: 'financial_advisor',
+        promise: withHealthTracking(
+          { functionName: 'run-life-council', actionName: 'financial_advisor' },
+          supabaseClient,
+          () => callAI({
+            prompt: FINANCIAL_ADVISOR_PROMPT.replace('{finance_data}', financeStr),
+            complexity: 'low',
+            expectJson: true,
+            temperature: 0.2,
+          })
+        ),
+        fallback: { incomeExpenseRatio: 'N/A', topExpenseCategories: [], spendingPattern: 'unknown', financialAdvice: 'Continue controlando seus gastos.' },
+      })
+    }
+
+    // Relationship Coach — requires Connections data
+    if (availableModules.includes('connections')) {
+      personaTasks.push({
+        name: 'relationship_coach',
+        promise: withHealthTracking(
+          { functionName: 'run-life-council', actionName: 'relationship_coach' },
+          supabaseClient,
+          () => callAI({
+            prompt: RELATIONSHIP_COACH_PROMPT.replace('{connections_data}', connectionsStr),
+            complexity: 'low',
+            expectJson: true,
+            temperature: 0.2,
+          })
+        ),
+        fallback: { networkHealth: 'N/A', contactsNeedingAttention: 0, balanceAssessment: 'unknown', reconnectionAdvice: 'Mantenha contato com pessoas importantes.' },
+      })
+    }
+
+    console.log(`[LIFE-COUNCIL] Running ${personaTasks.length} personas: ${personaTasks.map(p => p.name).join(', ')}`)
+
+    // Execute all personas in parallel
+    const personaResults = await Promise.allSettled(personaTasks.map(p => p.promise))
+
+    // Parse results
+    const parsedPersonas: Record<string, PersonaResult> = {}
+    let totalTokensIn = 0
+    let totalTokensOut = 0
+
+    for (let i = 0; i < personaTasks.length; i++) {
+      const task = personaTasks[i]
+      const result = personaResults[i]
+
+      if (result.status === 'fulfilled') {
+        let output: Record<string, unknown>
+        try {
+          output = extractJSON(result.value.text) as Record<string, unknown>
+        } catch {
+          output = task.fallback
+        }
+        parsedPersonas[task.name] = {
+          name: task.name,
+          output,
+          tokens: result.value.tokens,
+          model: result.value.model,
+          wasEscalated: result.value.wasEscalated,
+        }
+        totalTokensIn += result.value.tokens.input
+        totalTokensOut += result.value.tokens.output
+      } else {
+        console.error(`[LIFE-COUNCIL] Persona ${task.name} failed:`, result.reason)
+        parsedPersonas[task.name] = {
+          name: task.name,
+          output: task.fallback,
+          tokens: { input: 0, output: 0 },
+          model: 'fallback',
+          wasEscalated: false,
+        }
+      }
     }
 
     // =====================================================================
     // STEP 3: Fan-in — Synthesis (Gemini Pro)
     // =====================================================================
 
+    const personaOutputs: Record<string, unknown> = {}
+    for (const [name, result] of Object.entries(parsedPersonas)) {
+      personaOutputs[name] = result.output
+    }
+
+    const synthesisPrompt = buildSynthesisPrompt(
+      personaOutputs,
+      availableModules,
+      ALL_MODULES,
+      lifeScoreContext,
+    )
+
     const synthesisResult = await withHealthTracking(
       { functionName: 'run-life-council', actionName: 'synthesis' },
       supabaseClient,
       () => callAI({
-        prompt: SYNTHESIS_PROMPT
-          .replace('{philosopher}', JSON.stringify(philosopherOutput, null, 2))
-          .replace('{strategist}', JSON.stringify(strategistOutput, null, 2))
-          .replace('{biohacker}', JSON.stringify(biohackerOutput, null, 2))
-          .replace('{life_score_context}', lifeScoreContext),
+        prompt: synthesisPrompt,
         complexity: 'high',
         expectJson: true,
         temperature: 0.5,
       })
     )
+
+    totalTokensIn += synthesisResult.tokens.input
+    totalTokensOut += synthesisResult.tokens.output
 
     let synthesis
     try {
@@ -333,18 +528,6 @@ serve(async (req: Request) => {
     // =====================================================================
     // STEP 4: Log interaction + Save to Database
     // =====================================================================
-
-    const totalTokensIn =
-      philosopherResult.tokens.input +
-      strategistResult.tokens.input +
-      biohackerResult.tokens.input +
-      synthesisResult.tokens.input
-
-    const totalTokensOut =
-      philosopherResult.tokens.output +
-      strategistResult.tokens.output +
-      biohackerResult.tokens.output +
-      synthesisResult.tokens.output
 
     const totalTokens = totalTokensIn + totalTokensOut
 
@@ -370,6 +553,11 @@ serve(async (req: Request) => {
       ? synthesis.overallStatus
       : 'balanced'
 
+    // Build persona outputs for DB storage (backward compatible columns + new)
+    const philosopherOutput = parsedPersonas.philosopher?.output || {}
+    const strategistOutput = parsedPersonas.strategist?.output || {}
+    const biohackerOutput = parsedPersonas.biohacker?.output || {}
+
     const { data: saved, error: saveError } = await supabaseClient
       .from('daily_council_insights')
       .upsert({
@@ -389,7 +577,14 @@ serve(async (req: Request) => {
         data_sources: {
           moments_count: momentsCount,
           tasks_count: tasksCount,
+          available_modules: availableModules,
+          persona_count: personaTasks.length,
           has_daily_report: !!context.daily_report?.report_content,
+          has_finance: availableModules.includes('finance'),
+          has_connections: availableModules.includes('connections'),
+          has_flux: availableModules.includes('flux'),
+          has_studio: availableModules.includes('studio'),
+          has_grants: availableModules.includes('grants'),
         },
       }, { onConflict: 'user_id,insight_date' })
       .select('id')
@@ -403,6 +598,19 @@ serve(async (req: Request) => {
     // RESPONSE
     // =====================================================================
 
+    // Build personas response object (all active personas)
+    const personasResponse: Record<string, Record<string, unknown>> = {}
+    for (const [name, result] of Object.entries(parsedPersonas)) {
+      personasResponse[name] = result.output
+    }
+
+    // Build escalations object
+    const escalations: Record<string, boolean> = {}
+    for (const [name, result] of Object.entries(parsedPersonas)) {
+      escalations[name] = result.wasEscalated
+    }
+    escalations.synthesis = synthesisResult.wasEscalated
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -413,28 +621,26 @@ serve(async (req: Request) => {
           synthesis: synthesis.synthesis,
           actions: synthesis.actions,
           conflicts_resolved: synthesis.conflictsResolved,
-          personas: {
-            philosopher: philosopherOutput,
-            strategist: strategistOutput,
-            biohacker: biohackerOutput,
-          },
+          personas: personasResponse,
         },
         metadata: {
           total_tokens: totalTokens,
           processing_time_ms: processingTime,
+          available_modules: availableModules,
+          persona_count: personaTasks.length,
           models_used: {
-            personas: philosopherResult.model,
+            personas: personaTasks.length > 0 ? parsedPersonas[personaTasks[0].name]?.model : 'none',
             synthesis: synthesisResult.model,
           },
-          escalations: {
-            philosopher: philosopherResult.wasEscalated,
-            strategist: strategistResult.wasEscalated,
-            biohacker: biohackerResult.wasEscalated,
-            synthesis: synthesisResult.wasEscalated,
-          },
+          escalations,
           data_sources: {
             moments: momentsCount,
             tasks: tasksCount,
+            finance: availableModules.includes('finance'),
+            connections: availableModules.includes('connections'),
+            flux: availableModules.includes('flux'),
+            studio: availableModules.includes('studio'),
+            grants: availableModules.includes('grants'),
           },
         },
       }),

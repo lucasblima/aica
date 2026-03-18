@@ -49,7 +49,28 @@ export function registerAllDomainProviders(): void {
       log.warn('Flux provider not available:', err);
     });
 
-    log.info('All domain providers registration initiated');
+    import('@/modules/connections/services/networkScoring').then((m) => {
+      m.registerConnectionsDomainProvider();
+      log.debug('Connections provider registered');
+    }).catch((err) => {
+      log.warn('Connections provider not available:', err);
+    });
+
+    import('@/modules/studio/services/guestScoring').then((m) => {
+      m.registerStudioDomainProvider();
+      log.debug('Studio provider registered');
+    }).catch((err) => {
+      log.warn('Studio provider not available:', err);
+    });
+
+    import('@/modules/grants/services/researcherScoring').then((m) => {
+      m.registerGrantsDomainProvider();
+      log.debug('Grants provider registered');
+    }).catch((err) => {
+      log.warn('Grants provider not available:', err);
+    });
+
+    log.info('All domain providers registration initiated (7/7)');
   } catch (err) {
     log.error('Failed to register domain providers:', err);
   }

@@ -685,6 +685,20 @@ export async function computeConnectionsDomainScore(): Promise<{
 }
 
 // ============================================================================
+// DOMAIN PROVIDER REGISTRATION (for Life Score)
+// ============================================================================
+
+/**
+ * Register the Connections domain provider with the scoring engine.
+ * Call this once during app initialization.
+ */
+export function registerConnectionsDomainProvider(): void {
+  import('@/services/scoring/scoringEngine').then(({ registerDomainProvider }) => {
+    registerDomainProvider('connections', computeConnectionsDomainScore);
+  });
+}
+
+// ============================================================================
 // HELPERS
 // ============================================================================
 
