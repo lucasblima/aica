@@ -695,6 +695,8 @@ export async function computeConnectionsDomainScore(): Promise<{
 export function registerConnectionsDomainProvider(): void {
   import('@/services/scoring/scoringEngine').then(({ registerDomainProvider }) => {
     registerDomainProvider('connections', computeConnectionsDomainScore);
+  }).catch((err) => {
+    log.warn('Failed to register connections provider:', err);
   });
 }
 

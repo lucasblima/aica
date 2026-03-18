@@ -7,7 +7,9 @@
 
 CREATE OR REPLACE FUNCTION get_council_context(p_user_id UUID)
 RETURNS JSONB
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_moments JSONB;
   v_tasks JSONB;
@@ -222,3 +224,11 @@ BEGIN
   );
 END;
 $$;
+
+-- Persist new persona outputs
+ALTER TABLE daily_council_insights
+  ADD COLUMN IF NOT EXISTS financial_advisor_output JSONB NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS relationship_coach_output JSONB NOT NULL DEFAULT '{}';
+
+-- Re-grant after CREATE OR REPLACE (self-contained migration)
+GRANT EXECUTE ON FUNCTION get_council_context TO service_role;
