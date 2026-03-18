@@ -61,9 +61,6 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Informational: 15 pre-existing failures in gemini-client.test.ts
-    # (timeout issues). Remove continue-on-error once fixed.
-    continue-on-error: true
 
     steps:
       - name: Checkout code
