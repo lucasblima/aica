@@ -3,7 +3,7 @@
 **Date:** 2026-03-18
 **Author:** Lucas + Claude
 **Status:** Draft
-**Depends on:** MiroFish architecture analysis (`docs/plans/polymorphic-scribbling-yao.md`)
+**Depends on:** MiroFish architecture analysis (see `C:\Users\lucas\.claude\plans\polymorphic-scribbling-yao.md`)
 
 ---
 
@@ -134,7 +134,25 @@ Already exists and matches gemini-chat's pattern. Add Cloud Run staging origin i
 ```
 
 #### `_shared/model-router.ts`
-Already has `extractJSON()`. Verify it matches gemini-chat's implementation (it does — same algorithm). No changes needed.
+Has `extractJSON()` but **implementations diverge**. gemini-chat strips fences FIRST then parses (more robust). model-router tries parse first, then regex extraction (can fail on trailing braces). **Action:** Update model-router's `extractJSON()` to use gemini-chat's algorithm (strip fences → direct parse → indexOf/lastIndexOf fallback). This becomes the canonical implementation.
+
+#### `_shared/usage-tracker.ts` (~30 lines)
+Extract the `log_interaction` RPC call pattern from gemini-chat (fire-and-forget usage tracking). All new Edge Functions must call this to maintain usage/billing tracking.
+
+```typescript
+export async function logInteraction(
+  supabaseClient: any,
+  action: string,
+  module: string,
+  model: string,
+  tokensIn?: number,
+  tokensOut?: number
+): Promise<void> {
+  try {
+    await supabaseClient.rpc('log_interaction', { p_action: action, p_module: module, p_model: model, p_tokens_in: tokensIn, p_tokens_out: tokensOut })
+  } catch { /* fire-and-forget */ }
+}
+```
 
 ### Deduplications
 
@@ -157,10 +175,11 @@ Reduce gemini-chat to only chat-related handlers. Set up frontend routing for fu
 2. `chat_aica_stream` → streaming handler (~200 lines)
 3. `chat_with_agent` → `handleChatWithAgent()` (~80 lines)
 4. `classify_intent` → `handleClassifyIntent()` (~110 lines)
-5. `execute_chat_action` → `handleExecuteChatAction()` (~80 lines)
+5. `execute_chat_action` → `handleExecuteChatAction()` (~80 lines) — **note: contains write operations** (complete_task, start_task, update_priority, reschedule_task, create_moment). ReACT agent Phase 8 tools are read-only; write actions must go through execute_chat_action.
 6. `generate_daily_question` → already in `daily-question-handler.ts`
+7. `whatsapp_sentiment` / `sentiment_analysis` → stays here (rarely used, out of scope for separate function)
 
-**Estimated size after Phase 2:** ~700 lines (down from 3,248)
+**Estimated size after Phase 2:** ~800 lines (down from 3,248)
 
 ### gemini-chat still TEMPORARILY hosts (until their Edge Function exists):
 All other handlers stay until their phase is executed. The router dispatches to them normally. This ensures zero regression during the transition.
@@ -253,6 +272,8 @@ import { getGenAI, getModel } from '../_shared/gemini-helpers.ts'
 import { withHealthTracking } from '../_shared/health-tracker.ts'
 import type { /* types */ } from '../_shared/gemini-types.ts'
 
+import { logInteraction } from '../_shared/usage-tracker.ts'
+
 // Local handlers
 import { handleAnalyzeMomentSentiment } from './handlers/sentiment.ts'
 import { handleGenerateWeeklySummary } from './handlers/weekly-summary.ts'
@@ -261,6 +282,7 @@ import { handleEvaluateQuality } from './handlers/evaluate-quality.ts'
 import { handleAnalyzeContentRealtime } from './handlers/realtime.ts'
 import { handleGeneratePostCaptureInsight } from './handlers/post-capture.ts'
 import { handleClusterMomentsByTheme } from './handlers/clusters.ts'
+import { handleGenerateDailyReport } from './handlers/daily-report.ts'
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
@@ -275,7 +297,7 @@ serve(async (req) => {
 
 | Phase | Edge Function | Handlers | Actions |
 |-------|--------------|----------|---------|
-| 3 | `gemini-journey` | 7 | analyze_moment_sentiment, generate_weekly_summary, analyze_moment, evaluate_quality, analyze_content_realtime, generate_post_capture_insight, cluster_moments_by_theme |
+| 3 | `gemini-journey` | 8 | analyze_moment_sentiment, generate_weekly_summary, analyze_moment, evaluate_quality, analyze_content_realtime, generate_post_capture_insight, cluster_moments_by_theme, generate_daily_report |
 | 4 | `gemini-studio` | 5 | generate_dossier, generate_ice_breakers, generate_pauta_questions, generate_pauta_outline, research_guest |
 | 5 | `gemini-grants` | 7 | generate_field_content, analyze_edital_structure, parse_form_fields, generate_auto_briefing, improve_briefing_field, extract_required_documents, extract_timeline_phases |
 | 6 | `gemini-finance` | 2 | parse_statement, categorize_transactions |
@@ -283,21 +305,54 @@ serve(async (req) => {
 
 ### Per-Phase Checklist
 - [ ] Create Edge Function directory + index.ts
-- [ ] Import shared helpers
+- [ ] Import shared helpers (including `logInteraction` from `_shared/usage-tracker.ts`)
 - [ ] Move handler files from gemini-chat/handlers/*-temp.ts
 - [ ] Uncomment DEDICATED_EDGE_FUNCTIONS in frontend
 - [ ] Remove handlers from gemini-chat
 - [ ] Deploy new Edge Function
 - [ ] Redeploy gemini-chat (now smaller)
-- [ ] Verify no regression via manual test
+- [ ] Run smoke test script against all migrated actions
 - [ ] `npm run build && npm run typecheck`
+
+### CDN Import Standard
+All new Edge Functions MUST use `cdn.jsdelivr.net` for Supabase client imports (not `esm.sh`). This is the canonical pattern going forward.
+
+### Cold Start Trade-off
+Splitting into 6+ functions means 6+ separate cold starts (~500ms-2s each). At AICA's current scale (~100 req/day), this is acceptable. Each function pays cold start cost for `npm:@google/generative-ai` independently. Monitor latency after Phase 3+ deployments.
+
+### Rollback Strategy
+**Before deploying any phase**, tag the current working state:
+```bash
+git tag gemini-chat-pre-phase-N
+```
+If regression detected post-deploy, rollback in <60s:
+```bash
+git checkout gemini-chat-pre-phase-N -- supabase/functions/gemini-chat/
+npx supabase functions deploy gemini-chat --no-verify-jwt
+```
+
+### Phase 2 Smoke Test Script
+After Phase 2 deployment, run a curl-based smoke test against ALL actions on staging:
+```bash
+# Test each action returns 200 + success:true
+for action in chat_aica analyze_moment_sentiment generate_dossier parse_statement ...; do
+  curl -s -X POST "https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/gemini-chat" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"action\": \"$action\", \"payload\": {}}" | jq '.success'
+done
+```
 
 ---
 
 ## Phase 8 — react-agent Edge Function
 
 ### Goal
-Implement ReACT loop (Thought → Action → Observation → Final Answer) inspired by MiroFish's `report_agent.py` pattern. First use case: Gemini Chat enrichment — before answering, the chat does 3-5 tool calls to fetch relevant user context.
+Implement ReACT loop (Thought → Action → Observation → Final Answer) inspired by MiroFish's `report_agent.py` pattern. First use case: Gemini Chat enrichment — before answering, the chat does tool calls to fetch relevant user context.
+
+**Note:** Phase 8 depends on Phase 1-2 shared helpers but NOT on Phases 3-7. It can run immediately after Phase 2 is verified.
+
+**Intent pre-check:** Before entering the ReACT loop, use the existing `classify_intent` handler to determine if the question needs context enrichment. Simple questions ("what time is it?", greetings) bypass ReACT entirely and use the existing chat path. Only questions that benefit from cross-module context enter the loop.
 
 ### Architecture
 
@@ -336,9 +391,11 @@ export interface ReactTool {
 
 export interface ReactConfig {
   tools: ReactTool[]
-  minToolCalls: number  // default 3
+  minToolCalls: number  // default 1 — model decides when it has enough context
   maxToolCalls: number  // default 5
   maxCharsPerObservation: number  // default 4000
+  timeoutPerStepMs: number  // default 30000 (30s)
+  totalTimeoutMs: number  // default 150000 (150s, Supabase Edge Function limit)
   systemPrompt: string
   userMessage: string
   history?: Array<{ role: string; content: string }>
@@ -355,7 +412,7 @@ export interface ReactResult {
   finalAnswer: string
   steps: ReactStep[]
   model: string
-  totalTokens: number
+  tokens: { input: number; output: number }  // matches CallAIResult pattern
   confidence: number
   wasEscalated: boolean
 }
@@ -368,9 +425,11 @@ export async function runReactLoop(
   // 1. Build tool descriptions for system prompt
   // 2. Loop: ask Gemini for thought+action, execute tool, collect observation
   // 3. Truncate observations via context-manager
-  // 4. After min calls, allow "final_answer" action
-  // 5. If confidence < 0.6, escalate to Pro for synthesis
-  // 6. Return result with full step trace
+  // 4. Enforce timeoutPerStepMs per tool execution (AbortController)
+  // 5. Allow "final_answer" action after minToolCalls (model decides)
+  // 6. Assess confidence via assessConfidence() from _shared/model-router.ts
+  // 7. If confidence < 0.6, escalate to Pro for final synthesis
+  // 8. Return result with full step trace + token breakdown
 }
 ```
 
@@ -492,15 +551,14 @@ CREATE TABLE agent_runs (
   error_context JSONB
 );
 
--- RLS
+-- RLS (Edge Functions use service_role key which bypasses RLS)
 ALTER TABLE agent_runs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can read own runs" ON agent_runs
   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Service role can manage runs" ON agent_runs
-  FOR ALL USING (true)
-  WITH CHECK (true);
+-- No INSERT/UPDATE/DELETE policies for regular users.
+-- Edge Functions use service_role client (bypasses RLS) for writes.
 
 -- Indexes
 CREATE INDEX idx_agent_runs_user ON agent_runs(user_id, created_at DESC);
@@ -546,17 +604,22 @@ if (module === 'coordinator') {
 ### Unit Tests (Phase 1-2)
 - `context-builder.test.ts` — mock Supabase, verify query filters and context assembly
 - `action-suggester.test.ts` — keyword matching, action generation, edge cases
+- `gemini-helpers.test.ts` — getModel() name resolution, getDateContext() formatting
 - `context-manager.test.ts` — truncation, budget distribution
 
 ### Unit Tests (Phase 8)
-- `react-loop.test.ts` — mock tools, verify min/max calls, confidence escalation, step persistence
+- `react-loop.test.ts` — mock tools, verify min/max calls, confidence escalation (reusing assessConfidence()), step persistence, timeout enforcement
 - `context-manager.test.ts` — truncation edge cases, budget distribution with varying observation sizes
 
 ### Integration Tests (Each Phase)
 - Deploy Edge Function to staging
+- Run smoke test script against ALL actions (not just new ones)
 - Verify existing actions still work via gemini-chat
 - Verify new Edge Function responds correctly
 - `npm run build && npm run typecheck` passes
+
+### Phase 2 E2E Smoke Test
+Critical gate: all 26+ actions must return 200 + `success: true` on staging after Phase 2 restructuring. Create `scripts/smoke-test-gemini-chat.sh` with curl commands for each action.
 
 ---
 
@@ -566,10 +629,14 @@ if (module === 'coordinator') {
 |------|-----------|
 | Shared helper import fails in Deno | Test imports locally with `supabase functions serve` before deploying |
 | Frontend routing breaks existing flow | DEDICATED_EDGE_FUNCTIONS only added when Edge Function is deployed + verified |
-| extractJSON divergence | Delete inline copy in gemini-chat, single source of truth in model-router.ts |
+| extractJSON divergence | Update model-router.ts to use gemini-chat's algorithm (more robust). Delete inline copy. Single source of truth. |
 | buildUserContext called from multiple functions | Extract to _shared/, import everywhere — same code, no drift |
-| ReACT loop infinite | Hard cap at maxToolCalls (5), timeout at 30s per step, 150s total |
+| Usage tracking lost after split | New `_shared/usage-tracker.ts` with `logInteraction()` — all new Edge Functions must import it |
+| Phase 2 deployment breaks all handlers | Tag pre-deploy: `git tag gemini-chat-pre-phase-2`. Rollback in <60s via redeploy from tag. Run smoke test script. |
+| ReACT loop infinite | Hard cap at maxToolCalls (5), timeoutPerStepMs (30s), totalTimeoutMs (150s) enforced via AbortController |
+| ReACT called for simple questions | Intent pre-check via classify_intent. Simple questions bypass ReACT entirely. |
 | Context explosion in ReACT | context-manager.ts caps each observation at 4000 chars |
+| Cold start penalty from multiple functions | Acknowledged. Acceptable at current scale (~100 req/day). Monitor via Supabase logs. |
 
 ---
 
