@@ -56,6 +56,44 @@ const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
   // OpenClaw Adaptation (#251)
   'run_life_council': 'run-life-council',
   'synthesize_patterns': 'synthesize-user-patterns',
+
+  // Phase 3: Journey (uncomment when gemini-journey is deployed)
+  // 'analyze_moment_sentiment': 'gemini-journey',
+  // 'generate_weekly_summary': 'gemini-journey',
+  // 'analyze_moment': 'gemini-journey',
+  // 'evaluate_quality': 'gemini-journey',
+  // 'analyze_content_realtime': 'gemini-journey',
+  // 'generate_post_capture_insight': 'gemini-journey',
+  // 'cluster_moments_by_theme': 'gemini-journey',
+  // 'generate_daily_report': 'gemini-journey',
+
+  // Phase 4: Studio (uncomment when gemini-studio is deployed)
+  // 'generate_dossier': 'gemini-studio',
+  // 'generate_ice_breakers': 'gemini-studio',
+  // 'generate_pauta_questions': 'gemini-studio',
+  // 'generate_pauta_outline': 'gemini-studio',
+  // 'research_guest': 'gemini-studio',
+
+  // Phase 5: Grants (uncomment when gemini-grants is deployed)
+  // 'generate_field_content': 'gemini-grants',
+  // 'analyze_edital_structure': 'gemini-grants',
+  // 'parse_form_fields': 'gemini-grants',
+  // 'generate_auto_briefing': 'gemini-grants',
+  // 'improve_briefing_field': 'gemini-grants',
+  // 'extract_required_documents': 'gemini-grants',
+  // 'extract_timeline_phases': 'gemini-grants',
+
+  // Phase 6: Finance (uncomment when gemini-finance is deployed)
+  // 'parse_statement': 'gemini-finance',
+  // 'categorize_transactions': 'gemini-finance',
+
+  // Phase 7: Atlas (uncomment when gemini-atlas is deployed)
+  // 'extract_task_from_voice': 'gemini-atlas',
+  // 'generate_tags': 'gemini-atlas',
+  // 'transcribe_audio': 'gemini-atlas',
+
+  // Phase 8: ReACT Agent (uncomment when react-agent is deployed)
+  // 'react_chat': 'react-agent',
 }
 
 /**
