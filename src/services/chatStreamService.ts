@@ -25,6 +25,7 @@ export interface DoneEvent {
   agent?: string
   actions?: unknown[]
   usage?: { input: number; output: number }
+  suggested_questions?: string[]
 }
 
 export interface AgentDetectedEvent {
@@ -184,6 +185,7 @@ export async function* streamChat(
           agent: json.agent || 'aica_coordinator',
           actions: json.suggestedActions || json.actions || [],
           usage: json.usage,
+          suggested_questions: Array.isArray(json.suggested_questions) ? json.suggested_questions : undefined,
         }
       } else if (json.error) {
         yield { type: 'error', message: json.error }
