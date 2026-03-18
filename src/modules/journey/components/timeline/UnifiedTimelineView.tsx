@@ -86,19 +86,19 @@ function TimelineSkeleton() {
     <div className="space-y-6 animate-pulse">
       {[1, 2, 3].map((i) => (
         <div key={i}>
-          <div className="h-6 w-32 bg-[#E0DDD5] rounded mb-3" />
+          <div className="h-6 w-32 bg-ceramic-cool rounded mb-3" />
           <div className="space-y-3">
             {[1, 2].map((j) => (
               <div key={j} className="ceramic-tile p-4">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="h-8 w-8 bg-[#E0DDD5] rounded" />
+                  <div className="h-8 w-8 bg-ceramic-cool rounded" />
                   <div className="flex-1">
-                    <div className="h-4 w-48 bg-[#E0DDD5] rounded mb-2" />
-                    <div className="h-3 w-32 bg-[#E0DDD5] rounded" />
+                    <div className="h-4 w-48 bg-ceramic-cool rounded mb-2" />
+                    <div className="h-3 w-32 bg-ceramic-cool rounded" />
                   </div>
                 </div>
-                <div className="h-3 w-full bg-[#E0DDD5] rounded mb-2" />
-                <div className="h-3 w-3/4 bg-[#E0DDD5] rounded" />
+                <div className="h-3 w-full bg-ceramic-cool rounded mb-2" />
+                <div className="h-3 w-3/4 bg-ceramic-cool rounded" />
               </div>
             ))}
           </div>
@@ -118,11 +118,11 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
       animate={{ opacity: 1, y: 0 }}
       className="ceramic-tile p-12 text-center"
     >
-      <SparklesIcon className="h-16 w-16 text-[#C4A574] mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-[#5C554B] mb-2">
+      <SparklesIcon className="h-16 w-16 text-ceramic-warning mx-auto mb-4" />
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
         {hasFilters ? 'Nenhum evento encontrado' : 'Sua timeline está vazia'}
       </h3>
-      <p className="text-sm text-[#948D82] max-w-md mx-auto">
+      <p className="text-sm text-ceramic-text-secondary max-w-md mx-auto">
         {hasFilters
           ? 'Tente ajustar os filtros para ver mais eventos.'
           : 'Comece a registrar momentos, completar tarefas e interagir para ver sua linha do tempo crescer.'}
@@ -142,13 +142,13 @@ function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
       className="ceramic-tile p-12 text-center border-2 border-ceramic-error/30"
     >
       <ExclamationCircleIcon className="h-16 w-16 text-ceramic-error mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-[#5C554B] mb-2">
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
         Erro ao carregar timeline
       </h3>
-      <p className="text-sm text-[#948D82] mb-4">{error.message}</p>
+      <p className="text-sm text-ceramic-text-secondary mb-4">{error.message}</p>
       <button
         onClick={onRetry}
-        className="ceramic-tile px-6 py-2 text-sm font-medium text-[#5C554B] hover:shadow-lg transition-all rounded-full"
+        className="ceramic-tile px-6 py-2 text-sm font-medium text-ceramic-text-primary hover:shadow-lg transition-all rounded-full"
       >
         Tentar Novamente
       </button>
@@ -289,14 +289,14 @@ export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }:
           className="ceramic-inset-shallow px-4 py-3 rounded-lg mb-6 flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
-            <ClockIcon className="h-5 w-5 text-[#948D82]" />
-            <span className="text-sm text-[#5C554B]">
+            <ClockIcon className="h-5 w-5 text-ceramic-text-secondary" />
+            <span className="text-sm text-ceramic-text-primary">
               <strong>{stats.totalEvents}</strong> eventos
             </span>
           </div>
           <button
             onClick={refresh}
-            className="text-xs text-[#948D82] hover:text-[#5C554B] transition-colors flex items-center gap-1"
+            className="text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors flex items-center gap-1"
             disabled={isLoading}
           >
             <ArrowPathIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -318,14 +318,14 @@ export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }:
             >
               {/* Day Header */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#E0DDD5] to-transparent" />
-                <h3 className="text-sm font-semibold text-[#5C554B] uppercase tracking-wide">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-ceramic-cool to-transparent" />
+                <h3 className="text-sm font-semibold text-ceramic-text-primary uppercase tracking-wide">
                   {dayGroup.label}
                 </h3>
-                <span className="ceramic-inset-shallow px-2 py-1 text-xs text-[#948D82] rounded-full">
+                <span className="ceramic-inset-shallow px-2 py-1 text-xs text-ceramic-text-secondary rounded-full">
                   {dayGroup.events.length}
                 </span>
-                <div className="h-px flex-1 bg-gradient-to-r from-[#E0DDD5] via-[#E0DDD5] to-transparent" />
+                <div className="h-px flex-1 bg-gradient-to-r from-ceramic-cool via-ceramic-cool to-transparent" />
               </div>
 
               {/* Events for this day */}
@@ -334,7 +334,7 @@ export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }:
               ) : (
                 <div className="space-y-3 relative">
                   {/* Timeline vertical line (optional decorative element) */}
-                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#C4A574] via-[#E0DDD5] to-transparent opacity-30" />
+                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-ceramic-warning via-ceramic-cool to-transparent opacity-30" />
 
                   <div className="pl-6 space-y-3">
                     <AnimatePresence mode="popLayout">
@@ -368,7 +368,7 @@ export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }:
           <button
             onClick={loadMore}
             disabled={isLoading}
-            className="ceramic-tile px-8 py-3 text-sm font-medium text-[#5C554B] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-full"
+            className="ceramic-tile px-8 py-3 text-sm font-medium text-ceramic-text-primary hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-full"
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
@@ -392,8 +392,8 @@ export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }:
           className="mt-8 text-center"
         >
           <div className="inline-flex items-center gap-2 ceramic-inset-shallow px-4 py-2 rounded-full">
-            <SparklesIcon className="h-4 w-4 text-[#C4A574]" />
-            <span className="text-xs text-[#948D82]">
+            <SparklesIcon className="h-4 w-4 text-ceramic-warning" />
+            <span className="text-xs text-ceramic-text-secondary">
               Você chegou ao início da sua jornada
             </span>
           </div>
