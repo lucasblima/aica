@@ -612,8 +612,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
             return result.accessToken;
         }
 
-        // Handle error
-        lastError = result.error;
+        // Handle error (narrowing: result.success was true above with early return)
+        lastError = (result as { success: false; error: TokenRefreshError }).error;
         log.warn(`[refreshAccessToken] Attempt ${attempt + 1} failed: ERROR_CODE=${lastError.code}: ${lastError.message}`);
 
         // If error is not retryable, break immediately

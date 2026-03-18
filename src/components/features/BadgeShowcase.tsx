@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { badgeEvaluationService } from '@/services/badgeEvaluationService';
 import type {
   BadgeCategory,

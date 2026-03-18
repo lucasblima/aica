@@ -92,10 +92,10 @@ class FileSearchCacheService {
   private generateQueryHash(query: FileSearchQuery): string {
     const normalized = {
       query: query.query.toLowerCase().trim(),
-      corpusNames: query.corpusNames?.sort() || [],
-      moduleType: query.moduleType,
-      moduleId: query.moduleId,
-      maxResults: query.maxResults || 10,
+      categories: query.categories?.sort() || [],
+      module_type: query.module_type,
+      module_id: query.module_id,
+      result_count: query.result_count || 10,
     };
 
     const str = JSON.stringify(normalized);
@@ -120,7 +120,7 @@ class FileSearchCacheService {
    */
   private getCacheKey(query: FileSearchQuery): string {
     const hash = this.generateQueryHash(query);
-    return `filesearch:${query.moduleType}:${query.moduleId || 'global'}:${hash}`;
+    return `filesearch:${query.module_type}:${query.module_id || 'global'}:${hash}`;
   }
 
   // =====================================================
@@ -377,8 +377,8 @@ class FileSearchCacheService {
       timestamp: now,
       expiresAt: now + this.config.memoryTTL,
       queryHash: this.generateQueryHash(query),
-      moduleType: query.moduleType,
-      moduleId: query.moduleId,
+      moduleType: query.module_type || '',
+      moduleId: query.module_id,
       hits: 0,
     };
 

@@ -242,7 +242,7 @@ export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }:
   const hasActiveFilters =
     filters.sources.length < 7 ||
     filters.dateRange !== 'last30' ||
-    filters.searchTerm ||
+    !!filters.searchTerm ||
     (filters.sentiments && filters.sentiments.length > 0) ||
     (filters.tags && filters.tags.length > 0)
 

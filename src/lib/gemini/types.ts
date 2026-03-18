@@ -212,7 +212,8 @@ export type FileSearchCategory =
   | 'venture_documents'
   | 'academia_documents'
   | 'tribo_documents'
-  | 'onboarding_resources';
+  | 'onboarding_resources'
+  | 'journey_moments';
 
 export interface FileSearchResult {
   answer: string;

@@ -286,15 +286,13 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
       setSearchError(errorMessage);
 
       // Fallback profile - allow user to continue with basic profile
-      const fallbackProfile = {
+      const fallbackProfile: import('../types/wizard.types').GuestProfile = {
         name: data.name,
-        professional_title: 'Perfil indisponível',
-        biography_summary: 'Não foi possível buscar informações automáticas. Continue com dados manuais.',
-        biography: '',
-        notable_facts: [],
-        key_topics: [],
+        title: 'Perfil indisponível',
+        biography: 'Não foi possível buscar informações automáticas. Continue com dados manuais.',
+        recent_facts: [],
+        topics_of_interest: [],
         confidence_score: 0,
-        is_reliable: false,
       };
 
       // Save fallback profile to wizard state

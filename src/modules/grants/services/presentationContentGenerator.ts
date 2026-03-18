@@ -22,7 +22,7 @@ import type {
   GenerationStats,
   ValidationResult,
 } from '../types/presentationRAG';
-import type { SlideType, TemplateId } from '../types/presentation';
+import type { SlideType, TemplateType as TemplateId } from '../types/presentation';
 import { buildPresentationContext, enrichContext, validateContext } from './presentationRAGService';
 
 const log = createNamespacedLogger('PresentationContentGenerator');
@@ -327,7 +327,7 @@ function validateSlideContent(
   // Validation failed and could not be sanitized
   return {
     valid: false,
-    errors: result.errors,
+    errors: 'errors' in result ? result.errors : [],
   };
 }
 

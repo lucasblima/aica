@@ -90,7 +90,7 @@ export class PDFProcessingService {
         const page = await pdf.getPage(i)
         const textContent = await page.getTextContent()
         const pageText = textContent.items
-          .map((item: { str?: string }) => item.str || '')
+          .map((item: any) => item.str || '')
           .join(' ')
         fullText += pageText + '\n\n'
 
@@ -381,7 +381,6 @@ export class PDFProcessingService {
           closingBalance: Number(parsed.closingBalance) || 0,
           currency: parsed.currency || 'BRL',
           transactions: normalizedTransactions,
-          piiSanitized: false
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
@@ -516,7 +515,7 @@ export class PDFProcessingService {
       `**Período:** ${data.periodStart} a ${data.periodEnd}`,
       `**Tipo de Conta:** ${this.getAccountTypeLabel(data.accountType)}`,
       `**Moeda:** ${data.currency}`,
-      data.piiSanitized ? '**PII Sanitizado:** Sim (conforme LGPD)' : '',
+      '',
       '',
       '## Resumo',
       '',

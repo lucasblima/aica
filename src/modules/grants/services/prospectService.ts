@@ -343,7 +343,8 @@ export async function getPipelineStats(projectId: string): Promise<PipelineStats
 
   // Valor total do pipeline
   const total_pipeline_value = sponsorList.reduce((sum, s) => {
-    const value = s.negotiated_value || s.tier?.value || 0;
+    const sTier = Array.isArray(s.tier) ? s.tier[0] : s.tier;
+    const value = s.negotiated_value || sTier?.value || 0;
     return sum + value;
   }, 0);
 
@@ -429,14 +430,15 @@ export async function getPipelineKanbanData(projectId: string): Promise<Pipeline
       const now = new Date();
       const stageStart = s.status_changed_at ? new Date(s.status_changed_at) : new Date(s.created_at);
       const daysInStage = Math.floor((now.getTime() - stageStart.getTime()) / (1000 * 60 * 60 * 24));
+      const sTier = Array.isArray(s.tier) ? s.tier[0] : s.tier;
 
       return {
         id: s.id,
         company_name: s.company_name,
         contact_name: s.contact_name,
-        tier_name: s.tier?.name || 'Sem cota',
-        tier_color: s.tier?.color || null,
-        value: s.negotiated_value || s.tier?.value || 0,
+        tier_name: sTier?.name || 'Sem cota',
+        tier_color: sTier?.color || null,
+        value: s.negotiated_value || sTier?.value || 0,
         status: s.status,
         last_activity_date: lastActivities[s.id]?.date || null,
         last_activity_type: lastActivities[s.id]?.type || null,

@@ -266,7 +266,7 @@ export async function finalizeOnboarding(userId: string): Promise<FinalizeOnboar
     if (status.trailsCompleted < 3) {
       return {
         success: false,
-        nextStep: 'view_recommendations',
+        nextStep: 'step_2_moment_capture',
         allRecommendedModules: status.allRecommendedModules,
         averageScore: status.averageTrailScore,
         message: `Please complete at least 3 trails. You have completed ${status.trailsCompleted}`,

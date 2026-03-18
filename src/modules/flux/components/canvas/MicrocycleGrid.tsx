@@ -20,16 +20,8 @@ import {
 // Types
 // ============================================
 
-export interface WeekWorkout {
-  id: string;
-  day_of_week: number; // 1 (Monday) to 7 (Sunday)
-  name: string;
-  duration: number;
-  intensity: 'low' | 'medium' | 'high';
-  modality: 'swimming' | 'running' | 'cycling' | 'strength';
-  type?: string;
-  templateId?: string;
-}
+import type { WeekWorkout } from './WeeklyGrid';
+export type { WeekWorkout } from './WeeklyGrid';
 
 export interface BusySlot {
   dayOfWeek: number; // 1-7 (Mon-Sun)

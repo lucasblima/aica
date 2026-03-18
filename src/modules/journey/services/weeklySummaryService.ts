@@ -348,7 +348,7 @@ function generateFallbackSummary(moments: Moment[]): WeeklySummaryData {
   const posRatio = positive / total
   const negRatio = negative / total
 
-  let trend: import('../types/weeklySummary').EmotionalTrend = 'stable'
+  let trend: import('../types/weeklySummary').WeeklyEmotionalTrend = 'stable'
   let trendJustification = 'Seus momentos apresentaram sentimento predominantemente neutro ou equilibrado esta semana.'
 
   if (posRatio > 0.6) {

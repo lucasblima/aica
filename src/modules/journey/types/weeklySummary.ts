@@ -5,7 +5,7 @@
 
 import { Moment } from './moment'
 
-export type EmotionalTrend = 'ascending' | 'stable' | 'descending' | 'volatile'
+export type WeeklyEmotionalTrend = 'ascending' | 'stable' | 'descending' | 'volatile'
 
 export interface KeyMoment {
   id: string
@@ -15,7 +15,7 @@ export interface KeyMoment {
 }
 
 export interface WeeklySummaryData {
-  emotionalTrend: EmotionalTrend
+  emotionalTrend: WeeklyEmotionalTrend
   trendJustification?: string
   dominantEmotions: string[]
   keyMoments: KeyMoment[]
@@ -88,7 +88,7 @@ export function getWeekDateRange(year: number, week: number): { start: Date; end
 }
 
 // Emotional trend labels (Portuguese display names)
-export const EMOTIONAL_TREND_LABELS: Record<EmotionalTrend, string> = {
+export const EMOTIONAL_TREND_LABELS: Record<WeeklyEmotionalTrend, string> = {
   ascending: 'Ascendente',
   stable: 'Estável',
   descending: 'Em declínio',
@@ -96,7 +96,7 @@ export const EMOTIONAL_TREND_LABELS: Record<EmotionalTrend, string> = {
 }
 
 // Emotional trend descriptions
-export const EMOTIONAL_TREND_DESCRIPTIONS: Record<EmotionalTrend, string> = {
+export const EMOTIONAL_TREND_DESCRIPTIONS: Record<WeeklyEmotionalTrend, string> = {
   ascending: 'Sua energia emocional está crescendo! Continue assim.',
   stable: 'Você está equilibrado e consistente.',
   descending: 'Parece que sua energia está diminuindo. Que tal pausar e refletir?',
@@ -104,7 +104,7 @@ export const EMOTIONAL_TREND_DESCRIPTIONS: Record<EmotionalTrend, string> = {
 }
 
 // Emotional trend colors
-export const EMOTIONAL_TREND_COLORS: Record<EmotionalTrend, string> = {
+export const EMOTIONAL_TREND_COLORS: Record<WeeklyEmotionalTrend, string> = {
   ascending: '#10b981', // green-500
   stable: '#3b82f6', // blue-500
   descending: '#f97316', // orange-500

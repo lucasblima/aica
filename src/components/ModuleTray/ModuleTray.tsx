@@ -9,7 +9,7 @@
 import React, { useRef } from 'react';
 import { ModulePill } from './ModulePill';
 import type { ModuleInfo } from './ModulePill';
-import type { ViewState } from '../../../types';
+type ViewState = string;
 
 export interface ModuleTrayProps {
   modules: ModuleInfo[];

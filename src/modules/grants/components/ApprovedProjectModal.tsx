@@ -38,7 +38,7 @@ export function ApprovedProjectModal({
   const [error, setError] = useState<string | null>(null);
 
   // Load incentive laws
-  const { laws, loading: loadingLaws } = useIncentiveLaws();
+  const { laws, isLoading: loadingLaws } = useIncentiveLaws();
 
   // Reset form
   const resetForm = () => {
