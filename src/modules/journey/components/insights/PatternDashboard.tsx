@@ -94,7 +94,9 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
     topThemes,
     isLoading,
     backfillProgress,
+    isBackfillFailed,
     stopBackfill,
+    retryBackfill,
     refresh,
   } = useJourneyPatterns(userId)
 
@@ -155,6 +157,23 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
       {/* Backfill progress banner */}
       {showBackfillBanner && (
         <BackfillBanner progress={backfillProgress} onStop={stopBackfill} />
+      )}
+
+      {/* Backfill error recovery */}
+      {isBackfillFailed && (
+        <div className="ceramic-tile p-4 border-l-4 border-l-ceramic-error bg-ceramic-error/10">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-ceramic-text-primary">
+              A análise do histórico falhou. Seus dados estão seguros.
+            </span>
+            <button
+              onClick={() => { retryBackfill(); refresh(); }}
+              className="text-sm text-ceramic-error underline hover:no-underline whitespace-nowrap ml-2"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
       )}
 
       <motion.div
