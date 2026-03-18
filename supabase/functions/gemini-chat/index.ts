@@ -221,6 +221,44 @@ serve(async (req) => {
           )
           break
         }
+        case 'generate_morning_briefing': {
+          const briefingAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+          const { buildUserContext } = await import('../_shared/context-builder.ts')
+          const ctx = await buildUserContext(briefingAdmin, userId!, 'coordinator')
+
+          const briefingModel = genAI.getGenerativeModel({
+            model: MODELS.fast,
+            generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+          })
+
+          const now = new Date()
+          const hour = now.toLocaleString('pt-BR', { hour: '2-digit', timeZone: 'America/Sao_Paulo' })
+          const today = now.toISOString().split('T')[0]
+          const dow = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][now.getDay()]
+
+          const briefingPrompt = `Voce e a AICA, assistente pessoal do usuario. Gere um briefing matinal curto e motivacional em portugues.
+
+## Data: ${today} (${dow}), ${hour}h
+
+## Dados do usuario:
+${ctx.contextString}
+
+## Instrucoes:
+- Cumprimente pelo nome se disponivel
+- Mencione quantas tarefas tem para hoje e se alguma esta atrasada
+- Mencione eventos do dia se houver
+- Se tiver Life Score, comente brevemente
+- Maximo 3-4 frases, tom amigavel e energizante
+- Use emojis com moderacao (1-2 no maximo)
+- NAO liste tudo — seja conciso e destaque o mais importante`
+
+          const briefingResult = await briefingModel.generateContent(briefingPrompt)
+          const briefingText = briefingResult.response.text().trim()
+          result = { success: true, briefing: briefingText }
+          break
+        }
         case 'generate_title': {
           const titleMessage = payload?.message || ''
           const titleResponse = (payload?.response || '').substring(0, 200)
