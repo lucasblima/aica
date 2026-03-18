@@ -13,7 +13,6 @@ export type {
   GrantResponse,
   ProjectDocument,
   OpportunityDocument,
-  GuestResearch,
   CreateOpportunityPayload,
   CreateProjectPayload,
   UpdateBriefingPayload,
@@ -120,16 +119,13 @@ export {
 } from './types';
 
 // Views
-export { default as GrantsModuleView } from './views/GrantsModuleView';
+export { GrantsModuleView } from './views/GrantsModuleView';
 
 // Context
-export { WorkspaceContext, WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
+export { WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
+export { default as WorkspaceContext } from './context/WorkspaceContext';
 
 // Hooks
-export { useGrantProject } from './hooks/useGrantProject';
-export { useGrantOpportunity } from './hooks/useGrantOpportunity';
-export { useGrantBriefing } from './hooks/useGrantBriefing';
-export { useGrantResponse } from './hooks/useGrantResponse';
 // Organizations hooks
 export {
   useOrganizations,
@@ -139,10 +135,10 @@ export {
 } from './hooks/useOrganizations';
 
 // Services
-export { getOpportunities, createOpportunity, updateOpportunity, deleteOpportunity } from './services';
-export { getProjects, createProject, updateProject, deleteProject } from './services';
-export { getBriefings, updateBriefing } from './services';
-export { getResponses, updateResponse, generateField } from './services';
+export { listOpportunities, createOpportunity, updateOpportunity, deleteOpportunity } from './services';
+export { listProjects, createProject, updateProjectName, deleteProject } from './services';
+export { getBriefing, saveBriefing } from './services';
+export { listResponses, saveResponse } from './services';
 
 // Organizations services
 export {
