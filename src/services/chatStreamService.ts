@@ -46,21 +46,26 @@ export interface InterviewMeta {
   intent: string
 }
 
-/** Build common headers + URL for gemini-chat Edge Function */
-function getChatEndpoint(accessToken: string) {
+/** Build common headers + URL for an Edge Function */
+function getEdgeFunctionEndpoint(accessToken: string, functionName: string = 'gemini-chat') {
   const supabaseUrl =
     import.meta.env.VITE_SUPABASE_URL ||
     'https://uzywajqzbdbrfammshdg.supabase.co'
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
   return {
-    url: `${supabaseUrl}/functions/v1/gemini-chat`,
+    url: `${supabaseUrl}/functions/v1/${functionName}`,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
       apikey: anonKey,
     },
   }
+}
+
+/** Backward-compatible alias */
+function getChatEndpoint(accessToken: string) {
+  return getEdgeFunctionEndpoint(accessToken, 'gemini-chat')
 }
 
 /**
@@ -106,6 +111,64 @@ export async function fetchChatNonStreaming(
       agent: json.agent || 'aica_coordinator',
       actions: Array.isArray(json.suggestedActions) ? json.suggestedActions : [],
       usage: json.usage,
+    }
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new Error('Tempo limite excedido. Tente novamente.')
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+/**
+ * ReACT-enriched chat: POST to react-agent Edge Function.
+ * Uses ReACT loop for context-enriched responses (queries user data before answering).
+ * Has built-in intent pre-check — simple questions get direct answers without the loop.
+ */
+export async function fetchReactChat(
+  sessionId: string,
+  message: string,
+  history: Array<{ role: string; content: string }>,
+  context?: Record<string, unknown>,
+): Promise<{ text: string; agent: string; actions: unknown[]; usage?: { input: number; output: number }; react?: boolean; steps?: number; confidence?: number }> {
+  const { session } = await getCachedSession()
+  if (!session?.access_token) throw new Error('Not authenticated')
+
+  const { url, headers } = getEdgeFunctionEndpoint(session.access_token, 'react-agent')
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 120_000) // 2 min for ReACT loop
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        action: 'react_chat',
+        payload: { message, session_id: sessionId, history, context },
+      }),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const json = await response.json()
+    if (!json.success) {
+      throw new Error(json.error || 'Erro no servidor')
+    }
+
+    return {
+      text: json.response || '',
+      agent: 'react_agent',
+      actions: [],
+      usage: json.tokens ? { input: json.tokens?.input || 0, output: json.tokens?.output || 0 } : undefined,
+      react: json.react,
+      steps: json.steps,
+      confidence: json.confidence,
     }
   } catch (err) {
     if ((err as Error).name === 'AbortError') {
