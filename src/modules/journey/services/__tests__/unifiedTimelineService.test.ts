@@ -306,7 +306,8 @@ describe('fetchUnifiedTimelineEvents', () => {
     )
 
     // Moments returned [] due to error, questions returned 1
-    expect(result.events.length).toBeGreaterThanOrEqual(0)
+    expect(result.events.length).toBe(1)
+    expect(result.events[0].source).toBe('question')
   })
 })
 
