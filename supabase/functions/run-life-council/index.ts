@@ -111,7 +111,7 @@ ESTRATEGISTA/COO:
 
 BIO-HACKER/COACH:
 {biohacker}
-
+{life_score_context}
 Sintetize um "Daily Insight" unico que:
 1. RESOLVA CONFLITOS entre perspectivas (ex: Estrategista quer mais trabalho, mas Filosofo detectou burnout → sugira descanso estrategico)
 2. Priorize na ordem: SAUDE > CONSCIENCIA > PRODUTIVIDADE
@@ -187,6 +187,42 @@ serve(async (req: Request) => {
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // =====================================================================
+    // STEP 1b: Fetch Life Score for holistic context
+    // =====================================================================
+
+    let lifeScoreContext = ''
+    try {
+      const { data: latestScore } = await supabaseClient
+        .from('life_scores')
+        .select('composite_score, domain_scores, trend, spiral_detected, spiral_domains, computed_at')
+        .eq('user_id', userId)
+        .order('computed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (latestScore) {
+        const domains = latestScore.domain_scores as Record<string, number> || {}
+        const domainLabels: Record<string, string> = {
+          atlas: 'Produtividade', journey: 'Bem-estar', finance: 'Finanças',
+          flux: 'Treinamento', connections: 'Relacionamentos', grants: 'Captação', studio: 'Produção',
+        }
+        const domainLines = Object.entries(domains)
+          .filter(([, v]) => v > 0)
+          .map(([k, v]) => `${domainLabels[k] || k}: ${Math.round(v * 100)}%`)
+          .join(', ')
+
+        lifeScoreContext = `\n\nLIFE SCORE ATUAL (dados reais do sistema):\n`
+          + `Score composto: ${Math.round(latestScore.composite_score * 100)}/100\n`
+          + `Domínios: ${domainLines}\n`
+          + `Tendência: ${latestScore.trend || 'estável'}\n`
+          + `Alerta de espiral: ${latestScore.spiral_detected ? `SIM — domínios em declínio: ${(latestScore.spiral_domains || []).join(', ')}` : 'Não detectado'}\n`
+          + `Última atualização: ${latestScore.computed_at}\n`
+      }
+    } catch (err) {
+      console.warn('[LIFE-COUNCIL] Life Score fetch failed (non-critical):', err)
     }
 
     // =====================================================================
@@ -267,7 +303,8 @@ serve(async (req: Request) => {
         prompt: SYNTHESIS_PROMPT
           .replace('{philosopher}', JSON.stringify(philosopherOutput, null, 2))
           .replace('{strategist}', JSON.stringify(strategistOutput, null, 2))
-          .replace('{biohacker}', JSON.stringify(biohackerOutput, null, 2)),
+          .replace('{biohacker}', JSON.stringify(biohackerOutput, null, 2))
+          .replace('{life_score_context}', lifeScoreContext),
         complexity: 'high',
         expectJson: true,
         temperature: 0.5,
