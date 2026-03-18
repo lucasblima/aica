@@ -324,6 +324,8 @@ async function computeGrantsDomainScoreProvider(): Promise<import('@/services/sc
 export function registerGrantsDomainProvider(): void {
   import('@/services/scoring/scoringEngine').then(({ registerDomainProvider }) => {
     registerDomainProvider('grants', computeGrantsDomainScoreProvider);
+  }).catch((err) => {
+    log.warn('Failed to register grants provider:', err);
   });
 }
 

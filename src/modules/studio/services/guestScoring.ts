@@ -300,6 +300,8 @@ async function computeStudioDomainScoreProvider(): Promise<import('@/services/sc
 export function registerStudioDomainProvider(): void {
   import('@/services/scoring/scoringEngine').then(({ registerDomainProvider }) => {
     registerDomainProvider('studio', computeStudioDomainScoreProvider);
+  }).catch((err) => {
+    log.warn('Failed to register studio provider:', err);
   });
 }
 

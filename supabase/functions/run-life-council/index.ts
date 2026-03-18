@@ -553,10 +553,12 @@ serve(async (req: Request) => {
       ? synthesis.overallStatus
       : 'balanced'
 
-    // Build persona outputs for DB storage (backward compatible columns + new)
+    // Build persona outputs for DB storage (backward compatible + new columns)
     const philosopherOutput = parsedPersonas.philosopher?.output || {}
     const strategistOutput = parsedPersonas.strategist?.output || {}
     const biohackerOutput = parsedPersonas.biohacker?.output || {}
+    const financialAdvisorOutput = parsedPersonas.financial_advisor?.output || {}
+    const relationshipCoachOutput = parsedPersonas.relationship_coach?.output || {}
 
     const { data: saved, error: saveError } = await supabaseClient
       .from('daily_council_insights')
@@ -566,6 +568,8 @@ serve(async (req: Request) => {
         philosopher_output: philosopherOutput,
         strategist_output: strategistOutput,
         biohacker_output: biohackerOutput,
+        financial_advisor_output: financialAdvisorOutput,
+        relationship_coach_output: relationshipCoachOutput,
         overall_status: overallStatus,
         headline: (synthesis.headline || '').substring(0, 200),
         synthesis: synthesis.synthesis || '',
