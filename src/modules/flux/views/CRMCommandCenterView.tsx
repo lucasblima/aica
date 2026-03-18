@@ -315,6 +315,9 @@ export default function CRMCommandCenterView() {
   const [coachLevels, setCoachLevels] = useState<CoachLevel[]>([]);
   const [showLevelManager, setShowLevelManager] = useState(false);
 
+  // Unread feedback counts per athlete
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+
   // Athlete form modal state
   const [athleteModalOpen, setAthleteModalOpen] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
@@ -349,6 +352,18 @@ export default function CRMCommandCenterView() {
           .eq('user_id', user.id)
           .order('display_order');
         setCoachLevels((levelsData || []) as CoachLevel[]);
+
+        // Load unread feedback counts
+        const { data: unreadData } = await supabase.rpc('get_unread_feedback_counts', {
+          p_coach_user_id: user.id,
+        });
+        if (unreadData) {
+          const counts: Record<string, number> = {};
+          for (const row of unreadData) {
+            counts[row.athlete_id] = Number(row.unread_count);
+          }
+          setUnreadCounts(counts);
+        }
       }
     };
     loadCoachData();
@@ -1277,6 +1292,7 @@ export default function CRMCommandCenterView() {
                     onCopyLink={() => {}}
                     onPrescreverClick={() => navigate('/flux/canvas/' + athlete.id)}
                     groupTags={athleteGroupTags}
+                    unreadFeedbackCount={unreadCounts[athlete.id] || 0}
                   />
 
                   {/* CRM extra info: all practiced modalities + level */}

@@ -220,6 +220,21 @@ export default function AthleteDetailView() {
     return () => { cancelled = true; };
   }, [athleteId]);
 
+  // Mark feedback as read when coach views athlete detail
+  useEffect(() => {
+    if (!athleteId) return;
+    const markRead = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.rpc('mark_feedback_read', {
+          p_coach_user_id: user.id,
+          p_athlete_id: athleteId,
+        });
+      }
+    };
+    markRead();
+  }, [athleteId]);
+
   // Load structured feedback entries + compute aggregated radar (#781)
   useEffect(() => {
     if (!activeMicrocycle?.id) return;

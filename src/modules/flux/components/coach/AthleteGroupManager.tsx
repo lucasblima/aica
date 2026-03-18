@@ -8,10 +8,11 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, Pencil, Trash2, Check, Users, Tag, Loader2 } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Check, Users, Tag, Loader2, Link2, Copy } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import type { Athlete, AthleteGroup, AthleteGroupData } from '../../types/flux';
 import { GROUP_COLORS, getGroupColorClasses } from '../../types/flux';
+import { CoachInviteLinkService } from '../../services/coachInviteLinkService';
 
 // ============================================
 // Supabase persistence helpers
@@ -177,6 +178,8 @@ export function AthleteGroupManager({
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
+  const [linkLoading, setLinkLoading] = useState<string | null>(null);
 
   const newGroupInputRef = useRef<HTMLInputElement>(null);
 
@@ -288,6 +291,33 @@ export function AthleteGroupManager({
       console.error('[AthleteGroupManager] Failed to toggle athlete:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // COPY group invite link
+  const handleCopyGroupLink = async (groupId: string) => {
+    setLinkLoading(groupId);
+    try {
+      const defaultHealthConfig = {
+        requires_cardio_exam: false,
+        requires_clearance_cert: false,
+        allow_parq_onboarding: false,
+      };
+      const { data: link } = await CoachInviteLinkService.getOrCreateLink(
+        defaultHealthConfig,
+        10,
+        groupId
+      );
+      if (link) {
+        const url = `https://aica.guru/join/${link.token}`;
+        await navigator.clipboard.writeText(url);
+        setCopiedGroupId(groupId);
+        setTimeout(() => setCopiedGroupId(null), 3000);
+      }
+    } catch (err) {
+      console.error('[AthleteGroupManager] Failed to copy group link:', err);
+    } finally {
+      setLinkLoading(null);
     }
   };
 
@@ -443,6 +473,29 @@ export function AthleteGroupManager({
 
                         {/* Actions */}
                         <div className="flex items-center gap-1">
+                          {/* Copy group invite link */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyGroupLink(group.id);
+                            }}
+                            disabled={isSaving || linkLoading === group.id}
+                            className={`p-1.5 rounded transition-colors ${
+                              copiedGroupId === group.id
+                                ? 'bg-ceramic-success/10'
+                                : 'hover:bg-ceramic-info/10'
+                            }`}
+                            title={copiedGroupId === group.id ? 'Link copiado!' : 'Copiar link de convite do grupo'}
+                          >
+                            {linkLoading === group.id ? (
+                              <Loader2 className="w-3.5 h-3.5 text-ceramic-text-secondary animate-spin" />
+                            ) : copiedGroupId === group.id ? (
+                              <Check className="w-3.5 h-3.5 text-ceramic-success" />
+                            ) : (
+                              <Link2 className="w-3.5 h-3.5 text-ceramic-info" />
+                            )}
+                          </button>
+
                           {isEditing ? (
                             <button
                               onClick={() => handleRenameGroup(group.id)}
