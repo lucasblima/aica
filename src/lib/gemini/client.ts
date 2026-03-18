@@ -92,8 +92,8 @@ const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
   // 'generate_tags': 'gemini-atlas',
   // 'transcribe_audio': 'gemini-atlas',
 
-  // Phase 8: ReACT Agent (uncomment when react-agent is deployed)
-  // 'react_chat': 'react-agent',
+  // Phase 8: ReACT Agent
+  'react_chat': 'react-agent',
 }
 
 /**
