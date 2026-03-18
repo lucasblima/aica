@@ -33,8 +33,11 @@ CREATE POLICY "Users can read own summaries" ON public.chat_conversation_summari
 CREATE POLICY "Users can insert own summaries" ON public.chat_conversation_summaries
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Service role needs insert for Edge Function (uses SUPABASE_SERVICE_ROLE_KEY)
--- The Edge Function inserts via service_role client, so no additional policy needed.
+CREATE POLICY "Users can update own summaries" ON public.chat_conversation_summaries
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own summaries" ON public.chat_conversation_summaries
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- Index for efficient lookup by user + recency (used by gemini-chat buildUserContext)
 CREATE INDEX idx_chat_summaries_user_session
@@ -45,4 +48,4 @@ CREATE INDEX idx_chat_summaries_session_id
   ON public.chat_conversation_summaries(session_id);
 
 -- Grants
-GRANT SELECT, INSERT ON public.chat_conversation_summaries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.chat_conversation_summaries TO authenticated;

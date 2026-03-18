@@ -224,7 +224,19 @@ Retorne APENAS o JSON, sem texto adicional.`
 
     console.log(`[summarize-chat-session] Generating summary for session=${session_id}, messages=${messages.length}`)
 
-    const result = await model.generateContent(prompt)
+    // Retry with exponential backoff (per ai-integration.md)
+    let result: any
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        result = await model.generateContent(prompt)
+        break
+      } catch (geminiErr) {
+        console.warn(`[summarize-chat-session] Gemini attempt ${attempt + 1} failed:`, (geminiErr as Error).message)
+        if (attempt === 2) throw geminiErr
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)))
+      }
+    }
+
     const text = result.response.text()
 
     let summaryData: SummaryResult
@@ -282,7 +294,7 @@ Retorne APENAS o JSON, sem texto adicional.`
   } catch (error) {
     console.error('[summarize-chat-session] Unexpected error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
+      JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
