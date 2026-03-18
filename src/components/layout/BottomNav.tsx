@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ViewState } from '../types';
 import { LayoutGrid, Calendar, Sparkles, Network, Users } from 'lucide-react';
+
+type ViewState = string;
 
 interface BottomNavProps {
   currentView: ViewState;

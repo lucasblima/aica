@@ -312,7 +312,7 @@ export function useModuleFileSearch(module_type: string | string[], module_id?: 
       // When searching across multiple modules, use the first module type for context
       // (The actual search will include all modules via corpus filters)
       const contextModuleType = Array.isArray(module_type) ? module_type[0] : module_type;
-      return baseHook.search({ ...query, module_type: contextModuleType, module_id });
+      return baseHook.search({ ...query, module_type: contextModuleType as import('@/types/fileSearch').ModuleType, module_id });
     },
     [baseHook, module_type, module_id]
   );

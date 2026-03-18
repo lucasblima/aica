@@ -228,6 +228,7 @@ export interface ContactNetworkUpdateInput {
   is_active?: boolean;
   is_archived?: boolean;
   blocked?: boolean;
+  health_score?: number;
 }
 
 export interface ContactNetworkFilter {

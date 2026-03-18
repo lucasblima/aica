@@ -36,11 +36,7 @@ jobs:
     name: TypeScript Check
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Informational: ~140 pre-existing errors (down from 434).
-    # Top offenders: fileSearchApiClient (camelCase/snake_case), sponsorshipService,
-    # feedbackLoopService, EditalSearchBar, FinanceSearchPanel.
-    # Remove continue-on-error once all errors are fixed.
-    continue-on-error: true
+    # Blocking: zero errors as of Phase 4 fix (was 434 → 139 → 0).
 
     steps:
       - name: Checkout code

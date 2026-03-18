@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { ViewState } from '../../../types';
+type ViewState = string;
 
 export interface ModuleInfo {
   id: string;

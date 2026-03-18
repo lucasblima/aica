@@ -135,7 +135,7 @@ export const GuestApprovalPage: React.FC = () => {
         setApprovalStatus({
           approved: guestResearch.approved_by_guest,
           notes: guestResearch.approval_notes || '',
-          approvedAt: guestResearch.approved_at,
+          approvedAt: new Date().toISOString(),
         });
       }
     } catch (err) {

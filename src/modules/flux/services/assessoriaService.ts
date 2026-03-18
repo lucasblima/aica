@@ -88,9 +88,7 @@ export const assessoriaService = {
         description: input.description || 'Minha assessoria esportiva',
         color_theme: input.accentColor || 'amber',
         settings: {
-          space_type: ASSESSORIA_MARKER,
           business_type: 'agency' as const,
-          accent_color: input.accentColor || 'amber',
         },
       });
 

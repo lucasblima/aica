@@ -15,7 +15,7 @@
  */
 export type AIOperationType = string;
 
-export type ModuleType = 'grants' | 'journey' | 'podcast' | 'finance' | 'atlas' | 'chat' | 'connections' | 'flux' | 'studio';
+export type ModuleType = 'grants' | 'journey' | 'podcast' | 'finance' | 'atlas' | 'chat' | 'connections' | 'flux' | 'studio' | 'shared';
 
 export type AlertLevel = 'ok' | 'warning' | 'critical' | 'danger' | 'none';
 

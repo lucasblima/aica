@@ -122,8 +122,8 @@ export class GrantTaskGenerator {
         priority: project.status === 'review' ? 'critical' : 'high',
         status: project.status === 'review' ? 'in_progress' : 'pending',
         metadata: {
-          total_fields: project.metadata?.field_count || 0,
-          approved_fields: project.metadata?.approved_count || 0
+          total_fields: (project as Record<string, any>).metadata?.field_count || 0,
+          approved_fields: (project as Record<string, any>).metadata?.approved_count || 0
         },
         created_at: now
       });
@@ -198,7 +198,7 @@ export class GrantTaskGenerator {
     opportunity: GrantOpportunity,
     project: GrantProject
   ): GrantTask[] {
-    const steps = (opportunity.metadata?.steps || []) as EditalCustomStep[];
+    const steps = ((opportunity as Record<string, any>).metadata?.steps || []) as EditalCustomStep[];
 
     if (steps.length === 0) {
       return [];

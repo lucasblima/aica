@@ -175,8 +175,7 @@ export function HealthScoreBadge({
       {showTrend && trend && (
         <TrendIcon
           trend={trend}
-          className={sizeClasses.icon}
-          style={{ color: getTrendColor(trend) } as React.CSSProperties}
+          className={`${sizeClasses.icon}`}
         />
       )}
 

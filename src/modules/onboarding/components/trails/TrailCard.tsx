@@ -39,7 +39,7 @@ const TrailCard: React.FC<TrailCardProps> = ({ trail, isSelected, onToggle }) =>
       style={{
         backgroundColor: isSelected ? `${trail.color}20` : '#FFFFFF',
         borderColor: isSelected ? trail.color : 'transparent',
-        ringColor: isSelected ? trail.color : undefined,
+        ...( isSelected ? { '--tw-ring-color': trail.color } as React.CSSProperties : {}),
       }}
       aria-pressed={isSelected}
       aria-label={`Selecionar ${trail.name}`}

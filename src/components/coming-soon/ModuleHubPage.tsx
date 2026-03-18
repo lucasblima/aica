@@ -12,7 +12,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Grid3X3, Zap, Clock, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useModuleRegistry } from '@/hooks/useModuleRegistry';
+import { useModuleRegistry, type ModuleRegistryEntry } from '@/hooks/useModuleRegistry';
 import { PageShell, CeramicLoadingState } from '@/components/ui';
 import { ModuleCard } from './ModuleCard';
 
