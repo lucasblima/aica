@@ -558,6 +558,7 @@ async function computeFinanceDomainScoreProvider(): Promise<DomainScore | null> 
       const { data: healthScore, error: healthError } = await supabase
         .from('financial_health_scores')
         .select('composite_score, computed_at')
+        .eq('user_id', user.id)
         .order('computed_at', { ascending: false })
         .limit(1)
         .maybeSingle();
