@@ -887,6 +887,33 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
       }
     }
 
+    // Fetch recent chat conversation summaries for cross-session memory
+    {
+      const { data: chatSummaries } = await supabaseAdmin
+        .from('chat_conversation_summaries')
+        .select('summary, key_topics, key_decisions, emotional_themes, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(3)
+
+      if (chatSummaries?.length) {
+        contextParts.push(`\n## Conversas Anteriores`)
+        chatSummaries.forEach((cs: any, idx: number) => {
+          const date = new Date(cs.created_at).toLocaleDateString('pt-BR')
+          contextParts.push(`### Sessão ${idx + 1} (${date}): ${cs.summary}`)
+          if (cs.key_topics?.length) {
+            contextParts.push(`Tópicos: ${cs.key_topics.join(', ')}`)
+          }
+          if (cs.key_decisions?.length) {
+            contextParts.push(`Decisões: ${cs.key_decisions.join(', ')}`)
+          }
+          if (cs.emotional_themes?.length) {
+            contextParts.push(`Temas emocionais: ${cs.emotional_themes.join(', ')}`)
+          }
+        })
+      }
+    }
+
   } catch (error) {
     console.warn('[buildUserContext] Partial failure:', (error as Error).message)
     contextParts.push('\n(Alguns dados não puderam ser carregados)')

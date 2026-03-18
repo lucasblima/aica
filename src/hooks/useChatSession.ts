@@ -44,6 +44,7 @@ export interface UseChatSessionReturn {
   setShowSessions: (show: boolean) => void
   activeAgent: string | null
   lastFailedMessage: string | null
+  connectionStatus: 'connected' | 'degraded' | 'offline'
 }
 
 function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
@@ -68,6 +69,7 @@ export function useChatSession(): UseChatSessionReturn {
   const [showSessions, setShowSessions] = useState(false)
   const [activeAgent, setActiveAgent] = useState<string | null>(null)
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'degraded' | 'offline'>('connected')
   const initRef = useRef(false)
 
   // Load sessions on mount
@@ -220,6 +222,7 @@ export function useChatSession(): UseChatSessionReturn {
             upcomingEpisodes: ctx.upcomingEpisodes,
             patterns: ctx.patterns,
             latestInsight: ctx.latestInsight,
+            lifeScore: ctx.lifeScore,
           }
         }
       } catch (ctxErr) {
@@ -252,6 +255,7 @@ export function useChatSession(): UseChatSessionReturn {
         responseActions = streamResult.actions
         tokensInput = streamResult.usage?.input
         tokensOutput = streamResult.usage?.output
+        setConnectionStatus('connected')
       } catch (streamErr) {
         // Streaming failed — fallback to non-streaming chat_aica
         console.warn('[useChatSession] Streaming failed, falling back to non-streaming:', streamErr)
@@ -271,6 +275,7 @@ export function useChatSession(): UseChatSessionReturn {
         responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
         tokensInput = fallbackResult.usage?.input
         tokensOutput = fallbackResult.usage?.output
+        setConnectionStatus('degraded')
       }
 
       // Success — clear streaming state, save to DB, append final message
@@ -302,6 +307,7 @@ export function useChatSession(): UseChatSessionReturn {
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
       setError(message)
       setLastFailedMessage(trimmed)
+      setConnectionStatus('offline')
     } finally {
       setIsLoading(false)
       setIsStreaming(false)
@@ -323,6 +329,7 @@ export function useChatSession(): UseChatSessionReturn {
     setLastFailedMessage(null)
     setShowSessions(false)
     setActiveAgent(null)
+    setConnectionStatus('connected')
   }, [])
 
   const switchSession = useCallback(async (sessionId: string) => {
@@ -336,6 +343,7 @@ export function useChatSession(): UseChatSessionReturn {
       setError(null)
       setLastFailedMessage(null)
       setActiveAgent(null)
+      setConnectionStatus('connected')
     } catch (err) {
       console.error('[useChatSession] Failed to switch session:', sessionId, err)
       setError('Erro ao carregar conversa')
@@ -352,6 +360,11 @@ export function useChatSession(): UseChatSessionReturn {
         setMessages([])
         setActiveAgent(null)
       }
+
+      // Fire-and-forget: generate session summary for future context
+      supabase.functions.invoke('summarize-chat-session', {
+        body: { session_id: sessionId },
+      }).catch(err => console.warn('[useChatSession] Summary generation failed:', err))
     } catch (err) {
       console.error('[useChatSession] Failed to archive session:', sessionId, err)
       setError('Erro ao arquivar conversa')
@@ -377,5 +390,6 @@ export function useChatSession(): UseChatSessionReturn {
     setShowSessions,
     activeAgent,
     lastFailedMessage,
+    connectionStatus,
   }
 }
