@@ -95,27 +95,27 @@ export function validateMomentInput(input: any): ValidationResult {
       errors.push('Content must be less than 10,000 characters')
     } else if (sanitized.length > 0) {
       validatedInput.content = sanitized
-    } else if (!input.audioFile) {
+    } else if (!input.audioBlob) {
       warnings.push('Content is empty. Make sure to provide áudio if no text is provided.')
     }
   }
 
   // Validate áudio (optional)
-  if (input.audioFile !== undefined && input.audioFile !== null) {
-    if (!(input.audioFile instanceof Blob)) {
+  if (input.audioBlob !== undefined && input.audioBlob !== null) {
+    if (!(input.audioBlob instanceof Blob)) {
       errors.push('audioFile must be a Blob')
-    } else if (input.audioFile.size === 0) {
+    } else if (input.audioBlob.size === 0) {
       errors.push('audioFile cannot be empty')
-    } else if (input.audioFile.size > 25 * 1024 * 1024) {
+    } else if (input.audioBlob.size > 25 * 1024 * 1024) {
       // 25MB limit
       errors.push('audioFile must be less than 25MB')
     } else {
-      validatedInput.audioFile = input.audioFile
+      validatedInput.audioBlob = input.audioBlob
     }
   }
 
   // Validate that at least one content source exists
-  if (!validatedInput.content && !validatedInput.audioFile) {
+  if (!validatedInput.content && !validatedInput.audioBlob) {
     errors.push('Either content or audioFile must be provided')
   }
 
@@ -256,7 +256,7 @@ export function isValidLifeArea(area: string): area is LifeArea {
  * Check if moment has both text and áudio (for 'both' type detection)
  */
 export function hasMultipleContentTypes(input: CreateMomentEntryInput): boolean {
-  return !!(input.content && input.content.trim().length > 0 && input.audioFile)
+  return !!(input.content && input.content.trim().length > 0 && input.audioBlob)
 }
 
 /**
@@ -270,7 +270,7 @@ export function estimateBaseCP(input: CreateMomentEntryInput): number {
   if (input.content && input.content.length > 300) points += 2
 
   // Bonus for áudio
-  if (input.audioFile) points += 5
+  if (input.audioBlob) points += 5
 
   // Bonus for emotion intensity
   if (input.emotionIntensity >= 8) points += 2

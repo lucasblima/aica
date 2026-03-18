@@ -110,6 +110,8 @@ export interface CPAwardDetails {
   levelUpBonus?: number
   totalPoints: number
   reason: string
+  leveledUp?: boolean
+  newLevel?: number
 }
 
 /**

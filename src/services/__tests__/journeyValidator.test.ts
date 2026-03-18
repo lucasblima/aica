@@ -12,6 +12,7 @@
  * @see src/services/journeyValidator.ts
  */
 
+import { describe, it, expect, beforeAll } from 'vitest';
 import { journeyValidator, JourneyValidator } from '../journeyValidator';
 import { getJourneySchema } from '../../data/journeySchemas';
 import type { JourneySchema } from '../../types/journeySchemas';

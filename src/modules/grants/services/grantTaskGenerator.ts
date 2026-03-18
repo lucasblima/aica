@@ -74,13 +74,13 @@ export class GrantTaskGenerator {
         project_id: project.id,
         opportunity_id: opportunity.id,
         task_type: 'briefing',
-        title: `Completar contexto do projeto: ${project.project_title || 'Novo Projeto'}`,
+        title: `Completar contexto do projeto: ${project.project_name || 'Novo Projeto'}`,
         description: 'Preencha as informações de contexto do projeto para que a IA possa gerar a proposta. ' +
           'Inclua objetivos, metodologia, resultados esperados e outras informações relevantes.',
         priority: 'high',
         status: 'pending',
         metadata: {
-          project_title: project.project_title,
+          project_title: project.project_name,
           opportunity_title: opportunity.title,
           required_fields: ['project_title', 'context_objectives', 'context_methodology']
         },
@@ -96,7 +96,7 @@ export class GrantTaskGenerator {
         project_id: project.id,
         opportunity_id: opportunity.id,
         task_type: 'upload_doc',
-        title: `Enviar documentos do projeto: ${project.project_title || 'Novo Projeto'}`,
+        title: `Enviar documentos do projeto: ${project.project_name || 'Novo Projeto'}`,
         description: 'Faça upload de documentos relevantes (PDFs, relatórios, artigos) que serão usados ' +
           'como contexto pela IA ao gerar a proposta.',
         priority: 'medium',
@@ -116,7 +116,7 @@ export class GrantTaskGenerator {
         project_id: project.id,
         opportunity_id: opportunity.id,
         task_type: 'review_field',
-        title: `Revisar campos gerados: ${project.project_title || 'Novo Projeto'}`,
+        title: `Revisar campos gerados: ${project.project_name || 'Novo Projeto'}`,
         description: 'Revise e aprove todos os campos gerados pela IA. Você pode editar o conteúdo ' +
           'antes de aprovar. Campos aprovados podem ser colapsados para economizar espaço.',
         priority: project.status === 'review' ? 'critical' : 'high',
