@@ -100,9 +100,13 @@ export function AicaChatFAB({
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
 
-  const { isListening, isTranscribing, isSupported, audioLevel, recordSeconds, toggle: toggleMic } = useVoiceRecorder({
+  const { isListening, isTranscribing, isSupported, audioLevel, recordSeconds, interimText, mode: voiceMode, toggle: toggleMic } = useVoiceRecorder({
     onResult: (transcript) => {
       setInput(prev => prev ? `${prev} ${transcript}` : transcript)
+    },
+    onInterim: (text) => {
+      // Show real-time transcription in the input field
+      setInput(text)
     },
   })
 
@@ -622,18 +626,27 @@ export function AicaChatFAB({
               {/* Recording / Transcribing strip */}
               {isListening && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-ceramic-error/5 border-t border-ceramic-error/20">
-                  <div className="flex items-center gap-0.5 h-4">
-                    {waveformBars.map((h, i) => (
-                      <div
-                        key={i}
-                        className="w-0.5 bg-ceramic-error rounded-full transition-all duration-75"
-                        style={{ height: `${h}px` }}
-                      />
-                    ))}
-                  </div>
+                  {voiceMode === 'media-recorder' && (
+                    <div className="flex items-center gap-0.5 h-4">
+                      {waveformBars.map((h, i) => (
+                        <div
+                          key={i}
+                          className="w-0.5 bg-ceramic-error rounded-full transition-all duration-75"
+                          style={{ height: `${h}px` }}
+                        />
+                      ))}
+                    </div>
+                  )}
                   <span className="text-[10px] font-mono text-ceramic-error">{formatRecordTime(recordSeconds)}</span>
                   <div className="w-1.5 h-1.5 bg-ceramic-error rounded-full animate-pulse" />
-                  <span className="text-[10px] text-ceramic-text-secondary">Gravando...</span>
+                  <span className="text-[10px] text-ceramic-text-secondary">
+                    {voiceMode === 'speech-api' ? 'Ouvindo...' : 'Gravando...'}
+                  </span>
+                  {voiceMode === 'speech-api' && interimText && (
+                    <span className="text-[10px] text-ceramic-text-primary truncate flex-1">
+                      {interimText.substring(interimText.length - 40)}
+                    </span>
+                  )}
                 </div>
               )}
               {isTranscribing && (
