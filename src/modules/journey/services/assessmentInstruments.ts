@@ -273,6 +273,11 @@ export function scoreAssessment(
     throw new Error(`Unknown instrument: ${instrumentId}`);
   }
 
+  // Guard: empty or null responses
+  if (!responses || Object.keys(responses).length === 0) {
+    throw new Error(`Empty responses for ${instrumentId}: at least one response required`);
+  }
+
   // Validate all responses before scoring
   const validation = validateResponses(instrument, responses);
   if (!validation.valid) {
