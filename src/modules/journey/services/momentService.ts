@@ -115,14 +115,16 @@ export async function createMoment(
           .then(({ error: legacyErr }) => {
             if (legacyErr) {
               // P1-12: Structured error telemetry for streak failures
-              // Sentry captures structured log.error — no DB persistence needed
               log.error('STREAK_LOST: Both streak RPCs failed', {
                 userId,
                 momentId: moment.id,
                 primaryError: streakError.message,
                 fallbackError: legacyErr.message,
                 errorCode: 'STREAK_DOUBLE_FAILURE',
+                timestamp: new Date().toISOString(),
               })
+              // Track streak failure metric for monitoring
+              trackStreakFailure(userId, moment.id, streakError.message, legacyErr.message)
             }
           })
       }
@@ -411,3 +413,38 @@ export async function reanalyzeMoments(limit: number = 50): Promise<{
   }
 }
 
+// ============================================================================
+// P1-12: Streak failure telemetry
+// ============================================================================
+
+/**
+ * Track streak update failures for monitoring.
+ * Persists to consciousness_points_log as a negative-zero entry so it's
+ * visible in the existing CP audit trail without a new table.
+ */
+function trackStreakFailure(
+  userId: string,
+  momentId: string,
+  primaryError: string,
+  fallbackError: string,
+): void {
+  supabase
+    .from('consciousness_points_log')
+    .insert({
+      user_id: userId,
+      points: 0,
+      reason: 'streak_update_failed',
+      reference_id: momentId,
+      reference_type: 'streak_failure',
+      metadata: {
+        primary_error: primaryError,
+        fallback_error: fallbackError,
+        timestamp: new Date().toISOString(),
+      },
+    })
+    .then(({ error }) => {
+      if (error) {
+        log.warn('Failed to track streak failure telemetry:', error)
+      }
+    })
+}
