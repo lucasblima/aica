@@ -280,41 +280,37 @@ export function getComplexityForAction(action: string): ComplexityLevel {
  * Reuses the proven extractJSON pattern from gemini-chat.
  */
 export function extractJSON<T = unknown>(text: string): T {
-  // Try direct parse first
+  // 1. Strip code fences FIRST
+  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').trim()
+
+  // 2. Try direct parse
   try {
-    return JSON.parse(text);
+    return JSON.parse(cleaned)
   } catch {
-    // Continue to extraction
+    // continue to fallback strategies
   }
 
-  // Try extracting from markdown code fences
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
+  // 3. Find first { or [ and match to last } or ]
+  const objStart = cleaned.indexOf('{')
+  const arrStart = cleaned.indexOf('[')
+  let start = -1
+  let end = -1
+
+  if (objStart >= 0 && (arrStart < 0 || objStart < arrStart)) {
+    start = objStart
+    end = cleaned.lastIndexOf('}')
+  } else if (arrStart >= 0) {
+    start = arrStart
+    end = cleaned.lastIndexOf(']')
+  }
+
+  if (start >= 0 && end > start) {
     try {
-      return JSON.parse(fenceMatch[1].trim());
+      return JSON.parse(cleaned.substring(start, end + 1))
     } catch {
-      // Continue
+      // fall through
     }
   }
 
-  // Try finding JSON object or array in text
-  const objectMatch = text.match(/\{[\s\S]*\}/);
-  if (objectMatch) {
-    try {
-      return JSON.parse(objectMatch[0]);
-    } catch {
-      // Continue
-    }
-  }
-
-  const arrayMatch = text.match(/\[[\s\S]*\]/);
-  if (arrayMatch) {
-    try {
-      return JSON.parse(arrayMatch[0]);
-    } catch {
-      // Continue
-    }
-  }
-
-  throw new Error(`Failed to extract JSON from AI response: ${text.substring(0, 200)}...`);
+  throw new Error(`Failed to extract JSON from AI response: ${text.substring(0, 200)}...`)
 }
