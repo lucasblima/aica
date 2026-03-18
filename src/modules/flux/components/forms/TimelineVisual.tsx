@@ -47,7 +47,7 @@ export default function TimelineVisual({ series }: TimelineVisualProps) {
       {/* Horizontal bar */}
       <div className="flex items-center gap-0.5 h-16 rounded-lg overflow-hidden shadow-inner bg-ceramic-inset/50">
         {cardioSeries.map((s, idx) => {
-          const config = ZONE_CONFIGS[s.zone];
+          const config = ZONE_CONFIGS[s.zone] ?? ZONE_CONFIGS['Z2'];
           const width = `${(1 / cardioSeries.length) * 100}%`;
 
           return (
@@ -90,7 +90,7 @@ export default function TimelineVisual({ series }: TimelineVisualProps) {
       <div className="flex items-center justify-center gap-3 text-xs">
         {getZoneDistribution(cardioSeries).map(({ zone, count, percentage }) => {
           if (count === 0) return null;
-          const config = ZONE_CONFIGS[zone];
+          const config = ZONE_CONFIGS[zone] ?? ZONE_CONFIGS['Z2'];
           return (
             <div key={zone} className="flex items-center gap-1">
               <div className={`w-3 h-3 rounded-sm ${config.bgColor}`}></div>
