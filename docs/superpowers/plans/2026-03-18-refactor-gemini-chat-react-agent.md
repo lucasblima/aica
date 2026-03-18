@@ -59,6 +59,11 @@ src/lib/gemini/client.ts                   # Expand DEDICATED_EDGE_FUNCTIONS
 
 ## Phase 1 — Shared Helpers Extraction (PR #1)
 
+> **Before starting Phase 1**, tag the current state for rollback:
+> ```bash
+> git tag gemini-chat-pre-phase-1
+> ```
+
 ### Task 1: Fix extractJSON() in model-router.ts
 
 **Files:**
@@ -151,7 +156,7 @@ git commit -m "fix(cors): add Cloud Run origins to shared CORS config"
 
 - [ ] **Step 1: Extract all interfaces from gemini-chat**
 
-Copy lines 44-340 from `supabase/functions/gemini-chat/index.ts`. These are all the `interface` declarations. Add `export` keyword to each. The file should contain ~25 exported interfaces.
+Search for ALL `interface` declarations in `supabase/functions/gemini-chat/index.ts` using `grep -n '^interface' index.ts`. They are scattered throughout the file (not just lines 44-340 — also at lines ~1277, ~1527-1542, ~1659-1683, ~2411). Add `export` keyword to each.
 
 Key types to extract:
 - `BaseRequest`, `ChatRequest`
@@ -236,9 +241,9 @@ export function getDateContext(): {
   return { today, dayOfWeek, tomorrow, timeStr }
 }
 
-/** Create authenticated Supabase admin client for Edge Functions */
-export function getSupabaseAdmin() {
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm')
+/** Create authenticated Supabase admin client for Edge Functions.
+ *  Caller must import createClient at top of their file. */
+export function getSupabaseAdmin(createClient: any) {
   return createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -503,7 +508,10 @@ describe('generateSuggestedActions', () => {
 })
 ```
 
-Note: Deno Edge Function code cannot be directly imported in Vitest (Node.js). For Phase 1, focus on testing the pure functions (generateSuggestedActions, getDateContext) by copying their logic into a test-compatible wrapper, or skip and verify via smoke test in Task 10.
+**Note on Deno/Vitest compatibility:** Files with no Deno-specific imports (like `context-manager.ts`, `gemini-types.ts`) can be imported directly in Vitest. Files using `Deno.env.get()` or Deno std imports cannot. For those, either:
+- Test via `supabase functions serve` + curl (smoke tests)
+- Create thin Node-compatible wrappers that mock Deno APIs
+- Use `vi.mock()` to stub Deno-specific imports
 
 - [ ] **Step 2: Write gemini-helpers tests**
 
@@ -548,13 +556,7 @@ npm run build && npm run typecheck
 
 Expected: both pass (gemini-chat frontend code unchanged).
 
-- [ ] **Step 2: Tag pre-Phase-1 state**
-
-```bash
-git tag gemini-chat-pre-phase-1
-```
-
-- [ ] **Step 3: Test locally with Supabase CLI**
+- [ ] **Step 2: Test locally with Supabase CLI**
 
 ```bash
 npx supabase functions serve gemini-chat --no-verify-jwt
@@ -569,7 +571,7 @@ curl -s -X POST http://localhost:54321/functions/v1/gemini-chat \
 
 Expected: `true`
 
-- [ ] **Step 4: Commit Phase 1 complete marker**
+- [ ] **Step 3: Commit Phase 1 complete marker**
 
 ```bash
 git commit --allow-empty -m "chore: Phase 1 complete — shared helpers extracted"
@@ -578,6 +580,11 @@ git commit --allow-empty -m "chore: Phase 1 complete — shared helpers extracte
 ---
 
 ## Phase 2 — gemini-chat Slim (PR #2)
+
+> **Before starting Phase 2**, tag the current state for rollback:
+> ```bash
+> git tag gemini-chat-pre-phase-2
+> ```
 
 ### Task 11: Split handlers into local files
 
@@ -599,7 +606,8 @@ For each handler file, move the function(s) from index.ts and add proper imports
 **handlers/chat.ts** — move `handleLegacyChat()` (index.ts lines 1055-1130)
 **handlers/agent-chat.ts** — move `handleChatWithAgent()` (lines 1284-1366)
 **handlers/stream.ts** — move the `chat_aica_stream` inline handler (lines ~2905-3070 in the switch block)
-**handlers/actions.ts** — move `handleClassifyIntent()` (lines 2582-2692) and `handleExecuteChatAction()` (lines 2693-2828)
+**handlers/actions.ts** — move `handleClassifyIntent()` and `handleExecuteChatAction()`
+**handlers/whatsapp.ts** — move `handleWhatsAppSentiment()` (stays in gemini-chat permanently, rarely used)
 
 Each file pattern:
 ```typescript
@@ -666,7 +674,7 @@ import { handleGenerateDossier, handleGenerateIceBreakers, handleGeneratePautaQu
 import { handleGenerateFieldContent, handleAnalyzeEditalStructure, handleParseFormFields, handleGenerateAutoBriefing, handleImproveBriefingField, handleExtractRequiredDocuments, handleExtractTimelinePhases } from './handlers/grants-temp.ts'
 import { handleParseStatement, handleCategorizeTransactions } from './handlers/finance-temp.ts'
 import { handleExtractTaskFromVoice, handleTranscribeAudio, handleGenerateTags } from './handlers/atlas-temp.ts'
-import { handleWhatsAppSentiment } from './handlers/chat.ts'  // stays in chat
+import { handleWhatsAppSentiment } from './handlers/whatsapp.ts'  // stays in chat permanently
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -831,13 +839,7 @@ git commit -m "test(chat): add smoke test script for gemini-chat refactoring"
 npm run build && npm run typecheck
 ```
 
-- [ ] **Step 2: Tag pre-Phase-2 state**
-
-```bash
-git tag gemini-chat-pre-phase-2
-```
-
-- [ ] **Step 3: Test locally**
+- [ ] **Step 2: Test locally**
 
 ```bash
 npx supabase functions serve gemini-chat --no-verify-jwt
@@ -845,7 +847,7 @@ npx supabase functions serve gemini-chat --no-verify-jwt
 
 Test key actions: `chat_aica`, `analyze_moment_sentiment`, `generate_dossier`, `parse_statement`.
 
-- [ ] **Step 4: Commit Phase 2 complete marker**
+- [ ] **Step 3: Commit Phase 2 complete marker**
 
 ```bash
 git commit --allow-empty -m "chore: Phase 2 complete — gemini-chat slim router"
@@ -854,6 +856,11 @@ git commit --allow-empty -m "chore: Phase 2 complete — gemini-chat slim router
 ---
 
 ## Phase 8 — ReACT Agent (PR #3)
+
+> **Before starting Phase 8**, tag the current state for rollback:
+> ```bash
+> git tag gemini-chat-pre-phase-8
+> ```
 
 ### Task 16: Create _shared/context-manager.ts (TDD)
 
@@ -1087,12 +1094,31 @@ git commit -m "feat(db): add agent_runs table for ReACT loop persistence"
 
 Implement following the spec's architecture. The function:
 1. Validates auth (JWT)
-2. Builds chat tools for the user (query_tasks, query_moments, etc.)
-3. Runs the ReACT loop
-4. Persists the run to agent_runs
-5. Returns the final answer
+2. **Intent pre-check** — use a quick Gemini call to classify if the question needs context enrichment. Simple questions (greetings, time, generic) get a direct response WITHOUT entering the ReACT loop. Only cross-module questions ("como estao minhas tarefas?", "resumo do meu dia") enter the loop.
+3. Builds chat tools for the user (query_tasks, query_moments, etc.)
+4. Runs the ReACT loop
+5. Persists the run to agent_runs
+6. Reports to `ai_function_health` via `withHealthTracking()`
+7. Returns the final answer
 
 See spec section "Phase 8 — react-agent Edge Function" for the full buildChatTools implementation.
+
+Intent pre-check pattern:
+```typescript
+const intentPrompt = `Classify if this question needs cross-module data to answer well.
+Reply ONLY "simple" or "enriched".
+Simple: greetings, time, generic questions, single-domain answers.
+Enriched: questions about tasks+emotions, daily summary, cross-module analysis.
+Question: "${message}"`
+
+const intentResult = await model.generateContent(intentPrompt)
+const intent = intentResult.response.text().trim().toLowerCase()
+if (intent === 'simple') {
+  // Bypass ReACT, use direct chat
+  return handleDirectChat(genAI, message, userId, supabaseAdmin)
+}
+// Proceed with ReACT loop...
+```
 
 - [ ] **Step 2: Test locally**
 
