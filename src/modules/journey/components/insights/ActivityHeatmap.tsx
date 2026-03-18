@@ -73,8 +73,8 @@ export function ActivityHeatmap({ data, days = 90, emotions }: ActivityHeatmapPr
   return (
     <div className="ceramic-tile p-4">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-[#5C554B]">Atividade</h4>
-        <span className="text-xs text-[#948D82]">
+        <h4 className="text-sm font-semibold text-ceramic-text-primary">Atividade</h4>
+        <span className="text-xs text-ceramic-text-secondary">
           {totalMoments === 0
             ? `Ultimos ${days} dias`
             : `${totalMoments} momentos em ${activeDays} dias`}
@@ -89,8 +89,7 @@ export function ActivityHeatmap({ data, days = 90, emotions }: ActivityHeatmapPr
               key={`day-${i}`}
               x={0}
               y={i * (cellSize + gap) + cellSize - 2}
-              className="text-[11px]"
-              fill="#948D82"
+              className="text-[11px] fill-ceramic-text-secondary"
             >
               {label}
             </text>
@@ -115,11 +114,11 @@ export function ActivityHeatmap({ data, days = 90, emotions }: ActivityHeatmapPr
 
       {/* Intensity legend */}
       <div className="flex items-center gap-1 mt-3 justify-end">
-        <span className="text-xs text-[#948D82] mr-1">Menos</span>
+        <span className="text-xs text-ceramic-text-secondary mr-1">Menos</span>
         {['#E0DDD5', '#fbbf24', '#d97706', '#b45309', '#92400e'].map((color, i) => (
           <div key={i} className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
         ))}
-        <span className="text-xs text-[#948D82] ml-1">Mais</span>
+        <span className="text-xs text-ceramic-text-secondary ml-1">Mais</span>
       </div>
 
       {/* Emotion summary circles */}

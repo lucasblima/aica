@@ -21,6 +21,36 @@ import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluati
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentService')
 
+// =====================================================
+// CP AWARD SERIALIZATION (P0-2 race condition fix)
+// Prevents concurrent award_consciousness_points RPCs
+// from producing inconsistent CP totals.
+// =====================================================
+let cpAwardInProgress = false
+const cpAwardQueue: Array<() => void> = []
+
+async function serializedCPAward<T>(fn: () => Promise<T>): Promise<T> {
+  if (cpAwardInProgress) {
+    return new Promise<T>((resolve, reject) => {
+      cpAwardQueue.push(async () => {
+        try {
+          resolve(await fn())
+        } catch (e) {
+          reject(e)
+        }
+      })
+    })
+  }
+  cpAwardInProgress = true
+  try {
+    return await fn()
+  } finally {
+    cpAwardInProgress = false
+    const next = cpAwardQueue.shift()
+    if (next) next()
+  }
+}
+
 /**
  * Create a new moment
  */
@@ -67,15 +97,17 @@ export async function createMoment(
     // Award CP (awaited ~50ms to get real leveled_up data)
     const momentId = moment.id
 
-    const { data: cpResult, error: cpError } = await supabase.rpc(
-      'award_consciousness_points',
-      {
-        p_user_id: userId,
-        p_points: qualityResult.cp_earned,
-        p_reason: 'moment_registered',
-        p_reference_id: momentId,
-        p_reference_type: 'moment',
-      }
+    const { data: cpResult, error: cpError } = await serializedCPAward(async () =>
+      await supabase.rpc(
+        'award_consciousness_points',
+        {
+          p_user_id: userId,
+          p_points: qualityResult.cp_earned,
+          p_reason: 'moment_registered',
+          p_reference_id: momentId,
+          p_reference_type: 'moment',
+        }
+      )
     )
 
     if (cpError) {
@@ -91,7 +123,14 @@ export async function createMoment(
         log.warn('update_consciousness_streak failed, trying legacy:', streakError)
         supabase.rpc('update_moment_streak', { p_user_id: userId })
           .then(({ error: legacyErr }) => {
-            if (legacyErr) log.warn('Legacy streak update also failed:', legacyErr)
+            if (legacyErr) {
+              log.error('CRITICAL: Both streak update RPCs failed — user streak may be lost', {
+                userId,
+                momentId: moment.id,
+                primaryError: streakError.message,
+                fallbackError: legacyErr.message,
+              })
+            }
           })
       }
     })

@@ -34,6 +34,53 @@ import { analyzeSentimentWithGemini, generateSentimentInsights } from '@/integra
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentPersistence')
 
+// =====================================================
+// CLIENT-SIDE RATE LIMIT GUARD (P0-3 race condition fix)
+// The DB-level rate limit check (query + insert) is not
+// atomic, so two concurrent requests can both pass.
+// This in-memory guard provides an immediate check
+// before hitting the database.
+// =====================================================
+const recentCreations = new Map<string, number>() // userId -> timestamp
+
+function isClientRateLimited(userId: string): boolean {
+  const lastCreation = recentCreations.get(userId) || 0
+  const now = Date.now()
+  if (now - lastCreation < 1000) return true // 1-second minimum gap
+  recentCreations.set(userId, now)
+  return false
+}
+
+// =====================================================
+// CP AWARD SERIALIZATION (P0-2 race condition fix)
+// Same pattern as momentService.ts — prevents concurrent
+// award_consciousness_points RPCs from this code path too.
+// =====================================================
+let cpAwardInProgress = false
+const cpAwardQueue: Array<() => void> = []
+
+async function serializedCPAward<T>(fn: () => Promise<T>): Promise<T> {
+  if (cpAwardInProgress) {
+    return new Promise<T>((resolve, reject) => {
+      cpAwardQueue.push(async () => {
+        try {
+          resolve(await fn())
+        } catch (e) {
+          reject(e)
+        }
+      })
+    })
+  }
+  cpAwardInProgress = true
+  try {
+    return await fn()
+  } finally {
+    cpAwardInProgress = false
+    const next = cpAwardQueue.shift()
+    if (next) next()
+  }
+}
+
 /**
  * Create a new moment entry with full processing
  *
@@ -60,7 +107,10 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
       log.warn('[momentPersistenceService] Validation warnings:', validationResult.warnings)
     }
 
-    // 2. CHECK RATE LIMITING
+    // 2. CHECK RATE LIMITING (client-side guard first, then DB check)
+    if (isClientRateLimited(validatedInput.userId)) {
+      throw new Error('You are creating moments too quickly. Please wait before creating another.')
+    }
     const rateLimitOk = await checkUserRateLimit(validatedInput.userId)
     if (!rateLimitOk) {
       throw new Error('You are creating moments too quickly. Please wait before creating another.')
@@ -522,14 +572,16 @@ async function awardConsciousnessPoints(
       tags: data.tags,
     })
 
-    // Call database function to award points
-    const { data: result, error } = await supabase.rpc('award_consciousness_points', {
-      p_user_id: userId,
-      p_points: basePoints,
-      p_reason: 'moment_registered',
-      p_reference_id: momentId,
-      p_reference_type: 'moment',
-    })
+    // Call database function to award points (serialized to prevent race conditions)
+    const { data: result, error } = await serializedCPAward(async () =>
+      await supabase.rpc('award_consciousness_points', {
+        p_user_id: userId,
+        p_points: basePoints,
+        p_reason: 'moment_registered',
+        p_reference_id: momentId,
+        p_reference_type: 'moment',
+      })
+    )
 
     if (error) {
       log.error('[momentPersistenceService] Error awarding CP:', error)
