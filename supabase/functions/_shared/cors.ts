@@ -6,6 +6,8 @@
 const ALLOWED_ORIGINS = [
   'https://dev.aica.guru',
   'https://aica.guru',
+  'https://aica-staging-5562559893.southamerica-east1.run.app',
+  'https://aica-5562559893.southamerica-east1.run.app',
 ];
 
 function isAllowedOrigin(origin: string): boolean {
