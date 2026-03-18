@@ -222,7 +222,7 @@ export function useChatSession(): UseChatSessionReturn {
             upcomingEpisodes: ctx.upcomingEpisodes,
             patterns: ctx.patterns,
             latestInsight: ctx.latestInsight,
-            lifeScore: (ctx as Record<string, unknown>).lifeScore,
+            lifeScore: ctx.lifeScore,
           }
         }
       } catch (ctxErr) {
@@ -329,6 +329,7 @@ export function useChatSession(): UseChatSessionReturn {
     setLastFailedMessage(null)
     setShowSessions(false)
     setActiveAgent(null)
+    setConnectionStatus('connected')
   }, [])
 
   const switchSession = useCallback(async (sessionId: string) => {
@@ -342,6 +343,7 @@ export function useChatSession(): UseChatSessionReturn {
       setError(null)
       setLastFailedMessage(null)
       setActiveAgent(null)
+      setConnectionStatus('connected')
     } catch (err) {
       console.error('[useChatSession] Failed to switch session:', sessionId, err)
       setError('Erro ao carregar conversa')
