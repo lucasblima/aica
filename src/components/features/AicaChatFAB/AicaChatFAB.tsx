@@ -79,6 +79,7 @@ export function AicaChatFAB({
     error,
     limitReached,
     limitInfo,
+    suggestedQuestions,
     sendMessage,
     retryLastMessage,
     createNewSession,
@@ -554,6 +555,23 @@ export function AicaChatFAB({
                       )}
                     </div>
                   )
+                )}
+
+                {suggestedQuestions.length > 0 && !isLoading && (
+                  <div className="flex flex-wrap gap-1.5 px-3 py-2">
+                    {suggestedQuestions.map((q, i) => (
+                      <button
+                        key={i}
+                        className="text-[11px] px-2.5 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                        onClick={() => {
+                          setInput('')
+                          sendMessage(q)
+                        }}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 )}
 
                 <div ref={messagesEndRef} />

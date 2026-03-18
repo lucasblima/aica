@@ -180,6 +180,100 @@ describe('chatStreamService', () => {
     })
   })
 
+  describe('streamChat — suggested_questions in done event (phase 2.4)', () => {
+    it('yields suggested_questions from SSE done event', async () => {
+      const sseData = [
+        'data: {"type":"token","content":"Hello"}\n\n',
+        'data: {"type":"done","fullText":"Hello","agent":"aica_coordinator","actions":[],"suggested_questions":["Como vai?","O que mais?"]}\n\n',
+      ].join('')
+
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(sseData))
+          controller.close()
+        },
+      })
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        body: stream,
+        headers: new Headers({ 'content-type': 'text/event-stream' }),
+      })
+
+      const { streamChat } = await import('@/services/chatStreamService')
+
+      const events: unknown[] = []
+      for await (const event of streamChat('session-1', 'test', [])) {
+        events.push(event)
+      }
+
+      expect(events).toHaveLength(2)
+      expect(events[1]).toMatchObject({
+        type: 'done',
+        fullText: 'Hello',
+        suggested_questions: ['Como vai?', 'O que mais?'],
+      })
+    })
+
+    it('yields suggested_questions from non-SSE JSON fallback', async () => {
+      const jsonResponse = {
+        success: true,
+        text: 'Fallback response',
+        agent: 'aica_coordinator',
+        suggestedActions: [],
+        usage: { input: 50, output: 25 },
+        suggested_questions: ['Pergunta 1', 'Pergunta 2', 'Pergunta 3'],
+      }
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        body: new ReadableStream(),
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve(jsonResponse),
+      })
+
+      const { streamChat } = await import('@/services/chatStreamService')
+
+      const events: unknown[] = []
+      for await (const event of streamChat('session-1', 'test', [])) {
+        events.push(event)
+      }
+
+      expect(events).toHaveLength(1)
+      expect(events[0]).toMatchObject({
+        type: 'done',
+        fullText: 'Fallback response',
+        suggested_questions: ['Pergunta 1', 'Pergunta 2', 'Pergunta 3'],
+      })
+    })
+
+    it('omits suggested_questions when not present in non-SSE response', async () => {
+      const jsonResponse = {
+        success: true,
+        text: 'No suggestions here',
+        agent: 'aica_coordinator',
+      }
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        body: new ReadableStream(),
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve(jsonResponse),
+      })
+
+      const { streamChat } = await import('@/services/chatStreamService')
+
+      const events: unknown[] = []
+      for await (const event of streamChat('session-1', 'test', [])) {
+        events.push(event)
+      }
+
+      expect(events).toHaveLength(1)
+      expect((events[0] as Record<string, unknown>).suggested_questions).toBeUndefined()
+    })
+  })
+
   describe('fetchChatNonStreaming — fallback function (fix 0.2)', () => {
     it('returns parsed response from chat_aica action', async () => {
       const jsonResponse = {
@@ -220,6 +314,21 @@ describe('chatStreamService', () => {
       await expect(
         fetchChatNonStreaming('session-1', 'test', [])
       ).rejects.toThrow('Quota exceeded')
+    })
+
+    it('throws Portuguese timeout message on AbortError', async () => {
+      // Simulate an AbortError without fake timers to avoid unhandled rejection timing issues
+      globalThis.fetch = vi.fn().mockImplementation(() => {
+        const err = new Error('The operation was aborted')
+        err.name = 'AbortError'
+        return Promise.reject(err)
+      })
+
+      const { fetchChatNonStreaming } = await import('@/services/chatStreamService')
+
+      await expect(
+        fetchChatNonStreaming('session-1', 'test', [])
+      ).rejects.toThrow('Tempo limite excedido. Tente novamente.')
     })
   })
 })

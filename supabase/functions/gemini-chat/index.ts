@@ -1052,6 +1052,40 @@ function generateSuggestedActions(message: string, rawData: UserContextResult['r
   return actions.slice(0, 3)
 }
 
+// ============================================================================
+// SUGGESTED QUESTIONS GENERATOR (pure function, no async)
+// ============================================================================
+
+function generateSuggestedQuestions(
+  _userMessage: string,
+  _aiResponse: string,
+  module: string,
+  rawData: UserContextResult['rawData']
+): string[] {
+  const questions: string[] = []
+
+  // Context-aware suggestions based on module and data
+  if (module === 'atlas' && rawData.tasks.length > 0) {
+    const today = new Date().toISOString().split('T')[0]
+    const overdue = rawData.tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done')
+    if (overdue.length > 0) questions.push(`Tenho ${overdue.length} tarefa(s) atrasada(s). Pode me ajudar a priorizar?`)
+  }
+  if (module === 'journey') {
+    questions.push('Como estou me sentindo em relação à semana passada?')
+  }
+  if (module === 'finance' && rawData.transactions.length > 0) {
+    questions.push('Qual foi meu maior gasto este mês?')
+  }
+  if (module === 'coordinator') {
+    if (rawData.tasks.length > 0) questions.push('Quais são minhas prioridades para hoje?')
+    if (rawData.moments.length > 0) questions.push('Quais padrões você nota nas minhas reflexões recentes?')
+    if (rawData.events.length > 0) questions.push('O que tenho na agenda para amanhã?')
+  }
+
+  // Always limit to 3 suggestions
+  return questions.slice(0, 3)
+}
+
 async function handleLegacyChat(
   genAI: GoogleGenerativeAI,
   request: ChatRequest & { module?: string },
@@ -2598,10 +2632,15 @@ Analise a mensagem do usuário e classifique em UM dos módulos:
 - agenda: reuniões, eventos, calendário, horários, compromissos, agendamentos
 - coordinator: conversa geral sem módulo específico, ou envolve múltiplos módulos
 
+## Detecção de Intenção de Entrevista
+Se o usuário expressar desejo de registrar algo pessoal, reflexão, ou momento (ex: "quero registrar um momento", "preciso desabafar", "como me sinto hoje"), classifique como module="journey" E retorne interview_intent="register_moment".
+Se o usuário pedir a pergunta do dia ou algo similar (ex: "me faça uma pergunta", "pergunta do dia"), retorne interview_intent="daily_question".
+Caso contrário, interview_intent deve ser null.
+
 ${userPatterns ? `Padrões conhecidos do usuário: ${userPatterns.join(', ')}` : ''}
 
 Retorne APENAS JSON válido:
-{ "module": "nome_do_modulo", "confidence": 0.0-1.0, "action_hint": "breve descrição da ação detectada", "reasoning": "justificativa curta da classificação" }`;
+{ "module": "nome_do_modulo", "confidence": 0.0-1.0, "action_hint": "breve descrição da ação detectada", "reasoning": "justificativa curta da classificação", "interview_intent": "register_moment" | "daily_question" | null }`;
 
   const contents = [];
 
@@ -2680,6 +2719,7 @@ Retorne APENAS JSON válido:
       confidence: Math.min(classification.confidence || 0.5, 1.0),
       action_hint: classification.action_hint || '',
       reasoning: classification.reasoning || '',
+      interview_intent: classification.interview_intent || null,
     },
   };
 }
@@ -2878,11 +2918,12 @@ serve(async (req) => {
 
           // Phase 4: Check for interview mode trigger from frontend CTAs
           const interviewMeta = payload?.interview as { type: string; intent: string } | undefined
-          const isInterviewMode = interviewMeta?.type === 'interview_start'
+          let isInterviewMode = interviewMeta?.type === 'interview_start'
 
           // Phase 3: Detect module via intent classification (fast, low tokens)
           let streamModule = payload?.module || 'coordinator'
           let detectedAgent = 'aica_coordinator'
+          let detectedInterviewIntent: string | null = null
 
           if (isInterviewMode) {
             // Interview mode routes to journey for moment registration, or coordinator for others
@@ -2904,6 +2945,14 @@ serve(async (req) => {
                   streamModule = cls.module
                   detectedAgent = `aica_${cls.module}`
                   console.log(`[chat_aica_stream] Detected module: ${cls.module} (confidence: ${cls.confidence})`)
+                }
+                // Natural language detected interview intent — activate interview mode
+                if (cls.interview_intent && !isInterviewMode) {
+                  isInterviewMode = true
+                  detectedInterviewIntent = cls.interview_intent
+                  streamModule = 'journey'
+                  detectedAgent = 'aica_interviewer'
+                  console.log(`[chat_aica_stream] Natural interview intent detected: ${cls.interview_intent}`)
                 }
               }
             } catch (e) {
@@ -2928,8 +2977,9 @@ serve(async (req) => {
           let agentConfig: { prompt: string; temperature: number; maxOutputTokens: number }
 
           if (isInterviewMode) {
+            const interviewIntent = interviewMeta?.intent || detectedInterviewIntent || 'register_moment'
             agentConfig = {
-              prompt: INTERVIEWER_SYSTEM_PROMPT(interviewMeta!.intent),
+              prompt: INTERVIEWER_SYSTEM_PROMPT(interviewIntent),
               temperature: 0.7,
               maxOutputTokens: 4096,
             }
@@ -2988,12 +3038,14 @@ serve(async (req) => {
             const nonStreamResult = await streamChat.sendMessage(streamFinalMessage)
             const nonStreamText = nonStreamResult.response.text()
             const fallbackActions = generateSuggestedActions(streamMessage, streamRawData)
+            const fallbackQuestions = generateSuggestedQuestions(streamMessage, nonStreamText, streamModule, streamRawData)
             const fallbackUsage = nonStreamResult.response.usageMetadata
             return new Response(JSON.stringify({
               success: true,
               text: nonStreamText,
               agent: detectedAgent,
               suggestedActions: fallbackActions,
+              suggested_questions: fallbackQuestions,
               usage: { input: fallbackUsage?.promptTokenCount || 0, output: fallbackUsage?.candidatesTokenCount || 0 },
             }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
           }
@@ -3018,8 +3070,9 @@ serve(async (req) => {
                   }
                 }
 
-                // Generate suggested actions
+                // Generate suggested actions and follow-up questions
                 const streamActions = generateSuggestedActions(streamMessage, streamRawData)
+                const streamQuestions = generateSuggestedQuestions(streamMessage, fullText, streamModule, streamRawData)
 
                 // Get usage metadata safely
                 try {
@@ -3034,6 +3087,7 @@ serve(async (req) => {
                   fullText,
                   agent: detectedAgent,
                   actions: streamActions,
+                  suggested_questions: streamQuestions,
                   usage: { input: usageMeta?.promptTokenCount || 0, output: usageMeta?.candidatesTokenCount || 0 },
                 })}\n\n`))
               } catch (streamError) {
@@ -3055,6 +3109,32 @@ serve(async (req) => {
                     console.warn(`[chat_aica_stream] Failed to log interaction: ${err.message}`)
                   })
                 }
+
+                // Fire-and-forget: save conversation pair for pattern learning
+                if (userId && supabaseAdminStream && fullText) {
+                  const patternKey = `chat_${streamModule}_latest`
+                  supabaseAdminStream
+                    .from('user_patterns')
+                    .upsert({
+                      user_id: userId,
+                      pattern_type: 'routine',
+                      pattern_key: patternKey,
+                      description: `Última conversa no módulo ${streamModule}: "${streamMessage.substring(0, 100)}"`,
+                      evidence: [JSON.stringify({
+                        module: streamModule,
+                        message_preview: streamMessage.substring(0, 200),
+                        response_preview: fullText.substring(0, 200),
+                        detected_at: new Date().toISOString(),
+                      })],
+                      confidence_score: 0.50,
+                      is_active: true,
+                      updated_at: new Date().toISOString(),
+                    }, { onConflict: 'user_id,pattern_key' })
+                    .then(({ error: patternErr }: { error: any }) => {
+                      if (patternErr) console.warn('[chat_aica_stream] Pattern save failed:', patternErr.message)
+                    })
+                }
+
                 controller.close()
               }
             },
@@ -3068,6 +3148,16 @@ serve(async (req) => {
               'Connection': 'keep-alive',
             },
           })
+        }
+        case 'generate_title': {
+          const titleMessage = payload?.message || ''
+          const titleResponse = (payload?.response || '').substring(0, 200)
+          const titlePrompt = `Gere um titulo curto (max 40 caracteres) em portugues para esta conversa. Responda APENAS com o titulo, sem aspas.\n\nUsuario: ${titleMessage}\nAssistente: ${titleResponse}`
+          const titleModel = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.3, maxOutputTokens: 256 } })
+          const titleResult = await titleModel.generateContent(titlePrompt)
+          const generatedTitle = titleResult.response.text().trim().substring(0, 60)
+          result = { success: true, title: generatedTitle }
+          break
         }
         case 'analyze_content_realtime':
           result = await handleAnalyzeContentRealtime(genAI, payload)
