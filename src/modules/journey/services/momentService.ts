@@ -21,6 +21,20 @@ import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluati
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentService')
 
+// P0-2: Shared singleton mutex for CP award serialization
+import { serializedCPAward } from './cpAwardLock'
+
+// P0-3: Client-side rate limit guard (same pattern as momentPersistenceService)
+const recentCreations = new Map<string, number>()
+
+function isClientRateLimited(userId: string): boolean {
+  const lastCreation = recentCreations.get(userId) || 0
+  const now = Date.now()
+  if (now - lastCreation < 1000) return true
+  recentCreations.set(userId, now)
+  return false
+}
+
 /**
  * Create a new moment
  */
@@ -29,6 +43,11 @@ export async function createMoment(
   input: CreateMomentInput
 ): Promise<MomentWithCP> {
   try {
+    // P0-3: Client-side rate limit check
+    if (isClientRateLimited(userId)) {
+      log.warn('Client-side rate limit hit for user', { userId })
+      throw new Error('Rate limited: please wait before creating another moment')
+    }
     // Transcribe áudio if provided (must complete before insert)
     let finalContent = input.content
     let momentType: 'text' | 'audio' = input.type || 'text'
@@ -67,15 +86,17 @@ export async function createMoment(
     // Award CP (awaited ~50ms to get real leveled_up data)
     const momentId = moment.id
 
-    const { data: cpResult, error: cpError } = await supabase.rpc(
-      'award_consciousness_points',
-      {
-        p_user_id: userId,
-        p_points: qualityResult.cp_earned,
-        p_reason: 'moment_registered',
-        p_reference_id: momentId,
-        p_reference_type: 'moment',
-      }
+    const { data: cpResult, error: cpError } = await serializedCPAward(async () =>
+      await supabase.rpc(
+        'award_consciousness_points',
+        {
+          p_user_id: userId,
+          p_points: qualityResult.cp_earned,
+          p_reason: 'moment_registered',
+          p_reference_id: momentId,
+          p_reference_type: 'moment',
+        }
+      )
     )
 
     if (cpError) {
@@ -91,7 +112,14 @@ export async function createMoment(
         log.warn('update_consciousness_streak failed, trying legacy:', streakError)
         supabase.rpc('update_moment_streak', { p_user_id: userId })
           .then(({ error: legacyErr }) => {
-            if (legacyErr) log.warn('Legacy streak update also failed:', legacyErr)
+            if (legacyErr) {
+              log.error('CRITICAL: Both streak update RPCs failed — user streak may be lost', {
+                userId,
+                momentId: moment.id,
+                primaryError: streakError.message,
+                fallbackError: legacyErr.message,
+              })
+            }
           })
       }
     })
