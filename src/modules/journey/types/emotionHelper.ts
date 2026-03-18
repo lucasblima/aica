@@ -19,10 +19,11 @@ export interface EmotionDisplay {
 
 const DEFAULT_EMOTION: EmotionDisplay = { emoji: '📝', label: 'Momento', value: '' }
 
-// Build lookup maps once
-const byValue = new Map(AVAILABLE_EMOTIONS.map(e => [e.value, e]))
-const byName = new Map(AVAILABLE_EMOTIONS.map(e => [e.name.toLowerCase(), e]))
-const byEmoji = new Map(AVAILABLE_EMOTIONS.map(e => [e.emoji, e]))
+// Build lookup maps once (typed with string keys for flexible lookup)
+type EmotionEntry = typeof AVAILABLE_EMOTIONS[number]
+const byValue = new Map<string, EmotionEntry>(AVAILABLE_EMOTIONS.map(e => [e.value, e]))
+const byName = new Map<string, EmotionEntry>(AVAILABLE_EMOTIONS.map(e => [e.name.toLowerCase(), e]))
+const byEmoji = new Map<string, EmotionEntry>(AVAILABLE_EMOTIONS.map(e => [e.emoji, e]))
 
 /**
  * Resolve any stored emotion format to { emoji, label, value }.
