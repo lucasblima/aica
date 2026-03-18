@@ -15,6 +15,7 @@ export async function handleStreamChat(
   corsHeaders: Record<string, string>,
   apiKey: string
 ): Promise<Response> {
+  const requestStartMs = Date.now()
   const streamMessage = payload?.message
   if (!streamMessage) throw new Error('Mensagem e obrigatoria')
 
@@ -139,6 +140,8 @@ export async function handleStreamChat(
     const fallbackActions = generateSuggestedActions(streamMessage, streamRawData)
     const fallbackQuestions = generateSuggestedQuestions(streamMessage, nonStreamText, streamModule, streamRawData)
     const fallbackUsage = nonStreamResult.response.usageMetadata
+    const fallbackLatencyMs = Date.now() - requestStartMs
+    console.log(`[chat_aica_stream] METRIC user=${userId} module=${streamModule} latency=${fallbackLatencyMs}ms streaming=false fallback=true tokens_in=${fallbackUsage?.promptTokenCount || 0} tokens_out=${fallbackUsage?.candidatesTokenCount || 0}`)
     return new Response(JSON.stringify({
       success: true,
       text: nonStreamText,
@@ -195,6 +198,12 @@ export async function handleStreamChat(
           message: (streamError as Error).message || 'Erro no streaming',
         })}\n\n`))
       } finally {
+        const latencyMs = Date.now() - requestStartMs
+        const streamingSuccess = fullText.length > 0
+
+        // Structured metric log for observability
+        console.log(`[chat_aica_stream] METRIC user=${userId} module=${streamModule} latency=${latencyMs}ms streaming=${streamingSuccess} tokens_in=${usageMeta?.promptTokenCount || 0} tokens_out=${usageMeta?.candidatesTokenCount || 0}`)
+
         // Fire-and-forget: log interaction with real token counts from stream
         if (userId && supabaseAdmin) {
           supabaseAdmin.rpc('log_interaction', {
