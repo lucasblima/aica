@@ -35,6 +35,7 @@ export interface UseChatSessionReturn {
   error: string | null
   limitReached: boolean
   limitInfo: InteractionLimitResult | null
+  suggestedQuestions: string[]
   sendMessage: (text: string, interviewMeta?: InterviewMeta) => Promise<void>
   retryLastMessage: () => Promise<void>
   createNewSession: () => void
@@ -69,6 +70,7 @@ export function useChatSession(): UseChatSessionReturn {
   const [showSessions, setShowSessions] = useState(false)
   const [activeAgent, setActiveAgent] = useState<string | null>(null)
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'degraded' | 'offline'>('connected')
   const initRef = useRef(false)
 
@@ -118,6 +120,7 @@ export function useChatSession(): UseChatSessionReturn {
     agent: string
     actions: ChatAction[]
     usage?: { input: number; output: number }
+    suggestedQuestions: string[]
   }> => {
     setIsStreaming(true)
     setStreamedText('')
@@ -126,6 +129,7 @@ export function useChatSession(): UseChatSessionReturn {
     let agent = 'aica_coordinator'
     let actions: ChatAction[] = []
     let usage: { input: number; output: number } | undefined
+    let suggestedQs: string[] = []
 
     for await (const event of streamChat(sessionId, message, history, context, interviewMeta)) {
       if (event.type === 'token') {
@@ -136,6 +140,7 @@ export function useChatSession(): UseChatSessionReturn {
         agent = event.agent || 'aica_coordinator'
         actions = Array.isArray(event.actions) ? event.actions as ChatAction[] : []
         usage = event.usage
+        suggestedQs = Array.isArray(event.suggested_questions) ? event.suggested_questions as string[] : []
       } else if (event.type === 'agent_detected') {
         agent = event.agent
         setActiveAgent(event.agent)
@@ -148,7 +153,7 @@ export function useChatSession(): UseChatSessionReturn {
       throw new Error('Empty streaming response')
     }
 
-    return { text: fullText, agent, actions, usage }
+    return { text: fullText, agent, actions, usage, suggestedQuestions: suggestedQs }
   }, [])
 
   const sendMessage = useCallback(async (text: string, interviewMeta?: InterviewMeta) => {
@@ -157,6 +162,7 @@ export function useChatSession(): UseChatSessionReturn {
 
     // Don't clear error eagerly — only clear on success
     setLimitReached(false)
+    setSuggestedQuestions([])
     setIsLoading(true)
 
     try {
@@ -255,6 +261,7 @@ export function useChatSession(): UseChatSessionReturn {
         responseActions = streamResult.actions
         tokensInput = streamResult.usage?.input
         tokensOutput = streamResult.usage?.output
+        setSuggestedQuestions(streamResult.suggestedQuestions || [])
         setConnectionStatus('connected')
       } catch (streamErr) {
         // Streaming failed — fallback to non-streaming chat_aica
@@ -275,6 +282,7 @@ export function useChatSession(): UseChatSessionReturn {
         responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
         tokensInput = fallbackResult.usage?.input
         tokensOutput = fallbackResult.usage?.output
+        setSuggestedQuestions([])
         setConnectionStatus('degraded')
       }
 
@@ -298,6 +306,26 @@ export function useChatSession(): UseChatSessionReturn {
         actions: responseActions,
       }])
       setActiveAgent(respondingAgent)
+
+      // Generate AI title for new sessions (fire-and-forget)
+      if (currentSession && messages.length <= 1) {
+        supabase.functions.invoke('gemini-chat', {
+          body: {
+            action: 'generate_title',
+            payload: {
+              message: trimmed,
+              response: finalText,
+            },
+          },
+        }).then(async (resp) => {
+          if (resp.data?.success && resp.data?.title) {
+            const newTitle = resp.data.title
+            await chatService.updateSessionTitle(currentSession!.id, newTitle)
+            setSession(prev => prev ? { ...prev, title: newTitle } : prev)
+            setSessions(prev => prev.map(s => s.id === currentSession!.id ? { ...s, title: newTitle } : s))
+          }
+        }).catch(err => console.warn('[useChatSession] Title generation failed:', err))
+      }
 
       // Clear error and failed message on success
       setError(null)
@@ -327,6 +355,7 @@ export function useChatSession(): UseChatSessionReturn {
     setMessages([])
     setError(null)
     setLastFailedMessage(null)
+    setSuggestedQuestions([])
     setShowSessions(false)
     setActiveAgent(null)
     setConnectionStatus('connected')
@@ -342,6 +371,7 @@ export function useChatSession(): UseChatSessionReturn {
       setShowSessions(false)
       setError(null)
       setLastFailedMessage(null)
+      setSuggestedQuestions([])
       setActiveAgent(null)
       setConnectionStatus('connected')
     } catch (err) {
@@ -381,6 +411,7 @@ export function useChatSession(): UseChatSessionReturn {
     error,
     limitReached,
     limitInfo,
+    suggestedQuestions,
     sendMessage,
     retryLastMessage,
     createNewSession,
