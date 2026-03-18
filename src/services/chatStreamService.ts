@@ -11,8 +11,8 @@
 
 import { getCachedSession } from '@/services/authCacheService'
 
-/** Timeout for the streaming fetch (30 seconds) */
-const STREAM_TIMEOUT_MS = 30_000
+/** Timeout for the streaming fetch (60 seconds — Edge Function needs ~10-15s for context + Gemini) */
+const STREAM_TIMEOUT_MS = 60_000
 
 export interface TokenEvent {
   type: 'token'

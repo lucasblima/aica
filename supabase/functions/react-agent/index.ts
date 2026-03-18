@@ -347,7 +347,7 @@ Question: "${message}"`,
         model: MODELS[model],
         generationConfig: {
           temperature: model === 'fast' ? 0.3 : 0.5,
-          maxOutputTokens: 4096,
+          maxOutputTokens: model === 'fast' ? 4096 : 8192,
         },
       })
       const result = await m.generateContent(prompt)

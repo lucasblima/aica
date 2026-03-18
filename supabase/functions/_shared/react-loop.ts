@@ -220,13 +220,15 @@ export async function runReactLoop(
     try {
       parsed = extractJSON<GeminiStepResponse>(modelResponse.text)
     } catch {
-      // If JSON parsing fails, treat as error and break
+      // JSON parsing failed — Gemini responded in plain text instead of JSON.
+      // Use the raw text as the final answer (it's likely a valid response, just not structured).
+      const rawText = modelResponse.text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
       return {
-        finalAnswer: `Error: Could not parse model response. Raw: ${modelResponse.text.substring(0, 200)}`,
+        finalAnswer: rawText || 'Desculpe, não consegui processar a resposta.',
         steps,
         model: usedModel,
         tokens: totalTokens,
-        confidence: 0,
+        confidence: assessConfidence(rawText, false),
         wasEscalated: false,
       }
     }
