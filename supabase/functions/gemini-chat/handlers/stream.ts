@@ -1,11 +1,10 @@
 // handlers/stream.ts — SSE streaming chat handler (permanent)
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.21.0'
 import { MODELS, getDateContext } from '../../_shared/gemini-helpers.ts'
-import { buildUserContext, generateSuggestedActions } from '../../_shared/context-builder.ts'
+import { buildUserContext, generateSuggestedActions, generateSuggestedQuestions } from '../../_shared/context-builder.ts'
 import { AGENT_SYSTEM_PROMPTS, VALID_AGENTS, INTERVIEWER_SYSTEM_PROMPT } from '../../_shared/agent-prompts.ts'
 import type { UserContextResult } from '../../_shared/gemini-types.ts'
-import { handleClassifyIntent } from './actions.ts'
-import { generateSuggestedQuestions } from './chat.ts'
+import { classifyIntent } from '../../_shared/intent-classifier.ts'
 
 export async function handleStreamChat(
   genAI: GoogleGenerativeAI,
@@ -38,7 +37,7 @@ export async function handleStreamChat(
     console.log(`[chat_aica_stream] Interview mode: intent=${interviewIntent}, module=${streamModule}`)
   } else if (!payload?.module) {
     try {
-      const classifyResult = await handleClassifyIntent(
+      const classifyResult = await classifyIntent(
         { message: streamMessage, history: payload?.history },
         apiKey
       )

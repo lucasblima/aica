@@ -1,3 +1,31 @@
+// ==========================================================================
+// gemini-chat — Thin router for all AI-powered chat and module actions
+//
+// Architecture:
+//   index.ts           → Router (this file): parses request, routes to handler
+//   handlers/           → Route handlers (one per domain concern):
+//     stream.ts         → SSE streaming chat (primary chat path)
+//     chat.ts           → Legacy non-streaming chat
+//     agent-chat.ts     → Module-specific agent conversations
+//     actions.ts        → Chat action execution (complete task, create moment, etc.)
+//     whatsapp.ts       → WhatsApp sentiment analysis
+//     *-temp.ts         → Temporary module handlers (to be migrated to dedicated Edge Functions)
+//   _shared/            → Pure functions shared across ALL Edge Functions:
+//     context-builder.ts  → buildUserContext, generateSuggestedActions, generateSuggestedQuestions
+//     intent-classifier.ts → classifyIntent (module detection from message)
+//     agent-prompts.ts     → System prompts per module agent
+//     gemini-helpers.ts    → Model constants, date context, JWT extraction
+//     gemini-types.ts      → TypeScript types for all payloads
+//     model-router.ts      → callAI with complexity cascade, extractJSON
+//     cors.ts              → CORS header handling
+//     health-tracker.ts    → Health tracking wrapper
+//
+// Rules:
+//   - Handlers NEVER import from other handlers (use _shared/ as intermediary)
+//   - All Gemini API calls use gemini-2.5-flash (fast) or gemini-2.5-pro (smart)
+//   - Usage tracking is fire-and-forget (non-blocking)
+// ==========================================================================
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
