@@ -15,7 +15,7 @@
  */
 
 import { supabase } from './supabaseClient';
-import { gamificationService } from './gamificationService';
+import { addXP as gamificationAddXP } from './gamificationService';
 import { notificationService } from './notificationService';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -319,8 +319,7 @@ export class FeedbackLoopService {
       const { data: feedbackRecords, error } = await supabase
         .from('user_module_feedback')
         .select('module_id')
-        .eq('user_id', userId)
-        .distinct();
+        .eq('user_id', userId);
 
       if (error) throw error;
 
@@ -489,9 +488,10 @@ export class FeedbackLoopService {
       }
 
       // Award points
-      const { newLevel, levelUpBonus } = await gamificationService.addXp(userId, xpAwarded);
+      const gameProfile = await gamificationAddXP(userId, xpAwarded);
+      const newLevel = gameProfile.level;
 
-      this.logger.log(`Awarded ${xpAwarded} XP to user`, { newLevel, levelUpBonus });
+      this.logger.log(`Awarded ${xpAwarded} XP to user`, { newLevel });
 
       // Check for achievements
       const preferences = await this.getUserPreferences(userId);
@@ -521,7 +521,6 @@ export class FeedbackLoopService {
         xpAwarded,
         achievement_unlocked: achievementUnlocked,
         newLevel,
-        levelUpBonus,
       };
     } catch (error) {
       this.logger.error('Failed to handle module completion', error);
@@ -769,7 +768,7 @@ export class FeedbackLoopService {
   private async awardFeedbackPoints(userId: string, moduleId: string, feedbackType: string) {
     try {
       if (feedbackType === 'accepted') {
-        await gamificationService.addXp(userId, GAMIFICATION_REWARDS.ACCEPT_RECOMMENDATION);
+        await gamificationAddXP(userId, GAMIFICATION_REWARDS.ACCEPT_RECOMMENDATION);
       }
     } catch (error) {
       this.logger.error('Failed to award feedback points', error);
@@ -808,9 +807,8 @@ export class FeedbackLoopService {
   private async notifyFeedbackReceived(userId: string, feedbackType: string, moduleId: string) {
     try {
       if (feedbackType === 'accepted') {
-        await notificationService.send({
-          userId,
-          type: 'recommendation_accepted',
+        notificationService.show({
+          type: 'info',
           title: 'Great choice!',
           message: 'You accepted a module recommendation. Keep up the learning!',
           icon: '👍',
@@ -830,13 +828,11 @@ export class FeedbackLoopService {
     details: any
   ) {
     try {
-      await notificationService.send({
-        userId,
-        type: 'module_completed',
+      notificationService.show({
+        type: 'achievement',
         title: 'Module Completed!',
         message: `Congratulations! You earned ${details.xpAwarded} XP.`,
         icon: '🎉',
-        metadata: details,
       });
     } catch (error) {
       this.logger.error('Failed to send completion notification', error);

@@ -9,6 +9,7 @@ import { trackAIUsage } from '@/services/aiUsageTrackingService'
 import { createNamespacedLogger } from '@/lib/logger'
 import {
   Moment,
+  MomentType,
   CreateMomentInput,
   MomentWithCP,
   MomentFilter,
@@ -50,7 +51,7 @@ export async function createMoment(
     }
     // Transcribe áudio if provided (must complete before insert)
     let finalContent = input.content
-    let momentType: 'text' | 'audio' = input.type || 'text'
+    let momentType: MomentType = input.type || 'text'
     if (input.audioBlob && input.audioBlob.size > 0) {
       const transcription = await transcribeAudio(input.audioBlob)
       finalContent = finalContent ? `${finalContent}\n\n${transcription}` : transcription

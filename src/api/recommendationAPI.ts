@@ -378,8 +378,7 @@ async function getCompletedModules(userId: string): Promise<string[]> {
       .from('module_feedback')
       .select('module_id')
       .eq('user_id', userId)
-      .eq('action', 'completed')
-      .distinct();
+      .eq('action', 'completed');
 
     if (error) throw error;
 

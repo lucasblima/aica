@@ -55,7 +55,7 @@ export function SlideCanvas({
   const currentSlide = slides[currentSlideIndex];
 
   // Calculate zoom levels
-  const currentZoomIndex = ZOOM_LEVELS.indexOf(zoom);
+  const currentZoomIndex = (ZOOM_LEVELS as readonly number[]).indexOf(zoom);
   const canZoomIn = currentZoomIndex < ZOOM_LEVELS.length - 1;
   const canZoomOut = currentZoomIndex > 0;
 
@@ -77,18 +77,18 @@ export function SlideCanvas({
 
   const handleZoomIn = () => {
     if (canZoomIn) {
-      onZoomChange(ZOOM_LEVELS[currentZoomIndex + 1]);
+      onZoomChange(ZOOM_LEVELS[currentZoomIndex + 1] as typeof ZOOM_LEVELS[number]);
     }
   };
 
   const handleZoomOut = () => {
     if (canZoomOut) {
-      onZoomChange(ZOOM_LEVELS[currentZoomIndex - 1]);
+      onZoomChange(ZOOM_LEVELS[currentZoomIndex - 1] as typeof ZOOM_LEVELS[number]);
     }
   };
 
   const handleZoomFit = () => {
-    onZoomChange(1);
+    onZoomChange(1 as typeof ZOOM_LEVELS[number]);
   };
 
   // Handle slide content update

@@ -85,14 +85,14 @@ export function useConsciousnessPoints() {
  */
 export function useCPLog(limit: number = 50) {
   const { user } = useAuth()
-  const [log, setLog] = useState<ConsciousnessPointsLog[]>([])
+  const [cpLog, setCpLog] = useState<ConsciousnessPointsLog[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
   const fetchLog = useCallback(async () => {
     if (!user?.id) {
       // Reset to safe defaults when user is null/undefined
-      setLog([])
+      setCpLog([])
       setError(null)
       setIsLoading(false)
       return
@@ -103,13 +103,13 @@ export function useCPLog(limit: number = 50) {
       setError(null)
 
       const fetchedLog = await getCPLog(user.id, limit)
-      setLog(fetchedLog)
+      setCpLog(fetchedLog)
     } catch (err) {
-      const error = err as Error
-      setError(error)
+      const caughtError = err as Error
+      setError(caughtError)
       // Reset to safe defaults on error
-      setLog([])
-      log.error('Error fetching CP log:', error)
+      setCpLog([])
+      log.error('Error fetching CP log:', caughtError)
     } finally {
       // ALWAYS set loading to false
       setIsLoading(false)
@@ -124,7 +124,7 @@ export function useCPLog(limit: number = 50) {
   }, [user?.id, limit])
 
   return {
-    log,
+    log: cpLog,
     isLoading,
     error,
     refresh: fetchLog,

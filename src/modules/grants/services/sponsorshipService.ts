@@ -424,7 +424,8 @@ export async function recordPayment(
   if (fetchError) throw fetchError;
 
   const newPaidValue = (current.paid_value || 0) + amount;
-  const targetValue = current.negotiated_value || current.tier?.value || 0;
+  const tier = Array.isArray(current.tier) ? current.tier[0] : current.tier;
+  const targetValue = current.negotiated_value || tier?.value || 0;
 
   // Determinar novo status baseado no pagamento
   let newStatus: SponsorStatus = 'payment_partial';
@@ -651,13 +652,18 @@ export async function getProjectSponsorshipContext(
 
     if (CONFIRMED_SPONSOR_STATUSES.includes(status)) {
       confirmedSponsors++;
-      confirmedValue += sponsor.negotiated_value || sponsor.tier?.value || 0;
+      const sTier = Array.isArray(sponsor.tier) ? sponsor.tier[0] : sponsor.tier;
+      confirmedValue += sponsor.negotiated_value || sTier?.value || 0;
     }
   }
 
   const capturedValue = project.captured_value || 0;
   const captureGoal = project.capture_goal || 0;
   const capturePercentage = captureGoal > 0 ? (capturedValue / captureGoal) * 100 : 0;
+
+  const incentiveLaw = Array.isArray(project.incentive_law) ? project.incentive_law[0] : project.incentive_law;
+  const proponent = Array.isArray(project.proponent) ? project.proponent[0] : project.proponent;
+  const executor = Array.isArray(project.executor) ? project.executor[0] : project.executor;
 
   return {
     project_id: project.id,
@@ -667,9 +673,9 @@ export async function getProjectSponsorshipContext(
     approval_number: project.approval_number,
     validity_start: project.validity_start,
     validity_end: project.validity_end,
-    incentive_law: project.incentive_law,
-    proponent: project.proponent,
-    executor: project.executor,
+    incentive_law: incentiveLaw ?? null,
+    proponent: proponent ?? null,
+    executor: executor ?? null,
     capture_status: project.capture_status || 'not_started',
     capture_goal: captureGoal,
     capture_deadline: project.capture_deadline,
@@ -709,7 +715,8 @@ export async function getCapturedByStatus(
 
   for (const sponsor of sponsors || []) {
     const status = sponsor.status as SponsorStatus;
-    const value = sponsor.negotiated_value || sponsor.tier?.value || 0;
+    const sTier = Array.isArray(sponsor.tier) ? sponsor.tier[0] : sponsor.tier;
+    const value = sponsor.negotiated_value || sTier?.value || 0;
     byStatus[status] = (byStatus[status] || 0) + value;
   }
 

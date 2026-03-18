@@ -12,7 +12,6 @@ if (SENTRY_DSN) {
     tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0.5,
-    autoSessionTracking: true,
     beforeSend(event) {
       // Strip PII from breadcrumbs
       if (event.breadcrumbs) {

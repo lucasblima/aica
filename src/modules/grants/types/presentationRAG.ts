@@ -8,7 +8,7 @@
  * @module modules/grants/types/presentationRAG
  */
 
-import { SlideType, TemplateId } from './presentation';
+import { SlideType, TemplateType as TemplateId } from './presentation';
 
 // =============================================================================
 // TARGET AUDIENCE & FOCUS

@@ -7,5 +7,5 @@
 import { AicaChatFAB } from '@/components/features/AicaChatFAB'
 
 export default function ChatPage() {
-  return <AicaChatFAB mode="fullpage" />
+  return <AicaChatFAB />
 }

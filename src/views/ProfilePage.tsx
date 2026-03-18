@@ -19,13 +19,14 @@ import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('ProfilePage');
 
 interface ProfilePageProps {
-  userId: string;
+  userId?: string;
   userEmail?: string;
 }
 
 type ProfileTab = 'profile' | 'trails' | 'settings';
 
-export function ProfilePage({ userId, userEmail }: ProfilePageProps) {
+export function ProfilePage({ userId: propUserId, userEmail }: ProfilePageProps) {
+  const userId = propUserId || '';
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
   const { location, isLoading: locationLoading } = useUserLocation();

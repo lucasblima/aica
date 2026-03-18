@@ -103,12 +103,13 @@ export async function listCorpora(
 
       return (data || []).map(row => ({
         id: row.id,
+        user_id: row.user_id,
         name: row.corpus_name,
-        displayName: row.display_name || row.corpus_name,
-        documentCount: row.document_count || 0,
-        createdAt: row.created_at,
-        moduleType: row.module_type,
-        moduleId: row.module_id,
+        display_name: row.display_name || row.corpus_name,
+        document_count: row.document_count || 0,
+        created_at: row.created_at,
+        module_type: row.module_type,
+        module_id: row.module_id,
       }));
     } catch (error) {
       log.error('[fileSearchApiClient] Error listing corpora from Supabase:', { error: error });
@@ -172,12 +173,13 @@ export async function createCorpus(
         log.debug('[fileSearchApiClient] Corpus already exists, returning existing:', name);
         return {
           id: existingCorpus.id,
+          user_id: existingCorpus.user_id,
           name: existingCorpus.corpus_name,
-          displayName: existingCorpus.display_name || existingCorpus.corpus_name,
-          documentCount: existingCorpus.document_count || 0,
-          createdAt: existingCorpus.created_at,
-          moduleType: existingCorpus.module_type,
-          moduleId: existingCorpus.module_id,
+          display_name: existingCorpus.display_name || existingCorpus.corpus_name,
+          document_count: existingCorpus.document_count || 0,
+          created_at: existingCorpus.created_at,
+          module_type: existingCorpus.module_type,
+          module_id: existingCorpus.module_id,
         };
       }
 
@@ -209,12 +211,13 @@ export async function createCorpus(
           if (existing) {
             return {
               id: existing.id,
+              user_id: existing.user_id,
               name: existing.corpus_name,
-              displayName: existing.display_name || existing.corpus_name,
-              documentCount: existing.document_count || 0,
-              createdAt: existing.created_at,
-              moduleType: existing.module_type,
-              moduleId: existing.module_id,
+              display_name: existing.display_name || existing.corpus_name,
+              document_count: existing.document_count || 0,
+              created_at: existing.created_at,
+              module_type: existing.module_type,
+              module_id: existing.module_id,
             };
           }
         }
@@ -223,12 +226,13 @@ export async function createCorpus(
 
       return {
         id: data.id,
+        user_id: data.user_id,
         name: data.corpus_name,
-        displayName: data.display_name || data.corpus_name,
-        documentCount: 0,
-        createdAt: data.created_at,
-        moduleType: data.module_type,
-        moduleId: data.module_id,
+        display_name: data.display_name || data.corpus_name,
+        document_count: 0,
+        created_at: data.created_at,
+        module_type: data.module_type,
+        module_id: data.module_id,
       };
     } catch (error) {
       log.error('[fileSearchApiClient] Error creating corpus in Supabase:', { error: error });
@@ -341,7 +345,7 @@ export async function indexDocument(
     trackAIUsage({
       operation_type: 'embedding',
       ai_model: 'text-embedding-004', // Gemini embeddings for semantic indexing
-      module_type: request.module_type,
+      module_type: request.module_type as import('@/types/aiCost').ModuleType,
       module_id: request.module_id,
       duration_seconds: duration,
       request_metadata: {
@@ -358,16 +362,17 @@ export async function indexDocument(
     // Convert Edge Function response to FileSearchDocument format
     return {
       id: result.id,
-      name: result.geminiFileName,
-      displayName: request.metadata?.display_name || request.file.name,
-      corpusId: request.corpus_id,
-      mimeType: request.file.type,
-      sizeBytes: request.file.size,
-      status: result.status,
-      createdAt: new Date().toISOString(),
-      moduleType: request.module_type,
-      moduleId: request.module_id,
-      metadata: request.metadata,
+      user_id: '', // Will be set by the server
+      gemini_file_id: result.geminiFileName || '',
+      file_name: request.file.name,
+      corpus_id: request.corpus_id,
+      mime_type: request.file.type,
+      file_size: request.file.size,
+      storage_path: null,
+      created_at: new Date().toISOString(),
+      module_type: request.module_type || null,
+      module_id: request.module_id || null,
+      metadata: request.metadata || {},
     };
   } catch (error) {
     log.error('Error indexing document:', { error: error });
@@ -399,7 +404,7 @@ export async function queryFileSearch(
     }
 
     // Call Edge Function for each corpus
-    const corpusIds = Array.isArray(query.corpusNames) ? query.corpusNames : [query.corpusId].filter(Boolean);
+    const corpusIds = Array.isArray(query.categories) ? query.categories : [query.corpus_id].filter(Boolean);
 
     if (corpusIds.length === 0) {
       throw new Error('At least one corpus ID must be provided');
@@ -420,7 +425,7 @@ export async function queryFileSearch(
         payload: {
           corpusId,
           query: query.query,
-          resultCount: query.resultCount || 5,
+          resultCount: query.result_count || 5,
         },
       }),
     });
@@ -436,12 +441,8 @@ export async function queryFileSearch(
 
     // Convert Edge Function response to FileSearchResult format
     const results: FileSearchResult[] = [{
-      content: result.answer,
-      score: 1.0, // Edge Function doesn't return score yet
-      documentName: 'Multiple documents',
-      metadata: {
-        citations: result.citations || [],
-      },
+      answer: result.answer,
+      citations: result.citations || [],
     }];
 
     // ✅ CACHE: Store results for future queries
@@ -452,8 +453,8 @@ export async function queryFileSearch(
     trackAIUsage({
       operation_type: 'file_search_query', // Matches ai_usage_analytics CHECK constraint
       ai_model: 'gemini-2.5-flash',
-      module_type: query.moduleType,
-      module_id: query.moduleId,
+      module_type: query.module_type as import('@/types/aiCost').ModuleType,
+      module_id: query.module_id,
       duration_seconds: duration,
       request_metadata: {
         query_text: query.query,
@@ -523,16 +524,17 @@ export async function listDocuments(
 
       return (data || []).map(row => ({
         id: row.id,
-        name: row.gemini_file_name || row.original_filename,
-        displayName: row.custom_metadata?.display_name || row.original_filename,
-        corpusId: row.corpus_id,
-        mimeType: row.mime_type,
-        sizeBytes: row.file_size_bytes,
-        status: row.indexing_status || 'pending',
-        createdAt: row.created_at,
-        moduleType: row.module_type,
-        moduleId: row.module_id,
-        metadata: row.custom_metadata,
+        user_id: row.user_id,
+        gemini_file_id: row.gemini_file_name || '',
+        file_name: row.original_filename || '',
+        corpus_id: row.corpus_id,
+        mime_type: row.mime_type || '',
+        file_size: row.file_size_bytes || 0,
+        storage_path: null,
+        created_at: row.created_at,
+        module_type: row.module_type,
+        module_id: row.module_id,
+        metadata: row.custom_metadata || {},
       }));
     } catch (error) {
       log.error('[fileSearchApiClient] Error listing documents from Supabase:', { error: error });
@@ -544,7 +546,7 @@ export async function listDocuments(
   try {
     const params = new URLSearchParams();
     if (corpusId) params.append('corpus_id', corpusId);
-    if (moduleType) params.append('module_type', moduleType);
+    if (moduleType) params.append('module_type', Array.isArray(moduleType) ? moduleType.join(',') : moduleType);
     if (moduleId) params.append('module_id', moduleId);
 
     const headers = await getAuthHeaders();

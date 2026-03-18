@@ -23,21 +23,34 @@ import {
   Store,
   Tag,
 } from 'lucide-react';
-import type { FileSearchResult } from '../../../types/fileSearch';
+/** Search result displayed in the FinanceSearchPanel */
+interface FinanceSearchResult {
+  /** Text content from the search result */
+  content?: string;
+  text?: string;
+  /** Source document name */
+  document_name?: string;
+  /** Relevance score (0-1) */
+  score?: number;
+  /** Answer text */
+  answer?: string;
+  /** Citations */
+  citations?: Array<{ uri?: string; title?: string; text?: string }>;
+}
 
 export interface FinanceSearchPanelProps {
   /** Callback para busca livre */
-  onSearch: (query: string) => Promise<FileSearchResult[]>;
+  onSearch: (query: string) => Promise<FinanceSearchResult[]>;
   /** Callback para busca por categoria */
-  onSearchCategory?: (category: string) => Promise<FileSearchResult[]>;
+  onSearchCategory?: (category: string) => Promise<FinanceSearchResult[]>;
   /** Callback para busca por merchant */
-  onSearchMerchant?: (merchant: string) => Promise<FileSearchResult[]>;
+  onSearchMerchant?: (merchant: string) => Promise<FinanceSearchResult[]>;
   /** Callback para busca de anomalias */
-  onSearchAnomalies?: () => Promise<FileSearchResult[]>;
+  onSearchAnomalies?: () => Promise<FinanceSearchResult[]>;
   /** Callback para busca de padrões */
-  onSearchPatterns?: (pattern: string) => Promise<FileSearchResult[]>;
+  onSearchPatterns?: (pattern: string) => Promise<FinanceSearchResult[]>;
   /** Resultados da busca */
-  results: FileSearchResult[];
+  results: FinanceSearchResult[];
   /** Estado de loading */
   isSearching?: boolean;
   /** Se há statements indexados */

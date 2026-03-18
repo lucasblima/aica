@@ -358,7 +358,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
     content: string,
     status?: string
   ) => {
-    if (!selectedProject) return;
+    if (!selectedProject) throw new Error('No project selected');
 
     try {
       const response = await saveResponse(
@@ -372,6 +372,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         ...prev,
         [fieldId]: response
       }));
+
+      return response;
     } catch (error) {
       log.error('Error saving response:', error);
       throw error;
@@ -700,7 +702,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           briefing={currentBriefing}
           initialResponses={currentResponses}
           onGenerateField={handleGenerateField}
-          onSaveResponse={handleSaveResponse}
+          onSaveResponse={async (fieldId, content, status) => { await handleSaveResponse(fieldId, content, status); }}
           onProposalComplete={handleProposalComplete}
           externalSystemUrl={currentOpportunity.external_system_url}
           onBack={handleBack}

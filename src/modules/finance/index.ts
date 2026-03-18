@@ -13,7 +13,7 @@ export * from './types';
 // =====================================================
 // Services
 // =====================================================
-export { financeService } from './services/financeService';
+export * from './services/financeService';
 export { pdfProcessingService, PDFProcessingService } from './services/pdfProcessingService';
 export { statementService } from './services/statementService';
 export { getMonthlyDigest, clearDigestCache } from './services/financeDigestService';

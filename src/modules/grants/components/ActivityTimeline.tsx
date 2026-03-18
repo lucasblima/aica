@@ -42,7 +42,7 @@ interface ActivityTimelineProps {
 }
 
 // Mapeamento de icones Lucide
-const ICON_MAP: Record<ActivityType, React.FC<{ className?: string }>> = {
+const ICON_MAP: Record<ActivityType, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
   email_sent: Send,
   email_received: Mail,
   call_outbound: PhoneOutgoing,

@@ -308,8 +308,8 @@ async function fetchWhatsAppEvents(
       user_id: msg.user_id,
       // Privacy-first: Use intent_summary instead of raw text (Issue #91)
       content: msg.intent_summary || '',
-      contact_name: msg.contact_network?.name || msg.contact_network?.whatsapp_name || 'Contato Desconhecido',
-      contact_number: msg.contact_network?.phone_number || '',
+      contact_name: (() => { const cn = Array.isArray(msg.contact_network) ? msg.contact_network[0] : msg.contact_network; return cn?.name || cn?.whatsapp_name || 'Contato Desconhecido'; })(),
+      contact_number: (() => { const cn = Array.isArray(msg.contact_network) ? msg.contact_network[0] : msg.contact_network; return cn?.phone_number || ''; })(),
       contact_id: msg.contact_id,
       message_type: msg.intent_media_type || 'text',
       direction: msg.message_direction || 'incoming',

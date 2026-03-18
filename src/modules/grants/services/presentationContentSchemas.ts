@@ -297,7 +297,7 @@ export function validateSlideContent(
   }
 
   // Extract error messages from Zod
-  const errors = result.error.errors.map((err) => {
+  const errors = result.error.issues.map((err) => {
     const path = err.path.join('.');
     return `${path ? `${path}: ` : ''}${err.message}`;
   });
