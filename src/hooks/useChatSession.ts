@@ -12,7 +12,7 @@ import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 import { getUserAIContext } from '@/services/userAIContextService'
-import { streamChat, fetchChatNonStreaming, type InterviewMeta } from '@/services/chatStreamService'
+import { streamChat, fetchChatNonStreaming, fetchReactChat, type InterviewMeta } from '@/services/chatStreamService'
 import type { ChatAction } from '@/types/chatActions'
 
 export interface DisplayMessage {
@@ -264,26 +264,46 @@ export function useChatSession(): UseChatSessionReturn {
         setSuggestedQuestions(streamResult.suggestedQuestions || [])
         setConnectionStatus('connected')
       } catch (streamErr) {
-        // Streaming failed — fallback to non-streaming chat_aica
-        console.warn('[useChatSession] Streaming failed, falling back to non-streaming:', streamErr)
+        // Streaming failed — fallback to ReACT agent (context-enriched) or non-streaming chat
+        console.warn('[useChatSession] Streaming failed, falling back:', streamErr)
         setIsStreaming(false)
         setStreamedText('')
-        modelUsed = 'gemini-chat-fallback'
 
-        const fallbackResult = await fetchChatNonStreaming(
-          currentSession.id,
-          trimmed,
-          history,
-          userContext,
-        )
+        try {
+          // Try ReACT agent first — provides context-enriched responses
+          modelUsed = 'react-agent'
+          const reactResult = await fetchReactChat(
+            currentSession.id,
+            trimmed,
+            history,
+            userContext,
+          )
+          finalText = reactResult.text
+          respondingAgent = reactResult.agent
+          responseActions = []
+          tokensInput = reactResult.usage?.input
+          tokensOutput = reactResult.usage?.output
+          setSuggestedQuestions([])
+          setConnectionStatus('connected')
+        } catch (reactErr) {
+          // ReACT also failed — final fallback to basic non-streaming chat
+          console.warn('[useChatSession] ReACT failed, falling back to basic chat:', reactErr)
+          modelUsed = 'gemini-chat-fallback'
 
-        finalText = fallbackResult.text
-        respondingAgent = fallbackResult.agent
-        responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
-        tokensInput = fallbackResult.usage?.input
-        tokensOutput = fallbackResult.usage?.output
-        setSuggestedQuestions([])
-        setConnectionStatus('degraded')
+          const fallbackResult = await fetchChatNonStreaming(
+            currentSession.id,
+            trimmed,
+            history,
+            userContext,
+          )
+          finalText = fallbackResult.text
+          respondingAgent = fallbackResult.agent
+          responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
+          tokensInput = fallbackResult.usage?.input
+          tokensOutput = fallbackResult.usage?.output
+          setSuggestedQuestions([])
+          setConnectionStatus('degraded')
+        }
       }
 
       // Success — clear streaming state, save to DB, append final message
