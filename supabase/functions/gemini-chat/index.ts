@@ -1057,8 +1057,8 @@ function generateSuggestedActions(message: string, rawData: UserContextResult['r
 // ============================================================================
 
 function generateSuggestedQuestions(
-  userMessage: string,
-  aiResponse: string,
+  _userMessage: string,
+  _aiResponse: string,
   module: string,
   rawData: UserContextResult['rawData']
 ): string[] {
@@ -3148,6 +3148,16 @@ serve(async (req) => {
               'Connection': 'keep-alive',
             },
           })
+        }
+        case 'generate_title': {
+          const titleMessage = payload?.message || ''
+          const titleResponse = (payload?.response || '').substring(0, 200)
+          const titlePrompt = `Gere um titulo curto (max 40 caracteres) em portugues para esta conversa. Responda APENAS com o titulo, sem aspas.\n\nUsuario: ${titleMessage}\nAssistente: ${titleResponse}`
+          const titleModel = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.3, maxOutputTokens: 256 } })
+          const titleResult = await titleModel.generateContent(titlePrompt)
+          const generatedTitle = titleResult.response.text().trim().substring(0, 60)
+          result = { success: true, title: generatedTitle }
+          break
         }
         case 'analyze_content_realtime':
           result = await handleAnalyzeContentRealtime(genAI, payload)
