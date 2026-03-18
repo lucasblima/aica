@@ -506,7 +506,7 @@ export function AicaChatFAB({
                 ))}
 
                 {isLoading && (
-                  isStreaming && streamedText ? (
+                  streamedText ? (
                     <div className="aica-fab-message aica-fab-message--assistant">
                       <div
                         className="aica-fab-message__content"
