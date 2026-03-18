@@ -98,7 +98,7 @@ export async function generateAutoBriefing(context: BriefingGenerationContext): 
  * Melhora/expande um campo específico do briefing
  */
 export async function improveBriefingField(
-  fieldId: keyof BriefingData,
+  fieldId: string & keyof BriefingData,
   currentContent: string,
   allBriefing: BriefingData
 ): Promise<string> {

@@ -124,7 +124,7 @@ export function ContactSlide({
                         const newLinks = { ...content.socialLinks, [platform]: v };
                         handleChange('socialLinks', newLinks);
                       }}
-                      tag="a"
+                      tag="span"
                       className="text-lg accent hover:underline"
                       editMode={editMode}
                       placeholder={platform}

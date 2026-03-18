@@ -86,11 +86,12 @@ export const ContactProfileView: React.FC<ContactProfileProps> = ({
       setMemories(memoriesData || []);
 
       // Load shared associations (if contact is associated with associations)
-      if (contactData.association_id) {
+      const associationId = (contactData as Record<string, any>).association_id;
+      if (associationId) {
         const { data: associationData } = await supabase
           .from('associations')
           .select('id, name, type')
-          .eq('id', contactData.association_id)
+          .eq('id', associationId)
           .single();
 
         if (associationData) {

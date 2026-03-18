@@ -30,6 +30,7 @@ import {
 import { validateMomentInput, sanitizeText, checkRateLimit, estimateBaseCP } from '@/utils/momentValidation'
 
 import { analyzeSentimentWithGemini, generateSentimentInsights } from '@/integrations/geminiSentimentAnalysis'
+import { transcribeAudio } from '@/services/audioService'
 
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentPersistence')

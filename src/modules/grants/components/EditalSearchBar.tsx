@@ -8,17 +8,28 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Loader2, FileSearch, AlertCircle, X, Sparkles } from 'lucide-react';
-import type { FileSearchResult } from '../../../types/fileSearch';
-
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('Editalsearchbar');
 
+/** Search result displayed in the EditalSearchBar */
+interface EditalSearchResult {
+  /** Text content from the search result */
+  content?: string;
+  text?: string;
+  /** Source document name */
+  document_name?: string;
+  /** Relevance score (0-1) */
+  score?: number;
+  /** Citations from the search */
+  citations?: string[];
+}
+
 export interface EditalSearchBarProps {
   /** Callback quando busca é realizada */
-  onSearch: (query: string) => Promise<FileSearchResult[]>;
+  onSearch: (query: string) => Promise<EditalSearchResult[]>;
   /** Resultados da busca */
-  results: FileSearchResult[];
+  results: EditalSearchResult[];
   /** Estado de loading */
   isSearching?: boolean;
   /** Se há documentos indexados */

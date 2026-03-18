@@ -151,7 +151,7 @@ export const ORGANIZATION_TYPE_LABELS: Record<OrganizationType, string> = {
 
 export const RELATIONSHIP_TYPE_LABELS: Record<RelationshipType, string> = {
   parceria: 'Parceria',
-  execucao: 'Execução',
+  'execução': 'Execução',
   financiamento: 'Financiamento',
   fiscalizacao: 'Fiscalizacao',
   apoio: 'Apoio',

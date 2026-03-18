@@ -30,7 +30,7 @@ const features = [
   },
 ];
 
-const breathingAnimation = {
+const breathingAnimation: import('framer-motion').TargetAndTransition = {
   scale: [1, 1.06, 1],
   transition: {
     duration: 3,

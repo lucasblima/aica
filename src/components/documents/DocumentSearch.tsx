@@ -7,7 +7,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('DocumentSearch');
 
 export function DocumentSearch() {
-    const { uploadDocument, searchDocuments, isUploading, isSearching, error } = useFileSearch();
+    const { uploadDocument, search: searchDocuments, isSearching, isLoading: isUploading, error } = useFileSearch();
     const [query, setQuery] = useState('');
     const [result, setResult] = useState<SearchResult | null>(null);
     const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -15,8 +15,8 @@ export function DocumentSearch() {
     const handleSearch = async () => {
         if (!query.trim()) return;
         try {
-            const response = await searchDocuments(query);
-            setResult(response);
+            const response = await searchDocuments({ query });
+            if (response && response.length > 0) setResult(response[0] as unknown as SearchResult);
         } catch (e) {
             log.error("Search failed", e);
         }
@@ -28,7 +28,7 @@ export function DocumentSearch() {
 
         setUploadStatus("Uploading...");
         try {
-            await uploadDocument(file, 'documents'); // Defaulting to 'documents' category
+            await uploadDocument({ file, corpus_id: 'documents' }); // Defaulting to 'documents' category
             setUploadStatus(`File ${file.name} uploaded successfully!`);
         } catch (e) {
             setUploadStatus("Upload failed.");

@@ -179,7 +179,6 @@ export function QuickCapture({
               <div className="flex-1">
                 <p className="text-xs font-bold text-ceramic-accent mb-1">
                   {aiSuggestion.type === 'reflection' && 'Reflexão sugerida'}
-                  {aiSuggestion.type === 'question' && 'Pergunta para aprofundar'}
                   {aiSuggestion.type === 'pattern' && 'Padrão identificado'}
                 </p>
                 <p className="text-sm text-ceramic-text-secondary">

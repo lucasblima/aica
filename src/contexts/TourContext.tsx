@@ -348,7 +348,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       const { action, status, type, index } = data;
 
       // Handle tour end
-      if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+      if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
         if (activeTourKey) {
           if (status === STATUS.FINISHED) {
             completeTour(activeTourKey);
@@ -382,7 +382,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
               p_user_id: user.id,
               p_tour_id: activeTourKey,
               p_current_step: index + 1,
-            }).catch(err => log.error('Error updating tour step:', err));
+            }).then(({ error: rpcErr }) => { if (rpcErr) log.error('Error updating tour step:', rpcErr); });
           }
         })();
       }

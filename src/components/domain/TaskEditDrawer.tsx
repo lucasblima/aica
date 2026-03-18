@@ -222,7 +222,8 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
             const aiSubtasks: Subtask[] = result.subtasks.map((s, i) => ({
                 id: `ai-${Date.now()}-${i}`,
                 title: s.title,
-                completed: false,
+                is_completed: false,
+                order: i,
             }));
             setSubtasks(prev => [...prev, ...aiSubtasks]);
             // Update estimated duration with AI total if not set

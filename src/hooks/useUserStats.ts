@@ -53,7 +53,6 @@ export function useUserStats() {
         totalTasks: tasks.count || 0,
         daysActive,
         modulesUsed,
-        patternsCount: patterns.count || 0,
       })
     } catch {
       // Silently fail — trust level defaults to suggest_confirm

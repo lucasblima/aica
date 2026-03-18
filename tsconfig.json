@@ -35,6 +35,9 @@
     "tests",
     "src/**/examples/**",
     "src/**/__tests__/**",
-    "src/tests/**"
+    "src/tests/**",
+    "src/**/*.example.tsx",
+    "src/components/GoogleCalendarExample.tsx",
+    "src/components/documents/FileSearchExample.tsx"
   ]
 }

@@ -243,7 +243,7 @@ export function useJourneyPatterns(userId?: string) {
             .from('moments')
             .update({
               tags: result.tags,
-              emotion: result.mood.value || mapAIMoodToValue(result.mood),
+              emotion: mapAIMoodToValue(result.mood),
               sentiment_data: {
                 timestamp: new Date().toISOString(),
                 sentiment: result.sentiment,
