@@ -13,6 +13,8 @@ const AGENT_DISPLAY_NAMES: Record<string, string> = {
   connections_agent: 'Conexoes',
   flux_agent: 'Flux',
   agenda_agent: 'Agenda',
+  // ReACT agent
+  react_agent: 'Aica ReACT',
   // Legacy names (pre-ADK)
   coordinator: 'Aica',
   atlas: 'Atlas',

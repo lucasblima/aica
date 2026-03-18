@@ -304,8 +304,8 @@ export function useChatSession(): UseChatSessionReturn {
       } catch (streamErr) {
         // Streaming failed — fallback to ReACT agent (context-enriched) or non-streaming chat
         console.warn('[useChatSession] Streaming failed, falling back:', streamErr)
+        // Keep streamedText visible during fallback attempt (don't flash empty)
         setIsStreaming(false)
-        setStreamedText('')
 
         try {
           // Try ReACT agent first — provides context-enriched responses
@@ -344,11 +344,25 @@ export function useChatSession(): UseChatSessionReturn {
         }
       }
 
-      // Success — clear streaming state, save to DB, append final message
+      // Success — append message OPTIMISTICALLY before DB save (prevents flash of empty content)
+      const tempAssistantId = `temp-assistant-${Date.now()}`
+      const tempAssistantMsg: DisplayMessage = {
+        id: tempAssistantId,
+        role: 'assistant',
+        content: finalText,
+        created_at: new Date().toISOString(),
+        agent: respondingAgent,
+        actions: responseActions,
+      }
+      setMessages(prev => [...prev, tempAssistantMsg])
+      setActiveAgent(respondingAgent)
+
+      // NOW clear streaming state — the optimistic message is already visible
       setIsStreaming(false)
       setStreamedText('')
 
-      const savedAssistantMsg = await chatService.saveMessage({
+      // Save to DB (fire-and-forget for display, but await for consistency)
+      chatService.saveMessage({
         sessionId: currentSession.id,
         userId,
         content: finalText,
@@ -356,14 +370,15 @@ export function useChatSession(): UseChatSessionReturn {
         modelUsed,
         tokensInput,
         tokensOutput,
+      }).then(savedMsg => {
+        // Replace temp with DB-saved version (gets real ID)
+        setMessages(prev => prev.map(m =>
+          m.id === tempAssistantId ? { ...chatMsgToDisplay(savedMsg), agent: respondingAgent, actions: responseActions } : m
+        ))
+      }).catch(err => {
+        console.error('[useChatSession] Failed to save assistant message:', err)
+        // Message stays visible with temp ID — user doesn't lose the response
       })
-
-      setMessages(prev => [...prev, {
-        ...chatMsgToDisplay(savedAssistantMsg),
-        agent: respondingAgent,
-        actions: responseActions,
-      }])
-      setActiveAgent(respondingAgent)
 
       // Generate AI title for new sessions (fire-and-forget)
       if (currentSession && messages.length <= 1) {
