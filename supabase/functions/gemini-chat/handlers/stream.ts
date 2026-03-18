@@ -5,6 +5,7 @@ import { buildUserContext, generateSuggestedActions, generateSuggestedQuestions 
 import { AGENT_SYSTEM_PROMPTS, VALID_AGENTS, INTERVIEWER_SYSTEM_PROMPT } from '../../_shared/agent-prompts.ts'
 import type { UserContextResult } from '../../_shared/gemini-types.ts'
 import { classifyIntent } from '../../_shared/intent-classifier.ts'
+import { fetchRelevantDocuments } from '../../_shared/document-search.ts'
 
 export async function handleStreamChat(
   genAI: GoogleGenerativeAI,
@@ -75,6 +76,20 @@ export async function handleStreamChat(
     }
   }
 
+  // RAG: search user's indexed documents for relevant context (grants, studio, etc.)
+  let documentContext = ''
+  if (userId && supabaseAdmin && !isInterviewMode) {
+    try {
+      const docResult = await fetchRelevantDocuments(supabaseAdmin, userId, streamModule, streamMessage, apiKey)
+      if (docResult.found) {
+        documentContext = docResult.contextString
+        console.log(`[chat_aica_stream] RAG enrichment: ${docResult.sources.length} source(s), ${documentContext.length} chars`)
+      }
+    } catch (e) {
+      console.warn('[chat_aica_stream] Document search failed (non-blocking):', (e as Error).message)
+    }
+  }
+
   // Build system prompt — use interviewer prompt for interview mode, else module-specific
   let agentConfig: { prompt: string; temperature: number; maxOutputTokens: number }
 
@@ -109,6 +124,11 @@ export async function handleStreamChat(
 
   if (streamUserContext) {
     streamSystemPrompt += `\n\n## Dados Reais do Usuario\n${streamUserContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- NUNCA pergunte qual e a data atual — voce JA SABE a data (veja acima)\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Liste dados em formato organizado (bullet points) quando houver multiplos itens\n- Se nao tiver dados suficientes, sugira acoes concretas`
+  }
+
+  // Append RAG document context if available
+  if (documentContext) {
+    streamSystemPrompt += `\n\n${documentContext}\n\n- Quando relevante, cite informacoes dos documentos acima\n- Indique a fonte quando usar dados dos documentos`
   }
 
   const streamHistory = payload?.history?.map((msg: any) => ({
