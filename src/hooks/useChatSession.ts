@@ -14,6 +14,7 @@ import { checkInteractionLimit, type InteractionLimitResult } from '@/services/b
 import { getUserAIContext } from '@/services/userAIContextService'
 import { streamChat, fetchChatNonStreaming, fetchReactChat, type InterviewMeta } from '@/services/chatStreamService'
 import type { ChatAction } from '@/types/chatActions'
+import { Sentry } from '@/lib/sentry'
 
 export interface DisplayMessage {
   id: string
@@ -164,6 +165,7 @@ export function useChatSession(): UseChatSessionReturn {
     setLimitReached(false)
     setSuggestedQuestions([])
     setIsLoading(true)
+    const sendStartMs = Date.now()
 
     try {
       // Check interaction limit before calling AI (fail-open)
@@ -347,12 +349,29 @@ export function useChatSession(): UseChatSessionReturn {
         }).catch(err => console.warn('[useChatSession] Title generation failed:', err))
       }
 
+      // Sentry breadcrumb: success
+      Sentry.addBreadcrumb({
+        category: 'chat',
+        message: 'message_sent',
+        level: 'info',
+        data: { modelUsed, latencyMs: Date.now() - sendStartMs, success: true },
+      })
+
       // Clear error and failed message on success
       setError(null)
       setLastFailedMessage(null)
     } catch (err) {
       console.error('[useChatSession] sendMessage failed:', err)
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
+
+      // Sentry breadcrumb: failure
+      Sentry.addBreadcrumb({
+        category: 'chat',
+        message: 'message_failed',
+        level: 'error',
+        data: { latencyMs: Date.now() - sendStartMs, error: message },
+      })
+
       setError(message)
       setLastFailedMessage(trimmed)
       setConnectionStatus('offline')
