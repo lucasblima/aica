@@ -21,6 +21,7 @@ const ModalityIcon: React.FC<{ modality: TrainingModality; className?: string }>
     cycling: '🚴',
     strength: '🏋️',
     walking: '🚶',
+    triathlon: '🏅',
   };
   return <span className={className}>{icons[modality]}</span>;
 };
@@ -44,6 +45,7 @@ export function FluxCard({ compact = false }: FluxCardProps) {
       cycling: 0,
       strength: 0,
       walking: 0,
+      triathlon: 0,
     };
 
     for (const athlete of athletes) {
@@ -140,6 +142,7 @@ export function FluxCard({ compact = false }: FluxCardProps) {
       cycling: '\u{1F6B4}',
       strength: '\u{1F3CB}\u{FE0F}',
       walking: '\u{1F6B6}',
+      triathlon: '\u{1F3C5}',
     };
 
     return (

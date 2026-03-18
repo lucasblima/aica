@@ -280,7 +280,8 @@ export type ModuleType =
   | 'journey'   // Journey module
   | 'finance'   // Finance module
   | 'atlas'     // Atlas module
-  | 'chat';     // Chat module
+  | 'chat'      // Chat module
+  | 'shared';   // Shared/cross-module
 
 /**
  * Request to create a corpus (alternative to store)

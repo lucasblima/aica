@@ -32,6 +32,9 @@
     "_deprecated",
     "docs",
     "supabase/functions",
-    "tests"
+    "tests",
+    "src/**/examples/**",
+    "src/**/__tests__/**",
+    "src/tests/**"
   ]
 }
