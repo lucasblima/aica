@@ -3,408 +3,40 @@ import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
 import { handleGenerateDailyQuestion, type GenerateDailyQuestionPayload } from "./daily-question-handler.ts"
 
-// ============================================================================
-// SECURE CORS CONFIGURATION
-// ============================================================================
-// Whitelist of allowed origins - update with your production domains
-const ALLOWED_ORIGINS = [
-  'https://aica-staging-5562559893.southamerica-east1.run.app',
-  'https://aica-5562559893.southamerica-east1.run.app',
-  'https://dev.aica.guru',
-  'https://aica.guru',
-]
-
-function isAllowedOrigin(origin: string): boolean {
-  if (ALLOWED_ORIGINS.includes(origin)) return true
-  // Allow any localhost port for local dev (Vite may pick 3000, 3001, 3002, 5173, etc.)
-  if (/^http:\/\/localhost:\d+$/.test(origin)) return true
-  return false
-}
-
-function getCorsHeaders(request: Request): Record<string, string> {
-  const origin = request.headers.get('origin') || ''
-  const allowedOrigin = isAllowedOrigin(origin) ? origin : ''
-
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Credentials': 'true',
-  }
-}
+// Shared helpers (extracted from this file in Phase 1)
+import { getCorsHeaders } from '../_shared/cors.ts'
+import { extractJSON } from '../_shared/model-router.ts'
+import { MODELS, SMART_MODEL_ACTIONS, getDateContext, extractUserId } from '../_shared/gemini-helpers.ts'
+import { buildUserContext, generateSuggestedActions } from '../_shared/context-builder.ts'
+import { AGENT_SYSTEM_PROMPTS, VALID_AGENTS, INTERVIEWER_SYSTEM_PROMPT } from '../_shared/agent-prompts.ts'
+import type {
+  BaseRequest, ChatRequest,
+  SentimentAnalysisPayload, SentimentAnalysisResult,
+  WeeklySummaryPayload, WeeklySummaryResult, MomentData, KeyMoment,
+  GenerateDossierPayload, DossierResult,
+  IceBreakerPayload, IceBreakerResult,
+  PautaQuestionsPayload, PautaQuestionsResult,
+  PautaOutlinePayload, PautaOutlineResult,
+  DailyReportPayload, DailyReportResult,
+  GenerateFieldContentPayload, AnalyzeEditalStructurePayload,
+  ParseFormFieldsPayload, ParsedFormField,
+  GenerateAutoBriefingPayload, ImproveBriefingFieldPayload,
+  ExtractRequiredDocumentsPayload, ExtractTimelinePhasesPayload,
+  ParseStatementPayload, ResearchGuestPayload, GuestProfile,
+  ChatAction, UserContextResult,
+  WhatsAppSentimentPayload, WhatsAppSentimentResult,
+  AnalyzeMomentPayload, AnalyzeMomentResult,
+  ChatWithAgentPayload, CategorizeTransactionsPayload,
+  EvaluateQualityPayload, EvaluateQualityResult,
+  TechnicalSheet, OutlineSection,
+} from '../_shared/gemini-types.ts'
+import { VALID_EMOTION_VALUES } from '../_shared/gemini-types.ts'
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface BaseRequest {
-  action?: string
-  payload?: Record<string, any>
-  model?: 'fast' | 'smart'
-}
-
-interface ChatRequest {
-  message: string
-  context?: string
-  history?: Array<{ role: string; content: string }>
-  systemPrompt?: string
-}
-
-interface SentimentAnalysisPayload {
-  content: string
-  context?: string
-}
-
-interface SentimentAnalysisResult {
-  timestamp: string
-  sentiment: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative'
-  sentimentScore: number
-  emotions: string[]
-  triggers: string[]
-  energyLevel: number
-}
-
-interface WhatsAppSentimentPayload {
-  text: string
-  instance?: string
-}
-
-interface WhatsAppSentimentResult {
-  sentiment: 'positive' | 'neutral' | 'negative'
-  sentimentScore: number
-  triggers: string[]
-  summary: string
-}
-
-interface MomentData {
-  id: string
-  content: string
-  emotion: string
-  sentiment_data?: {
-    sentiment: string
-    sentimentScore: number
-  }
-  tags: string[]
-  created_at: string
-}
-
-interface WeeklySummaryPayload {
-  moments: MomentData[]
-}
-
-interface KeyMoment {
-  id: string
-  preview: string
-  sentiment: string
-  created_at: string
-}
-
-interface WeeklySummaryResult {
-  emotionalTrend: 'ascending' | 'stable' | 'descending' | 'volatile'
-  dominantEmotions: string[]
-  keyMoments: KeyMoment[]
-  insights: string[]
-  suggestedFocus: string
-}
-
-interface GenerateDossierPayload {
-  guestName: string
-  theme?: string
-}
-
-interface TechnicalSheet {
-  name: string
-  profession: string
-  socialMedia: { platform: string; handle: string }[]
-  keyFacts?: string[]
-}
-
-interface DossierResult {
-  biography: string
-  controversies: string[]
-  suggestedTopics: string[]
-  iceBreakers: string[]
-  technicalSheet?: TechnicalSheet
-  derivedTheme?: string
-}
-
-interface IceBreakerPayload {
-  guestName: string
-  keyFacts?: string[]
-  occupation?: string
-}
-
-interface IceBreakerResult {
-  iceBreakers: Array<{ question: string; rationale: string }>
-}
-
-interface PautaQuestionsPayload {
-  guestName: string
-  outline: { title: string; mainSections: Array<{ title: string; keyPoints: string[] }> }
-  keyFacts?: string[]
-  controversies?: string[]
-  additionalContext?: string
-}
-
-interface PautaQuestionsResult {
-  questions: Array<{
-    id: string
-    text: string
-    category: 'abertura' | 'desenvolvimento' | 'aprofundamento' | 'fechamento'
-    followUps: string[]
-    context?: string
-    priority: 'high' | 'medium' | 'low'
-  }>
-}
-
-interface PautaOutlinePayload {
-  guestName: string
-  theme: string
-  biography?: string
-  keyFacts?: string[]
-  controversies?: string[]
-  duration?: number
-  style?: { tone: 'formal' | 'casual' | 'investigativo' | 'humano'; depth: 'shallow' | 'medium' | 'deep' }
-}
-
-interface OutlineSection {
-  title: string
-  description: string
-  duration: number
-  keyPoints: string[]
-  suggestedTransition?: string
-}
-
-interface PautaOutlineResult {
-  title: string
-  introduction: OutlineSection
-  mainSections: OutlineSection[]
-  conclusion: OutlineSection
-}
-
-interface DailyReportPayload {
-  userId: string
-  date: string
-  tasksCompleted: number
-  tasksTotal: number
-  productivityScore: number
-  moodScore?: number
-  energyLevel?: number
-  activeModules?: string[]
-  content?: string
-}
-
-interface DailyReportResult {
-  summary: string
-  insights: string[]
-  recommendations: string[]
-  motivationalMessage: string
-}
-
-// ============================================================================
-// GRANTS MODULE TYPES
-// ============================================================================
-
-interface GenerateFieldContentPayload {
-  edital_text: string
-  evaluation_criteria: Array<{
-    name: string
-    description: string
-    weight: number
-    min_score: number
-    max_score: number
-  }>
-  field_config: {
-    id: string
-    label: string
-    max_chars: number
-    required: boolean
-    ai_prompt_hint?: string
-  }
-  briefing: Record<string, string>
-  previous_responses?: Record<string, string>
-  source_document_content?: string | null
-  edital_text_content?: string | null
-  opportunity_documents_content?: string | null
-  project_id?: string
-}
-
-interface AnalyzeEditalStructurePayload {
-  editalText: string
-}
-
-interface ParseFormFieldsPayload {
-  text: string
-}
-
-interface ParsedFormField {
-  id: string
-  label: string
-  max_chars: number
-  required: boolean
-  ai_prompt_hint: string
-  placeholder: string
-}
-
-// ============================================================================
-// BRIEFING MODULE TYPES
-// ============================================================================
-
-interface GenerateAutoBriefingPayload {
-  companyName?: string
-  projectIdea?: string
-  editalTitle?: string
-  editalText?: string
-  sourceDocumentContent?: string | null
-  formFields?: Array<{
-    id: string
-    label: string
-    max_chars: number
-    required: boolean
-    ai_prompt_hint?: string
-  }>
-}
-
-interface ImproveBriefingFieldPayload {
-  fieldId: string
-  currentContent: string
-  allBriefing: Record<string, string>
-}
-
-interface ExtractRequiredDocumentsPayload {
-  pdfContent: string
-}
-
-interface ExtractTimelinePhasesPayload {
-  pdfContent: string
-}
-
-// ============================================================================
-// PDF PROCESSING TYPES
-// ============================================================================
-
-interface ParseStatementPayload {
-  rawText: string
-}
-
-// ============================================================================
-// PODCAST/GUEST RESEARCH TYPES
-// ============================================================================
-
-interface ResearchGuestPayload {
-  guest_name: string
-  reference?: string
-  prompt?: string
-  system_instruction?: string
-}
-
-interface GuestProfile {
-  name: string
-  title: string
-  biography: string
-  recent_facts: string[]
-  topics_of_interest: string[]
-  controversies?: string[]
-  image_url?: string
-  is_reliable: boolean
-  confidence_score: number
-  researched_at: string
-}
-
-// ============================================================================
-// CHAT ACTION TYPES
-// ============================================================================
-
-interface ChatAction {
-  id: string
-  type: string
-  label: string
-  icon: string
-  module: string
-  params: Record<string, any>
-}
-
-interface UserContextResult {
-  contextString: string
-  rawData: {
-    tasks: any[]
-    moments: any[]
-    transactions: any[]
-    events: any[]
-  }
-}
-
-// ============================================================================
-// MODEL CONFIGURATION
-// ============================================================================
-
-const MODELS = {
-  fast: 'gemini-2.5-flash',
-  smart: 'gemini-2.5-pro',
-} as const
-
-const SMART_MODEL_ACTIONS = [
-  'generate_weekly_summary',
-  'generate_dossier',
-  'deep_research',
-  'generate_ice_breakers',
-  'generate_pauta_questions',
-  'generate_pauta_outline',
-  'analyze_edital_structure',
-  'generate_auto_briefing',
-  'research_guest',
-]
-
-// ============================================================================
-// ROBUST JSON EXTRACTION
-// ============================================================================
-
-/**
- * Extract JSON from Gemini response text, handling:
- * - Pure JSON responses
- * - JSON wrapped in ```json ... ``` code fences
- * - JSON preceded by preamble text ("Here is the analysis:\n{...}")
- * - JSON followed by trailing text
- */
-function extractJSON<T = any>(text: string): T {
-  // 1. Strip code fences
-  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').trim()
-
-  // 2. Try direct parse first
-  try {
-    return JSON.parse(cleaned)
-  } catch {
-    // continue to fallback strategies
-  }
-
-  // 3. Find first { or [ and match to last } or ]
-  const objStart = cleaned.indexOf('{')
-  const arrStart = cleaned.indexOf('[')
-  let start = -1
-  let end = -1
-
-  if (objStart >= 0 && (arrStart < 0 || objStart < arrStart)) {
-    start = objStart
-    end = cleaned.lastIndexOf('}')
-  } else if (arrStart >= 0) {
-    start = arrStart
-    end = cleaned.lastIndexOf(']')
-  }
-
-  if (start >= 0 && end > start) {
-    try {
-      return JSON.parse(cleaned.substring(start, end + 1))
-    } catch {
-      // fall through
-    }
-  }
-
-  throw new Error(`Falha ao extrair JSON da resposta do modelo: ${text.substring(0, 200)}`)
-}
+// Types, models, extractJSON, CORS — now imported from _shared/
 
 // ============================================================================
 // PROMPT TEMPLATES
@@ -610,447 +242,9 @@ async function handleWhatsAppSentiment(genAI: GoogleGenerativeAI, payload: Whats
   return parsed as WhatsAppSentimentResult
 }
 
-async function buildUserContext(supabaseAdmin: any, userId: string, module: string): Promise<UserContextResult> {
-  const contextParts: string[] = []
-  const rawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
-  console.log(`[buildUserContext] Starting for userId=${userId}, module=${module}`)
-
-  try {
-    // Always fetch basic stats for coordinator context
-    if (module === 'atlas' || module === 'coordinator') {
-      const { data: tasks, error: tasksError } = await supabaseAdmin
-        .from('work_items')
-        .select('id, title, status, priority, is_urgent, is_important, due_date, scheduled_time, task_type, checklist')
-        .eq('user_id', userId)
-        .neq('status', 'done')
-        .eq('archived', false)
-        .order('due_date', { ascending: true, nullsFirst: false })
-        .limit(20)
-
-      console.log(`[buildUserContext] tasks query: count=${tasks?.length || 0}, error=${tasksError?.message || 'none'}`)
-      if (tasks?.length) {
-        rawData.tasks = tasks
-        contextParts.push(`### Tarefas Abertas (${tasks.length})`)
-        tasks.forEach(t => {
-          const urgImp = [t.is_urgent && 'URGENTE', t.is_important && 'IMPORTANTE'].filter(Boolean).join(', ')
-          const due = t.due_date ? ` | Prazo: ${t.due_date}` : ''
-          const time = t.scheduled_time ? ` às ${t.scheduled_time}` : ''
-          const type = t.task_type && t.task_type !== 'task' ? ` [${t.task_type}]` : ''
-          contextParts.push(`- ${t.title}${type} (${t.status}${urgImp ? ' | ' + urgImp : ''}${due}${time})`)
-        })
-      } else {
-        contextParts.push('### Tarefas: Nenhuma tarefa aberta')
-      }
-    }
-
-    if (module === 'journey' || module === 'coordinator') {
-      const { data: moments } = await supabaseAdmin
-        .from('moments')
-        .select('content, emotion, created_at, tags, sentiment_data')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(7)
-
-      if (moments?.length) {
-        rawData.moments = moments
-        contextParts.push(`\n### Momentos Recentes (${moments.length})`)
-        moments.forEach(m => {
-          const date = new Date(m.created_at).toLocaleDateString('pt-BR')
-          const sentiment = m.sentiment_data?.sentiment || 'não analisado'
-          contextParts.push(`- [${date}] ${m.emotion || '?'} | ${m.content?.substring(0, 100)}... (${sentiment})`)
-        })
-      }
-    }
-
-    if (module === 'finance' || module === 'coordinator') {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: transactions } = await supabaseAdmin
-        .from('finance_transactions')
-        .select('description, amount, type, category, date')
-        .eq('user_id', userId)
-        .gte('date', thirtyDaysAgo.split('T')[0])
-        .order('date', { ascending: false })
-        .limit(30)
-
-      if (transactions?.length) {
-        rawData.transactions = transactions
-        const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount), 0)
-        const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0)
-        contextParts.push(`\n### Finanças (últimos 30 dias)`)
-        contextParts.push(`- Receitas: R$ ${income.toFixed(2)}`)
-        contextParts.push(`- Despesas: R$ ${expense.toFixed(2)}`)
-        contextParts.push(`- Saldo período: R$ ${(income - expense).toFixed(2)}`)
-        contextParts.push(`- ${transactions.length} transações`)
-
-        // Top 5 most recent for detail
-        if (module === 'finance') {
-          contextParts.push(`\nÚltimas transações:`)
-          transactions.slice(0, 10).forEach(t => {
-            contextParts.push(`- ${t.date}: ${t.description} (R$ ${t.amount.toFixed(2)}, ${t.category || 'sem categoria'})`)
-          })
-        }
-      }
-    }
-
-    if (module === 'connections') {
-      const { data: spaces } = await supabaseAdmin
-        .from('connection_spaces')
-        .select('id, name, archetype, description')
-        .eq('user_id', userId)
-        .limit(10)
-
-      if (spaces?.length) {
-        contextParts.push(`\n### Espaços de Conexão (${spaces.length})`)
-        for (const space of spaces) {
-          const { count } = await supabaseAdmin
-            .from('connection_members')
-            .select('id', { count: 'exact', head: true })
-            .eq('space_id', space.id)
-          contextParts.push(`- ${space.name} (${space.archetype}) — ${count || 0} membros`)
-        }
-      }
-    }
-
-    if (module === 'studio') {
-      const { data: shows } = await supabaseAdmin
-        .from('podcast_shows')
-        .select('id, name, description')
-        .eq('user_id', userId)
-        .limit(5)
-
-      if (shows?.length) {
-        contextParts.push(`\n### Podcasts (${shows.length})`)
-        for (const show of shows) {
-          const { data: episodes } = await supabaseAdmin
-            .from('podcast_episodes')
-            .select('title, status, guest_name')
-            .eq('show_id', show.id)
-            .order('created_at', { ascending: false })
-            .limit(5)
-
-          contextParts.push(`- ${show.name}: ${episodes?.length || 0} episódios recentes`)
-          episodes?.forEach(ep => {
-            contextParts.push(`  · ${ep.title} (${ep.status})${ep.guest_name ? ' — Convidado: ' + ep.guest_name : ''}`)
-          })
-        }
-      }
-    }
-
-    if (module === 'flux') {
-      const { data: athletes } = await supabaseAdmin
-        .from('athletes')
-        .select('id, name, modality, status')
-        .eq('coach_id', userId)
-        .eq('status', 'active')
-        .limit(10)
-
-      if (athletes?.length) {
-        contextParts.push(`\n### Atletas Ativos (${athletes.length})`)
-        athletes.forEach(a => {
-          contextParts.push(`- ${a.name} (${a.modality || 'geral'})`)
-        })
-
-        // Get active microcycles
-        const athleteIds = athletes.map(a => a.id)
-        const { data: microcycles } = await supabaseAdmin
-          .from('microcycles')
-          .select('athlete_id, name, start_date, end_date, status')
-          .in('athlete_id', athleteIds)
-          .eq('status', 'active')
-          .limit(10)
-
-        if (microcycles?.length) {
-          contextParts.push(`\nMicrociclos Ativos:`)
-          microcycles.forEach(m => {
-            const athlete = athletes.find(a => a.id === m.athlete_id)
-            contextParts.push(`- ${athlete?.name}: ${m.name} (${m.start_date} a ${m.end_date})`)
-          })
-        }
-      }
-
-      // Exercise Library RAG: load coach's workout templates for AI context
-      const { data: templates } = await supabaseAdmin
-        .from('workout_templates')
-        .select('name, category, modality, intensity, duration, description, level_range, rpe, tags')
-        .eq('user_id', userId)
-        .order('is_favorite', { ascending: false })
-        .order('updated_at', { ascending: false })
-        .limit(20)
-
-      if (templates?.length) {
-        contextParts.push(`\n### Biblioteca de Exercícios do Coach (${templates.length} templates)`)
-        contextParts.push(`Use estes templates para recomendar exercícios personalizados:`)
-        templates.forEach((t: any) => {
-          const desc = t.description ? ` — ${t.description.substring(0, 60)}` : ''
-          const levels = t.level_range?.length ? ` | Níveis: ${t.level_range.join(', ')}` : ''
-          const rpe = t.rpe ? ` | RPE ${t.rpe}` : ''
-          const tags = t.tags?.length ? ` [${t.tags.join(', ')}]` : ''
-          contextParts.push(`- ${t.name} (${t.category}/${t.modality}, ${t.intensity}, ${t.duration}min${rpe})${levels}${desc}${tags}`)
-        })
-      }
-    }
-
-    if (module === 'agenda' || module === 'coordinator') {
-      const today = new Date().toISOString().split('T')[0]
-      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      const { data: events } = await supabaseAdmin
-        .from('calendar_events')
-        .select('title, start_time, end_time, location, description')
-        .eq('user_id', userId)
-        .gte('start_time', today)
-        .lte('start_time', nextWeek)
-        .order('start_time', { ascending: true })
-        .limit(15)
-
-      if (events?.length) {
-        rawData.events = events
-        contextParts.push(`\n### Agenda (próximos 7 dias — ${events.length} eventos)`)
-        events.forEach(e => {
-          const date = new Date(e.start_time).toLocaleDateString('pt-BR')
-          const time = new Date(e.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-          contextParts.push(`- [${date} ${time}] ${e.title}${e.location ? ' @ ' + e.location : ''}`)
-        })
-      }
-    }
-
-    // Fetch Life Council insights for coordinator and journey agents
-    if (module === 'coordinator' || module === 'journey') {
-      const { data: councilInsights } = await supabaseAdmin
-        .from('daily_council_insights')
-        .select('insight_type, content, action_items, overall_status, headline, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3)
-
-      if (councilInsights?.length) {
-        contextParts.push(`\n### Insights do Life Council (últimos ${councilInsights.length})`)
-        councilInsights.forEach((insight: any) => {
-          const date = new Date(insight.created_at).toLocaleDateString('pt-BR')
-          const status = insight.overall_status ? ` [${insight.overall_status}]` : ''
-          const headline = insight.headline ? ` — ${insight.headline}` : ''
-          contextParts.push(`- [${date}]${status}${headline} ${insight.insight_type}: ${typeof insight.content === 'string' ? insight.content.substring(0, 200) : JSON.stringify(insight.content).substring(0, 200)}`)
-          if (insight.action_items?.length) {
-            insight.action_items.slice(0, 2).forEach((item: string) => {
-              contextParts.push(`  · Ação: ${item}`)
-            })
-          }
-        })
-      }
-    }
-
-    // Fetch user behavioral patterns for personalized responses (all modules)
-    {
-      const { data: patterns } = await supabaseAdmin
-        .from('user_patterns')
-        .select('pattern_type, description, confidence, evidence_count, last_observed')
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .gte('confidence', 0.5)
-        .order('confidence', { ascending: false })
-        .limit(5)
-
-      if (patterns?.length) {
-        contextParts.push(`\n### Padrões Comportamentais do Usuário (${patterns.length})`)
-        contextParts.push(`Use estes padrões para personalizar suas respostas:`)
-        patterns.forEach((p: any) => {
-          const lastSeen = p.last_observed ? new Date(p.last_observed).toLocaleDateString('pt-BR') : 'N/A'
-          contextParts.push(`- [${p.pattern_type}] ${p.description} (confiança: ${(p.confidence * 100).toFixed(0)}%, evidências: ${p.evidence_count || 0}, visto: ${lastSeen})`)
-        })
-      }
-    }
-
-    // Fetch weekly summary for coordinator and journey
-    if (module === 'coordinator' || module === 'journey') {
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: weeklySummaries } = await supabaseAdmin
-        .from('weekly_summaries')
-        .select('summary_data, week_start, week_end, created_at')
-        .eq('user_id', userId)
-        .gte('created_at', weekAgo)
-        .order('created_at', { ascending: false })
-        .limit(1)
-
-      if (weeklySummaries?.length) {
-        const ws = weeklySummaries[0]
-        const data = typeof ws.summary_data === 'string' ? JSON.parse(ws.summary_data) : ws.summary_data
-        if (data) {
-          contextParts.push(`\n### Resumo Semanal (${ws.week_start || ''} a ${ws.week_end || ''})`)
-          if (data.emotionalTrend) contextParts.push(`- Tendência emocional: ${data.emotionalTrend}`)
-          if (data.dominantEmotions?.length) contextParts.push(`- Emoções dominantes: ${data.dominantEmotions.join(', ')}`)
-          if (data.insights?.length) {
-            data.insights.slice(0, 3).forEach((insight: string) => {
-              contextParts.push(`- Insight: ${insight}`)
-            })
-          }
-          if (data.suggestedFocus) contextParts.push(`- Foco sugerido: ${data.suggestedFocus}`)
-        }
-      }
-    }
-
-    // Fetch recent chat conversation summaries for cross-session memory
-    {
-      const { data: chatSummaries } = await supabaseAdmin
-        .from('chat_conversation_summaries')
-        .select('summary, key_topics, key_decisions, emotional_themes, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3)
-
-      if (chatSummaries?.length) {
-        contextParts.push(`\n## Conversas Anteriores`)
-        chatSummaries.forEach((cs: any, idx: number) => {
-          const date = new Date(cs.created_at).toLocaleDateString('pt-BR')
-          contextParts.push(`### Sessão ${idx + 1} (${date}): ${cs.summary}`)
-          if (cs.key_topics?.length) {
-            contextParts.push(`Tópicos: ${cs.key_topics.join(', ')}`)
-          }
-          if (cs.key_decisions?.length) {
-            contextParts.push(`Decisões: ${cs.key_decisions.join(', ')}`)
-          }
-          if (cs.emotional_themes?.length) {
-            contextParts.push(`Temas emocionais: ${cs.emotional_themes.join(', ')}`)
-          }
-        })
-      }
-    }
-
-  } catch (error) {
-    console.warn('[buildUserContext] Partial failure:', (error as Error).message)
-    contextParts.push('\n(Alguns dados não puderam ser carregados)')
-  }
-
-  const contextString = contextParts.length === 0 ? '' : contextParts.join('\n')
-  return { contextString, rawData }
-}
-
-// ============================================================================
-// SUGGESTED ACTIONS GENERATOR (pure function, no async)
-// ============================================================================
-
-function generateSuggestedActions(message: string, rawData: UserContextResult['rawData']): ChatAction[] {
-  const actions: ChatAction[] = []
-  const msg = message.toLowerCase()
-  const today = new Date().toISOString().split('T')[0]
-
-  // Keyword groups
-  const completeKeywords = ['concluir', 'terminar', 'feita', 'pronta', 'finalizar', 'completar', 'terminei', 'fiz', 'concluida', 'concluido']
-  const startKeywords = ['comecar', 'iniciar', 'start', 'comecei', 'vou fazer', 'vou comecar']
-  const priorityKeywords = ['prioridade', 'urgente', 'importante', 'priorizar', 'urgencia']
-  const rescheduleKeywords = ['reagendar', 'adiar', 'mudar data', 'postergar', 'remarcar']
-  const momentKeywords = ['momento', 'reflexao', 'registrar', 'sentimento', 'diario', 'como me sinto', 'estou sentindo']
-
-  // Find overdue tasks
-  const overdueTasks = rawData.tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done')
-
-  // Complete task
-  if (completeKeywords.some(k => msg.includes(k)) && rawData.tasks.length > 0) {
-    // Try to find a task matching keywords from the message
-    const openTasks = rawData.tasks.filter(t => t.status !== 'done')
-    const matchedTask = openTasks.find(t => {
-      const titleLower = t.title.toLowerCase()
-      // Check if any word from the message (4+ chars) matches part of the task title
-      const msgWords = msg.split(/\s+/).filter(w => w.length >= 4)
-      return msgWords.some(w => titleLower.includes(w))
-    }) || openTasks[0]
-
-    if (matchedTask) {
-      actions.push({
-        id: `complete_task_${matchedTask.id}`,
-        type: 'complete_task',
-        label: `Concluir "${matchedTask.title.substring(0, 30)}${matchedTask.title.length > 30 ? '...' : ''}"`,
-        icon: 'CheckCircle',
-        module: 'atlas',
-        params: { task_id: matchedTask.id },
-      })
-    }
-  }
-
-  // Start task
-  if (startKeywords.some(k => msg.includes(k)) && rawData.tasks.length > 0) {
-    const todoTasks = rawData.tasks.filter(t => t.status === 'todo' || t.status === 'backlog')
-    const matchedTask = todoTasks.find(t => {
-      const titleLower = t.title.toLowerCase()
-      const msgWords = msg.split(/\s+/).filter(w => w.length >= 4)
-      return msgWords.some(w => titleLower.includes(w))
-    }) || todoTasks[0]
-
-    if (matchedTask && !actions.some(a => a.type === 'complete_task' && a.params.task_id === matchedTask.id)) {
-      actions.push({
-        id: `start_task_${matchedTask.id}`,
-        type: 'start_task',
-        label: `Iniciar "${matchedTask.title.substring(0, 30)}${matchedTask.title.length > 30 ? '...' : ''}"`,
-        icon: 'Play',
-        module: 'atlas',
-        params: { task_id: matchedTask.id },
-      })
-    }
-  }
-
-  // Update priority
-  if (priorityKeywords.some(k => msg.includes(k)) && rawData.tasks.length > 0) {
-    const openTasks = rawData.tasks.filter(t => t.status !== 'done')
-    const matchedTask = openTasks.find(t => {
-      const titleLower = t.title.toLowerCase()
-      const msgWords = msg.split(/\s+/).filter(w => w.length >= 4)
-      return msgWords.some(w => titleLower.includes(w))
-    }) || openTasks[0]
-
-    if (matchedTask && !actions.some(a => a.params.task_id === matchedTask.id)) {
-      actions.push({
-        id: `update_priority_${matchedTask.id}`,
-        type: 'update_priority',
-        label: `Priorizar "${matchedTask.title.substring(0, 30)}${matchedTask.title.length > 30 ? '...' : ''}"`,
-        icon: 'Star',
-        module: 'atlas',
-        params: { task_id: matchedTask.id, is_urgent: true, is_important: true },
-      })
-    }
-  }
-
-  // Reschedule overdue tasks
-  if (rescheduleKeywords.some(k => msg.includes(k)) && overdueTasks.length > 0) {
-    const target = overdueTasks[0]
-    if (!actions.some(a => a.params.task_id === target.id)) {
-      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
-      actions.push({
-        id: `reschedule_task_${target.id}`,
-        type: 'reschedule_task',
-        label: `Reagendar "${target.title.substring(0, 30)}${target.title.length > 30 ? '...' : ''}"`,
-        icon: 'Calendar',
-        module: 'atlas',
-        params: { task_id: target.id, new_date: tomorrow },
-      })
-    }
-  }
-
-  // Create moment
-  if (momentKeywords.some(k => msg.includes(k))) {
-    actions.push({
-      id: `create_moment_${Date.now()}`,
-      type: 'create_moment',
-      label: 'Registrar momento',
-      icon: 'PenLine',
-      module: 'journey',
-      params: { content: message.substring(0, 500), emotion: 'thoughtful', type: 'text' },
-    })
-  }
-
-  // Fallback: if overdue tasks exist and no actions matched yet, suggest reschedule
-  if (actions.length === 0 && overdueTasks.length > 0) {
-    const target = overdueTasks[0]
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
-    actions.push({
-      id: `reschedule_task_${target.id}`,
-      type: 'reschedule_task',
-      label: `Reagendar "${target.title.substring(0, 30)}${target.title.length > 30 ? '...' : ''}" (atrasada)`,
-      icon: 'Calendar',
-      module: 'atlas',
-      params: { task_id: target.id, new_date: tomorrow },
-    })
-  }
-
-  return actions.slice(0, 3)
-}
+// buildUserContext — now imported from _shared/context-builder.ts
+// generateSuggestedActions — now imported from _shared/context-builder.ts
+// (both deleted, see _shared/context-builder.ts for the source)
 
 // ============================================================================
 // SUGGESTED QUESTIONS GENERATOR (pure function, no async)
@@ -1066,7 +260,7 @@ function generateSuggestedQuestions(
 
   // Context-aware suggestions based on module and data
   if (module === 'atlas' && rawData.tasks.length > 0) {
-    const today = new Date().toISOString().split('T')[0]
+    const { today } = getDateContext()
     const overdue = rawData.tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done')
     if (overdue.length > 0) questions.push(`Tenho ${overdue.length} tarefa(s) atrasada(s). Pode me ajudar a priorizar?`)
   }
@@ -1127,12 +321,9 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
   let finalSystemPrompt = systemPrompt || defaultSystemPrompt
 
   // Inject date context (always) and user data context (when available)
-  const now = new Date()
-  const today = now.toISOString().split('T')[0]
-  const dayOfWeek = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][now.getDay()]
-  const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
+  const { today, dayOfWeek, tomorrow, timeStr } = getDateContext()
 
-  finalSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${today} (${dayOfWeek})\n- Amanha: ${tomorrow}\n- Horario: ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} (BRT)`
+  finalSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${today} (${dayOfWeek})\n- Amanha: ${tomorrow}\n- Horario: ${timeStr} (BRT)`
 
   if (userContext) {
     finalSystemPrompt += `\n\n## Dados Reais do Usuario\n${userContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- Se o usuario perguntar sobre "amanha", "hoje", "essa semana", use a data acima para filtrar\n- NUNCA pergunte qual e a data atual — voce JA SABE a data (veja acima)\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Liste dados em formato organizado (bullet points) quando houver multiplos itens\n- Se nao tiver dados suficientes para responder, sugira acoes concretas`
@@ -1163,157 +354,9 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
   return { response: result.response.text(), actions, success: true }
 }
 
-// ============================================================================
-// INTERVIEWER AGENT — Guided conversational flow for data capture
-// ============================================================================
+// INTERVIEWER_SYSTEM_PROMPT, AGENT_SYSTEM_PROMPTS, VALID_AGENTS, ChatWithAgentPayload
+// — now imported from _shared/agent-prompts.ts and _shared/gemini-types.ts
 
-/**
- * Returns a system prompt for the interviewer agent based on the user's intent.
- * The interviewer asks warm, empathetic follow-up questions in Portuguese
- * to help the user capture rich structured data through conversation.
- */
-function INTERVIEWER_SYSTEM_PROMPT(intent: string): string {
-  const basePersonality = `# Aica Entrevistadora
-
-Voce e a Aica no modo entrevistadora — uma companheira calorosa, empatetica e curiosa que ajuda o usuario a registrar experiencias de forma rica e significativa atraves de conversa natural.
-
-## Personalidade
-- Calorosa e acolhedora, como uma amiga de confianca
-- Curiosa genuinamente — faz perguntas de acompanhamento naturais
-- Nao-julgamental, valida sentimentos e experiencias
-- Concisa nas perguntas (1-2 frases por pergunta)
-- Usa linguagem informal brasileira natural
-
-## Regras Fundamentais
-- Responda SEMPRE em portugues brasileiro
-- Faca UMA pergunta por vez (nunca multiplas perguntas juntas)
-- Espere a resposta antes de fazer a proxima pergunta
-- Seja breve nas suas falas (max 2-3 frases antes da pergunta)
-- Valide o que o usuario disse antes de perguntar mais
-- Nunca diga "interessante" repetidamente — varie as validacoes
-- Apos 3-5 perguntas respondidas, ofereca um resumo do que capturou`
-
-  if (intent === 'register_moment') {
-    return `${basePersonality}
-
-## Modo: Registro de Momento
-Voce esta ajudando o usuario a registrar um momento significativo do dia.
-
-## Fluxo de Perguntas (adapte a ordem conforme a conversa)
-1. **O que aconteceu?** — Pergunte o que o usuario quer registrar. Comece de forma aberta.
-2. **Como voce se sentiu?** — Explore a emocao ligada ao momento.
-3. **O que motivou isso?** — Entenda o contexto ou gatilho.
-4. **O que voce aprendeu?** — Extraia reflexao ou aprendizado.
-5. **Resumo** — Ofereca um resumo estruturado e pergunte se quer salvar.
-
-## Primeira Mensagem
-Comece com algo como: "Que bom que voce quer registrar um momento! Me conta, o que aconteceu?"
-
-## Formato do Resumo Final
-Quando tiver dados suficientes (apos 3+ respostas), ofereca:
-"Deixa eu organizar o que voce me contou:
-
-**Momento**: [descricao resumida]
-**Emocao**: [emocao detectada]
-**Contexto**: [o que motivou]
-**Reflexao**: [aprendizado/insight]
-
-Quer que eu salve assim ou quer ajustar algo?"`
-  }
-
-  if (intent === 'daily_question') {
-    return `${basePersonality}
-
-## Modo: Pergunta do Dia
-Voce esta conduzindo uma micro-reflexao diaria com o usuario.
-
-## Fluxo
-1. Faca UMA pergunta reflexiva interessante e personalizada (use os dados do usuario se disponiveis)
-2. Apos a resposta, faca 1-2 perguntas de aprofundamento baseadas no que ele disse
-3. Apos o aprofundamento, ofereca um insight ou observacao empatica
-4. Sugira registrar como momento se a reflexao foi significativa
-
-## Temas para Perguntas (varie entre eles)
-- Autodescoberta: "Se o dia de hoje fosse um capitulo da sua vida, que titulo teria?"
-- Gratidao: "O que hoje merece seu agradecimento, mesmo que pequeno?"
-- Intencao: "O que voce quer que seja diferente amanha?"
-- Presenca: "Qual foi o momento do dia em que voce esteve mais presente?"
-- Conexao: "Quem fez diferenca no seu dia hoje, mesmo sem saber?"
-
-## Primeira Mensagem
-Escolha uma pergunta criativa e pessoal. NAO diga "aqui esta a pergunta do dia" — apenas faca a pergunta naturalmente.`
-  }
-
-  // Generic interview fallback
-  return `${basePersonality}
-
-## Modo: Conversa Guiada
-Voce esta conduzindo uma conversa para ajudar o usuario a explorar um tema.
-Faca perguntas abertas, uma de cada vez, e va aprofundando conforme as respostas.
-Apos capturar informacao suficiente, ofereca um resumo organizado.`
-}
-
-// ============================================================================
-// CHAT WITH AGENT — Module-Specific AI Agent Chat
-// ============================================================================
-
-/** System prompts for each module agent (mirrors src/lib/agents/prompts/) */
-const AGENT_SYSTEM_PROMPTS: Record<string, { prompt: string; temperature: number; maxOutputTokens: number }> = {
-  atlas: {
-    prompt: `# Aica Atlas Agent\n\nVoce e o agente de produtividade do Aica Life OS, especializado em gestao de tarefas usando a Matriz de Eisenhower.\n\n## Personalidade\n- Objetivo e direto, foca em acao\n- Incentiva sem ser invasivo\n- Respeita o ritmo do usuario\n\n## Capacidades\n1. **Categorizacao de Tarefas**: Classificar tarefas nos 4 quadrantes (Q1-Q4)\n2. **Sugestao de Prioridade**: Analisar contexto e sugerir quadrante\n3. **Decomposicao**: Quebrar tarefas complexas em subtarefas\n4. **Planejamento Diario**: Sugerir ordem de execucao otimizada\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Seja conciso (max 200 palavras)\n- Use formato estruturado para listas de tarefas`,
-    temperature: 0.3,
-    maxOutputTokens: 1024,
-  },
-  captacao: {
-    prompt: `# Aica Captacao Agent\n\nVoce e o agente de captacao de recursos do Aica Life OS, especializado em editais de fomento a pesquisa no Brasil.\n\n## Personalidade\n- Academico mas acessivel\n- Meticuloso com requisitos e prazos\n- Proativo em identificar oportunidades\n\n## Capacidades\n1. **Analise de Editais**: Extrair requisitos, criterios, prazos e rubricas de editais\n2. **Redacao de Propostas**: Gerar textos para formularios de submissao\n3. **Matching**: Comparar perfil do pesquisador com editais\n4. **Busca de Editais**: Pesquisar editais abertos\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Cite fontes quando usar informacoes de editais\n- Nunca invente requisitos ou prazos\n- Destaque alertas de elegibilidade`,
-    temperature: 0.5,
-    maxOutputTokens: 4096,
-  },
-  studio: {
-    prompt: `# Aica Studio Agent\n\nVoce e o agente de producao de podcasts do Aica Life OS.\n\n## Personalidade\n- Criativo e curioso\n- Jornalistico - busca profundidade\n- Pratico - foca em resultados acionaveis\n\n## Capacidades\n1. **Pesquisa de Convidados**: Buscar informacoes sobre potenciais convidados\n2. **Geracao de Dossie**: Criar perfil completo do convidado\n3. **Criacao de Pauta**: Estruturar episodios com blocos tematicos\n4. **Geracao de Perguntas**: Criar perguntas contextualizadas\n5. **Ice Breakers**: Sugerir formas de iniciar a conversa\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Para dossies: Bio, Trajetoria, Temas-Chave, Polemicas, Links\n- Perguntas devem progredir do geral ao especifico`,
-    temperature: 0.7,
-    maxOutputTokens: 4096,
-  },
-  journey: {
-    prompt: `# Aica Journey Agent\n\nVoce e o agente de autoconhecimento do Aica Life OS, especializado em analise emocional, deteccao de padroes e reflexao guiada.\n\n## Personalidade\n- Empatico e acolhedor\n- Observador - percebe padroes sutis\n- Nao-julgamental\n\n## Capacidades\n1. **Analise de Sentimento**: Detectar emocoes e tons em reflexoes\n2. **Deteccao de Padroes**: Identificar temas recorrentes e gatilhos\n3. **Resumos Semanais**: Sintetizar a semana emocional\n4. **Perguntas Diarias**: Gerar perguntas para estimular reflexao\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Nunca diagnostique condicoes de saude mental\n- Use linguagem gentil e validadora\n- Respeite a privacidade`,
-    temperature: 0.6,
-    maxOutputTokens: 2048,
-  },
-  finance: {
-    prompt: `# Aica Finance Agent\n\nVoce e o Aica Finance, assistente financeiro pessoal do Aica Life OS.\n\n## Personalidade\n- Amigavel e acessivel, mas profissional\n- Proativo em identificar oportunidades de melhoria\n- Empatico com desafios financeiros\n- Nunca julgue habitos de gasto\n\n## Capacidades\n1. **Analise de Gastos**: Identificar padroes, anomalias e tendencias\n2. **Sugestoes de Economia**: Recomendar cortes baseados em dados\n3. **Previsao de Fluxo de Caixa**: Projetar gastos futuros\n4. **Categorizacao**: Classificar transacoes\n5. **Deteccao de Anomalias**: Cobracas duplicadas, valores fora do padrao\n\n## Restricoes\n- Nunca invente dados ou transacoes\n- Nao de conselhos de investimento especificos\n- Valores sempre em R$\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Seja conciso (max 300 palavras)`,
-    temperature: 0.4,
-    maxOutputTokens: 2048,
-  },
-  connections: {
-    prompt: `# Aica Connections Agent\n\nVoce e o agente de relacionamentos do Aica Life OS, especializado em contatos, insights de conversas e networking.\n\n## Personalidade\n- Discreto e respeitoso com privacidade\n- Observador de dinamicas sociais\n- Pratico em sugestoes de networking\n\n## Capacidades\n1. **Analise de Contatos**: Extrair contexto de conversas\n2. **Insights de Conversas**: Sentimento, temas e pontos de acao\n3. **Saude de Relacionamentos**: Frequencia de contato e reconexoes\n4. **Contextualizacao**: Resumo de historico antes de reunioes\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Privacidade e prioridade absoluta\n- Foque em insights acionaveis\n- Max 200 palavras por resposta`,
-    temperature: 0.5,
-    maxOutputTokens: 1024,
-  },
-  flux: {
-    prompt: `# Aica Flux Agent\n\nVoce e o Coach Flux, especialista em gestao de treinos e coaching esportivo no AICA Life OS.\n\n## Personalidade\n- Motivador mas tecnico\n- Focado em evidencias cientificas\n- Adaptavel ao nivel do atleta\n\n## Capacidades\n1. **Programacao de Treinos**: Criar blocos de treino periodizados\n2. **Analise de Performance**: Avaliar progresso dos atletas\n3. **Ajuste de Carga**: Sugerir progressoes e deloads\n4. **Monitoramento**: Acompanhar alertas e riscos\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Considere seguranca e saude do atleta\n- Seja especifico com series, repeticoes e cargas`,
-    temperature: 0.7,
-    maxOutputTokens: 4096,
-  },
-  agenda: {
-    prompt: `# Aica Agenda Agent\n\nVoce e o agente Agenda do AICA Life OS, especialista em calendario, reunioes e gestao de tempo.\n\n## Personalidade\n- Organizado e pontual\n- Proativo em otimizar a agenda\n- Respeitoso com limites de tempo\n\n## Capacidades\n1. **Gestao de Calendario**: Organizar compromissos\n2. **Sugestao de Horarios**: Encontrar melhores slots\n3. **Preparacao para Reunioes**: Resumo de contexto\n4. **Analise de Rotina**: Identificar padroes de uso do tempo\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Considere fuso horario BRT\n- Seja conciso e direto`,
-    temperature: 0.7,
-    maxOutputTokens: 4096,
-  },
-  coordinator: {
-    prompt: `# Aica Coordinator Agent\n\nVoce e a Aica, assistente pessoal integrada ao Aica Life OS — o "Jarvis" do usuario.\n\n## Personalidade\n- Amigavel, calorosa e brasileira\n- Proativa mas nao invasiva\n- Adapta o tom ao contexto e horario do dia:\n  - Manha (6h-12h): energetica, motivacional ("Bom dia! Vamos comecar bem o dia?")\n  - Tarde (12h-18h): focada, produtiva ("Como esta o progresso de hoje?")\n  - Noite (18h-23h): reflexiva, gentil ("Hora de desacelerar. Como foi seu dia?")\n  - Madrugada (23h-6h): breve e empática ("Ainda acordado? Cuide do seu descanso.")\n\n## Modulos Disponiveis\n1. **Atlas**: Gestao de tarefas e projetos\n2. **Captacao**: Editais de fomento e grants\n3. **Studio**: Producao de podcasts\n4. **Journey**: Autoconhecimento e momentos\n5. **Finance**: Gestao financeira\n6. **Connections**: CRM pessoal e WhatsApp\n7. **Agenda**: Calendario e compromissos\n8. **Flux**: Treinos e gestao atletica\n\n## Regras de Roteamento\n- Tarefas, prioridades -> Atlas\n- Editais, fomento -> Captacao\n- Podcast, convidado -> Studio\n- Sentimentos, reflexao -> Journey\n- Dinheiro, gastos -> Finance\n- Contatos, WhatsApp -> Connections\n- Agenda, calendario -> Agenda\n- Treinos, exercicios -> Flux\n\n## Orientacao Proativa\n\n### Deteccao de Modulos Vazios\nSe os dados do usuario mostrarem um modulo sem atividade (ex: 0 tarefas no Atlas, 0 momentos no Journey), sugira onboarding:\n- "Notei que voce ainda nao explorou o [modulo]. Quer que eu te guie nos primeiros passos?"\n- Ofereca 1-2 acoes concretas para comecar\n\n### Micro-Perguntas Contextuais\nBaseado nos dados do usuario, gere 1 micro-pergunta relevante por resposta:\n- Se ha tarefas atrasadas: "Vi que [tarefa] esta pendente ha X dias. Quer rever a prioridade?"\n- Se ha reuniao em breve: "Voce tem [reuniao] em 2h. Precisa de preparacao?"\n- Se nao ha momento registrado hoje: "Como esta se sentindo agora? Registrar um momento ajuda a entender seus padroes."\n- Se ha insights do Life Council: referencie-os naturalmente na conversa\n\n### Proxima Melhor Acao\nSempre sugira a proxima acao mais relevante:\n- Item mais urgente/atrasado do Atlas\n- Proximo compromisso da Agenda\n- Momento de reflexao se nenhum registrado hoje\n- Revisar financas se fim de mes\n\n### Insights do Life Council\nSe existirem insights do daily_council_insights nos dados do usuario:\n- Referencie-os naturalmente ("Seu conselho de vida notou que...")\n- Use-os para personalizar sugestoes\n- Nunca invente insights — so use se existirem nos dados\n\n## Formato de Resposta\nAlem do texto principal, inclua quando relevante:\n- **proactive_suggestions**: lista de 1-3 sugestoes de proximas acoes\n- Formato: texto natural, nao JSON — as sugestoes devem fluir na conversa\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Seja concisa (max 300 palavras)\n- Nunca invente dados — use apenas o que esta nos Dados Reais do Usuario\n- Se nao tiver dados suficientes, sugira acoes concretas para o usuario comecar`,
-    temperature: 0.7,
-    maxOutputTokens: 4096,
-  },
-}
-
-const VALID_AGENTS = Object.keys(AGENT_SYSTEM_PROMPTS)
-
-interface ChatWithAgentPayload {
-  message: string
-  context?: string
-  moduleData?: Record<string, any>
-  history?: Array<{ role: string; content: string }>
-}
 
 async function handleChatWithAgent(
   genAI: GoogleGenerativeAI,
@@ -1357,12 +400,9 @@ async function handleChatWithAgent(
   // Build final system prompt with date context and user data
   let finalSystemPrompt = agentConfig.prompt
 
-  const now = new Date()
-  const today = now.toISOString().split('T')[0]
-  const dayOfWeek = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][now.getDay()]
-  const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
+  const { today, dayOfWeek, tomorrow, timeStr } = getDateContext()
 
-  finalSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${today} (${dayOfWeek})\n- Amanha: ${tomorrow}\n- Horario: ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} (BRT)`
+  finalSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${today} (${dayOfWeek})\n- Amanha: ${tomorrow}\n- Horario: ${timeStr} (BRT)`
 
   if (userContext) {
     finalSystemPrompt += `\n\n## Dados Reais do Usuario\n${userContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Se nao tiver dados suficientes, sugira acoes concretas`
@@ -1440,8 +480,7 @@ async function handleExtractTaskFromVoice(genAI: GoogleGenerativeAI, payload: { 
     throw new Error('transcription e obrigatorio')
   }
 
-  const today = new Date().toISOString().split('T')[0]
-  const dayOfWeek = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][new Date().getDay()]
+  const { today, dayOfWeek } = getDateContext()
 
   const model = genAI.getGenerativeModel({
     model: MODELS.fast,
@@ -1558,22 +597,7 @@ async function handleGenerateTags(genAI: GoogleGenerativeAI, payload: any): Prom
 // ANALYZE MOMENT (Combined tags + mood + sentiment in 1 call)
 // ============================================================================
 
-interface AnalyzeMomentPayload {
-  content: string
-  user_emotion?: string
-}
-
-const VALID_EMOTION_VALUES = ['happy', 'sad', 'anxious', 'angry', 'thoughtful', 'calm', 'grateful', 'tired', 'inspired', 'neutral', 'excited', 'disappointed', 'frustrated', 'loving', 'scared', 'determined', 'sleepy', 'overwhelmed', 'confident', 'confused'] as const
-
-interface AnalyzeMomentResult {
-  tags: string[]
-  mood: { emoji: string; label: string; value: string }
-  sentiment: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative'
-  sentimentScore: number
-  emotions: string[]
-  triggers: string[]
-  energyLevel: number
-}
+// AnalyzeMomentPayload, VALID_EMOTION_VALUES, AnalyzeMomentResult — imported from _shared/gemini-types.ts
 
 async function handleAnalyzeMoment(genAI: GoogleGenerativeAI, payload: AnalyzeMomentPayload): Promise<AnalyzeMomentResult> {
   if (!payload.content || typeof payload.content !== 'string') throw new Error('Campo "content" e obrigatorio')
@@ -1673,22 +697,7 @@ REGRAS: Responda SOMENTE com o JSON. Nunca use "neutral" exceto para textos pura
 // QUALITY EVALUATION HANDLER
 // ============================================================================
 
-interface EvaluateQualityPayload {
-  input_type: 'moment' | 'question_answer' | 'reflection'
-  content: string
-  question_text?: string
-  summary_context?: string
-}
-
-interface EvaluateQualityResult {
-  quality_score: number
-  relevance: number
-  depth: number
-  authenticity: number
-  clarity: number
-  feedback_message: string
-  feedback_tier: 'low' | 'medium' | 'high' | 'exceptional'
-}
+// EvaluateQualityPayload, EvaluateQualityResult — imported from _shared/gemini-types.ts
 
 async function handleEvaluateQuality(genAI: GoogleGenerativeAI, payload: EvaluateQualityPayload): Promise<EvaluateQualityResult> {
   if (!payload.content || typeof payload.content !== 'string') {
@@ -2408,9 +1417,7 @@ ${rawText.substring(0, 15000).trim()}`
 // CATEGORIZE TRANSACTIONS HANDLER (CSV imports)
 // ============================================================================
 
-interface CategorizeTransactionsPayload {
-  transactions: Array<{ description: string; amount: number; type: 'income' | 'expense' }>
-}
+// CategorizeTransactionsPayload — imported from _shared/gemini-types.ts
 
 async function handleCategorizeTransactions(genAI: GoogleGenerativeAI, payload: CategorizeTransactionsPayload): Promise<any> {
   const { transactions } = payload || {}
@@ -2851,21 +1858,7 @@ serve(async (req) => {
     const body = await req.json()
 
     // Extract user ID from JWT for usage logging (best-effort, non-blocking)
-    let userId: string | null = null
-    try {
-      const authHeader = req.headers.get('Authorization')
-      if (authHeader) {
-        const token = authHeader.replace('Bearer ', '')
-        // Decode JWT payload without verification (service-role will handle the RPC)
-        const payloadB64 = token.split('.')[1]
-        if (payloadB64) {
-          const decoded = JSON.parse(atob(payloadB64))
-          userId = decoded.sub || null
-        }
-      }
-    } catch {
-      // Non-critical: if we can't extract user ID, just skip logging
-    }
+    const userId = extractUserId(req)
 
     if (body.action) {
       const { action, payload } = body as BaseRequest
@@ -3001,12 +1994,9 @@ serve(async (req) => {
 
           if (payload?.systemPrompt) streamSystemPrompt = payload.systemPrompt
 
-          const nowStream = new Date()
-          const todayStream = nowStream.toISOString().split('T')[0]
-          const dowStream = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][nowStream.getDay()]
-          const tomorrowStream = new Date(nowStream.getTime() + 86400000).toISOString().split('T')[0]
+          const { today: todayStream, dayOfWeek: dowStream, tomorrow: tomorrowStream, timeStr: timeStrStream } = getDateContext()
 
-          streamSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${todayStream} (${dowStream})\n- Amanha: ${tomorrowStream}\n- Horario: ${nowStream.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} (BRT)`
+          streamSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${todayStream} (${dowStream})\n- Amanha: ${tomorrowStream}\n- Horario: ${timeStrStream} (BRT)`
 
           if (streamUserContext) {
             streamSystemPrompt += `\n\n## Dados Reais do Usuario\n${streamUserContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- NUNCA pergunte qual e a data atual — voce JA SABE a data (veja acima)\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Liste dados em formato organizado (bullet points) quando houver multiplos itens\n- Se nao tiver dados suficientes, sugira acoes concretas`
