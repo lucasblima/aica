@@ -136,8 +136,29 @@ export async function handleStreamChat(
     parts: [{ text: msg.content }],
   })) || []
 
+  // Thread context: if replying to a specific message, fetch parent content
+  let threadContext = ''
+  if (payload?.parent_message_id && userId && supabaseAdmin) {
+    try {
+      const { data: parentMsg } = await supabaseAdmin
+        .from('chat_messages')
+        .select('content, direction')
+        .eq('id', payload.parent_message_id)
+        .eq('user_id', userId)
+        .single()
+      if (parentMsg) {
+        const role = parentMsg.direction === 'inbound' ? 'usuario' : 'assistente'
+        threadContext = `[Respondendo a mensagem do ${role}: "${parentMsg.content.substring(0, 300)}"]`
+        console.log(`[chat_aica_stream] Thread context: replying to ${payload.parent_message_id}`)
+      }
+    } catch (e) {
+      console.warn('[chat_aica_stream] Failed to fetch parent message:', (e as Error).message)
+    }
+  }
+
   let streamFinalMessage = streamMessage
-  if (payload?.context) streamFinalMessage = `Contexto:\n${payload.context}\n\nPergunta: ${streamMessage}`
+  if (threadContext) streamFinalMessage = `${threadContext}\n\n${streamMessage}`
+  if (payload?.context) streamFinalMessage = `Contexto:\n${payload.context}\n\n${streamFinalMessage}`
 
   const streamChat = streamModel.startChat({
     history: [

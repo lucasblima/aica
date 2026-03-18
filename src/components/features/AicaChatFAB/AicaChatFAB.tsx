@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, Square, Loader2, RotateCcw } from 'lucide-react'
+import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, Square, Loader2, RotateCcw, Reply, CornerDownRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
@@ -90,6 +90,8 @@ export function AicaChatFAB({
     activeAgent,
     lastFailedMessage,
     connectionStatus,
+    replyTo,
+    setReplyTo,
   } = useChatSession()
 
   const activeModule = activeAgent
@@ -224,7 +226,7 @@ export function AicaChatFAB({
     if (!trimmed || isLoading) return
 
     setInput('')
-    await sendMessage(trimmed)
+    await sendMessage(trimmed, undefined, replyTo?.id)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -470,56 +472,88 @@ export function AicaChatFAB({
                   </div>
                 )}
 
-                {messages.map((msg, idx) => (
-                  <div key={msg.id}>
-                    <div
-                      className={cn(
-                        'aica-fab-message',
-                        msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+                {messages.map((msg, idx) => {
+                  // Find parent message for thread indicator
+                  const parentMsg = msg.parentMessageId
+                    ? messages.find(m => m.id === msg.parentMessageId)
+                    : null
+
+                  return (
+                    <div key={msg.id}>
+                      {/* Thread indicator: show quoted parent message */}
+                      {parentMsg && (
+                        <div className="flex items-start gap-1 px-3 pt-1">
+                          <CornerDownRight size={12} className="text-ceramic-text-secondary mt-0.5 shrink-0" />
+                          <div className="text-[10px] text-ceramic-text-secondary bg-ceramic-cool/50 rounded px-2 py-0.5 truncate max-w-[80%]">
+                            {parentMsg.content.substring(0, 100)}{parentMsg.content.length > 100 ? '...' : ''}
+                          </div>
+                        </div>
                       )}
-                    >
-                      {msg.role === 'assistant' ? (
-                        msg.isStreaming ? (
-                          streamedText ? (
-                            <div className="aica-fab-message__content">
-                              <span dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(streamedText) }} />
-                              <span className="typing-cursor" aria-hidden="true">▍</span>
-                            </div>
+
+                      <div
+                        className={cn(
+                          'aica-fab-message group',
+                          msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+                        )}
+                      >
+                        {msg.role === 'assistant' ? (
+                          msg.isStreaming ? (
+                            streamedText ? (
+                              <div className="aica-fab-message__content">
+                                <span dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(streamedText) }} />
+                                <span className="typing-cursor" aria-hidden="true">▍</span>
+                              </div>
+                            ) : (
+                              <div className="aica-fab-thinking">
+                                <span className="aica-fab-thinking__label">Pensando...</span>
+                                <span className="typing-dots" aria-hidden="true">
+                                  <span /><span /><span />
+                                </span>
+                              </div>
+                            )
                           ) : (
-                            <div className="aica-fab-thinking">
-                              <span className="aica-fab-thinking__label">Pensando...</span>
-                              <span className="typing-dots" aria-hidden="true">
-                                <span /><span /><span />
-                              </span>
-                            </div>
+                            <div
+                              className="aica-fab-message__content"
+                              dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
+                            />
                           )
                         ) : (
-                          <div
-                            className="aica-fab-message__content"
-                            dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
-                          />
-                        )
-                      ) : (
-                        <p>{msg.content}</p>
+                          <p>{msg.content}</p>
+                        )}
+
+                        {/* Reply button — appears on hover for assistant messages */}
+                        {msg.role === 'assistant' && !isLoading && (
+                          <button
+                            className="absolute -bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-ceramic-base border border-ceramic-border rounded-full p-1 shadow-sm hover:bg-ceramic-cool"
+                            onClick={() => {
+                              setReplyTo(msg)
+                              inputRef.current?.focus()
+                            }}
+                            aria-label="Responder"
+                            title="Responder a esta mensagem"
+                          >
+                            <Reply size={12} className="text-ceramic-text-secondary" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Action buttons on last assistant message */}
+                      {isLastAssistantMessage(msg, idx) && msg.actions && msg.actions.length > 0 && (
+                        <ChatActionButtons
+                          actions={msg.actions}
+                          onExecute={handleExecuteAction}
+                        />
+                      )}
+
+                      {/* Agent badge for non-coordinator assistant messages */}
+                      {msg.role === 'assistant' && msg.agent && msg.agent !== 'aica_coordinator' && (
+                        <div className="aica-fab-agent-badge">
+                          {formatAgentName(msg.agent)}
+                        </div>
                       )}
                     </div>
-
-                    {/* Action buttons on last assistant message */}
-                    {isLastAssistantMessage(msg, idx) && msg.actions && msg.actions.length > 0 && (
-                      <ChatActionButtons
-                        actions={msg.actions}
-                        onExecute={handleExecuteAction}
-                      />
-                    )}
-
-                    {/* Agent badge for non-coordinator assistant messages */}
-                    {msg.role === 'assistant' && msg.agent && msg.agent !== 'aica_coordinator' && (
-                      <div className="aica-fab-agent-badge">
-                        {formatAgentName(msg.agent)}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
 
                 {/* Thinking indicator only when loading and no streaming placeholder exists yet */}
                 {isLoading && !messages.some(m => m.isStreaming) && (
@@ -606,6 +640,23 @@ export function AicaChatFAB({
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-t border-amber-200">
                   <Loader2 className="w-3 h-3 text-amber-600 animate-spin" />
                   <span className="text-[10px] text-amber-700">Transcrevendo...</span>
+                </div>
+              )}
+
+              {/* Reply preview */}
+              {replyTo && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50/50 border-t border-amber-200/50">
+                  <Reply size={12} className="text-amber-600 shrink-0" />
+                  <span className="text-[11px] text-amber-700 truncate flex-1">
+                    {replyTo.content.substring(0, 80)}{replyTo.content.length > 80 ? '...' : ''}
+                  </span>
+                  <button
+                    onClick={() => setReplyTo(null)}
+                    className="text-ceramic-text-secondary hover:text-ceramic-text-primary"
+                    aria-label="Cancelar resposta"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               )}
 
