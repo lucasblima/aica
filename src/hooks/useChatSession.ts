@@ -100,6 +100,42 @@ export function useChatSession(): UseChatSessionReturn {
     }
   }, [])
 
+  // Morning briefing: show once per day between 6-12h BRT
+  const fetchMorningBriefing = useCallback(async () => {
+    const now = new Date()
+    const brtHour = parseInt(now.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' }))
+    if (brtHour < 6 || brtHour >= 12) return // Only 6-12h BRT
+
+    const todayKey = `aica_briefing_${now.toISOString().split('T')[0]}`
+    if (localStorage.getItem(todayKey)) return // Already shown today
+
+    try {
+      const resp = await supabase.functions.invoke('gemini-chat', {
+        body: { action: 'generate_morning_briefing', payload: {} },
+      })
+      if (resp.data?.success && resp.data?.briefing) {
+        localStorage.setItem(todayKey, '1')
+        const briefingMsg: DisplayMessage = {
+          id: `briefing-${Date.now()}`,
+          role: 'assistant',
+          content: resp.data.briefing,
+          created_at: new Date().toISOString(),
+          agent: 'aica_coordinator',
+        }
+        setMessages(prev => prev.length === 0 ? [briefingMsg] : prev)
+      }
+    } catch (err) {
+      console.warn('[useChatSession] Morning briefing failed:', err)
+    }
+  }, [])
+
+  // Trigger briefing when hook loads with no messages
+  useEffect(() => {
+    if (messages.length === 0 && !session) {
+      fetchMorningBriefing()
+    }
+  }, [messages.length, session, fetchMorningBriefing])
+
   const getUserId = useCallback(async (): Promise<string> => {
     const { session: authSession } = await getCachedSession()
     if (!authSession?.user?.id) throw new Error('Não autenticado')
