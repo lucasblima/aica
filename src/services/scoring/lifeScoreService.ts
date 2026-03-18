@@ -372,7 +372,14 @@ export async function getLifeScoreHistory(
  */
 export async function storeLifeScore(score: LifeScore): Promise<void> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      log.error('Cannot store Life Score: no authenticated user');
+      return;
+    }
+
     const { error } = await supabase.from('life_scores').insert({
+      user_id: user.id,
       domain_scores: score.domainScores,
       domain_weights: score.domainWeights,
       composite_score: score.composite,
