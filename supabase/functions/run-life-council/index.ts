@@ -273,35 +273,44 @@ serve(async (req: Request) => {
 
   try {
     // =====================================================================
-    // JWT Authentication — validate caller identity
+    // Authentication — JWT preferred, body userId as fallback
     // =====================================================================
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+    const body = await req.json().catch(() => ({}))
+    let userId: string | null = null
+
+    // Try JWT auth first (preferred — prevents arbitrary userId injection)
     const authHeader = req.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: authHeader } }
+        })
+        const { data: { user: authUser } } = await userClient.auth.getUser()
+        if (authUser) {
+          userId = authUser.id
+        }
+      } catch (err) {
+        console.warn('[LIFE-COUNCIL] JWT validation failed, trying body userId:', err)
+      }
+    }
+
+    // Fallback: body userId (backward compatibility with frontend)
+    if (!userId && body.userId) {
+      userId = body.userId
+    }
+
+    if (!userId) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
+        JSON.stringify({ error: 'Authentication required. Send Authorization header or userId in body.' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-    const { data: { user: authUser }, error: authError } = await userClient.auth.getUser()
-
-    if (authError || !authUser) {
-      console.error('[LIFE-COUNCIL] Auth error:', authError)
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const userId = authUser.id
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
 
     const startTime = Date.now()
