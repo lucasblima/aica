@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, Pencil, Trash2, Check, ChevronUp, ChevronDown, GraduationCap, Loader2, Search } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Check, ChevronUp, ChevronDown, GraduationCap, Loader2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import type { Athlete, CoachLevel } from '../../types/flux';
 import { GROUP_COLORS, getGroupColorClasses } from '../../types/flux';
@@ -169,7 +169,6 @@ export function CustomLevelManager({
         .eq('id', athleteId);
 
       if (error) throw error;
-
 
       onAthleteUpdate?.();
     } catch (err) {
