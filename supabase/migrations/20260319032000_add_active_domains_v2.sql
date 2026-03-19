@@ -1,0 +1,4 @@
+-- Applied via Supabase Dashboard.
+-- Supersedes local 20260318100000_add_active_domains (deleted).
+-- Adds active_domains JSONB column to user_domain_weights.
+-- Content already applied to remote — DO NOT re-run.

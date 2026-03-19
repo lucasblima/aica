@@ -477,9 +477,13 @@ export async function storeFinancialHealth(
  */
 export async function getLatestFinancialHealth(): Promise<FinancialHealthResult | null> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
     const { data, error } = await supabase
       .from('financial_health_scores')
       .select('*')
+      .eq('user_id', user.id)
       .order('computed_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -519,9 +523,13 @@ export async function getFinancialHealthHistory(
   limit: number = 10
 ): Promise<{ composite: number; computedAt: string }[]> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
     const { data, error } = await supabase
       .from('financial_health_scores')
       .select('composite_score, computed_at')
+      .eq('user_id', user.id)
       .order('computed_at', { ascending: false })
       .limit(limit);
 
