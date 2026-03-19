@@ -179,7 +179,7 @@ export function AicaChatFAB({
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+  }, [messages.length, isLoading, streamedText])
 
   // Update consciousness streak once per chat session after first AI response
   useEffect(() => {
@@ -479,10 +479,26 @@ export function AicaChatFAB({
                       )}
                     >
                       {msg.role === 'assistant' ? (
-                        <div
-                          className="aica-fab-message__content"
-                          dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
-                        />
+                        msg.isStreaming ? (
+                          streamedText ? (
+                            <div className="aica-fab-message__content">
+                              <span dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(streamedText) }} />
+                              <span className="typing-cursor" aria-hidden="true">▍</span>
+                            </div>
+                          ) : (
+                            <div className="aica-fab-thinking">
+                              <span className="aica-fab-thinking__label">Pensando...</span>
+                              <span className="typing-dots" aria-hidden="true">
+                                <span /><span /><span />
+                              </span>
+                            </div>
+                          )
+                        ) : (
+                          <div
+                            className="aica-fab-message__content"
+                            dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
+                          />
+                        )
                       ) : (
                         <p>{msg.content}</p>
                       )}
@@ -505,17 +521,9 @@ export function AicaChatFAB({
                   </div>
                 ))}
 
-                {isLoading && (
-                  streamedText ? (
-                    <div className="aica-fab-message aica-fab-message--assistant">
-                      <div
-                        className="aica-fab-message__content"
-                        dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(streamedText) }}
-                      />
-                    </div>
-                  ) : (
-                    <AicaThinkingIndicator />
-                  )
+                {/* Thinking indicator only when loading and no streaming placeholder exists yet */}
+                {isLoading && !messages.some(m => m.isStreaming) && (
+                  <AicaThinkingIndicator />
                 )}
 
                 {error && (
