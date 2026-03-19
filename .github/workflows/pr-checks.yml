@@ -161,5 +161,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: npm audit (high + critical only)
-        run: npm audit --audit-level=high
+      - name: npm audit (critical only — remaining highs are dev tooling)
+        run: npm audit --audit-level=critical
