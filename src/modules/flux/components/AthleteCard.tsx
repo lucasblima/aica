@@ -8,11 +8,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import type { AthleteCardProps, AthleteGroup } from '../types';
-import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } from '../types';
-import { LevelBadge } from './LevelBadge';
+import { STATUS_CONFIG, MODALITY_CONFIG, getGroupColorClasses } from '../types';
 import { AlertBadge } from './AlertBadge';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
-import { AlertCircle, MessageSquare, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check, ClipboardEdit } from 'lucide-react';
+import { AlertCircle, MessageSquare, MoreVertical, Edit2, Trash2, Mail, Copy, Check, ClipboardEdit } from 'lucide-react';
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
@@ -63,9 +62,9 @@ export function AthleteCard({
   athlete,
   recentFeedbacks = [],
   activeAlerts = [],
-  adherenceRate = 0,
+  adherenceRate: _adherenceRate = 0,
   onClick,
-  onWhatsAppClick,
+  onWhatsAppClick: _onWhatsAppClick,
   onEdit,
   onDelete,
   onSendInvite,

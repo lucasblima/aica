@@ -26,7 +26,6 @@ import {
   ArrowDown,
   Users,
   DollarSign,
-  CheckCircle,
   Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -49,18 +48,15 @@ import type {
   Athlete,
   TrainingModality,
   AthleteLevel,
-  AthleteGroup,
   AthleteGroupData,
   CoachLevel,
   ModalityLevel,
-  Alert,
 } from '../types/flux';
 import type { WorkoutAutomation } from '../types/flow';
 import {
   MODALITY_CONFIG,
   TRAINING_MODALITIES,
   LEVEL_LABELS,
-  STATUS_CONFIG,
   getGroupColorClasses,
 } from '../types/flux';
 
@@ -292,7 +288,7 @@ export default function CRMCommandCenterView() {
   const { athletes: allAthletes, isLoading, error, refresh } = useAthletes();
 
   // Automations (separate fetch, not real-time)
-  const [automations, setAutomations] = useState<WorkoutAutomation[]>([]);
+  const [_automations, _setAutomations] = useState<WorkoutAutomation[]>([]);
 
   // Gamification
   const { trackAthleteCreated } = useFluxGamification();
@@ -337,7 +333,7 @@ export default function CRMCommandCenterView() {
   // Load automations
   useEffect(() => {
     AutomationService.getActiveAutomations().then((res) => {
-      if (res.data) setAutomations(res.data);
+      if (res.data) _setAutomations(res.data);
     });
   }, []);
 

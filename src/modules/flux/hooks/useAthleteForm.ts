@@ -260,7 +260,8 @@ export function useAthleteForm({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+     
+  }, [formData, mode]);
 
   const resetForm = useCallback(() => {
     setFormData(getInitialFormData());
@@ -338,7 +339,8 @@ export function useAthleteForm({
         setIsSubmitting(false);
       }
     },
-    [formData, validate, onSave, onClose, getInitialFormData, autoCloseDelayMs]
+     
+    [formData, validate, onSave, onClose, getInitialFormData, autoCloseDelayMs, mode]
   );
 
   const handleClose = useCallback(() => {

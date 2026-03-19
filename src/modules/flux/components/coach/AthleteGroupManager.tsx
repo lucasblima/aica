@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, Pencil, Trash2, Check, Users, Tag, Loader2, Link2, Copy } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Check, Users, Tag, Loader2, Link2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import type { Athlete, AthleteGroup, AthleteGroupData } from '../../types/flux';
 import { GROUP_COLORS, getGroupColorClasses } from '../../types/flux';
@@ -67,6 +67,7 @@ async function migrateFromLocalStorage(coachUserId: string): Promise<void> {
     }
 
     localStorage.removeItem(storageKey);
+    // eslint-disable-next-line no-console -- one-time migration diagnostic log
     console.log('[AthleteGroupManager] Migrated groups from localStorage to Supabase');
   } catch (err) {
     console.error('[AthleteGroupManager] Migration failed:', err);
@@ -77,6 +78,7 @@ async function migrateFromLocalStorage(coachUserId: string): Promise<void> {
  * Load all groups + membership from Supabase.
  * Triggers localStorage migration on first call.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export async function loadGroupData(coachUserId: string): Promise<AthleteGroupData> {
   // Migrate legacy data first (no-op if already migrated)
   await migrateFromLocalStorage(coachUserId);
@@ -119,6 +121,7 @@ export async function loadGroupData(coachUserId: string): Promise<AthleteGroupDa
  * @deprecated No longer needed — mutations go directly to Supabase.
  * Kept for backward compatibility; does nothing.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function saveGroupData(_coachUserId: string, _data: AthleteGroupData): void {
   // no-op — persistence is now handled per-mutation via Supabase
 }
@@ -126,6 +129,7 @@ export function saveGroupData(_coachUserId: string, _data: AthleteGroupData): vo
 /**
  * Get groups assigned to a specific athlete
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getAthleteGroups(data: AthleteGroupData, athleteId: string): AthleteGroup[] {
   const groupIds = data.assignments[athleteId] || [];
   return data.groups.filter((g) => groupIds.includes(g.id));
@@ -134,6 +138,7 @@ export function getAthleteGroups(data: AthleteGroupData, athleteId: string): Ath
 /**
  * Get all unique group names (for filter pills)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getAllGroups(data: AthleteGroupData): AthleteGroup[] {
   return data.groups;
 }
@@ -141,6 +146,7 @@ export function getAllGroups(data: AthleteGroupData): AthleteGroup[] {
 /**
  * Check if an athlete is in a specific group
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function isAthleteInGroup(data: AthleteGroupData, athleteId: string, groupId: string): boolean {
   return (data.assignments[athleteId] || []).includes(groupId);
 }

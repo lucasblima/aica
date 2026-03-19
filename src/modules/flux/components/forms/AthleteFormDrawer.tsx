@@ -32,7 +32,6 @@ import {
 } from 'lucide-react';
 import type { Athlete, ModalityLevel, CoachLevel } from '../../types/flux';
 import { getGroupColorClasses } from '../../types/flux';
-import { AthleteService } from '../../services/athleteService';
 import { CoachInviteLinkService, type CoachInviteLink } from '../../services/coachInviteLinkService';
 import { supabase } from '@/services/supabaseClient';
 import {
