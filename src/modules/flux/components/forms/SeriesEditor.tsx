@@ -878,20 +878,31 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
 
       {/* Zone selector — optional for cycling (speed/power are the primary intensity) */}
       <div>
+        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Zonas de Esforço</label>
         <button
           type="button"
           onClick={() => {
             setShowZones(!showZones);
             if (showZones) onUpdate({ zone: undefined });
           }}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            showZones
-              ? 'bg-ceramic-accent/10 text-ceramic-accent'
-              : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
-          }`}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg ceramic-inset hover:bg-white/50 transition-all"
         >
-          <Zap className="w-3.5 h-3.5" />
-          {showZones ? 'Zonas ativas' : 'Adicionar zonas FC'}
+          <Zap className={`w-4 h-4 ${showZones ? 'text-ceramic-accent' : 'text-ceramic-text-secondary'}`} />
+          <span className={`flex-1 text-left text-xs font-medium ${showZones ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'}`}>
+            {showZones ? 'Zonas de esforço ativadas' : 'Zonas de esforço desativadas'}
+          </span>
+          {/* Toggle switch */}
+          <div
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+              showZones ? 'bg-ceramic-accent' : 'bg-ceramic-text-secondary/30'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                showZones ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </div>
         </button>
       </div>
       {showZones && (

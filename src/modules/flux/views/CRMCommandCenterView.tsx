@@ -888,12 +888,12 @@ export default function CRMCommandCenterView() {
               </span>
               <button
                 onClick={() => setShowLevelManager(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent/10 hover:bg-ceramic-accent/20 transition-colors border border-ceramic-accent/20"
                 title="Gerenciar niveis personalizados"
               >
-                <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                  Gerenciar
+                <Settings className="w-3.5 h-3.5 text-ceramic-accent" />
+                <span className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider">
+                  Gerenciar Niveis
                 </span>
               </button>
             </div>
@@ -1012,12 +1012,12 @@ export default function CRMCommandCenterView() {
               </span>
               <button
                 onClick={() => setGroupManagerOpen(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent/10 hover:bg-ceramic-accent/20 transition-colors border border-ceramic-accent/20"
                 title="Gerenciar grupos e atribuir atletas"
               >
-                <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                  Gerenciar
+                <Settings className="w-3.5 h-3.5 text-ceramic-accent" />
+                <span className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider">
+                  Gerenciar Grupos
                 </span>
               </button>
             </div>
