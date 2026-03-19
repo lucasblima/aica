@@ -8,7 +8,7 @@
  * Tool descriptions are in Portuguese to match the AI's language.
  */
 
-import { tool } from 'npm:ai@^4'
+import { tool } from 'npm:ai@^6'
 import { z } from 'npm:zod@^3'
 import { buildUserContext } from '../_shared/context-builder.ts'
 
@@ -31,12 +31,8 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
         'Requer o ID da tarefa (task_id).',
       parameters: z.object({
         task_id: z.string().uuid().describe('ID da tarefa a ser concluida'),
-        completion_note: z
-          .string()
-          .optional()
-          .describe('Nota opcional sobre a conclusao da tarefa'),
       }),
-      execute: async ({ task_id, completion_note }) => {
+      execute: async ({ task_id }) => {
         console.log(`[complete_task] userId=${userId}, task_id=${task_id}`)
 
         // Verify the task belongs to the user before updating
@@ -55,7 +51,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           }
         }
 
-        if (existing.status === 'done') {
+        if (existing.status === 'completed') {
           return {
             success: true,
             message: `A tarefa "${existing.title}" ja estava concluida.`,
@@ -63,13 +59,11 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           }
         }
 
-        // Update task status to done
+        // Update task status to completed
         const updateData: Record<string, any> = {
-          status: 'done',
-          updated_at: new Date().toISOString(),
-        }
-        if (completion_note) {
-          updateData.completion_note = completion_note
+          status: 'completed',
+          is_completed: true,
+          completed_at: new Date().toISOString(),
         }
 
         const { data: updated, error: updateError } = await supabaseAdmin
@@ -77,7 +71,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           .update(updateData)
           .eq('id', task_id)
           .eq('user_id', userId)
-          .select('id, title, status, updated_at')
+          .select('id, title, status, completed_at')
           .single()
 
         if (updateError) {
@@ -166,7 +160,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
         module: z
           .enum([
             'atlas', 'journey', 'finance', 'connections',
-            'studio', 'flux', 'agenda', 'coordinator',
+            'studio', 'flux', 'agenda', 'captacao', 'coordinator',
           ])
           .describe('Modulo de onde buscar dados do usuario'),
       }),
