@@ -1381,6 +1381,8 @@ export default function CRMCommandCenterView() {
         coachUserId={coachUserId}
         levels={coachLevels}
         onLevelsChange={(updated) => setCoachLevels(updated)}
+        athletes={allAthletes}
+        onAthleteUpdate={refresh}
       />
     </div>
   );
