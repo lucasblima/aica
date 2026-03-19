@@ -44,7 +44,7 @@ import {
   WhatsAppExportUpload,
   ContactDetailSheet,
 } from '../components/whatsapp';
-import { GoogleContextPanel } from '@/modules/google-hub/components/GoogleContextPanel';
+import { GoogleContextPanel } from '@/components/features/GoogleContextPanel';
 import { deleteContacts } from '@/services/contactNetworkService';
 import { useContactDossier } from '../hooks/useContactDossier';
 import { useConversationThreads } from '../hooks/useConversationThreads';
