@@ -12,6 +12,13 @@ ALTER TABLE user_domain_weights
 
 COMMENT ON COLUMN user_domain_weights.active_domains IS 'Array of active domain names for Life Score computation. Only active domains are included in the weighted geometric mean.';
 
+-- Prevent empty active_domains (at least 1 domain must be active)
+ALTER TABLE user_domain_weights
+  DROP CONSTRAINT IF EXISTS active_domains_not_empty;
+ALTER TABLE user_domain_weights
+  ADD CONSTRAINT active_domains_not_empty
+  CHECK (jsonb_array_length(active_domains) > 0);
+
 -- 2. Add active_domains column to life_scores for historical tracking
 ALTER TABLE life_scores
   ADD COLUMN IF NOT EXISTS active_domains JSONB;
