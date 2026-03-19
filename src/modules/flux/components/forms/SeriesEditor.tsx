@@ -288,50 +288,7 @@ function DistanceInput({
 // SHARED: DURATION INPUT (min + seg)
 // ============================================================================
 
-function DurationInput({
-  label,
-  minutes,
-  seconds,
-  onMinutesChange,
-  onSecondsChange,
-}: {
-  label: string;
-  minutes: number;
-  seconds: number;
-  onMinutesChange: (v: number) => void;
-  onSecondsChange: (v: number) => void;
-}) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">{label}</label>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={minutes}
-            onChange={(e) => onMinutesChange(parseInt(e.target.value) || 0)}
-            className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
-          />
-          <span className="text-xs text-ceramic-text-secondary font-medium">min</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            min="0"
-            max="59"
-            step="1"
-            value={seconds}
-            onChange={(e) => onSecondsChange(Math.min(59, parseInt(e.target.value) || 0))}
-            className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
-          />
-          <span className="text-xs text-ceramic-text-secondary font-medium">seg</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+// DurationInput removed — replaced by inline h/min/seg fields in modality-specific components
 
 // ============================================================================
 // SHARED: HOURS + MINUTES DURATION INPUT (for cycling distance mode — #427)

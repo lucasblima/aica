@@ -69,6 +69,7 @@ export class CoachInviteLinkService {
     groupId?: string | null
   ): Promise<{
     data: CoachInviteLink | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
     error: any;
   }> {
     const token = generateToken();
@@ -93,6 +94,7 @@ export class CoachInviteLinkService {
     groupId?: string | null
   ): Promise<{
     data: CoachInviteLink | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
     error: any;
   }> {
     const existing = await this.findActiveLink(healthConfig, groupId);
@@ -100,6 +102,7 @@ export class CoachInviteLinkService {
     return this.createLink(healthConfig, maxUses, groupId);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
   static async getMyLinks(): Promise<{ data: CoachInviteLink[]; error: any }> {
     const { data, error } = await supabase
       .from('coach_invite_links')
@@ -108,6 +111,7 @@ export class CoachInviteLinkService {
     return { data: (data || []) as CoachInviteLink[], error };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
   static async deactivateLink(linkId: string): Promise<{ error: any }> {
     const { error } = await supabase
       .from('coach_invite_links')
