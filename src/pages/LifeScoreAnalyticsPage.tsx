@@ -4,9 +4,9 @@
  *
  * Detailed view with:
  * - Current score hero
- * - Domain breakdown grid
+ * - Domain breakdown grid (only active domains)
  * - Historical line chart (SVG)
- * - Domain weight adjuster (reuses DomainWeightSliders)
+ * - Domain weight adjuster with active domain toggles
  * - Spiral alert details
  *
  * Follows Ceramic Design System.
@@ -30,6 +30,7 @@ import { LifeScoreRadar } from '@/components/features/LifeScoreRadar';
 import { DomainWeightSliders } from '@/components/features/DomainWeightSliders';
 import { DOMAIN_LABELS } from '@/services/scoring/lifeScoreService';
 import type { AicaDomain, ScoreTrend, SufficiencyLevel } from '@/services/scoring/types';
+import { ALL_AICA_DOMAINS } from '@/services/scoring/types';
 import {
   getSufficiencyColor,
   getSufficiencyDisplayText,
@@ -39,10 +40,6 @@ import {
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const DOMAINS_ORDER: AicaDomain[] = [
-  'atlas', 'journey', 'connections', 'finance', 'grants', 'studio', 'flux',
-];
 
 const DOMAIN_ICONS: Record<AicaDomain, string> = {
   atlas: '🎯',
@@ -299,6 +296,7 @@ export default function LifeScoreAnalyticsPage() {
     lifeScore,
     history,
     weights,
+    activeDomains,
     isLoading,
     isComputing,
     error,
@@ -306,6 +304,7 @@ export default function LifeScoreAnalyticsPage() {
     refresh,
     compute,
     updateWeights,
+    updateActiveDomains,
     fetchHistory,
   } = useLifeScore();
 
@@ -336,10 +335,15 @@ export default function LifeScoreAnalyticsPage() {
     await fetchHistory(30);
   }, [compute, fetchHistory]);
 
+  // Filter to active domains preserving canonical order
+  const visibleDomains = useMemo(() => {
+    return ALL_AICA_DOMAINS.filter(d => activeDomains.includes(d));
+  }, [activeDomains]);
+
   // Derive domain trends from history
   const domainTrends = useMemo((): Record<AicaDomain, ScoreTrend> => {
     const result: Record<string, ScoreTrend> = {};
-    for (const domain of DOMAINS_ORDER) {
+    for (const domain of ALL_AICA_DOMAINS) {
       if (history.length < 3) {
         result[domain] = 'stable';
         continue;
@@ -491,13 +495,13 @@ export default function LifeScoreAnalyticsPage() {
               </div>
             </motion.section>
 
-            {/* Section 2: Domain Breakdown */}
+            {/* Section 2: Domain Breakdown — only active domains */}
             <section>
               <h2 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
                 Dominios
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {DOMAINS_ORDER.map(domain => (
+                {visibleDomains.map(domain => (
                   <DomainCard
                     key={domain}
                     domain={domain}
@@ -551,7 +555,7 @@ export default function LifeScoreAnalyticsPage() {
               </div>
             </section>
 
-            {/* Section 5: Domain Weights */}
+            {/* Section 5: Domain Weights with Active Domain Toggles */}
             <section>
               <h2 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
                 Pesos dos Dominios
@@ -560,6 +564,8 @@ export default function LifeScoreAnalyticsPage() {
                 weights={localWeights}
                 onWeightsChange={setLocalWeights}
                 onSave={handleSaveWeights}
+                activeDomains={activeDomains}
+                onActiveDomainsChange={updateActiveDomains}
                 isSaving={isSavingWeights}
               />
             </section>
