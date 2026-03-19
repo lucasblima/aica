@@ -89,6 +89,67 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
     }),
 
     // ========================================================================
+    // CREATE TASK — Create a new work_item in Atlas
+    // ========================================================================
+    create_task: tool({
+      description:
+        'Criar uma nova tarefa no modulo Atlas. ' +
+        'Use SEMPRE que o usuario pedir para criar, adicionar, ou registrar uma tarefa. ' +
+        'NUNCA apenas descreva a tarefa — SEMPRE execute esta ferramenta para cria-la de fato.',
+      parameters: z.object({
+        title: z.string().min(1).max(200).describe('Titulo da tarefa'),
+        description: z.string().max(2000).optional().describe('Descricao detalhada da tarefa'),
+        is_urgent: z.boolean().describe('Tarefa urgente? (Eisenhower Q1 ou Q3)'),
+        is_important: z.boolean().describe('Tarefa importante? (Eisenhower Q1 ou Q2)'),
+        due_date: z.string().optional().describe('Data limite no formato YYYY-MM-DD'),
+        priority: z.enum(['urgent', 'high', 'medium', 'low', 'none']).optional().describe('Prioridade geral'),
+      }),
+      execute: async ({ title, description, is_urgent, is_important, due_date, priority }) => {
+        console.log(`[create_task] userId=${userId}, title="${title}", urgent=${is_urgent}, important=${is_important}`)
+
+        const taskData: Record<string, any> = {
+          user_id: userId,
+          title,
+          description: description || null,
+          status: 'todo',
+          is_urgent,
+          is_important,
+          priority: priority || 'medium',
+          due_date: due_date || null,
+          archived: false,
+          is_completed: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
+        const { data: task, error } = await supabaseAdmin
+          .from('work_items')
+          .insert(taskData)
+          .select('id, title, status, is_urgent, is_important, priority, due_date')
+          .single()
+
+        if (error) {
+          console.error('[create_task] Insert failed:', error.message)
+          return { success: false, error: 'Erro ao criar tarefa.' }
+        }
+
+        // Determine Eisenhower quadrant for response
+        const quadrant = is_urgent && is_important ? 'Q1 (Urgente + Importante: Fazer Agora)'
+          : !is_urgent && is_important ? 'Q2 (Importante, Nao Urgente: Planejar/Agendar)'
+          : is_urgent && !is_important ? 'Q3 (Urgente, Nao Importante: Delegar)'
+          : 'Q4 (Nem Urgente, Nem Importante: Eliminar)'
+
+        console.log(`[create_task] Success: "${task.title}" created in ${quadrant}`)
+        return {
+          success: true,
+          message: `Tarefa "${task.title}" criada com sucesso! Categorizada como ${quadrant}.`,
+          task,
+          quadrant,
+        }
+      },
+    }),
+
+    // ========================================================================
     // CREATE MOMENT — Create a Journey moment/reflection
     // ========================================================================
     create_moment: tool({

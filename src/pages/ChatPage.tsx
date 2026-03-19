@@ -1,11 +1,9 @@
 /**
- * ChatPage — Full-page chat experience at /chat route.
- *
- * Dispatches aica-chat-open event on mount to auto-open AicaChatFAB
- * in fullscreen mode. Wrapped in error boundary.
+ * ChatPage — Full-page chat at /chat route.
+ * Uses fullPage prop to keep AicaChatFAB always open+expanded.
  */
 
-import { Component, useEffect, type ReactNode } from 'react'
+import { Component, type ReactNode } from 'react'
 import { AicaChatFAB } from '@/components/features/AicaChatFAB'
 
 class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -46,19 +44,9 @@ class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 }
 
 export default function ChatPage() {
-  // Auto-open chat in fullscreen mode when /chat route loads
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('aica-chat-open', {
-        detail: { fullscreen: true },
-      }))
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
-
   return (
     <ChatErrorBoundary>
-      <AicaChatFAB hideButton />
+      <AicaChatFAB fullPage hideButton />
     </ChatErrorBoundary>
   )
 }
