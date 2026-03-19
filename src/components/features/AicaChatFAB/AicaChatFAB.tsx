@@ -13,7 +13,20 @@ import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { useChatSession } from '@/hooks/useChatSession'
-import type { DisplayMessage } from '@/hooks/useChatSession'
+import { useChatSessionV2 } from '@/hooks/useChatSessionV2'
+import type { DisplayMessage, UseChatSessionReturn } from '@/hooks/useChatSession'
+
+/**
+ * Feature flag: localStorage.setItem('aica_chat_v2', 'true') to enable AI SDK chat.
+ * Read once at module load — stable for hooks.
+ */
+const CHAT_V2_ENABLED = typeof window !== 'undefined' && localStorage.getItem('aica_chat_v2') === 'true'
+
+/** Route to v1 or v2 chat hook. Falls back to v1 on any v2 crash. */
+function useChatHook(): UseChatSessionReturn {
+  if (CHAT_V2_ENABLED) return useChatSessionV2() // eslint-disable-line react-hooks/rules-of-hooks
+  return useChatSession() // eslint-disable-line react-hooks/rules-of-hooks
+}
 import type { InterviewMeta } from '@/services/chatStreamService'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import { formatAgentName } from '@/lib/agents/formatAgentName'
@@ -55,15 +68,18 @@ interface AicaChatFABProps {
   bottomOffset?: number
   /** When true, hides the FAB circle button but keeps the drawer functional (openable via CustomEvent). Used on /vida where VidaChatHero replaces the FAB button. */
   hideButton?: boolean
+  /** When true, chat starts open+expanded and cannot be minimized. Used on /chat full-page route. */
+  fullPage?: boolean
 }
 
 export function AicaChatFAB({
   position = 'bottom-right',
   bottomOffset = 80,
   hideButton = false,
+  fullPage = false,
 }: AicaChatFABProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isOpen, setIsOpen] = useState(fullPage)
+  const [isExpanded, setIsExpanded] = useState(fullPage)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -92,7 +108,7 @@ export function AicaChatFAB({
     connectionStatus,
     replyTo,
     setReplyTo,
-  } = useChatSession()
+  } = useChatHook()
 
   const activeModule = activeAgent
     ? activeAgent.replace(/_agent$/, '').replace('aica_', '')
@@ -185,16 +201,16 @@ export function AicaChatFAB({
       if (e.key === 'Escape' && isOpen) {
         if (showSessions) {
           setShowSessions(false)
-        } else if (isExpanded) {
+        } else if (isExpanded && !fullPage) {
           setIsExpanded(false)
-        } else {
+        } else if (!fullPage) {
           setIsOpen(false)
         }
       }
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, isExpanded, showSessions, setShowSessions])
+  }, [isOpen, isExpanded, showSessions, setShowSessions, fullPage])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -235,6 +251,7 @@ export function AicaChatFAB({
   }, [isOpen, showSessions])
 
   const handleClose = () => {
+    if (fullPage) return // Cannot close in full-page mode
     setIsExpanded(false)
     setIsOpen(false)
   }
@@ -367,7 +384,7 @@ export function AicaChatFAB({
               </button>
               <button
                 className="aica-fab-header__action"
-                onClick={() => setIsExpanded(prev => !prev)}
+                onClick={() => !fullPage && setIsExpanded(prev => !prev)}
                 aria-label={isExpanded ? 'Reduzir' : 'Expandir'}
                 title={isExpanded ? 'Reduzir' : 'Expandir'}
               >
