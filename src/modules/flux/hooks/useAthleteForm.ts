@@ -37,6 +37,7 @@ export interface AthleteFormData {
   allow_parq_onboarding: boolean;
   auth_user_id?: string;
   invitation_status?: 'none' | 'pending' | 'connected';
+  custom_level_id?: string;
 }
 
 export interface AthleteFormErrors {
@@ -119,6 +120,7 @@ export function useAthleteForm({
         allow_parq_onboarding: initialData.allow_parq_onboarding || false,
         auth_user_id: initialData.auth_user_id,
         invitation_status: initialData.invitation_status,
+        custom_level_id: initialData.custom_level_id,
       };
     }
     return {
@@ -131,6 +133,7 @@ export function useAthleteForm({
       allow_parq_onboarding: false,
       auth_user_id: undefined,
       invitation_status: undefined,
+      custom_level_id: undefined,
     };
   }, [initialData]);
 
@@ -257,7 +260,8 @@ export function useAthleteForm({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+     
+  }, [formData, mode]);
 
   const resetForm = useCallback(() => {
     setFormData(getInitialFormData());
@@ -287,6 +291,7 @@ export function useAthleteForm({
           modality: hasModalities ? formData.modalityLevels[0].modality : undefined,
           level: hasModalities ? formData.modalityLevels[0].level as AthleteLevel : 'iniciante',
           practiced_modalities: hasModalities ? formData.modalityLevels.map((ml) => ml.modality) : [],
+          custom_level_id: formData.custom_level_id || undefined,
           status: isCreate ? 'trial' : 'active',
           invitation_status: isCreate ? 'pending' : formData.invitation_status,
           requires_cardio_exam: formData.requires_cardio_exam,
@@ -334,7 +339,8 @@ export function useAthleteForm({
         setIsSubmitting(false);
       }
     },
-    [formData, validate, onSave, onClose, getInitialFormData, autoCloseDelayMs]
+     
+    [formData, validate, onSave, onClose, getInitialFormData, autoCloseDelayMs, mode]
   );
 
   const handleClose = useCallback(() => {

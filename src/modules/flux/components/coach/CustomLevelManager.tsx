@@ -1,7 +1,7 @@
 /**
  * CustomLevelManager - CRUD para niveis personalizados do coach
  *
- * Permite ao coach criar, renomear, excluir e reordenar niveis customizados.
+ * Permite ao coach criar, renomear, excluir, reordenar niveis customizados e atribuir atletas.
  * Máximo de 10 niveis. Dados persistidos no Supabase (coach_levels).
  * Segue o mesmo padrão visual do AthleteGroupManager (Ceramic Design System).
  */
@@ -9,7 +9,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Pencil, Trash2, Check, ChevronUp, ChevronDown, GraduationCap, Loader2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
-import type { CoachLevel } from '../../types/flux';
+import type { Athlete, CoachLevel } from '../../types/flux';
 import { GROUP_COLORS, getGroupColorClasses } from '../../types/flux';
 
 const MAX_LEVELS = 10;
@@ -20,6 +20,8 @@ interface CustomLevelManagerProps {
   coachUserId: string;
   levels: CoachLevel[];
   onLevelsChange: (levels: CoachLevel[]) => void;
+  athletes?: Athlete[];
+  onAthleteUpdate?: () => void;
 }
 
 export function CustomLevelManager({
@@ -28,16 +30,22 @@ export function CustomLevelManager({
   coachUserId,
   levels,
   onLevelsChange,
+  athletes = [],
+  onAthleteUpdate,
 }: CustomLevelManagerProps) {
   const [newLevelName, setNewLevelName] = useState('');
   const [newLevelColor, setNewLevelColor] = useState(GROUP_COLORS[0].id);
   const [editingLevelId, setEditingLevelId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
+      setSelectedLevelId(null);
+      setSearchQuery('');
       setTimeout(() => inputRef.current?.focus(), 200);
     }
   }, [isOpen]);
@@ -101,6 +109,9 @@ export function CustomLevelManager({
     setIsSaving(true);
     try {
       await supabase.from('coach_levels').delete().eq('id', levelId);
+      if (selectedLevelId === levelId) {
+        setSelectedLevelId(null);
+      }
       await reloadLevels();
     } catch (err) {
       console.error('[CustomLevelManager] Failed to delete level:', err);
@@ -144,6 +155,44 @@ export function CustomLevelManager({
       setIsSaving(false);
     }
   };
+
+  // Toggle athlete into/out of a level (exclusive — one level at a time)
+  const handleToggleAthleteLevel = async (athleteId: string, levelId: string) => {
+    setIsSaving(true);
+    try {
+      const athlete = athletes.find((a) => a.id === athleteId);
+      const newLevelId = athlete?.custom_level_id === levelId ? null : levelId;
+
+      const { error } = await supabase
+        .from('athletes')
+        .update({ custom_level_id: newLevelId, updated_at: new Date().toISOString() })
+        .eq('id', athleteId);
+
+      if (error) throw error;
+
+      onAthleteUpdate?.();
+    } catch (err) {
+      console.error('[CustomLevelManager] Failed to toggle athlete level:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Filter athletes by search query
+  const filteredAthletes = athletes.filter((a) => {
+    if (!searchQuery.trim()) return true;
+    return a.name.toLowerCase().includes(searchQuery.toLowerCase().trim());
+  });
+
+  // Athletes in the selected level
+  const athletesInLevel = selectedLevelId
+    ? filteredAthletes.filter((a) => a.custom_level_id === selectedLevelId)
+    : [];
+
+  // Athletes NOT in the selected level
+  const athletesNotInLevel = selectedLevelId
+    ? filteredAthletes.filter((a) => a.custom_level_id !== selectedLevelId)
+    : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -240,16 +289,18 @@ export function CustomLevelManager({
                 {levels.map((level, index) => {
                   const colors = getGroupColorClasses(level.color);
                   const isEditing = editingLevelId === level.id;
+                  const isSelected = selectedLevelId === level.id;
+                  const memberCount = athletes.filter((a) => a.custom_level_id === level.id).length;
 
                   return (
-                    <div key={level.id} className="ceramic-card p-3 transition-all">
+                    <div key={level.id} className={`ceramic-card p-3 transition-all ${isSelected ? 'ring-2 ring-ceramic-accent' : ''}`}>
                       <div className="flex items-center gap-3">
                         {/* Color dot */}
                         <div
                           className={`w-3 h-3 rounded-full ${colors.bg} border border-black/10 flex-shrink-0`}
                         />
 
-                        {/* Name (editable) */}
+                        {/* Name (editable or clickable) */}
                         {isEditing ? (
                           <input
                             type="text"
@@ -268,9 +319,17 @@ export function CustomLevelManager({
                             disabled={isSaving}
                           />
                         ) : (
-                          <span className="flex-1 text-sm font-bold text-ceramic-text-primary">
-                            {level.name}
-                          </span>
+                          <button
+                            onClick={() => setSelectedLevelId(isSelected ? null : level.id)}
+                            className="flex-1 text-left"
+                          >
+                            <span className="text-sm font-bold text-ceramic-text-primary">
+                              {level.name}
+                            </span>
+                            <span className="ml-2 text-xs text-ceramic-text-secondary">
+                              {memberCount} atleta{memberCount !== 1 ? 's' : ''}
+                            </span>
+                          </button>
                         )}
 
                         {/* Actions */}
@@ -335,6 +394,78 @@ export function CustomLevelManager({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Athlete assignment (when a level is selected) */}
+          {selectedLevelId && athletes.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                  Atribuir Atletas - {levels.find((l) => l.id === selectedLevelId)?.name}
+                </label>
+                <button
+                  onClick={() => setSelectedLevelId(null)}
+                  className="text-xs text-ceramic-info hover:underline"
+                >
+                  Fechar
+                </button>
+              </div>
+
+              {/* Search athletes */}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar atleta..."
+                className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+              />
+
+              {/* Athletes in this level */}
+              {athletesInLevel.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-ceramic-success uppercase tracking-wider">
+                    Neste nivel ({athletesInLevel.length})
+                  </p>
+                  {athletesInLevel.map((athlete) => (
+                    <button
+                      key={athlete.id}
+                      onClick={() => handleToggleAthleteLevel(athlete.id, selectedLevelId)}
+                      className="w-full flex items-center gap-3 px-3 py-2 ceramic-card hover:bg-ceramic-cool transition-colors text-left"
+                      disabled={isSaving}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-ceramic-success flex-shrink-0" />
+                      <span className="text-sm text-ceramic-text-primary flex-1 truncate">
+                        {athlete.name}
+                      </span>
+                      <Check className="w-4 h-4 text-ceramic-success flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Athletes NOT in this level */}
+              {athletesNotInLevel.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                    Disponíveis ({athletesNotInLevel.length})
+                  </p>
+                  {athletesNotInLevel.map((athlete) => (
+                    <button
+                      key={athlete.id}
+                      onClick={() => handleToggleAthleteLevel(athlete.id, selectedLevelId)}
+                      className="w-full flex items-center gap-3 px-3 py-2 ceramic-inset hover:bg-white/50 transition-colors text-left rounded-lg"
+                      disabled={isSaving}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-ceramic-border flex-shrink-0" />
+                      <span className="text-sm text-ceramic-text-secondary flex-1 truncate">
+                        {athlete.name}
+                      </span>
+                      <Plus className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

@@ -26,7 +26,6 @@ import {
   ArrowDown,
   Users,
   DollarSign,
-  CheckCircle,
   Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -49,24 +48,26 @@ import type {
   Athlete,
   TrainingModality,
   AthleteLevel,
-  AthleteGroup,
   AthleteGroupData,
   CoachLevel,
   ModalityLevel,
-  Alert,
 } from '../types/flux';
 import type { WorkoutAutomation } from '../types/flow';
 import {
   MODALITY_CONFIG,
   TRAINING_MODALITIES,
   LEVEL_LABELS,
-  STATUS_CONFIG,
   getGroupColorClasses,
 } from '../types/flux';
 
 // ============================================================================
 // Sort / Level types (mirroring FluxDashboard)
 // ============================================================================
+
+interface UnreadFeedbackRow {
+  athlete_id: string;
+  unread_count: number;
+}
 
 type SortOrder = 'none' | 'asc' | 'desc';
 
@@ -287,7 +288,7 @@ export default function CRMCommandCenterView() {
   const { athletes: allAthletes, isLoading, error, refresh } = useAthletes();
 
   // Automations (separate fetch, not real-time)
-  const [automations, setAutomations] = useState<WorkoutAutomation[]>([]);
+  const [_automations, _setAutomations] = useState<WorkoutAutomation[]>([]);
 
   // Gamification
   const { trackAthleteCreated } = useFluxGamification();
@@ -315,6 +316,9 @@ export default function CRMCommandCenterView() {
   const [coachLevels, setCoachLevels] = useState<CoachLevel[]>([]);
   const [showLevelManager, setShowLevelManager] = useState(false);
 
+  // Unread feedback counts per athlete
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+
   // Athlete form modal state
   const [athleteModalOpen, setAthleteModalOpen] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
@@ -329,7 +333,7 @@ export default function CRMCommandCenterView() {
   // Load automations
   useEffect(() => {
     AutomationService.getActiveAutomations().then((res) => {
-      if (res.data) setAutomations(res.data);
+      if (res.data) _setAutomations(res.data);
     });
   }, []);
 
@@ -349,6 +353,20 @@ export default function CRMCommandCenterView() {
           .eq('user_id', user.id)
           .order('display_order');
         setCoachLevels((levelsData || []) as CoachLevel[]);
+
+        // Load unread feedback counts
+        const { data: unreadData, error: unreadError } = await supabase.rpc('get_unread_feedback_counts', {
+          p_coach_user_id: user.id,
+        });
+        if (unreadError) {
+          console.error('[CRM] Failed to fetch unread feedback counts:', unreadError);
+        } else if (unreadData) {
+          const counts: Record<string, number> = {};
+          for (const row of unreadData as UnreadFeedbackRow[]) {
+            counts[row.athlete_id] = Number(row.unread_count);
+          }
+          setUnreadCounts(counts);
+        }
       }
     };
     loadCoachData();
@@ -873,12 +891,12 @@ export default function CRMCommandCenterView() {
               </span>
               <button
                 onClick={() => setShowLevelManager(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent/10 hover:bg-ceramic-accent/20 transition-colors border border-ceramic-accent/20"
                 title="Gerenciar niveis personalizados"
               >
-                <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                  Gerenciar
+                <Settings className="w-3.5 h-3.5 text-ceramic-accent" />
+                <span className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider">
+                  Gerenciar Niveis
                 </span>
               </button>
             </div>
@@ -997,12 +1015,12 @@ export default function CRMCommandCenterView() {
               </span>
               <button
                 onClick={() => setGroupManagerOpen(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ceramic-cool transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ceramic-accent/10 hover:bg-ceramic-accent/20 transition-colors border border-ceramic-accent/20"
                 title="Gerenciar grupos e atribuir atletas"
               >
-                <Settings className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-                <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                  Gerenciar
+                <Settings className="w-3.5 h-3.5 text-ceramic-accent" />
+                <span className="text-[10px] font-bold text-ceramic-accent uppercase tracking-wider">
+                  Gerenciar Grupos
                 </span>
               </button>
             </div>
@@ -1277,6 +1295,7 @@ export default function CRMCommandCenterView() {
                     onCopyLink={() => {}}
                     onPrescreverClick={() => navigate('/flux/canvas/' + athlete.id)}
                     groupTags={athleteGroupTags}
+                    unreadFeedbackCount={unreadCounts[athlete.id] || 0}
                   />
 
                   {/* CRM extra info: all practiced modalities + level */}
@@ -1365,6 +1384,8 @@ export default function CRMCommandCenterView() {
         coachUserId={coachUserId}
         levels={coachLevels}
         onLevelsChange={(updated) => setCoachLevels(updated)}
+        athletes={allAthletes}
+        onAthleteUpdate={refresh}
       />
     </div>
   );
