@@ -148,7 +148,7 @@ serve(async (req: Request) => {
 
     // --- CONVERT UI MESSAGES TO MODEL MESSAGES ---
     // useChat sends UIMessage[] (with parts array), streamText needs CoreMessage[]
-    const modelMessages = convertToModelMessages(messages)
+    const modelMessages = await convertToModelMessages(messages)
 
     // --- INTENT CLASSIFICATION ---
     // Extract last user message text for classification
