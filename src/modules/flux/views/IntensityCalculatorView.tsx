@@ -74,8 +74,8 @@ export default function IntensityCalculatorView() {
       /* eslint-disable react-hooks/set-state-in-effect */
       calculateIntensity();
       calculateAllZones();
-    }
       /* eslint-enable react-hooks/set-state-in-effect */
+    }
   }, [profile, selectedZone]);
 
   if (loading) {

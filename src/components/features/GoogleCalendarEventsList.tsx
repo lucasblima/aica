@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Calendar, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useGoogleCalendarEvents } from '@/hooks/useGoogleCalendarEvents';
 
@@ -31,8 +31,9 @@ export default function GoogleCalendarEventsList({
 
     const displayedEvents = filteredEvents.slice(0, maxEvents);
 
-    // Stable timestamp for render — avoids impure Date.now() calls during render
-    const [nowMs] = useState(() => Date.now());
+    // Refreshes when events update — avoids impure Date.now() during render
+    // eslint-disable-next-line react-hooks/purity
+    const nowMs = Date.now();
 
     if (!isConnected) {
         return null;
