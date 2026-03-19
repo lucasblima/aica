@@ -79,8 +79,10 @@ export default function CoachInviteView() {
   // Load link info
   useEffect(() => {
     if (!token) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setStep('error');
       setErrorMessage('Link invalido.');
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
 

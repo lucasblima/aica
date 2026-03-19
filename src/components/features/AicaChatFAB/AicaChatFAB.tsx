@@ -107,10 +107,10 @@ export function AicaChatFAB({
   const waveformBars = useMemo(() => {
     const bars = 6
     return Array.from({ length: bars }, (_, i) => {
-      const variance = Math.sin((Date.now() / 200) + i) * 0.3 + 0.7
+      const variance = Math.sin((recordSeconds * 5) + i) * 0.3 + 0.7
       return Math.max(3, (audioLevel / 100) * 16 * variance)
     })
-  }, [audioLevel])
+  }, [audioLevel, recordSeconds])
 
   const formatRecordTime = (secs: number) => {
     const m = Math.floor(secs / 60)

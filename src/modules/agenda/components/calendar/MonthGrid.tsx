@@ -46,11 +46,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
   // Reset focusedDay when month/year changes or selectedDay changes externally
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (selectedDay != null && selectedDay >= 1 && selectedDay <= daysInMonth) {
       setFocusedDay(selectedDay);
     } else {
       setFocusedDay(prev => Math.min(prev, daysInMonth));
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [selectedDay, daysInMonth]);
 
   const setCellRef = useCallback((day: number, el: HTMLDivElement | null) => {

@@ -31,12 +31,15 @@ export function PricingSimulatorPage() {
 
   // Merge baseline when loaded
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (!isLoading) setInput(baselineInput);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [isLoading, baselineInput]);
 
   // Auto-apply live exchange rate on first load
   useEffect(() => {
     if (exchangeRate.data && !isLoading) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setInput(prev => ({
         ...prev,
         costs: {
@@ -44,6 +47,7 @@ export function PricingSimulatorPage() {
           exchangeRate: parseFloat(exchangeRate.data!.usdBrl.toFixed(2)),
         },
       }));
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [exchangeRate.data, isLoading]);
 

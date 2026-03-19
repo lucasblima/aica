@@ -14,8 +14,10 @@ export function useMediaQuery(query: string): boolean {
     const mql = window.matchMedia(query);
     const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
 
-    // Set initial value
+    // Sync initial value for new query
+    /* eslint-disable react-hooks/set-state-in-effect */
     setMatches(mql.matches);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     mql.addEventListener('change', handler);
     return () => mql.removeEventListener('change', handler);

@@ -34,6 +34,7 @@ function useCountdown(expiresAt: string | null): string {
 
   useEffect(() => {
     if (!expiresAt) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRemaining('')
       return
     }

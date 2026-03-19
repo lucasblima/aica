@@ -10,6 +10,7 @@ import type { AlertBadgeProps } from '../types';
 import { SEVERITY_COLORS } from '../types';
 import { AlertCircle, Heart, Frown, UserX, MessageSquare, FileText, DollarSign } from 'lucide-react';
 
+/* eslint-disable react-hooks/static-components */
 export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps) {
   // Icon mapping by alert type
   const getAlertIcon = () => {

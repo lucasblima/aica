@@ -37,7 +37,7 @@ export default function NewsletterPreview({ newsletter, onClick }: NewsletterPre
   const templateConfig = TEMPLATE_CONFIG[newsletter.template] || TEMPLATE_CONFIG.default;
 
   const contentPreview = newsletter.content
-    ? newsletter.content.replace(/[#*_`\[\]]/g, '').substring(0, 200)
+    ? newsletter.content.replace(/[#*_`[\]]/g, '').substring(0, 200)
     : '';
 
   const formattedScheduledAt = newsletter.scheduledAt

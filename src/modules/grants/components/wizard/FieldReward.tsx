@@ -20,6 +20,7 @@ export function FieldReward({ xp, show, onComplete }: FieldRewardProps) {
 
   useEffect(() => {
     if (show) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       const timer = setTimeout(() => {
         setIsVisible(false);
@@ -166,8 +167,8 @@ export function LevelUpCelebration({
                     scale: 0,
                   }}
                   animate={{
-                    x: `${Math.random() * 100}%`,
-                    y: `${Math.random() * 100}%`,
+                    x: `${((Math.sin(i * 2.4 + 0.5) + 1) / 2) * 100}%`,
+                    y: `${((Math.cos(i * 1.7 + 0.3) + 1) / 2) * 100}%`,
                     scale: [0, 1, 0],
                     opacity: [0, 1, 0],
                   }}

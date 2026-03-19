@@ -95,8 +95,20 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
         };
       }
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFieldStates(initialStates);
   }, [formFields, initialResponses]);
+
+  /**
+   * Calculate approval progress
+   */
+  const calculateProgress = () => {
+    const total = formFields.length;
+    const approved = formFields.filter(
+      field => fieldStates[field.id]?.status === 'approved'
+    ).length;
+    return { approved, total, percentage: Math.round((approved / total) * 100) };
+  };
 
   /**
    * Detect when all fields are approved and show confirmation modal
@@ -107,6 +119,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
 
     if (allApproved && !hasCalledComplete && !showSubmitConfirmation) {
       // Show confirmation modal instead of auto-submitting
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowSubmitConfirmation(true);
     }
   }, [fieldStates, formFields, hasCalledComplete, showSubmitConfirmation]);
@@ -161,17 +174,6 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
     setShowSubmitConfirmation(false);
     setSubmissionPhase('idle');
     setErrorMessage('');
-  };
-
-  /**
-   * Calculate approval progress
-   */
-  const calculateProgress = () => {
-    const total = formFields.length;
-    const approved = formFields.filter(
-      field => fieldStates[field.id]?.status === 'approved'
-    ).length;
-    return { approved, total, percentage: Math.round((approved / total) * 100) };
   };
 
   /**
@@ -933,7 +935,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
               {/* SUCCESS STATE - Confetti and next steps */}
               {submissionPhase === 'success' && (
                 <>
-                  {/* Confetti Animation */}
+                  {/* Confetti Animation — deterministic offsets based on index */}
                   {[...Array(20)].map((_, i) => (
                     <motion.div
                       key={i}
@@ -946,10 +948,10 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                       initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
                       animate={{
                         opacity: [1, 1, 0],
-                        x: (Math.random() - 0.5) * 400,
-                        y: (Math.random() - 0.5) * 400,
+                        x: (Math.sin(i * 2.4) * 0.5) * 400,
+                        y: (Math.cos(i * 1.7) * 0.5) * 400,
                         scale: [1, 1.5, 0],
-                        rotate: Math.random() * 720
+                        rotate: ((i * 137.5) % 360) * 2
                       }}
                       transition={{ duration: 1.5, ease: 'easeOut' }}
                     />

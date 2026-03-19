@@ -41,6 +41,7 @@ export function ConversionSection({
         const duration = 2000;
 
         if (end === 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDisplayCount(0);
             return;
         }

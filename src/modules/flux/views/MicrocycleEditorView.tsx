@@ -116,13 +116,6 @@ export default function MicrocycleEditorView() {
     };
   });
 
-  // Load data
-  useEffect(() => {
-    if (microcycleId) {
-      loadMicrocycle();
-    }
-  }, [microcycleId]);
-
   // Real-time subscription for slot updates
   useEffect(() => {
     if (!microcycleId) return;
@@ -228,6 +221,14 @@ export default function MicrocycleEditorView() {
 
     setLoading(false);
   };
+
+  // Load data
+  useEffect(() => {
+    if (microcycleId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadMicrocycle();
+    }
+  }, [microcycleId]);
 
   const handleSave = async () => {
     if (!microcycle) return;

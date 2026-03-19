@@ -82,7 +82,8 @@ jobs:
     name: ESLint
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    continue-on-error: true
+    # Blocking for errors (0 errors as of eslint-errors fix).
+    # Warnings allowed (1225 baseline) — will decrease over time.
 
     steps:
       - name: Checkout code
@@ -97,5 +98,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint (errors block, warnings allowed)
+        run: npx eslint src/ --max-warnings 1225

@@ -100,7 +100,7 @@ export async function awardCP(
     const config = DEFAULT_CP_CONFIG;
 
     // Calculate base amount
-    let baseAmount = options.customAmount || reward?.amount || 0;
+    const baseAmount = options.customAmount || reward?.amount || 0;
 
     // Check daily cap for this reward type
     if (reward?.max_daily) {

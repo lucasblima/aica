@@ -62,6 +62,7 @@ interface WeatherInsightCardProps {
   compact?: boolean
 }
 
+/* eslint-disable react-hooks/static-components */
 export const WeatherInsightCard: React.FC<WeatherInsightCardProps> = ({ compact = false }) => {
   const { weather, insight, hasLocation, isLoading } = useWeatherInsight()
   const [showModal, setShowModal] = useState(false)

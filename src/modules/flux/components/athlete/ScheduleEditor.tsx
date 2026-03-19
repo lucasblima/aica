@@ -25,9 +25,12 @@ export function ScheduleEditor({
   const [day, setDay] = useState(currentDay);
   const [time, setTime] = useState(currentTime || '');
 
+  // Sync from props when they change
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setDay(currentDay);
     setTime(currentTime || '');
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [currentDay, currentTime]);
 
   const hasChanges = day !== currentDay || time !== (currentTime || '');

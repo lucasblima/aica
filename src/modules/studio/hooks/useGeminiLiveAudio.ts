@@ -60,7 +60,9 @@ export function useGeminiLiveAudio(
 
   // Use refs for values that change frequently but don't need re-renders
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+  useEffect(() => {
+    optionsRef.current = options;
+  });
 
   // Track partial transcripts to build complete messages
   const currentUserTranscript = useRef('');

@@ -42,12 +42,6 @@ export function DailyQuestionCarousel({
   const [direction, setDirection] = useState(0) // -1 = left, 1 = right
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const currentQuestion = questions[activeIndex]
-  if (!currentQuestion) return null
-
-  const isCurrentAnswered = answeredIndices.has(activeIndex) || !!currentQuestion.user_response
-  const isCurrentSubmitting = submittingIndex === activeIndex || externalSubmitting
-
   const goTo = useCallback((index: number) => {
     setDirection(index > activeIndex ? 1 : -1)
     setActiveIndex(index)
@@ -83,6 +77,12 @@ export function DailyQuestionCarousel({
       setIsTranscribing(false)
     }
   }, [activeIndex])
+
+  const currentQuestion = questions[activeIndex]
+  if (!currentQuestion) return null
+
+  const isCurrentAnswered = answeredIndices.has(activeIndex) || !!currentQuestion.user_response
+  const isCurrentSubmitting = submittingIndex === activeIndex || externalSubmitting
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

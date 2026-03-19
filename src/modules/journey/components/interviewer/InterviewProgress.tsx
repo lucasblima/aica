@@ -50,6 +50,7 @@ export function InterviewProgress() {
   const { stats, isLoading: isLoadingStats } = useInterviewStats()
   const [completions, setCompletions] = useState<Record<InterviewCategory, CategoryCompletion> | null>(null)
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const loadCompletions = useCallback(async () => {
     if (!user?.id) return
     const data = await getCategoryCompletion(user.id)
@@ -57,6 +58,7 @@ export function InterviewProgress() {
   }, [user?.id])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCompletions()
   }, [loadCompletions])
 

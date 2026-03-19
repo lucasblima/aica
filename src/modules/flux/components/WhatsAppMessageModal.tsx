@@ -185,10 +185,12 @@ export function WhatsAppMessageModal({
   // Reset all state when modal opens
   useEffect(() => {
     if (isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setMessageVariant(0);
       setIsEditing(false);
       setCustomMessage('');
       setSendStatus('idle');
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen]);
 

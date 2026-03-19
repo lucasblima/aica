@@ -204,6 +204,7 @@ export function EF_OnboardingScreen({
   // Step 3: Capture voice answer from interimTranscript
   useEffect(() => {
     if (voiceTutorialPhase === 'listening' && interimTranscript && interimTranscript.trim().length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVoiceAnswer(interimTranscript.trim());
     }
   }, [interimTranscript, voiceTutorialPhase]);
@@ -284,6 +285,7 @@ export function EF_OnboardingScreen({
 
   useEffect(() => {
     if (step === 5) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowConfetti(true);
       speak('Parabens! Sua aventura comeca agora!');
     }

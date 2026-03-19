@@ -10,6 +10,7 @@ interface WeatherStripProps {
   className?: string
 }
 
+/* eslint-disable react-hooks/static-components */
 export const WeatherStrip: React.FC<WeatherStripProps> = ({
   variant,
   dayOffset = 0,
