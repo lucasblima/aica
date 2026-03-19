@@ -99,4 +99,4 @@ jobs:
         run: npm ci
 
       - name: Lint (errors block, warnings allowed)
-        run: npx eslint src/ --max-warnings 1225
+        run: npx eslint src/ --max-warnings 1224

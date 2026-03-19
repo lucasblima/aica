@@ -93,8 +93,8 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
       // If in auto mode and no theme set yet, use generated theme
       if (themeMode === 'auto' && !formData.theme) {
         setFormData((prev) => ({ ...prev, theme: generated }));
-      /* eslint-enable react-hooks/set-state-in-effect */
       }
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [guestName]);
 
