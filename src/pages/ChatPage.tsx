@@ -1,11 +1,11 @@
 /**
- * ChatPage — Full-page chat experience
+ * ChatPage — Full-page chat experience at /chat route.
  *
- * Lazy-loaded at /chat route. Renders AicaChatFAB in permanent fullpage mode.
- * Wrapped in error boundary to prevent blank pages on chat crashes.
+ * Dispatches aica-chat-open event on mount to auto-open AicaChatFAB
+ * in fullscreen mode. Wrapped in error boundary.
  */
 
-import { Component, type ReactNode } from 'react'
+import { Component, useEffect, type ReactNode } from 'react'
 import { AicaChatFAB } from '@/components/features/AicaChatFAB'
 
 class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -24,9 +24,9 @@ class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
       return (
         <div className="flex items-center justify-center min-h-screen bg-ceramic-cool p-8">
           <div className="bg-ceramic-base rounded-xl p-6 shadow-ceramic-emboss max-w-md text-center">
-            <h2 className="text-ceramic-text-primary font-medium text-lg mb-2">Chat indisponível</h2>
+            <h2 className="text-ceramic-text-primary font-medium text-lg mb-2">Chat indisponivel</h2>
             <p className="text-ceramic-text-secondary text-sm mb-4">
-              Ocorreu um erro ao carregar o chat. Tente recarregar a página.
+              Ocorreu um erro ao carregar o chat. Tente recarregar a pagina.
             </p>
             <button
               onClick={() => {
@@ -46,9 +46,19 @@ class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 }
 
 export default function ChatPage() {
+  // Auto-open chat in fullscreen mode when /chat route loads
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('aica-chat-open', {
+        detail: { fullscreen: true },
+      }))
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <ChatErrorBoundary>
-      <AicaChatFAB />
+      <AicaChatFAB hideButton />
     </ChatErrorBoundary>
   )
 }
