@@ -74,12 +74,18 @@ export function unregisterDomainProvider(domain: AicaDomain): void {
 
 /**
  * Compute all available domain scores.
- * Skips modules that don't have enough data or aren't registered.
+ * Skips modules that don't have enough data, aren't registered, or aren't active.
  */
-export async function computeAllDomainScores(): Promise<DomainScore[]> {
+export async function computeAllDomainScores(activeDomains?: AicaDomain[]): Promise<DomainScore[]> {
   const results: DomainScore[] = [];
 
   for (const [domain, provider] of domainProviders) {
+    // Skip domains not in the active set
+    if (activeDomains && !activeDomains.includes(domain)) {
+      log.debug(`Domain ${domain}: not active, skipping`);
+      continue;
+    }
+
     try {
       const score = await provider();
       if (score) {
@@ -111,11 +117,11 @@ export async function computeAndStoreLifeScore(): Promise<LifeScore | null> {
   try {
     log.info('Computing Life Score...');
 
-    // 1. Get user's domain weights
-    const { weights } = await getUserDomainWeights();
+    // 1. Get user's domain weights + active domains
+    const { weights, activeDomains } = await getUserDomainWeights();
 
-    // 2. Compute domain scores
-    const domainScores = await computeAllDomainScores();
+    // 2. Compute domain scores (only active domains)
+    const domainScores = await computeAllDomainScores(activeDomains);
 
     if (domainScores.length === 0) {
       log.warn('No domain scores available — Life Score cannot be computed');
@@ -126,7 +132,7 @@ export async function computeAndStoreLifeScore(): Promise<LifeScore | null> {
     const history = await getLifeScoreHistory(10);
 
     // 4. Compute Life Score
-    const lifeScore = computeLifeScore(domainScores, weights, history);
+    const lifeScore = computeLifeScore(domainScores, weights, history, activeDomains);
 
     // 5. Store in database
     await storeLifeScore(lifeScore);
@@ -134,6 +140,7 @@ export async function computeAndStoreLifeScore(): Promise<LifeScore | null> {
     log.info('Life Score computed:', {
       composite: lifeScore.composite.toFixed(3),
       domains: domainScores.length,
+      activeDomains: activeDomains.length,
       trend: lifeScore.trend,
       spiral: lifeScore.spiralAlert,
     });

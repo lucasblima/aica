@@ -4,22 +4,19 @@
  *
  * Lets users customize how much each AICA domain contributes to their Life Score.
  * Supports slider mode (quick) and AHP mode (scientific pairwise comparison).
+ * Includes active/inactive domain toggles.
  * Follows Ceramic Design System.
  */
 
 import React, { useState, useCallback } from 'react';
 import { Sliders, Scale, RotateCcw } from 'lucide-react';
 import type { AicaDomain } from '@/services/scoring/types';
-import { DEFAULT_DOMAIN_WEIGHTS } from '@/services/scoring/types';
+import { ALL_AICA_DOMAINS, DEFAULT_DOMAIN_WEIGHTS, DEFAULT_ACTIVE_DOMAINS } from '@/services/scoring/types';
 import { DOMAIN_LABELS } from '@/services/scoring/lifeScoreService';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const DOMAINS: AicaDomain[] = [
-  'atlas', 'journey', 'connections', 'finance', 'grants', 'studio', 'flux',
-];
 
 const DOMAIN_ICONS: Record<AicaDomain, string> = {
   atlas: '🎯',
@@ -42,6 +39,10 @@ interface DomainWeightSlidersProps {
   onWeightsChange: (weights: Record<AicaDomain, number>) => void;
   /** Callback when user saves */
   onSave?: (weights: Record<AicaDomain, number>) => void;
+  /** Currently active domains */
+  activeDomains: AicaDomain[];
+  /** Callback when active domains change */
+  onActiveDomainsChange: (domains: AicaDomain[]) => void;
   /** Whether save is in progress */
   isSaving?: boolean;
   /** Additional CSS classes */
@@ -52,6 +53,8 @@ export const DomainWeightSliders: React.FC<DomainWeightSlidersProps> = ({
   weights,
   onWeightsChange,
   onSave,
+  activeDomains,
+  onActiveDomainsChange,
   isSaving = false,
   className = '',
 }) => {
@@ -63,18 +66,31 @@ export const DomainWeightSliders: React.FC<DomainWeightSlidersProps> = ({
     onWeightsChange(updated);
   }, [localWeights, onWeightsChange]);
 
+  const handleToggleDomain = useCallback((domain: AicaDomain) => {
+    const isActive = activeDomains.includes(domain);
+    const updated = isActive
+      ? activeDomains.filter(d => d !== domain)
+      : [...activeDomains, domain];
+    // Prevent deactivating all domains
+    if (updated.length === 0) return;
+    onActiveDomainsChange(updated);
+  }, [activeDomains, onActiveDomainsChange]);
+
   const handleReset = useCallback(() => {
     const defaults = { ...DEFAULT_DOMAIN_WEIGHTS };
     setLocalWeights(defaults);
     onWeightsChange(defaults);
-  }, [onWeightsChange]);
+    onActiveDomainsChange([...DEFAULT_ACTIVE_DOMAINS]);
+  }, [onWeightsChange, onActiveDomainsChange]);
 
   const handleSave = useCallback(() => {
     onSave?.(localWeights);
   }, [localWeights, onSave]);
 
-  // Compute relative percentages for display
-  const totalWeight = Object.values(localWeights).reduce((a, b) => a + b, 0);
+  // Compute relative percentages for display (only active domains)
+  const totalWeight = ALL_AICA_DOMAINS
+    .filter(d => activeDomains.includes(d))
+    .reduce((sum, d) => sum + (localWeights[d] ?? 1), 0);
 
   return (
     <div
@@ -92,28 +108,48 @@ export const DomainWeightSliders: React.FC<DomainWeightSlidersProps> = ({
         <button
           onClick={handleReset}
           className="flex items-center gap-1 text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-          title="Restaurar pesos iguais"
+          title="Restaurar pesos iguais e domínios padrão"
         >
           <RotateCcw size={12} />
-          Igualar
+          Restaurar
         </button>
       </div>
 
       <p className="text-xs text-ceramic-text-secondary mb-4">
-        Ajuste a importância de cada área para seu Life Score.
-        Áreas com peso maior têm mais impacto no score final.
+        Ative ou desative áreas e ajuste a importância de cada uma para seu Life Score.
       </p>
 
       {/* Sliders */}
       <div className="space-y-3">
-        {DOMAINS.map(domain => {
+        {ALL_AICA_DOMAINS.map(domain => {
+          const isActive = activeDomains.includes(domain);
           const weight = localWeights[domain] ?? 1;
-          const percentage = totalWeight > 0
+          const percentage = isActive && totalWeight > 0
             ? ((weight / totalWeight) * 100).toFixed(0)
-            : '0';
+            : '—';
 
           return (
-            <div key={domain} className="flex items-center gap-3">
+            <div
+              key={domain}
+              className={`flex items-center gap-3 transition-opacity ${isActive ? '' : 'opacity-40'}`}
+            >
+              {/* Toggle */}
+              <button
+                onClick={() => handleToggleDomain(domain)}
+                className={`relative w-8 h-[18px] rounded-full transition-colors shrink-0 ${
+                  isActive
+                    ? 'bg-ceramic-accent'
+                    : 'bg-ceramic-border'
+                }`}
+                aria-label={`${isActive ? 'Desativar' : 'Ativar'} ${DOMAIN_LABELS[domain]}`}
+              >
+                <span
+                  className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform ${
+                    isActive ? 'left-[16px]' : 'left-[2px]'
+                  }`}
+                />
+              </button>
+
               <span className="text-base w-6 text-center" title={DOMAIN_LABELS[domain]}>
                 {DOMAIN_ICONS[domain]}
               </span>
@@ -123,7 +159,7 @@ export const DomainWeightSliders: React.FC<DomainWeightSlidersProps> = ({
                     {DOMAIN_LABELS[domain]}
                   </span>
                   <span className="text-xs text-ceramic-text-secondary">
-                    {percentage}%
+                    {percentage}{isActive ? '%' : ''}
                   </span>
                 </div>
                 <input
@@ -133,15 +169,19 @@ export const DomainWeightSliders: React.FC<DomainWeightSlidersProps> = ({
                   step={0.1}
                   value={weight}
                   onChange={e => handleSliderChange(domain, parseFloat(e.target.value))}
+                  disabled={!isActive}
                   className="w-full h-1.5 rounded-full appearance-none cursor-pointer
                     bg-ceramic-border
+                    disabled:cursor-not-allowed
                     [&::-webkit-slider-thumb]:appearance-none
                     [&::-webkit-slider-thumb]:w-4
                     [&::-webkit-slider-thumb]:h-4
                     [&::-webkit-slider-thumb]:rounded-full
                     [&::-webkit-slider-thumb]:bg-ceramic-accent
                     [&::-webkit-slider-thumb]:shadow-sm
-                    [&::-webkit-slider-thumb]:cursor-pointer"
+                    [&::-webkit-slider-thumb]:cursor-pointer
+                    disabled:[&::-webkit-slider-thumb]:bg-ceramic-border
+                    disabled:[&::-webkit-slider-thumb]:cursor-not-allowed"
                   aria-label={`Peso para ${DOMAIN_LABELS[domain]}`}
                 />
               </div>
