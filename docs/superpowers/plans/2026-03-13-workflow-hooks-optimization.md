@@ -4,7 +4,9 @@
 
 **Goal:** Add 9 Node.js hook scripts to AICA's Claude Code setup for post-action automation, session persistence, and cost tracking.
 
-**Architecture:** All hooks live in `.claude/hooks/` with a shared `lib/utils.js`. They are registered in `.claude/settings.json` as additive entries (existing hooks untouched). Each script reads JSON from stdin, does its work, writes stdin back to stdout, and exits 0.
+**Architecture:** All hooks live in `.claude/hooks/` with a shared `lib/utils.cjs`. They are registered in `.claude/settings.json` as additive entries (existing hooks untouched). Each script reads JSON from stdin, does its work, writes stdin back to stdout, and exits 0.
+
+> **IMPORTANT:** All hook files use `.cjs` extension (not `.js`) because `package.json` has `"type": "module"` which causes `.js` files to be treated as ESM. CommonJS requires `.cjs`.
 
 **Tech Stack:** Node.js (CommonJS, no dependencies), Claude Code hooks API
 
