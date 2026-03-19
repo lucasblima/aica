@@ -6,7 +6,7 @@
  * Connects to lifeScoreService + scoringEngine backing services.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { LifeScore, AicaDomain } from '@/services/scoring/types';
 import { DEFAULT_DOMAIN_WEIGHTS, DEFAULT_ACTIVE_DOMAINS } from '@/services/scoring/types';
@@ -52,9 +52,16 @@ export function useLifeScore(): UseLifeScoreReturn {
   const [history, setHistory] = useState<LifeScoreHistoryEntry[]>([]);
   const [weights, setWeights] = useState<Record<AicaDomain, number>>({ ...DEFAULT_DOMAIN_WEIGHTS });
   const [activeDomains, setActiveDomains] = useState<AicaDomain[]>([...DEFAULT_ACTIVE_DOMAINS]);
+  const [weightMethod, setWeightMethod] = useState<'equal' | 'slider' | 'ahp'>('equal');
   const [isLoading, setIsLoading] = useState(true);
   const [isComputing, setIsComputing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Refs for stable access in callbacks (avoids stale closures)
+  const weightsRef = useRef(weights);
+  weightsRef.current = weights;
+  const methodRef = useRef(weightMethod);
+  methodRef.current = weightMethod;
 
   const spiralAlert = lifeScore?.spiralAlert ?? false;
 
@@ -105,6 +112,7 @@ export function useLifeScore(): UseLifeScoreReturn {
     try {
       await saveUserDomainWeights(newWeights, method, undefined, activeDomains);
       setWeights(newWeights);
+      setWeightMethod(method);
       await refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao salvar pesos';
@@ -116,7 +124,8 @@ export function useLifeScore(): UseLifeScoreReturn {
   const updateActiveDomains = useCallback(async (domains: AicaDomain[]) => {
     setError(null);
     try {
-      await saveUserDomainWeights(weights, 'slider', undefined, domains);
+      // Use refs for current weights/method to avoid stale closures
+      await saveUserDomainWeights(weightsRef.current, methodRef.current, undefined, domains);
       setActiveDomains(domains);
       // Recompute with new active domains
       const result = await computeAndStoreLifeScore();
@@ -128,7 +137,7 @@ export function useLifeScore(): UseLifeScoreReturn {
       log.error('updateActiveDomains failed:', err);
       setError(msg);
     }
-  }, [weights]);
+  }, []);
 
   // Initial fetch on mount
   useEffect(() => {
@@ -145,6 +154,7 @@ export function useLifeScore(): UseLifeScoreReturn {
         if (cancelled) return;
         setLifeScore(latest);
         setWeights(weightData.weights);
+        setWeightMethod(weightData.method as 'equal' | 'slider' | 'ahp');
         setActiveDomains(weightData.activeDomains);
       } catch (err) {
         if (cancelled) return;
