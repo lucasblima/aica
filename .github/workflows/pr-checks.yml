@@ -78,6 +78,48 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+  test-all:
+    name: Full Test Suite (regression gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_URL: http://localhost:54321
+      VITE_SUPABASE_ANON_KEY: test-anon-key-placeholder
+      # Known pre-existing failures baseline (2026-03-19).
+      # Decrease this number as failures are fixed — never increase it.
+      KNOWN_FAILURE_BASELINE: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full test suite
+        id: tests
+        run: |
+          set +e
+          npm run test -- --run --reporter=verbose 2>&1 | tee test-output.txt
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Check for new regressions
+        run: |
+          FAILURES=$(grep -oP '\d+(?= failed)' test-output.txt | head -1)
+          FAILURES=${FAILURES:-0}
+          echo "Test failures: $FAILURES (baseline: $KNOWN_FAILURE_BASELINE)"
+          if [ "$FAILURES" -gt "$KNOWN_FAILURE_BASELINE" ]; then
+            echo "::error::New test regressions detected! $FAILURES failures exceeds baseline of $KNOWN_FAILURE_BASELINE"
+            exit 1
+          fi
+          echo "✓ No new regressions (failures within baseline)"
+
   lint:
     name: ESLint
     runs-on: ubuntu-latest
@@ -105,7 +147,6 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    continue-on-error: true
 
     steps:
       - name: Checkout code
