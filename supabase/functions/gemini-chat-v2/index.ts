@@ -7,12 +7,12 @@
  * Request format (from AI SDK `useChat` hook):
  * { messages: [{role, content}, ...], session_id?: string }
  *
- * Response: AI SDK Data Stream (streaming text + tool results)
+ * Response: AI SDK UI Message Stream (streaming text + tool results)
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
-import { streamText, generateText } from 'npm:ai@^6'
+import { streamText, generateText, convertToModelMessages } from 'npm:ai@^6'
 import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@^3'
 
 import { getCorsHeaders } from '../_shared/cors.ts'
@@ -146,13 +146,19 @@ serve(async (req: Request) => {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    // --- INTENT CLASSIFICATION ---
-    // Use the last user message for classification
-    const lastUserMessage = [...messages]
-      .reverse()
-      .find((m: any) => m.role === 'user')?.content || ''
+    // --- CONVERT UI MESSAGES TO MODEL MESSAGES ---
+    // useChat sends UIMessage[] (with parts array), streamText needs CoreMessage[]
+    const modelMessages = convertToModelMessages(messages)
 
-    const module = await classifyIntent(google, lastUserMessage)
+    // --- INTENT CLASSIFICATION ---
+    // Extract last user message text for classification
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')
+    const lastUserText = lastUserMsg?.parts
+      ?.filter((p: any) => p.type === 'text')
+      ?.map((p: any) => p.text)
+      ?.join('') || lastUserMsg?.content || ''
+
+    const module = await classifyIntent(google, lastUserText)
 
     // --- BUILD SYSTEM PROMPT ---
     const systemPrompt = await buildSystemPrompt(module, userId, supabaseAdmin)
@@ -164,9 +170,9 @@ serve(async (req: Request) => {
     const result = streamText({
       model: google('gemini-2.5-flash'),
       system: systemPrompt,
-      messages,
+      messages: modelMessages,
       tools,
-      maxSteps: 3, // Allow model to call tools and then respond
+      maxSteps: 3,
       temperature: 0.7,
       maxTokens: 4096,
     })
@@ -174,14 +180,10 @@ serve(async (req: Request) => {
     // --- LOG INTERACTION (fire-and-forget) ---
     logInteraction(supabaseAdmin, userId, module)
 
-    // --- RETURN STREAMING RESPONSE WITH CORS ---
-    const response = result.toDataStreamResponse()
-    const headers = new Headers(response.headers)
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      headers.set(key, value)
-    })
-
-    return new Response(response.body, { status: response.status, headers })
+    // --- RETURN UI MESSAGE STREAM WITH CORS ---
+    // Must use toUIMessageStreamResponse (NOT toDataStreamResponse)
+    // because DefaultChatTransport on the client expects UIMessageChunk format
+    return result.toUIMessageStreamResponse({ headers: corsHeaders })
   } catch (error) {
     console.error('[gemini-chat-v2] Error:', (error as Error).message)
     return new Response(

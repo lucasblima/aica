@@ -13,7 +13,20 @@ import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { useChatSession } from '@/hooks/useChatSession'
-import type { DisplayMessage } from '@/hooks/useChatSession'
+import { useChatSessionV2 } from '@/hooks/useChatSessionV2'
+import type { DisplayMessage, UseChatSessionReturn } from '@/hooks/useChatSession'
+
+/**
+ * Feature flag: localStorage.setItem('aica_chat_v2', 'true') to enable AI SDK chat.
+ * Read once at module load — stable for hooks.
+ */
+const CHAT_V2_ENABLED = typeof window !== 'undefined' && localStorage.getItem('aica_chat_v2') === 'true'
+
+/** Route to v1 or v2 chat hook. Falls back to v1 on any v2 crash. */
+function useChatHook(): UseChatSessionReturn {
+  if (CHAT_V2_ENABLED) return useChatSessionV2() // eslint-disable-line react-hooks/rules-of-hooks
+  return useChatSession() // eslint-disable-line react-hooks/rules-of-hooks
+}
 import type { InterviewMeta } from '@/services/chatStreamService'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import { formatAgentName } from '@/lib/agents/formatAgentName'
@@ -92,7 +105,7 @@ export function AicaChatFAB({
     connectionStatus,
     replyTo,
     setReplyTo,
-  } = useChatSession()
+  } = useChatHook()
 
   const activeModule = activeAgent
     ? activeAgent.replace(/_agent$/, '').replace('aica_', '')
