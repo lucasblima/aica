@@ -14,36 +14,10 @@
 
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
+import type { DomainScore, ScoreTrend, SufficiencyLevel, ScientificScore } from '@/services/scoring/types';
+import { getSufficiencyLevel } from '@/services/scoring/types';
 
 const log = createNamespacedLogger('networkScoring');
-
-// ============================================================================
-// INLINE TYPES (from scoring/types — avoids cross-sprint dependency)
-// ============================================================================
-
-export type ScoreTrend = 'improving' | 'stable' | 'declining';
-export type SufficiencyLevel = 'thriving' | 'sufficient' | 'growing' | 'attention_needed';
-
-export interface ScientificScore {
-  dimension: string;
-  value: number;
-  rawValue: number;
-  methodology: string;
-  confidence: number;
-  computedAt: string;
-  trend: ScoreTrend;
-  explainer: string;
-  sufficiency: SufficiencyLevel;
-  isContested: boolean;
-  contestedNote?: string;
-}
-
-function getSufficiencyLevel(score: number): SufficiencyLevel {
-  if (score >= 0.80) return 'thriving';
-  if (score >= 0.66) return 'sufficient';
-  if (score >= 0.40) return 'growing';
-  return 'attention_needed';
-}
 
 // ============================================================================
 // TYPES
@@ -644,14 +618,7 @@ export async function scoreAllContacts(): Promise<{
  * Compute the Connections domain score for the Life Score.
  * Uses average relationship score across active contacts.
  */
-export async function computeConnectionsDomainScore(): Promise<{
-  module: 'connections';
-  normalized: number;
-  raw: number;
-  label: string;
-  confidence: number;
-  trend: ScoreTrend;
-} | null> {
+export async function computeConnectionsDomainScore(): Promise<DomainScore | null> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;

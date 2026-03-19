@@ -151,6 +151,40 @@ Responda APENAS em JSON valido:
   "reconnectionAdvice": "string - sugestao pratica de reconexao em portugues"
 }`
 
+const STUDIO_PRODUCER_PROMPT = `Voce e um produtor de conteudo experiente. Analise os dados de producao de podcast do usuario.
+
+DADOS DE PRODUCAO (Studio):
+{studio_data}
+
+Analise:
+1. Volume de producao: total de episodios e quantos publicados
+2. Consistencia: taxa de publicacao vs. episodios em producao
+3. Uma sugestao pratica para manter ou melhorar o ritmo de producao
+
+Responda APENAS em JSON valido:
+{
+  "productionVolume": "string - ex: 12 episodios, 8 publicados",
+  "consistencyRate": "string - ex: 67% publicados",
+  "productionAdvice": "string - sugestao pratica em portugues"
+}`
+
+const GRANTS_RESEARCHER_PROMPT = `Voce e um consultor de captacao de recursos e pesquisa. Analise os dados de projetos e oportunidades do usuario.
+
+DADOS DE CAPTACAO (Grants):
+{grants_data}
+
+Analise:
+1. Status dos projetos ativos e proximidade de deadlines
+2. Risco de perder prazos (deadlines proximos nos proximos 14 dias)
+3. Uma sugestao pratica de proximo passo para o projeto mais urgente
+
+Responda APENAS em JSON valido:
+{
+  "activeProjectsSummary": "string - ex: 3 projetos ativos",
+  "deadlineRisk": "string - baixo | medio | alto",
+  "nextStepAdvice": "string - sugestao pratica em portugues"
+}`
+
 // ============================================================================
 // DYNAMIC SYNTHESIS PROMPT BUILDER
 // ============================================================================
@@ -179,6 +213,12 @@ function buildSynthesisPrompt(
   }
   if (personaOutputs.relationship_coach) {
     personaSections += `\nCOACH DE RELACIONAMENTOS (Connections):\n${JSON.stringify(personaOutputs.relationship_coach, null, 2)}\n`
+  }
+  if (personaOutputs.studio_producer) {
+    personaSections += `\nPRODUTOR DE CONTEUDO (Studio):\n${JSON.stringify(personaOutputs.studio_producer, null, 2)}\n`
+  }
+  if (personaOutputs.grants_researcher) {
+    personaSections += `\nCONSULTOR DE CAPTACAO (Grants):\n${JSON.stringify(personaOutputs.grants_researcher, null, 2)}\n`
   }
 
   return `Voce e o Conselheiro-Chefe do usuario. Recebeu ${personaCount} analises independentes de especialistas:
@@ -232,18 +272,36 @@ serve(async (req: Request) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}))
-    const userId = body.userId
+    // =====================================================================
+    // JWT Authentication — validate caller identity
+    // =====================================================================
 
-    if (!userId) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'userId is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+    const { data: { user: authUser }, error: authError } = await userClient.auth.getUser()
+
+    if (authError || !authUser) {
+      console.error('[LIFE-COUNCIL] Auth error:', authError)
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const userId = authUser.id
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
 
     const startTime = Date.now()
@@ -332,6 +390,8 @@ serve(async (req: Request) => {
     const financeStr = JSON.stringify(context.finance || {}, null, 2)
     const connectionsStr = JSON.stringify(context.connections || {}, null, 2)
     const fluxStr = JSON.stringify(context.flux || {}, null, 2)
+    const studioStr = JSON.stringify(context.studio || {}, null, 2)
+    const grantsStr = JSON.stringify(context.grants || {}, null, 2)
 
     // Build persona list based on available modules
     const personaTasks: Array<{
@@ -431,6 +491,42 @@ serve(async (req: Request) => {
           })
         ),
         fallback: { networkHealth: 'N/A', contactsNeedingAttention: 0, balanceAssessment: 'unknown', reconnectionAdvice: 'Mantenha contato com pessoas importantes.' },
+      })
+    }
+
+    // Studio Producer — requires Studio data
+    if (availableModules.includes('studio')) {
+      personaTasks.push({
+        name: 'studio_producer',
+        promise: withHealthTracking(
+          { functionName: 'run-life-council', actionName: 'studio_producer' },
+          supabaseClient,
+          () => callAI({
+            prompt: STUDIO_PRODUCER_PROMPT.replace('{studio_data}', studioStr),
+            complexity: 'low',
+            expectJson: true,
+            temperature: 0.2,
+          })
+        ),
+        fallback: { productionVolume: 'N/A', consistencyRate: 'N/A', productionAdvice: 'Continue produzindo conteudo regularmente.' },
+      })
+    }
+
+    // Grants Researcher — requires Grants data
+    if (availableModules.includes('grants')) {
+      personaTasks.push({
+        name: 'grants_researcher',
+        promise: withHealthTracking(
+          { functionName: 'run-life-council', actionName: 'grants_researcher' },
+          supabaseClient,
+          () => callAI({
+            prompt: GRANTS_RESEARCHER_PROMPT.replace('{grants_data}', grantsStr),
+            complexity: 'low',
+            expectJson: true,
+            temperature: 0.2,
+          })
+        ),
+        fallback: { activeProjectsSummary: 'N/A', deadlineRisk: 'unknown', nextStepAdvice: 'Revise os prazos dos seus projetos.' },
       })
     }
 
@@ -559,6 +655,8 @@ serve(async (req: Request) => {
     const biohackerOutput = parsedPersonas.biohacker?.output || {}
     const financialAdvisorOutput = parsedPersonas.financial_advisor?.output || {}
     const relationshipCoachOutput = parsedPersonas.relationship_coach?.output || {}
+    const studioProducerOutput = parsedPersonas.studio_producer?.output || {}
+    const grantsResearcherOutput = parsedPersonas.grants_researcher?.output || {}
 
     const { data: saved, error: saveError } = await supabaseClient
       .from('daily_council_insights')
@@ -589,6 +687,8 @@ serve(async (req: Request) => {
           has_flux: availableModules.includes('flux'),
           has_studio: availableModules.includes('studio'),
           has_grants: availableModules.includes('grants'),
+          studio_producer_output: studioProducerOutput,
+          grants_researcher_output: grantsResearcherOutput,
         },
       }, { onConflict: 'user_id,insight_date' })
       .select('id')
