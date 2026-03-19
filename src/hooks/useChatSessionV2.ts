@@ -80,7 +80,7 @@ function uiMessageToDisplay(msg: UIMessage, streaming: boolean = false): Display
   }
 }
 
-/** Convert a ChatMessage (DB) to a UIMessage (AI SDK v3). */
+/** Convert a ChatMessage (DB) to a UIMessage (AI SDK). */
 function chatMsgToUIMessage(msg: ChatMessage): UIMessage {
   return {
     id: msg.id,
