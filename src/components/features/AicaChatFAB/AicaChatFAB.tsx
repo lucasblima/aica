@@ -210,7 +210,7 @@ export function AicaChatFAB({
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, isExpanded, showSessions, setShowSessions])
+  }, [isOpen, isExpanded, showSessions, setShowSessions, fullPage])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
