@@ -84,11 +84,22 @@ export default function AthleteFormDrawer({
 
   React.useEffect(() => {
     if (mode === 'edit' && isOpen) {
-      supabase
-        .from('coach_levels')
-        .select('*')
-        .order('display_order')
-        .then(({ data }) => setCoachLevels((data || []) as CoachLevel[]));
+      const loadLevels = async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const { data, error } = await supabase
+            .from('coach_levels')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('display_order');
+          if (error) console.error('[AthleteFormDrawer] Failed to load coach levels:', error);
+          setCoachLevels((data || []) as CoachLevel[]);
+        } catch (err) {
+          console.error('[AthleteFormDrawer] Failed to load coach levels:', err);
+        }
+      };
+      loadLevels();
     }
   }, [mode, isOpen]);
 

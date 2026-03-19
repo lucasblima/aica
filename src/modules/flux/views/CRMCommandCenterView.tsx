@@ -68,6 +68,11 @@ import {
 // Sort / Level types (mirroring FluxDashboard)
 // ============================================================================
 
+interface UnreadFeedbackRow {
+  athlete_id: string;
+  unread_count: number;
+}
+
 type SortOrder = 'none' | 'asc' | 'desc';
 
 type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado' | (string & {});
@@ -354,12 +359,14 @@ export default function CRMCommandCenterView() {
         setCoachLevels((levelsData || []) as CoachLevel[]);
 
         // Load unread feedback counts
-        const { data: unreadData } = await supabase.rpc('get_unread_feedback_counts', {
+        const { data: unreadData, error: unreadError } = await supabase.rpc('get_unread_feedback_counts', {
           p_coach_user_id: user.id,
         });
-        if (unreadData) {
+        if (unreadError) {
+          console.error('[CRM] Failed to fetch unread feedback counts:', unreadError);
+        } else if (unreadData) {
           const counts: Record<string, number> = {};
-          for (const row of unreadData) {
+          for (const row of unreadData as UnreadFeedbackRow[]) {
             counts[row.athlete_id] = Number(row.unread_count);
           }
           setUnreadCounts(counts);

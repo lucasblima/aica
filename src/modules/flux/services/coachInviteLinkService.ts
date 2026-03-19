@@ -72,12 +72,12 @@ export class CoachInviteLinkService {
     error: any;
   }> {
     const token = generateToken();
-    const insertData: Record<string, unknown> = {
+    const insertData = {
       token,
       max_uses: maxUses,
       health_config: healthConfig,
+      ...(groupId ? { group_id: groupId } : {}),
     };
-    if (groupId) insertData.group_id = groupId;
 
     const { data, error } = await supabase
       .from('coach_invite_links')

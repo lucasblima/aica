@@ -224,12 +224,17 @@ export default function AthleteDetailView() {
   useEffect(() => {
     if (!athleteId) return;
     const markRead = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.rpc('mark_feedback_read', {
-          p_coach_user_id: user.id,
-          p_athlete_id: athleteId,
-        });
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error } = await supabase.rpc('mark_feedback_read', {
+            p_coach_user_id: user.id,
+            p_athlete_id: athleteId,
+          });
+          if (error) console.error('[AthleteDetailView] Failed to mark feedback read:', error);
+        }
+      } catch (err) {
+        console.error('[AthleteDetailView] Failed to mark feedback read:', err);
       }
     };
     markRead();
