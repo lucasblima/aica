@@ -260,12 +260,6 @@ export function useChatSessionV2(): UseChatSessionReturn {
   // Load sessions on mount
   // -------------------------------------------------------------------------
 
-  useEffect(() => {
-    if (initRef.current) return
-    initRef.current = true
-    loadSessions()
-  }, [])
-
   const loadSessions = useCallback(async () => {
     try {
       const list = await chatService.getActiveSessions(10)
@@ -282,6 +276,13 @@ export function useChatSessionV2(): UseChatSessionReturn {
       // Silently fail -- user can still start new conversation
     }
   }, [setAiMessages])
+
+  useEffect(() => {
+    if (initRef.current) return
+    initRef.current = true
+    loadSessions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // -------------------------------------------------------------------------
   // Morning briefing: show once per day between 6-12h BRT
