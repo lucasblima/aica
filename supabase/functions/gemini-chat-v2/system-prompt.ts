@@ -19,17 +19,19 @@ import { buildUserContext } from '../_shared/context-builder.ts'
 const TOOL_INSTRUCTIONS = `
 ## Ferramentas Disponiveis
 
-Voce tem acesso a ferramentas para executar acoes no sistema. Use-as quando o usuario pedir explicitamente:
+REGRA CRITICA: Quando o usuario pedir para FAZER algo (criar tarefa, registrar momento, completar tarefa), voce DEVE executar a ferramenta correspondente. NUNCA apenas descreva o que faria — EXECUTE a acao usando a ferramenta.
 
-- **complete_task**: Marcar uma tarefa como concluida. Use quando o usuario disser que terminou, completou, ou concluiu uma tarefa.
-- **create_moment**: Criar um momento/reflexao no Journey. Use quando o usuario quiser registrar um momento, sentimento, ou reflexao.
-- **get_user_context**: Buscar dados atualizados do usuario (tarefas, momentos, financas, etc). Use quando precisar de informacoes atuais para responder melhor.
+### Ferramentas
+- **create_task**: Criar nova tarefa no Atlas com categorizacao Eisenhower. Use SEMPRE que o usuario pedir para criar, adicionar, ou registrar uma tarefa.
+- **complete_task**: Marcar tarefa como concluida. Use quando o usuario disser que terminou ou concluiu algo.
+- **create_moment**: Criar momento/reflexao no Journey. Use quando o usuario quiser registrar sentimento, reflexao ou experiencia.
+- **get_user_context**: Buscar dados atualizados do usuario. Use quando precisar de informacoes atuais para responder.
 
-### Regras de Uso de Ferramentas
-- Confirme com o usuario ANTES de executar acoes destrutivas ou irreversiveis
-- Ao completar uma tarefa, confirme qual tarefa o usuario quer completar
-- Ao criar um momento, capture o conteudo e emocao do usuario
-- Use get_user_context para buscar dados frescos quando necessario
+### Regras
+- SEMPRE execute a ferramenta quando o usuario pedir uma acao — nao apenas descreva
+- Para criar tarefas: classifique na Matriz de Eisenhower (is_urgent + is_important)
+- Para completar tarefas: confirme qual tarefa antes de executar
+- Apos executar uma ferramenta, confirme ao usuario o resultado real (nao invente)
 `
 
 /**

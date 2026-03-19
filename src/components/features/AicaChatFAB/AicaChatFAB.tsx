@@ -68,15 +68,18 @@ interface AicaChatFABProps {
   bottomOffset?: number
   /** When true, hides the FAB circle button but keeps the drawer functional (openable via CustomEvent). Used on /vida where VidaChatHero replaces the FAB button. */
   hideButton?: boolean
+  /** When true, chat starts open+expanded and cannot be minimized. Used on /chat full-page route. */
+  fullPage?: boolean
 }
 
 export function AicaChatFAB({
   position = 'bottom-right',
   bottomOffset = 80,
   hideButton = false,
+  fullPage = false,
 }: AicaChatFABProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isOpen, setIsOpen] = useState(fullPage)
+  const [isExpanded, setIsExpanded] = useState(fullPage)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -198,9 +201,9 @@ export function AicaChatFAB({
       if (e.key === 'Escape' && isOpen) {
         if (showSessions) {
           setShowSessions(false)
-        } else if (isExpanded) {
+        } else if (isExpanded && !fullPage) {
           setIsExpanded(false)
-        } else {
+        } else if (!fullPage) {
           setIsOpen(false)
         }
       }
@@ -248,6 +251,7 @@ export function AicaChatFAB({
   }, [isOpen, showSessions])
 
   const handleClose = () => {
+    if (fullPage) return // Cannot close in full-page mode
     setIsExpanded(false)
     setIsOpen(false)
   }
@@ -380,7 +384,7 @@ export function AicaChatFAB({
               </button>
               <button
                 className="aica-fab-header__action"
-                onClick={() => setIsExpanded(prev => !prev)}
+                onClick={() => !fullPage && setIsExpanded(prev => !prev)}
                 aria-label={isExpanded ? 'Reduzir' : 'Expandir'}
                 title={isExpanded ? 'Reduzir' : 'Expandir'}
               >
