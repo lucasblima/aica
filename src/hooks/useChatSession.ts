@@ -434,6 +434,7 @@ export function useChatSession(): UseChatSessionReturn {
         modelUsed,
         tokensInput,
         tokensOutput,
+        parentMessageId: replyTargetId,
       }).then(savedMsg => {
         // Replace temp with DB-saved version (gets real ID)
         setMessages(prev => prev.map(m =>

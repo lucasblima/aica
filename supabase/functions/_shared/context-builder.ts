@@ -323,10 +323,6 @@ export async function buildUserContext(supabaseAdmin: any, userId: string, modul
 }
 
 // ============================================================================
-// SUGGESTED ACTIONS GENERATOR (pure function, no async)
-// ============================================================================
-
-// ============================================================================
 // SUGGESTED QUESTIONS GENERATOR (pure function, no async)
 // Moved from handlers/chat.ts to eliminate cross-handler imports
 // ============================================================================

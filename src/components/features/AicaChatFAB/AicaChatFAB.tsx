@@ -100,15 +100,29 @@ export function AicaChatFAB({
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
 
-  const { isListening, isTranscribing, isSupported, audioLevel, recordSeconds, interimText, mode: voiceMode, toggle: toggleMic } = useVoiceRecorder({
+  const preVoiceInputRef = useRef('')
+
+  const { isListening, isTranscribing, isSupported, audioLevel, recordSeconds, interimText, mode: voiceMode, toggle: rawToggleMic } = useVoiceRecorder({
     onResult: (transcript) => {
-      setInput(prev => prev ? `${prev} ${transcript}` : transcript)
+      // Append transcription to whatever was typed before voice started
+      const prefix = preVoiceInputRef.current
+      setInput(prefix ? `${prefix} ${transcript}` : transcript)
+      preVoiceInputRef.current = ''
     },
     onInterim: (text) => {
-      // Show real-time transcription in the input field
-      setInput(text)
+      // Show pre-voice text + interim transcription
+      const prefix = preVoiceInputRef.current
+      setInput(prefix ? `${prefix} ${text}` : text)
     },
   })
+
+  const toggleMic = useCallback(() => {
+    if (!isListening) {
+      // Capture current input before voice starts
+      preVoiceInputRef.current = input.trim()
+    }
+    rawToggleMic()
+  }, [isListening, input, rawToggleMic])
 
   const waveformBars = useMemo(() => {
     const bars = 6
