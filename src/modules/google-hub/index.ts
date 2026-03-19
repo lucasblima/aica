@@ -7,7 +7,7 @@
  */
 
 export { GoogleHubPage } from './pages/GoogleHubPage';
-export { GoogleContextPanel } from './components/GoogleContextPanel';
+export { GoogleContextPanel } from '@/components/features/GoogleContextPanel';
 export { EmailCategoryBadge } from './components/EmailCategoryBadge';
 export { EmailDetailSheet } from './components/EmailDetailSheet';
 export { useEmailCategories } from './hooks/useEmailCategories';

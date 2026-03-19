@@ -48,9 +48,7 @@ export interface InterviewMeta {
 
 /** Build common headers + URL for an Edge Function */
 function getEdgeFunctionEndpoint(accessToken: string, functionName: string = 'gemini-chat') {
-  const supabaseUrl =
-    import.meta.env.VITE_SUPABASE_URL ||
-    'https://uzywajqzbdbrfammshdg.supabase.co'
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
   return {

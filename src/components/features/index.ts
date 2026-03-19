@@ -109,3 +109,6 @@ export { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorde
 
 // Holiday Badge — Inline holiday indicator (re-exported from Atlas for cross-module use)
 export { HolidayBadge } from '@/modules/atlas/components/HolidayBadge';
+
+// Google Context Panel — Gmail/Drive contextual search (moved from google-hub for cross-module use)
+export { GoogleContextPanel } from './GoogleContextPanel';
