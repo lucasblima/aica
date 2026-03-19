@@ -1,5 +1,9 @@
 import { createBrowserClient } from '@supabase/ssr';
 
+// Re-export commonly used Supabase types so modules import from here
+// instead of directly from @supabase/supabase-js
+export type { Session, User, RealtimeChannel } from '@supabase/supabase-js';
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 

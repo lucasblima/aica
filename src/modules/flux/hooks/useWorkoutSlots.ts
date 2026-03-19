@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { WorkoutSlot } from '../types/flow';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@/services/supabaseClient';
 
 const log = createNamespacedLogger('useWorkoutSlots');
 

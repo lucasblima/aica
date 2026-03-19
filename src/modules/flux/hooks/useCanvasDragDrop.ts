@@ -14,7 +14,7 @@ import type {
   WorkoutSlot,
   MicrocycleWeekFocus,
 } from '../types/flow';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@/services/supabaseClient';
 
 const log = createNamespacedLogger('useCanvasDragDrop');
 

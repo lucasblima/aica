@@ -14,7 +14,7 @@ import {
   type PerformanceTestType,
   type CreatePerformanceTestInput,
 } from '../services/performanceTestService';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@/services/supabaseClient';
 
 const log = createNamespacedLogger('usePerformanceTests');
 
