@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, Pencil, Trash2, Check, ChevronUp, ChevronDown, GraduationCap, Loader2, Search } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Check, ChevronUp, ChevronDown, GraduationCap, Loader2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import type { Athlete, CoachLevel } from '../../types/flux';
 import { GROUP_COLORS, getGroupColorClasses } from '../../types/flux';
@@ -44,6 +44,8 @@ export function CustomLevelManager({
 
   useEffect(() => {
     if (isOpen) {
+      setSelectedLevelId(null);
+      setSearchQuery('');
       setTimeout(() => inputRef.current?.focus(), 200);
     }
   }, [isOpen]);
@@ -107,6 +109,9 @@ export function CustomLevelManager({
     setIsSaving(true);
     try {
       await supabase.from('coach_levels').delete().eq('id', levelId);
+      if (selectedLevelId === levelId) {
+        setSelectedLevelId(null);
+      }
       await reloadLevels();
     } catch (err) {
       console.error('[CustomLevelManager] Failed to delete level:', err);
@@ -158,10 +163,12 @@ export function CustomLevelManager({
       const athlete = athletes.find((a) => a.id === athleteId);
       const newLevelId = athlete?.custom_level_id === levelId ? null : levelId;
 
-      await supabase
+      const { error } = await supabase
         .from('athletes')
         .update({ custom_level_id: newLevelId, updated_at: new Date().toISOString() })
         .eq('id', athleteId);
+
+      if (error) throw error;
 
       onAthleteUpdate?.();
     } catch (err) {
