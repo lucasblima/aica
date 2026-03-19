@@ -14,7 +14,7 @@ import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
 import { useAssessoriaEsportiva } from '../hooks/useAssessoriaEsportiva';
 import { CreateAssessoriaModal } from '../components/CreateAssessoriaModal';
 import { AdminDashboardSection } from '../components/coach/AdminDashboardSection';
-import { ArrowLeft, Users, BookOpen, Dumbbell, Briefcase, CheckCircle, X } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, Dumbbell, Briefcase, CheckCircle, X, Settings } from 'lucide-react';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 export default function FluxDashboard() {
@@ -148,7 +148,9 @@ export default function FluxDashboard() {
             </div>
             <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">Atletas</h3>
             <p className="text-sm text-ceramic-text-secondary">
-              Gerencie seus atletas, grupos e prescricoes
+              {hasAssessoria
+                ? `${assessoria!.name} · Gerencie atletas, grupos e niveis`
+                : 'Gerencie seus atletas, grupos e prescricoes'}
             </p>
           </button>
 
@@ -185,12 +187,33 @@ export default function FluxDashboard() {
             </div>
             <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">Meus proprios treinos</h3>
             <p className="text-sm text-ceramic-text-secondary">
-              Portal do atleta
+              Acompanhe seus treinos pessoais
             </p>
           </button>
 
-          {/* Assessoria Esportiva Card — hidden after creation (managed via header + Connections) */}
-          {!hasAssessoria && (
+          {/* Assessoria Esportiva Card — config hub (create or manage) */}
+          {hasAssessoria ? (
+            <button
+              onClick={() => navigate(`/connections/${assessoria!.id}`)}
+              className="bg-white rounded-xl p-6 shadow-sm border border-ceramic-border/30 hover:shadow-md transition-shadow cursor-pointer text-left group relative"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                  <Briefcase className="w-6 h-6 text-purple-600" />
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-ceramic-success/10 text-ceramic-success flex items-center gap-1">
+                  <Settings className="w-3 h-3" />
+                  Configurar
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">
+                Assessoria Esportiva
+              </h3>
+              <p className="text-sm text-ceramic-text-secondary">
+                {assessoria!.name}
+              </p>
+            </button>
+          ) : (
             <button
               onClick={() => setShowCreateAssessoria(true)}
               className="bg-white rounded-xl p-6 shadow-sm border border-ceramic-border/30 hover:shadow-md transition-shadow cursor-pointer text-left group relative"
