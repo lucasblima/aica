@@ -53,6 +53,7 @@ export function useDailyQuestionAI() {
     error: null,
   })
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const fetchQuestion = useCallback(async () => {
     if (!user?.id) return
 
@@ -95,7 +96,9 @@ export function useDailyQuestionAI() {
     }
   }, [user?.id])
 
+
   const answer = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     async (responseText: string): Promise<AnswerQuestionResult> => {
       if (!user?.id || !state.question) {
         throw new Error('No question available')
@@ -206,6 +209,7 @@ export function useDailyQuestionAI() {
   // Auto-fetch question when user changes
   useEffect(() => {
     if (user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchQuestion()
     }
   }, [user?.id, fetchQuestion])
@@ -235,6 +239,7 @@ export function useDailyQuestionCarousel(count: number = 5) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const fetchQuestions = useCallback(async () => {
     if (!user?.id) return
 
@@ -259,7 +264,9 @@ export function useDailyQuestionCarousel(count: number = 5) {
     }
   }, [user?.id, count])
 
+
   const answer = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     async (questionIndex: number, responseText: string): Promise<AnswerQuestionResult> => {
       if (!user?.id || !questions[questionIndex]) {
         throw new Error('No question available at this index')
@@ -355,6 +362,7 @@ export function useDailyQuestionCarousel(count: number = 5) {
 
   useEffect(() => {
     if (user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchQuestions()
     }
   }, [user?.id, fetchQuestions])

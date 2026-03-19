@@ -48,7 +48,7 @@ export function UnifiedAgentChat({
       if (saved && SELECTABLE_MODULES.includes(saved as any)) {
         return saved as Exclude<AgentModule, 'coordinator'>
       }
-    } catch {}
+    } catch { /* intentionally empty */ }
     return initialModule
   })
   const [showModuleSelector, setShowModuleSelector] = useState(false)
@@ -57,7 +57,7 @@ export function UnifiedAgentChat({
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, selectedModule)
-    } catch {}
+    } catch { /* intentionally empty */ }
   }, [selectedModule])
 
   const moduleConfig = MODULE_AGENT_CONFIGS[selectedModule]

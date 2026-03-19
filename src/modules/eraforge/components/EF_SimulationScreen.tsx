@@ -404,6 +404,7 @@ export function EF_SimulationScreen({
       if (dayEvents) {
         cumulativeIdx += dayEvents.length;
         if (cumulativeIdx >= revealedCount) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setActiveDay(d);
           break;
         }
@@ -436,6 +437,7 @@ export function EF_SimulationScreen({
   // --- Clear narrating when speech stops ---
   useEffect(() => {
     if (!isSpeaking) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNarratingIdx(null);
     }
   }, [isSpeaking]);

@@ -60,30 +60,24 @@ export default function TemplateFormDrawer({
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [warmupCharCount, setWarmupCharCount] = useState(0);
-  const [cooldownCharCount, setCooldownCharCount] = useState(0);
-  const [descCharCount, setDescCharCount] = useState(0);
-  const [coachNotesCharCount, setCoachNotesCharCount] = useState(0);
+
+  // Derive char counts from formData instead of syncing via useEffect
+  const warmupCharCount = formData.exercise_structure?.warmup?.length || 0;
+  const cooldownCharCount = formData.exercise_structure?.cooldown?.length || 0;
+  const descCharCount = formData.description?.length || 0;
+  const coachNotesCharCount = formData.coach_notes?.length || 0;
 
   const y = useMotionValue(0);
 
   // Reset success/error state when drawer opens (prevents stale messages on edit)
   useEffect(() => {
     if (isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setSubmitError(null);
       setSubmitSuccess(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    setWarmupCharCount(formData.exercise_structure?.warmup?.length || 0);
-    setCooldownCharCount(formData.exercise_structure?.cooldown?.length || 0);
-  }, [formData.exercise_structure?.warmup, formData.exercise_structure?.cooldown]);
-
-  useEffect(() => {
-    setDescCharCount(formData.description?.length || 0);
-    setCoachNotesCharCount(formData.coach_notes?.length || 0);
-  }, [formData.description, formData.coach_notes]);
 
   const handleCloseClick = () => {
     if (isDirty) {

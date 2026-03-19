@@ -147,11 +147,12 @@ function compareContacts(
     case 'health_score':
       comparison = (a.health_score ?? 0) - (b.health_score ?? 0);
       break;
-    case 'last_interaction':
+    case 'last_interaction': {
       const aDate = a.last_whatsapp_message_at || a.last_interaction_at || '';
       const bDate = b.last_whatsapp_message_at || b.last_interaction_at || '';
       comparison = new Date(bDate).getTime() - new Date(aDate).getTime();
       break;
+    }
     case 'relationship_type':
       comparison = (a.relationship_type || '').localeCompare(
         b.relationship_type || ''

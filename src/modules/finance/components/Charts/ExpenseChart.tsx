@@ -82,22 +82,23 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({ data, totalExpenses 
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 6);
 
-    let startAngle = 0;
+    const result: Array<{ category: string; percentage: number; amount: number; startAngle: number; endAngle: number; color: string; label: string }> = [];
+    let runningAngle = 0;
 
-    return sorted.map((item) => {
+    for (const item of sorted) {
       const angle = (item.percentage / 100) * 360;
-      const segment = {
+      result.push({
         category: item.category,
         percentage: item.percentage,
         amount: item.amount,
-        startAngle,
-        endAngle: startAngle + angle,
+        startAngle: runningAngle,
+        endAngle: runningAngle + angle,
         color: CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other,
         label: CATEGORY_LABELS[item.category] || item.category,
-      };
-      startAngle += angle;
-      return segment;
-    });
+      });
+      runningAngle += angle;
+    }
+    return result;
   }, [data]);
 
   // Cumulative offsets for stroke-dashoffset animation

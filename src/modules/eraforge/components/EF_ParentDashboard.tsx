@@ -226,6 +226,7 @@ function ProgressGraph({ childId }: { childId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     EraforgeGameService.getChildStatsHistory(childId)
       .then(res => setHistory(res.data))
@@ -291,6 +292,7 @@ function DecisionHistory({ childId }: { childId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     EraforgeGameService.getChildTurnHistory(childId, 10)
       .then(res => setHistory(res.data))

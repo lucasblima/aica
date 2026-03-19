@@ -53,9 +53,11 @@ export function LandingPage() {
       if (formatted.length >= 8) {
         const code = `${formatted.slice(0, 4)}-${formatted.slice(4, 8)}`;
         storeInviteCode(code);
+        /* eslint-disable react-hooks/set-state-in-effect */
         setHasStoredInvite(true);
         setInviteCode(code);
         setCodeValid(true);
+        /* eslint-enable react-hooks/set-state-in-effect */
       }
     }
   }, [searchParams]);

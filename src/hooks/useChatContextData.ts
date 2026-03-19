@@ -22,6 +22,7 @@ export function useChatContextData(isExpanded: boolean): ChatContextDataResult {
     if (!isExpanded) return
 
     let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true)
 
     getUserAIContext(true).then((data) => {

@@ -105,6 +105,29 @@ export const TeleprompterWindow: React.FC<TeleprompterWindowProps> = ({
         };
     }, [isAutoScrolling, scrollSpeed, isSponsorTopic]);
 
+    const handlePrevious = () => {
+        if (currentIndex > 0) {
+            onIndexChange(currentIndex - 1);
+            setIsAutoScrolling(false);
+            if (scrollRef.current) scrollRef.current.scrollTop = 0;
+        }
+    };
+
+    const handleNext = () => {
+        if (currentIndex < topics.length - 1) {
+            onIndexChange(currentIndex + 1);
+            setIsAutoScrolling(false);
+            if (scrollRef.current) scrollRef.current.scrollTop = 0;
+        }
+    };
+
+    const toggleAutoScroll = () => {
+        if (!isAutoScrolling && scrollSpeed === 0) {
+            setScrollSpeed(2); // Default speed
+        }
+        setIsAutoScrolling(!isAutoScrolling);
+    };
+
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -135,29 +158,6 @@ export const TeleprompterWindow: React.FC<TeleprompterWindowProps> = ({
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [currentIndex, isSponsorTopic, isAutoScrolling]);
-
-    const handlePrevious = () => {
-        if (currentIndex > 0) {
-            onIndexChange(currentIndex - 1);
-            setIsAutoScrolling(false);
-            if (scrollRef.current) scrollRef.current.scrollTop = 0;
-        }
-    };
-
-    const handleNext = () => {
-        if (currentIndex < topics.length - 1) {
-            onIndexChange(currentIndex + 1);
-            setIsAutoScrolling(false);
-            if (scrollRef.current) scrollRef.current.scrollTop = 0;
-        }
-    };
-
-    const toggleAutoScroll = () => {
-        if (!isAutoScrolling && scrollSpeed === 0) {
-            setScrollSpeed(2); // Default speed
-        }
-        setIsAutoScrolling(!isAutoScrolling);
-    };
 
     return (
         <div

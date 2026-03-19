@@ -37,7 +37,7 @@ export const validateName = (name: string): ValidationResult => {
 
   // Allow letters (including accented), spaces, hyphens, apostrophes
   // This regex accepts Unicode letters, spaces, hyphens, and apostrophes
-  const validNameRegex = /^[\p{L}\s'\-]+$/u;
+  const validNameRegex = /^[\p{L}\s'-]+$/u;
 
   if (!validNameRegex.test(trimmed)) {
     return { isValid: false, error: 'Nome contém caracteres inválidos' };

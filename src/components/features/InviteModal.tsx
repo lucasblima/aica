@@ -155,8 +155,9 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
   const formatCode = (code: string) =>
     code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
 
+  const [nowMs] = useState(() => Date.now());
   const getDaysRemaining = (expiresAt: string) => {
-    const diff = new Date(expiresAt).getTime() - Date.now();
+    const diff = new Date(expiresAt).getTime() - nowMs;
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 

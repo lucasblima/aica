@@ -24,7 +24,8 @@ const STATS_CONFIG = [
 function AnimatedNumber({ value }: { value: number }) {
   const spring = useSpring(value, { stiffness: 300, damping: 30 });
   const display = useTransform(spring, (v) => Math.round(v));
-  const prevRef = useRef(value);
+  const prevRef = React.useRef(value);
+  // eslint-disable-next-line react-hooks/refs
   const isChanging = prevRef.current !== value;
 
   useEffect(() => {

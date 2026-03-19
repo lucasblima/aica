@@ -193,7 +193,7 @@ function workspaceReducer(
         isDirty: true,
       };
 
-    case 'TOGGLE_DOC_STATUS':
+    case 'TOGGLE_DOC_STATUS': {
       const updatedDocs: RequiredDocument[] = state.documents.requiredDocs.map(doc =>
         doc.id === action.payload
           ? { ...doc, status: (doc.status === 'available' ? 'required' : 'available') as RequiredDocument['status'] }
@@ -208,6 +208,7 @@ function workspaceReducer(
         },
         isDirty: true,
       };
+    }
 
     case 'ADD_UPLOADED_DOC':
       return {

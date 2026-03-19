@@ -39,6 +39,7 @@ export function useAdminCoupons(): UseAdminCouponsReturn {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
 

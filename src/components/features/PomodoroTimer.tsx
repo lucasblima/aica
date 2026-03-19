@@ -23,9 +23,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     const [isActive, setIsActive] = useState(autoStart);
     const [totalTime] = useState(initialMinutes * 60);
 
+    // Sync from props when they change
     useEffect(() => {
+        /* eslint-disable react-hooks/set-state-in-effect */
         setTimeLeft(initialMinutes * 60);
         setIsActive(autoStart);
+        /* eslint-enable react-hooks/set-state-in-effect */
     }, [initialMinutes, autoStart]);
 
     useEffect(() => {
@@ -36,6 +39,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                 setTimeLeft((prevTime) => prevTime - 1);
             }, 1000);
         } else if (timeLeft === 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsActive(false);
             if (onComplete) onComplete();
             // Play sound or notification here

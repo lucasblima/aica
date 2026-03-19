@@ -88,7 +88,7 @@ export async function syncGoogleContacts(): Promise<SyncReport> {
     );
 
     // Fetch Google Contacts with pagination
-    let allPeople: GooglePerson[] = [];
+    const allPeople: GooglePerson[] = [];
     let pageToken: string | undefined;
     let pageCount = 0;
 
@@ -245,7 +245,7 @@ export async function syncGoogleContactsToPlatform(): Promise<SyncReport> {
     }
 
     // Fetch Google Contacts with pagination
-    let allPeople: GooglePerson[] = [];
+    const allPeople: GooglePerson[] = [];
     let pageToken: string | undefined;
     let pageCount = 0;
 
