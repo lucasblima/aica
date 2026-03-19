@@ -3,10 +3,11 @@
  * Issue #575: Scientific foundations for AICA Life OS
  *
  * Full-width card displaying composite Life Score with mini domain bars.
+ * Only renders bars for active domains.
  * Follows Ceramic Design System and matches JourneyHeroCard visual style.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useLifeScore } from '@/hooks/useLifeScore';
 import type { AicaDomain, ScoreTrend, SufficiencyLevel } from '@/services/scoring/types';
+import { ALL_AICA_DOMAINS } from '@/services/scoring/types';
 import {
   getSufficiencyColor,
   getSufficiencyDisplayText,
@@ -29,10 +31,6 @@ import { DOMAIN_LABELS } from '@/services/scoring/lifeScoreService';
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const DOMAINS_ORDER: AicaDomain[] = [
-  'atlas', 'journey', 'connections', 'finance', 'grants', 'studio', 'flux',
-];
 
 const DOMAIN_ICONS: Record<AicaDomain, string> = {
   atlas: '🎯',
@@ -121,7 +119,7 @@ function LifeScoreWidgetSkeleton() {
       </div>
       <div className="h-10 w-16 bg-ceramic-border rounded mb-3" />
       <div className="flex gap-2">
-        {Array.from({ length: 7 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex-1 space-y-1">
             <div className="h-3 w-3 bg-ceramic-border rounded mx-auto" />
             <div className="h-1.5 w-full bg-ceramic-border rounded-full" />
@@ -148,6 +146,15 @@ export const LifeScoreWidget: React.FC<LifeScoreWidgetProps> = ({
   className = '',
 }) => {
   const { lifeScore, isLoading, isComputing, compute } = useLifeScore();
+
+  // Filter to only active domains, preserving canonical order
+  const visibleDomains = useMemo(() => {
+    const active = lifeScore?.activeDomains;
+    if (active && active.length > 0) {
+      return ALL_AICA_DOMAINS.filter(d => active.includes(d));
+    }
+    return ALL_AICA_DOMAINS;
+  }, [lifeScore?.activeDomains]);
 
   // Loading state
   if (isLoading) {
@@ -227,9 +234,9 @@ export const LifeScoreWidget: React.FC<LifeScoreWidgetProps> = ({
         <span className="text-xs text-ceramic-text-secondary pb-0.5">/100</span>
       </div>
 
-      {/* 7 mini domain bars */}
+      {/* Mini domain bars — only active domains */}
       <div className="flex gap-2 mb-3">
-        {DOMAINS_ORDER.map(domain => (
+        {visibleDomains.map(domain => (
           <MiniDomainBar
             key={domain}
             domain={domain}
