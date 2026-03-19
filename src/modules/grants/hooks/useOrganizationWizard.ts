@@ -109,7 +109,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         lastSavedAt: action.timestamp,
       };
 
-    case 'LOAD_DATA':
+    case 'LOAD_DATA': {
       // Calculate which fields already have values (for XP tracking)
       const loadedFieldXpMap: Record<string, boolean> = {};
       const allFields = WIZARD_STEPS.flatMap(step => step.fields);
@@ -131,6 +131,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         fieldXpMap: loadedFieldXpMap,
         isDirty: false,
       };
+    }
 
     case 'RESET':
       return initialState;

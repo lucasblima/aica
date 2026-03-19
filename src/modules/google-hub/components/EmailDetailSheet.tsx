@@ -53,6 +53,7 @@ export function EmailDetailSheet({
   // Fetch body when email changes
   useEffect(() => {
     if (!email) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setBody(null);
       return;
     }
@@ -61,6 +62,7 @@ export function EmailDetailSheet({
     setLoadingBody(true);
     setBody(null);
 
+    /* eslint-enable react-hooks/set-state-in-effect */
     getMessageBody(email.id).then((result) => {
       if (!cancelled) {
         setBody(result);

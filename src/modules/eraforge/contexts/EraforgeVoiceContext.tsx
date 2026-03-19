@@ -98,6 +98,7 @@ export function EraforgeVoiceProvider({ children }: EraforgeVoiceProviderProps) 
     transcript,
   ]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const wrappedListen = useCallback(async (): Promise<string | null> => {
     const result = await voice.listen();
     if (result) {

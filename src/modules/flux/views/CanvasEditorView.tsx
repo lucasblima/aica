@@ -257,18 +257,7 @@ export default function CanvasEditorView() {
     }
   }, [activeMicrocycle?.id]);
 
-  // If no athleteId, show athlete picker (after all hooks)
-  if (!athleteId) {
-    return (
-      <AthletePicker
-        athletes={athletes}
-        isLoading={athletesLoading}
-        onSelect={(a) => navigate(`/flux/canvas/${a.id}`)}
-      />
-    );
-  }
-
-  // Derived data
+  // Derived data — all hooks must be called before any conditional returns
   const gridWorkouts = useMemo<WeekWorkout[]>(
     () => weekWorkoutData.flatMap((wd) => wd.slots.map(slotToWeekWorkout)),
     [weekWorkoutData]
@@ -511,6 +500,17 @@ export default function CanvasEditorView() {
     setCurrentWeek(weekNumber);
     setViewMode('weekly');
   }, []);
+
+  // If no athleteId, show athlete picker (after all hooks)
+  if (!athleteId) {
+    return (
+      <AthletePicker
+        athletes={athletes}
+        isLoading={athletesLoading}
+        onSelect={(a) => navigate(`/flux/canvas/${a.id}`)}
+      />
+    );
+  }
 
   // Loading states
   if (workoutsLoading) {

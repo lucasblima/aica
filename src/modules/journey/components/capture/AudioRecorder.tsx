@@ -36,15 +36,6 @@ export function AudioRecorder({
   const animFrameRef = useRef<number | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopRecording()
-      if (timerRef.current) clearInterval(timerRef.current)
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-    }
-  }, [])
-
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop()
@@ -64,6 +55,16 @@ export function AudioRecorder({
     analyserRef.current = null
   }, [])
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopRecording()
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+    }
+  }, [])
+
+   
   const updateAudioLevel = useCallback(() => {
     if (!analyserRef.current) return
 
@@ -73,7 +74,7 @@ export function AudioRecorder({
     const sum = dataArray.reduce((acc, val) => acc + val, 0)
     const avg = sum / dataArray.length
     setAudioLevel(Math.min(100, (avg / 128) * 100))
-
+    // eslint-disable-next-line react-hooks/immutability
     animFrameRef.current = requestAnimationFrame(updateAudioLevel)
   }, [])
 
@@ -163,10 +164,10 @@ export function AudioRecorder({
     return `${m}:${s.toString().padStart(2, '0')}`
   }
 
-  // Generate waveform bars
+  // Generate waveform bars — use seconds counter as animation driver instead of Date.now()
   const bars = 8
   const barHeights = Array.from({ length: bars }, (_, i) => {
-    const variance = Math.sin((Date.now() / 200) + i) * 0.3 + 0.7
+    const variance = Math.sin((seconds * 5) + i) * 0.3 + 0.7
     return Math.max(4, (audioLevel / 100) * 24 * variance)
   })
 

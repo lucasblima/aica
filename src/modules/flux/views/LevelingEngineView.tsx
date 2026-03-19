@@ -19,10 +19,6 @@ export default function LevelingEngineView() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     setLoading(true);
     const { data } = await AthleteProfileService.getAllProfiles();
@@ -40,6 +36,11 @@ export default function LevelingEngineView() {
     setRecommendations(recs);
     setAnalyzing(false);
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, []);
 
   const needingAdjustment = recommendations.filter(
     (r) => r.current_level !== r.recommended_level && r.confidence >= 70

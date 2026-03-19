@@ -8,19 +8,21 @@ interface OperationBreakdownChartProps {
 
 export const OperationBreakdownChart: React.FC<OperationBreakdownChartProps> = ({ data }) => {
   const segments = useMemo(() => {
-    let startAngle = 0;
-    return data.slice(0, 6).map((item) => {
+    const sliced = data.slice(0, 6);
+    const result: Array<typeof data[number] & { startAngle: number; endAngle: number; color: string; label: string }> = [];
+    let runningAngle = 0;
+    for (const item of sliced) {
       const angle = (item.percentage / 100) * 360;
-      const segment = {
+      result.push({
         ...item,
-        startAngle,
-        endAngle: startAngle + angle,
+        startAngle: runningAngle,
+        endAngle: runningAngle + angle,
         color: getOperationColor(item.operation_type),
         label: getOperationLabel(item.operation_type)
-      };
-      startAngle += angle;
-      return segment;
-    });
+      });
+      runningAngle += angle;
+    }
+    return result;
   }, [data]);
 
   const createArcPath = (startAngle: number, endAngle: number, innerR: number, outerR: number) => {

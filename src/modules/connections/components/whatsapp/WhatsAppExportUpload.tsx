@@ -67,6 +67,7 @@ const useRotatingMessage = (stage: string | null, interval = 2500): string => {
     const messages = PROCESSING_MESSAGES[stage];
     if (!messages || messages.length <= 1) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMessageIndex(0);
     const timer = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % messages.length);

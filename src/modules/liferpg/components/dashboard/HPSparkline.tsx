@@ -17,6 +17,9 @@ export const HPSparkline: React.FC<HPSparklineProps> = ({
   width = 200,
   height = 40,
 }) => {
+  // Unique gradient ID per component instance — must be called before any returns
+  const uid = useId();
+
   if (data.length < 2) return null;
 
   const padding = 2;
@@ -40,8 +43,7 @@ export const HPSparkline: React.FC<HPSparklineProps> = ({
   // Gradient fill path
   const fillPath = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
 
-  // Unique gradient ID per component instance
-  const gradientId = `hp-grad-${useId()}`;
+  const gradientId = `hp-grad-${uid}`;
 
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>

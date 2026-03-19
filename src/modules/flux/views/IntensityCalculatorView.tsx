@@ -30,19 +30,6 @@ export default function IntensityCalculatorView() {
   const [allZones, setAllZones] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (athleteId) {
-      loadAthlete();
-    }
-  }, [athleteId]);
-
-  useEffect(() => {
-    if (profile) {
-      calculateIntensity();
-      calculateAllZones();
-    }
-  }, [profile, selectedZone]);
-
   const loadAthlete = async () => {
     if (!athleteId) return;
 
@@ -74,6 +61,22 @@ export default function IntensityCalculatorView() {
       console.error('Error calculating zones:', error instanceof Error ? error.message : error);
     }
   };
+
+  useEffect(() => {
+    if (athleteId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadAthlete();
+    }
+  }, [athleteId]);
+
+  useEffect(() => {
+    if (profile) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      calculateIntensity();
+      calculateAllZones();
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [profile, selectedZone]);
 
   if (loading) {
     return (

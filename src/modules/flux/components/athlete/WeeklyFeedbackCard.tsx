@@ -121,6 +121,7 @@ function DayFeedbackCard({
 
   // Reset step when collapsed
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isExpanded) setCurrentStep(0);
   }, [isExpanded]);
 

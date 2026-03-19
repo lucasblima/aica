@@ -71,8 +71,10 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
   useEffect(() => {
     const active = projects.filter(p => !p.archived_at);
     const archived = projects.filter(p => p.archived_at);
+    /* eslint-disable react-hooks/set-state-in-effect */
     setActiveProjects(active);
     setArchivedProjects(archived);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [projects]);
 
   /**

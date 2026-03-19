@@ -313,7 +313,7 @@ export class IntensityCalculatorService {
     z5: string | number;
   } {
     switch (profile.modality) {
-      case 'cycling':
+      case 'cycling': {
         if (!profile.ftp) throw new Error('FTP não definido');
         const cyclingZones = this.calculateCyclingZones(profile.ftp);
         return {
@@ -323,6 +323,7 @@ export class IntensityCalculatorService {
           z4: `${cyclingZones.z4[0]}-${cyclingZones.z4[1]}W`,
           z5: `${cyclingZones.z5[0]}+W`,
         };
+      }
 
       case 'running':
         if (!profile.pace_threshold) throw new Error('Pace limiar não definido');

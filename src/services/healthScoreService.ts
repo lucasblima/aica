@@ -80,7 +80,7 @@ export async function getHealthScoreAlerts(
   limit = 20,
   onlyUnacknowledged = true
 ): Promise<HealthScoreAlert[]> {
-  let query = supabase
+  const query = supabase
     .from('contact_health_history')
     .select(`
       id,

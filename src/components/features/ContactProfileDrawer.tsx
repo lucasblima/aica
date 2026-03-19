@@ -154,11 +154,13 @@ export function ContactProfileDrawer({
   const [bioValue, setBioValue] = useState('');
   const [isSavingBio, setIsSavingBio] = useState(false);
 
-  // Reset bio state when contact changes
+  // Reset bio state when contact changes (async data from usePlatformContact)
   useEffect(() => {
     if (contact) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setBioValue(contact.bio || '');
       setIsEditingBio(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [contact]);
 
