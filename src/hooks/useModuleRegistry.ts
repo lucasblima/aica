@@ -8,9 +8,9 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
+import type { RealtimeChannel } from '@/services/supabaseClient';
 import { getCachedUser } from '@/services/authCacheService';
 import { createNamespacedLogger } from '@/lib/logger';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const log = createNamespacedLogger('useModuleRegistry');
 

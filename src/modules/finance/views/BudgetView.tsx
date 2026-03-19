@@ -8,7 +8,7 @@
  * Now backed by finance_budgets table via budgetService.
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Pencil, Check, X } from 'lucide-react';
 
@@ -75,11 +75,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
   const [editAmount, setEditAmount] = useState('');
   const [savingBudget, setSavingBudget] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [userId, selectedYear, selectedMonth]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -121,7 +117,11 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Navigate to previous month
   const goToPreviousMonth = () => {
