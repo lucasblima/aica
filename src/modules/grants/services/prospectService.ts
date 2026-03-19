@@ -397,7 +397,7 @@ export async function getPipelineKanbanData(projectId: string): Promise<Pipeline
 
   // Buscar ultima atividade de cada sponsor
   const sponsorIds = sponsorList.map(s => s.id);
-  let lastActivities: Record<string, { date: string; type: ActivityType }> = {};
+  const lastActivities: Record<string, { date: string; type: ActivityType }> = {};
 
   if (sponsorIds.length > 0) {
     const { data: activities } = await supabase

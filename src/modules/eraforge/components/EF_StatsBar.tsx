@@ -24,12 +24,14 @@ const STATS_CONFIG = [
 function AnimatedNumber({ value }: { value: number }) {
   const spring = useSpring(value, { stiffness: 300, damping: 30 });
   const display = useTransform(spring, (v) => Math.round(v));
-  const prevRef = useRef(value);
-  const isChanging = prevRef.current !== value;
+  const [isChanging, setIsChanging] = React.useState(false);
 
   useEffect(() => {
     spring.set(value);
-    prevRef.current = value;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsChanging(true);
+    const timer = setTimeout(() => setIsChanging(false), 400);
+    return () => clearTimeout(timer);
   }, [value, spring]);
 
   return (

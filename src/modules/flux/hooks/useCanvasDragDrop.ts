@@ -62,8 +62,9 @@ export function useCanvasDragDrop({
       setError(null);
 
       // 1. Try to get active microcycle for athlete
-      let { data: microcycle, error: mcError } =
-        await MicrocycleService.getActiveMicrocycle(athleteId);
+      const mcResult = await MicrocycleService.getActiveMicrocycle(athleteId);
+      const mcError = mcResult.error;
+      let microcycle = mcResult.data;
 
       if (mcError) throw mcError;
 

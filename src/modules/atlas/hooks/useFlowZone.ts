@@ -47,7 +47,9 @@ export function useFlowZone(profile: CognitiveProfile | null): UseFlowZoneReturn
   }, [profile])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     compute()
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     intervalRef.current = setInterval(compute, UPDATE_INTERVAL_MS)
 

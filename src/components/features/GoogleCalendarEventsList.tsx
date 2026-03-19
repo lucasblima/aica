@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useGoogleCalendarEvents } from '@/hooks/useGoogleCalendarEvents';
 
@@ -30,6 +30,9 @@ export default function GoogleCalendarEventsList({
         : events;
 
     const displayedEvents = filteredEvents.slice(0, maxEvents);
+
+    // Stable timestamp for render — avoids impure Date.now() calls during render
+    const [nowMs] = useState(() => Date.now());
 
     if (!isConnected) {
         return null;
@@ -80,7 +83,7 @@ export default function GoogleCalendarEventsList({
                     {displayedEvents.map((event) => {
                         const startTime = new Date(event.startTime);
                         const endTime = new Date(event.endTime);
-                        const isCurrentOrUpcoming = startTime.getTime() >= Date.now();
+                        const isCurrentOrUpcoming = startTime.getTime() >= nowMs;
 
                         // Formatar horários
                         const timeString = event.isAllDay

@@ -23,39 +23,15 @@ interface HelpButtonProps {
   className?: string;
 }
 
-export const HelpButton: React.FC<HelpButtonProps> = ({
-  tourKey,
-  className = ''
-}) => {
+/**
+ * Safe wrapper that catches context errors from useTour.
+ * The hook is always called (not conditional), but if TourProvider
+ * is missing, useTour() throws — we catch at the ErrorBoundary level
+ * by wrapping the inner component.
+ */
+function HelpButtonInner({ tourKey, className = '' }: HelpButtonProps) {
   const [isLoading, setIsLoading] = React.useState(false);
-
-  let tourContext;
-  try {
-    tourContext = useTour();
-  } catch (err) {
-    log.warn('[HelpButton] TourContext not available:', err);
-    // Render disabled button if TourContext is not available
-    return (
-      <button
-        disabled
-        title="Tour system not available"
-        className={`
-          w-10 h-10
-          ceramic-card
-          flex items-center justify-center
-          text-ceramic-text-secondary
-          opacity-30
-          cursor-not-allowed
-          ${className}
-        `}
-        aria-label="Tour indisponível"
-      >
-        <HelpCircle className="w-5 h-5" />
-      </button>
-    );
-  }
-
-  const { startTour } = tourContext;
+  const { startTour } = useTour();
 
   const handleClick = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -94,5 +70,55 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
     >
       <HelpCircle className="w-5 h-5" />
     </button>
+  );
+}
+
+class HelpButtonErrorBoundary extends React.Component<
+  { children: React.ReactNode; className?: string },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; className?: string }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    log.warn('[HelpButton] TourContext not available:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <button
+          disabled
+          title="Tour system not available"
+          className={`
+            w-10 h-10
+            ceramic-card
+            flex items-center justify-center
+            text-ceramic-text-secondary
+            opacity-30
+            cursor-not-allowed
+            ${this.props.className || ''}
+          `}
+          aria-label="Tour indisponível"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export const HelpButton: React.FC<HelpButtonProps> = ({ tourKey, className = '' }) => {
+  return (
+    <HelpButtonErrorBoundary className={className}>
+      <HelpButtonInner tourKey={tourKey} className={className} />
+    </HelpButtonErrorBoundary>
   );
 };

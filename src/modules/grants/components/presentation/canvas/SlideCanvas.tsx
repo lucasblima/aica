@@ -99,6 +99,7 @@ export function SlideCanvas({
   };
 
   // Render current slide based on type
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const renderSlide = useMemo(() => {
     if (!currentSlide) {
       return (

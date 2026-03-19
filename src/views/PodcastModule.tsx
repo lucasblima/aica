@@ -322,7 +322,7 @@ export const PodcastModule: React.FC<PodcastModuleProps> = ({ userEmail, onLogou
                                         <div className="h-12 bg-[#F0EFE9]/10 rounded-lg flex items-center justify-center mb-2">
                                             <div className="flex gap-1 items-end h-6">
                                                 {[...Array(10)].map((_, i) => (
-                                                    <div key={i} className="w-1 bg-[#F0EFE9]/50 rounded-full animate-pulse" style={{ height: `${Math.random() * 100}%` }}></div>
+                                                    <div key={i} className="w-1 bg-[#F0EFE9]/50 rounded-full animate-pulse" style={{ height: `${((Math.sin(i * 2.1 + 1.3) + 1) / 2) * 100}%` }}></div>
                                                 ))}
                                             </div>
                                         </div>

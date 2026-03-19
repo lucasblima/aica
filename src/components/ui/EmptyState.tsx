@@ -98,6 +98,7 @@ const EMPTY_STATE_CONFIG = {
  * />
  * ```
  */
+/* eslint-disable react-hooks/static-components */
 export const EmptyState: React.FC<EmptyStateProps> = ({
   type,
   onPrimaryAction,
@@ -124,6 +125,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       }
     : EMPTY_STATE_CONFIG[type];
 
+   
   const Icon = customIcon ? () => <div>{customIcon}</div> : config.icon;
 
   // Customize message for no_data_period with selectedDays

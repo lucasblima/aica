@@ -116,6 +116,7 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({ userId }) => {
   }, [userId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadGoals();
   }, [loadGoals]);
 

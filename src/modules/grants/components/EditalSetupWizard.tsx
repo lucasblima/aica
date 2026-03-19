@@ -49,15 +49,6 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
   const [isParsing, setIsParsing] = useState(false);
 
   /**
-   * Auto-process existing document when wizard opens with existingDocument
-   */
-  React.useEffect(() => {
-    if (isOpen && existingDocument && !processedEdital && !isProcessing) {
-      handleReprocessExisting(existingDocument);
-    }
-  }, [isOpen, existingDocument]);
-
-  /**
    * Re-process an existing document from Google Files (skip upload)
    */
   const handleReprocessExisting = async (doc: FileSearchDocument) => {
@@ -92,6 +83,15 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
       setIsProcessing(false);
     }
   };
+
+  /**
+   * Auto-process existing document when wizard opens with existingDocument
+   */
+  React.useEffect(() => {
+    if (isOpen && existingDocument && !processedEdital && !isProcessing) {
+      handleReprocessExisting(existingDocument);
+    }
+  }, [isOpen, existingDocument]);
 
   /**
    * Handle PDF upload and analysis

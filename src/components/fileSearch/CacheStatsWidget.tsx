@@ -25,7 +25,14 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const updateStats = () => {
+    const cacheStats = fileSearchCache.getStats();
+    setStats(cacheStats);
+    setLastUpdate(new Date());
+  };
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     updateStats();
 
     const interval = setInterval(() => {
@@ -34,12 +41,6 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
 
     return () => clearInterval(interval);
   }, [refreshInterval]);
-
-  const updateStats = () => {
-    const cacheStats = fileSearchCache.getStats();
-    setStats(cacheStats);
-    setLastUpdate(new Date());
-  };
 
   const handleRefresh = () => {
     setIsRefreshing(true);

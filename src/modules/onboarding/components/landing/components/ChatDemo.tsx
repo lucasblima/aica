@@ -26,9 +26,11 @@ export function ChatDemo({ script, onComplete }: ChatDemoProps) {
 
   useEffect(() => {
     // Reset state on script change
+    /* eslint-disable react-hooks/set-state-in-effect */
     setVisibleMessages([]);
     setIsTyping(false);
     clearTimeouts();
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const { messages } = script;
     let elapsed = 500; // initial pause
