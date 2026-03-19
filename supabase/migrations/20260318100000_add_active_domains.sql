@@ -18,7 +18,9 @@ ALTER TABLE life_scores
 
 COMMENT ON COLUMN life_scores.active_domains IS 'Snapshot of active domains at computation time. Null for scores computed before this feature.';
 
--- 3. Update get_user_domain_weights RPC to include active_domains
+-- 3. Drop + recreate get_user_domain_weights (return type changed)
+DROP FUNCTION IF EXISTS get_user_domain_weights();
+
 CREATE OR REPLACE FUNCTION get_user_domain_weights()
 RETURNS TABLE (
   weights JSONB,
@@ -38,7 +40,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION get_user_domain_weights TO authenticated;
 
--- 4. Update upsert_user_domain_weights RPC to accept active_domains
+-- 4. Drop + recreate upsert_user_domain_weights (signature changed)
+DROP FUNCTION IF EXISTS upsert_user_domain_weights(JSONB, TEXT, JSONB);
+
 CREATE OR REPLACE FUNCTION upsert_user_domain_weights(
   p_weights JSONB,
   p_method TEXT DEFAULT 'slider',
@@ -69,7 +73,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION upsert_user_domain_weights TO authenticated;
 
--- 5. Update get_latest_life_score RPC to include active_domains
+-- 5. Drop + recreate get_latest_life_score (return type changed)
+DROP FUNCTION IF EXISTS get_latest_life_score();
+
 CREATE OR REPLACE FUNCTION get_latest_life_score()
 RETURNS TABLE (
   id UUID,
