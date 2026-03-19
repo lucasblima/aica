@@ -229,6 +229,9 @@ export function useChatSessionV2(): UseChatSessionReturn {
   // Ref to track the last user message text (for title generation in onFinish)
   const lastUserTextRef = useRef('')
 
+  // Reply-to state (mirrors V1 hook interface)
+  const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null)
+
   // -------------------------------------------------------------------------
   // Derived state: map AI SDK messages to DisplayMessage[]
   // -------------------------------------------------------------------------
@@ -509,5 +512,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
     activeAgent,
     lastFailedMessage,
     connectionStatus,
+    replyTo,
+    setReplyTo,
   }
 }
