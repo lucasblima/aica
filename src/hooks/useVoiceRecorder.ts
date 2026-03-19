@@ -82,6 +82,7 @@ export function useVoiceRecorder({
   const audioContextRef = useRef<AudioContext | null>(null)
 
   // Refs for Web Speech API
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Web Speech API lacks standard types
   const recognitionRef = useRef<any>(null)
   const shouldRestartRef = useRef(false)
   const finalTranscriptRef = useRef('')
@@ -131,6 +132,7 @@ export function useVoiceRecorder({
 
   // ── Web Speech API ──────────────────────────────────────────────
   const startSpeechApi = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Web Speech API vendor-prefixed globals
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) return false
 

@@ -89,6 +89,7 @@ export function useChatSession(): UseChatSessionReturn {
     initRef.current = true
 
     loadSessions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadSessions = useCallback(async () => {
@@ -349,6 +350,7 @@ export function useChatSession(): UseChatSessionReturn {
         const partialContent = streamedTextRef.current
         if (partialContent && partialContent.length > 50) {
           // Streaming delivered substantial content — use it, skip fallback
+          // eslint-disable-next-line no-console
           console.info('[useChatSession] Using partial streamed content (%d chars)', partialContent.length)
           finalText = partialContent
           respondingAgent = 'aica_coordinator'

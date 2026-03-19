@@ -74,7 +74,7 @@ export function AicaChatFAB({
     sessions,
     messages,
     isLoading,
-    isStreaming,
+    isStreaming: _isStreaming,
     streamedText,
     error,
     limitReached,
