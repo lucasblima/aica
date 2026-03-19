@@ -12,8 +12,8 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
-import { streamText, generateText } from 'npm:ai@^4'
-import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@^1'
+import { streamText, generateText } from 'npm:ai@^6'
+import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@^3'
 
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { extractUserId } from '../_shared/gemini-helpers.ts'
