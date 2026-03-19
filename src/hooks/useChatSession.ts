@@ -24,6 +24,7 @@ export interface DisplayMessage {
   agent?: string
   actions?: ChatAction[]
   sources?: Array<{ title: string; url: string }>
+  isStreaming?: boolean
 }
 
 export interface UseChatSessionReturn {
@@ -74,6 +75,8 @@ export function useChatSession(): UseChatSessionReturn {
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'degraded' | 'offline'>('connected')
   const initRef = useRef(false)
+  const streamedTextRef = useRef('')
+  const streamingMsgIdRef = useRef<string | null>(null)
 
   // Load sessions on mount
   useEffect(() => {
@@ -161,6 +164,7 @@ export function useChatSession(): UseChatSessionReturn {
   }> => {
     setIsStreaming(true)
     setStreamedText('')
+    streamedTextRef.current = ''
 
     let fullText = ''
     let agent = 'aica_coordinator'
@@ -172,6 +176,7 @@ export function useChatSession(): UseChatSessionReturn {
       if (event.type === 'token') {
         fullText += event.content
         setStreamedText(fullText)
+        streamedTextRef.current = fullText
       } else if (event.type === 'done') {
         fullText = event.fullText || fullText
         agent = event.agent || 'aica_coordinator'
@@ -285,6 +290,17 @@ export function useChatSession(): UseChatSessionReturn {
       let tokensOutput: number | undefined
       let modelUsed = 'gemini-chat-stream'
 
+      // Insert streaming placeholder — single render path, no separate bubble
+      const streamingId = `streaming-${Date.now()}`
+      streamingMsgIdRef.current = streamingId
+      setMessages(prev => [...prev, {
+        id: streamingId,
+        role: 'assistant' as const,
+        content: '',
+        created_at: new Date().toISOString(),
+        isStreaming: true,
+      }])
+
       // Strategy: try streaming first, fallback to non-streaming gemini-chat
       try {
         const streamResult = await tryStreaming(
@@ -302,64 +318,88 @@ export function useChatSession(): UseChatSessionReturn {
         setSuggestedQuestions(streamResult.suggestedQuestions || [])
         setConnectionStatus('connected')
       } catch (streamErr) {
-        // Streaming failed — fallback to ReACT agent (context-enriched) or non-streaming chat
-        console.warn('[useChatSession] Streaming failed, falling back:', streamErr)
-        // Keep streamedText visible during fallback attempt (don't flash empty)
+        // Streaming failed — check if we got partial content before falling back
+        console.warn('[useChatSession] Streaming failed:', streamErr)
         setIsStreaming(false)
 
-        try {
-          // Try ReACT agent first — provides context-enriched responses
-          modelUsed = 'react-agent'
-          const reactResult = await fetchReactChat(
-            currentSession.id,
-            trimmed,
-            history,
-            userContext,
-          )
-          finalText = reactResult.text
-          respondingAgent = reactResult.agent
+        const partialContent = streamedTextRef.current
+        if (partialContent && partialContent.length > 50) {
+          // Streaming delivered substantial content — use it, skip fallback
+          console.info('[useChatSession] Using partial streamed content (%d chars)', partialContent.length)
+          finalText = partialContent
+          respondingAgent = 'aica_coordinator'
           responseActions = []
-          tokensInput = reactResult.usage?.input
-          tokensOutput = reactResult.usage?.output
+          modelUsed = 'gemini-chat-stream-partial'
+          setStreamedText('')
+          streamedTextRef.current = ''
           setSuggestedQuestions([])
           setConnectionStatus('connected')
-        } catch (reactErr) {
-          // ReACT also failed — final fallback to basic non-streaming chat
-          console.warn('[useChatSession] ReACT failed, falling back to basic chat:', reactErr)
-          modelUsed = 'gemini-chat-fallback'
+        } else {
+          // No substantial content — run fallback chain
+          setStreamedText('')
+          streamedTextRef.current = ''
 
-          const fallbackResult = await fetchChatNonStreaming(
-            currentSession.id,
-            trimmed,
-            history,
-            userContext,
-          )
-          finalText = fallbackResult.text
-          respondingAgent = fallbackResult.agent
-          responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
-          tokensInput = fallbackResult.usage?.input
-          tokensOutput = fallbackResult.usage?.output
-          setSuggestedQuestions([])
-          setConnectionStatus('degraded')
+          try {
+            // Try ReACT agent first — provides context-enriched responses
+            modelUsed = 'react-agent'
+            const reactResult = await fetchReactChat(
+              currentSession.id,
+              trimmed,
+              history,
+              userContext,
+            )
+            finalText = reactResult.text
+            respondingAgent = reactResult.agent
+            responseActions = []
+            tokensInput = reactResult.usage?.input
+            tokensOutput = reactResult.usage?.output
+            setSuggestedQuestions([])
+            setConnectionStatus('connected')
+          } catch (reactErr) {
+            // ReACT also failed — final fallback to basic non-streaming chat
+            console.warn('[useChatSession] ReACT failed, falling back to basic chat:', reactErr)
+            modelUsed = 'gemini-chat-fallback'
+
+            const fallbackResult = await fetchChatNonStreaming(
+              currentSession.id,
+              trimmed,
+              history,
+              userContext,
+            )
+            finalText = fallbackResult.text
+            respondingAgent = fallbackResult.agent
+            responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
+            tokensInput = fallbackResult.usage?.input
+            tokensOutput = fallbackResult.usage?.output
+            setSuggestedQuestions([])
+            setConnectionStatus('degraded')
+          }
         }
       }
 
-      // Success — append message OPTIMISTICALLY before DB save (prevents flash of empty content)
+      // Replace streaming placeholder with final message (in-place, never append)
       const tempAssistantId = `temp-assistant-${Date.now()}`
-      const tempAssistantMsg: DisplayMessage = {
-        id: tempAssistantId,
-        role: 'assistant',
-        content: finalText,
-        created_at: new Date().toISOString(),
-        agent: respondingAgent,
-        actions: responseActions,
-      }
-      setMessages(prev => [...prev, tempAssistantMsg])
+      const streamingIdForReplace = streamingMsgIdRef.current
+      setMessages(prev => prev.map(m =>
+        m.id === streamingIdForReplace
+          ? {
+              id: tempAssistantId,
+              role: 'assistant' as const,
+              content: finalText,
+              created_at: m.created_at,
+              agent: respondingAgent,
+              actions: responseActions,
+              isStreaming: false,
+            }
+          : m
+      ))
+      streamingMsgIdRef.current = null
       setActiveAgent(respondingAgent)
 
-      // NOW clear streaming state — the optimistic message is already visible
+      // Clear streaming state
       setIsStreaming(false)
       setStreamedText('')
+      streamedTextRef.current = ''
 
       // Save to DB (fire-and-forget for display, but await for consistency)
       chatService.saveMessage({
@@ -415,6 +455,13 @@ export function useChatSession(): UseChatSessionReturn {
       console.error('[useChatSession] sendMessage failed:', err)
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
 
+      // Remove streaming placeholder on total failure
+      if (streamingMsgIdRef.current) {
+        const failedId = streamingMsgIdRef.current
+        setMessages(prev => prev.filter(m => m.id !== failedId))
+        streamingMsgIdRef.current = null
+      }
+
       // Sentry breadcrumb: failure
       Sentry.addBreadcrumb({
         category: 'chat',
@@ -430,6 +477,8 @@ export function useChatSession(): UseChatSessionReturn {
       setIsLoading(false)
       setIsStreaming(false)
       setStreamedText('')
+      streamedTextRef.current = ''
+      streamingMsgIdRef.current = null
     }
   }, [session, messages, isLoading, getUserId, tryStreaming])
 

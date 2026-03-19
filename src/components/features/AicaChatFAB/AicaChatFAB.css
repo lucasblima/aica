@@ -1218,3 +1218,19 @@
     color: #f87171;
   }
 }
+
+/* ============================================================================
+   TYPING CURSOR (streaming indicator)
+   ============================================================================ */
+
+.typing-cursor {
+  display: inline;
+  animation: blink-cursor 0.8s step-end infinite;
+  color: var(--ceramic-text-secondary, #a0937d);
+  font-weight: 100;
+  margin-left: 1px;
+}
+
+@keyframes blink-cursor {
+  50% { opacity: 0; }
+}
