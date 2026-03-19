@@ -2,8 +2,9 @@
  * LifeScoreRadar — Domain Radar Chart
  * Issue #575: Scientific foundations for AICA Life OS
  *
- * Radar/spider chart displaying all AICA domain scores.
+ * Radar/spider chart displaying active AICA domain scores.
  * Uses SVG for lightweight rendering without chart library dependency.
+ * Adapts polygon shape to the number of active domains (pentagon for 5, etc.).
  * Follows Ceramic Design System.
  *
  * Restored: Issue #717 — accidentally deleted in PR #713.
@@ -11,16 +12,13 @@
 
 import React, { useMemo } from 'react';
 import type { AicaDomain, LifeScore } from '@/services/scoring/types';
+import { ALL_AICA_DOMAINS } from '@/services/scoring/types';
 import { DOMAIN_LABELS } from '@/services/scoring/lifeScoreService';
 import { getSufficiencyColor, getSufficiencyLevel } from '@/services/scoring/types';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const DOMAINS_ORDER: AicaDomain[] = [
-  'atlas', 'journey', 'connections', 'finance', 'grants', 'studio', 'flux',
-];
 
 /** Sufficiency threshold line (GNH-inspired: 0.66) */
 const SUFFICIENCY_THRESHOLD = 0.66;
@@ -86,12 +84,22 @@ export const LifeScoreRadar: React.FC<LifeScoreRadarProps> = ({
   showThreshold = true,
   className = '',
 }) => {
-  const n = DOMAINS_ORDER.length;
+  // Use active domains from the life score, falling back to all domains
+  const domainsOrder = useMemo(() => {
+    const active = lifeScore.activeDomains;
+    if (active && active.length > 0) {
+      // Preserve canonical order from ALL_AICA_DOMAINS
+      return ALL_AICA_DOMAINS.filter(d => active.includes(d));
+    }
+    return ALL_AICA_DOMAINS;
+  }, [lifeScore.activeDomains]);
+
+  const n = domainsOrder.length;
 
   // Get scores in order
   const scores = useMemo(
-    () => DOMAINS_ORDER.map(d => lifeScore.domainScores[d] ?? 0),
-    [lifeScore.domainScores]
+    () => domainsOrder.map(d => lifeScore.domainScores[d] ?? 0),
+    [lifeScore.domainScores, domainsOrder]
   );
 
   // Grid rings (0.25, 0.50, 0.75, 1.0)
@@ -100,11 +108,11 @@ export const LifeScoreRadar: React.FC<LifeScoreRadarProps> = ({
   // Axis lines
   const axes = useMemo(
     () =>
-      DOMAINS_ORDER.map((_, i) => {
+      domainsOrder.map((_, i) => {
         const angle = (360 / n) * i;
         return polarToCartesian(angle, RADIUS);
       }),
-    [n]
+    [n, domainsOrder]
   );
 
   // Score polygon
@@ -198,7 +206,7 @@ export const LifeScoreRadar: React.FC<LifeScoreRadarProps> = ({
 
         {/* Labels */}
         {showLabels &&
-          DOMAINS_ORDER.map((domain, i) => {
+          domainsOrder.map((domain, i) => {
             const angle = (360 / n) * i;
             const labelR = RADIUS + 28;
             const { x, y } = polarToCartesian(angle, labelR);

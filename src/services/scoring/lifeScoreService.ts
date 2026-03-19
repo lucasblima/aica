@@ -19,7 +19,7 @@ import type {
   AHPResult,
   ScoreTrend,
 } from './types';
-import { DEFAULT_DOMAIN_WEIGHTS, getSufficiencyLevel } from './types';
+import { DEFAULT_DOMAIN_WEIGHTS, DEFAULT_ACTIVE_DOMAINS, getSufficiencyLevel } from './types';
 import { detectSpiral } from './spiralDetectionService';
 
 const log = createNamespacedLogger('LifeScoreService');
@@ -215,7 +215,8 @@ export function computeTrend(history: { composite: number; computedAt: string }[
 export function computeLifeScore(
   domains: DomainScore[],
   weights: Record<AicaDomain, number>,
-  history: { composite: number; computedAt: string }[] = []
+  history: { composite: number; computedAt: string }[] = [],
+  activeDomains: AicaDomain[] = DEFAULT_ACTIVE_DOMAINS
 ): LifeScore {
   const composite = computeWeightedGeometricMean(domains, weights);
   const trend = computeTrend(history);
@@ -233,6 +234,7 @@ export function computeLifeScore(
     composite,
     domainScores: domainScores as Record<AicaDomain, number>,
     domainWeights: weights,
+    activeDomains,
     weightMethod: 'slider',
     trend,
     sufficiency: getSufficiencyLevel(composite),
@@ -254,28 +256,31 @@ export async function getUserDomainWeights(): Promise<{
   weights: Record<AicaDomain, number>;
   method: string;
   ahpComparisons: AHPComparison[] | null;
+  activeDomains: AicaDomain[];
 }> {
   try {
     const { data, error } = await supabase.rpc('get_user_domain_weights');
 
     if (error) {
       log.warn('Failed to fetch domain weights, using defaults:', error.message);
-      return { weights: { ...DEFAULT_DOMAIN_WEIGHTS }, method: 'equal', ahpComparisons: null };
+      return { weights: { ...DEFAULT_DOMAIN_WEIGHTS }, method: 'equal', ahpComparisons: null, activeDomains: [...DEFAULT_ACTIVE_DOMAINS] };
     }
 
     if (!data || data.length === 0) {
-      return { weights: { ...DEFAULT_DOMAIN_WEIGHTS }, method: 'equal', ahpComparisons: null };
+      return { weights: { ...DEFAULT_DOMAIN_WEIGHTS }, method: 'equal', ahpComparisons: null, activeDomains: [...DEFAULT_ACTIVE_DOMAINS] };
     }
 
     const row = data[0];
+    const activeDomains = (row.active_domains as AicaDomain[] | null) ?? [...DEFAULT_ACTIVE_DOMAINS];
     return {
       weights: row.weights as Record<AicaDomain, number>,
       method: row.method,
       ahpComparisons: row.ahp_comparisons as AHPComparison[] | null,
+      activeDomains,
     };
   } catch (err) {
     log.error('getUserDomainWeights failed:', err);
-    return { weights: { ...DEFAULT_DOMAIN_WEIGHTS }, method: 'equal', ahpComparisons: null };
+    return { weights: { ...DEFAULT_DOMAIN_WEIGHTS }, method: 'equal', ahpComparisons: null, activeDomains: [...DEFAULT_ACTIVE_DOMAINS] };
   }
 }
 
@@ -285,13 +290,15 @@ export async function getUserDomainWeights(): Promise<{
 export async function saveUserDomainWeights(
   weights: Record<AicaDomain, number>,
   method: 'equal' | 'slider' | 'ahp' = 'slider',
-  ahpComparisons?: AHPComparison[]
+  ahpComparisons?: AHPComparison[],
+  activeDomains?: AicaDomain[]
 ): Promise<void> {
   try {
     const { error } = await supabase.rpc('upsert_user_domain_weights', {
       p_weights: weights,
       p_method: method,
       p_ahp_comparisons: ahpComparisons ?? null,
+      p_active_domains: activeDomains ?? null,
     });
 
     if (error) {
@@ -299,7 +306,7 @@ export async function saveUserDomainWeights(
       throw error;
     }
 
-    log.info('Domain weights saved:', { method, weights });
+    log.info('Domain weights saved:', { method, weights, activeDomains });
   } catch (err) {
     log.error('saveUserDomainWeights failed:', err);
     throw err;
@@ -325,6 +332,7 @@ export async function getLatestLifeScore(): Promise<LifeScore | null> {
       composite: row.composite_score,
       domainScores: row.domain_scores as Record<AicaDomain, number>,
       domainWeights: row.domain_weights as Record<AicaDomain, number>,
+      activeDomains: (row.active_domains as AicaDomain[] | null) ?? [...DEFAULT_ACTIVE_DOMAINS],
       weightMethod: 'slider',
       trend: (row.trend as ScoreTrend) ?? 'stable',
       sufficiency: getSufficiencyLevel(row.composite_score),
@@ -382,6 +390,7 @@ export async function storeLifeScore(score: LifeScore): Promise<void> {
       user_id: user.id,
       domain_scores: score.domainScores,
       domain_weights: score.domainWeights,
+      active_domains: score.activeDomains,
       composite_score: score.composite,
       trend: score.trend,
       spiral_detected: score.spiralAlert,

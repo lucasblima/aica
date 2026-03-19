@@ -26,6 +26,8 @@ export type {
 } from './types';
 
 export {
+  ALL_AICA_DOMAINS,
+  DEFAULT_ACTIVE_DOMAINS,
   DEFAULT_DOMAIN_WEIGHTS,
   getSufficiencyLevel,
   getSufficiencyColor,

@@ -63,6 +63,16 @@ export type AicaDomain =
   | 'studio'
   | 'flux';
 
+/** All 7 AICA domains */
+export const ALL_AICA_DOMAINS: AicaDomain[] = [
+  'atlas', 'journey', 'connections', 'finance', 'grants', 'studio', 'flux',
+];
+
+/** Default active domains (5 — grants and studio start inactive) */
+export const DEFAULT_ACTIVE_DOMAINS: AicaDomain[] = [
+  'atlas', 'journey', 'connections', 'finance', 'flux',
+];
+
 /** Default domain weights (equal) */
 export const DEFAULT_DOMAIN_WEIGHTS: Record<AicaDomain, number> = {
   atlas: 1,
@@ -98,6 +108,8 @@ export interface LifeScore {
   domainScores: Record<AicaDomain, number>;
   /** Current domain weights */
   domainWeights: Record<AicaDomain, number>;
+  /** Which domains are active for this computation */
+  activeDomains: AicaDomain[];
   /** Weighting method used */
   weightMethod: 'equal' | 'slider' | 'ahp';
   /** Overall trend */
