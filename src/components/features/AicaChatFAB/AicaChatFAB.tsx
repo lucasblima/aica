@@ -13,21 +13,7 @@ import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { useChatSession } from '@/hooks/useChatSession'
-import { useChatSessionV2 } from '@/hooks/useChatSessionV2'
-import type { DisplayMessage, UseChatSessionReturn } from '@/hooks/useChatSession'
-
-/**
- * Feature flag: set localStorage.setItem('aica_chat_v2', 'true') to enable AI SDK chat.
- * Module-level constant — safe for hooks since it never changes during runtime.
- */
-const CHAT_V2_ENABLED = typeof window !== 'undefined' && localStorage.getItem('aica_chat_v2') === 'true'
-
-/** Route to v1 or v2 chat hook based on feature flag. */
-function useChatHook(): UseChatSessionReturn {
-  // CHAT_V2_ENABLED is a module-level constant, so hook call order is stable
-  if (CHAT_V2_ENABLED) return useChatSessionV2() // eslint-disable-line react-hooks/rules-of-hooks
-  return useChatSession() // eslint-disable-line react-hooks/rules-of-hooks
-}
+import type { DisplayMessage } from '@/hooks/useChatSession'
 import type { InterviewMeta } from '@/services/chatStreamService'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import { formatAgentName } from '@/lib/agents/formatAgentName'
@@ -106,7 +92,7 @@ export function AicaChatFAB({
     connectionStatus,
     replyTo,
     setReplyTo,
-  } = useChatHook()
+  } = useChatSession()
 
   const activeModule = activeAgent
     ? activeAgent.replace(/_agent$/, '').replace('aica_', '')
