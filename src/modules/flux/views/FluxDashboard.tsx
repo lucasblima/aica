@@ -3,7 +3,8 @@
  *
  * Clean overview page with navigation cards to Atletas (CRM), Biblioteca,
  * Meus Treinos, and Assessoria Esportiva. Athlete management is accessed
- * through /flux/crm. Assessoria links to Connections Ventures.
+ * through /flux/crm. Assessoria card is always visible as a config hub:
+ * shows "Configurar" link when active, or "Criar" option otherwise.
  */
 
 import React, { useState } from 'react';
