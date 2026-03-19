@@ -111,3 +111,6 @@ IMPLEMENTATION_*.md
 /*.http
 /*.tar.gz
 *.tsbuildinfo
+
+# Audit screenshots (generated, not source)
+audit-*.png
