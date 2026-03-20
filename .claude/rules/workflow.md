@@ -41,7 +41,7 @@ Standard tasks skip this — plan in chat if needed.
 ## Session End Protocol — ALWAYS Execute
 
 1. **Verify** — `superpowers:verification-before-completion`: Run `npm run build`, `npm run typecheck`, `npm run test` with FRESH output as evidence. NEVER claim "tests pass" without showing output.
-2. **Code review** — `superpowers:requesting-code-review`: Dispatch review subagent, address findings.
+2. **Code review** — Pre-push: `superpowers:requesting-code-review` (local subagent). For PRs: CodeRabbit is the final gate (see CodeRabbit Workflow below).
 3. **Commit** with descriptive message + co-authorship
 4. **Push** feature branch
 5. **Finish** — `superpowers:finishing-a-development-branch`: Present 4 options (Merge / PR / Keep / Discard)
@@ -68,7 +68,7 @@ CodeRabbit is the external AI code reviewer. It runs automatically on every PR.
    gh pr view <pr-number> --comments
 
    # Inline code comments (where the real findings are)
-   gh api repos/lucasblima/aica/pulls/<pr-number>/comments
+   gh api repos/{owner}/{repo}/pulls/<pr-number>/comments
    ```
 
 3. **Triage findings** — For each CodeRabbit comment:

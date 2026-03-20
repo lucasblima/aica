@@ -3,6 +3,8 @@
 
 language: pt-BR
 
+early_access: true
+
 reviews:
   # Review every PR automatically
   auto_review:
@@ -32,6 +34,13 @@ reviews:
   # Collapse past review comments
   collapse_previous_comments: true
 
+  # Reduce noise on non-code files
+  path_filters:
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!docs/plans/**"
+    - "!docs/superpowers/**"
+
   # Path-specific instructions
   path_instructions:
     - path: "src/modules/**/*.{ts,tsx}"
@@ -48,6 +57,13 @@ reviews:
         NUNCA chamar supabase.auth.refreshSession() incondicionalmente.
         Verificar se queries filtram por user_id.
 
+    - path: "src/hooks/**/*.{ts,tsx}"
+      instructions: |
+        Hooks de auth (useAuth.ts) sao criticos para seguranca.
+        OAuth exchange SOMENTE em useAuth.ts.
+        NUNCA chamar supabase.auth.refreshSession() incondicionalmente.
+        Token refresh somente quando expira em <60s.
+
     - path: "supabase/functions/**/*.ts"
       instructions: |
         Edge Functions DEVEM incluir CORS headers para dev.aica.guru e aica.guru.
@@ -57,6 +73,12 @@ reviews:
         Modelos validos: gemini-2.5-flash e gemini-2.5-pro APENAS.
         NUNCA usar responseMimeType: 'application/json' com thinking models.
         maxOutputTokens >= 4096 para JSON output.
+
+    - path: "supabase/functions/_shared/**/*.ts"
+      instructions: |
+        Shared modules devem ser reutilizaveis (sem logica function-specific).
+        Manter backwards compatibility ao modificar (outras functions dependem).
+        Verificar se changes impactam TODAS as functions que importam deste modulo.
 
     - path: "supabase/migrations/**/*.sql"
       instructions: |
@@ -70,25 +92,36 @@ reviews:
         Componentes em ui/ devem ser puros (sem business logic).
         Componentes em features/ sao cross-module reutilizaveis.
         Componentes em domain/ contem business logic.
+        NUNCA hardcodar API keys, tokens ou secrets em componentes.
 
     - path: "cloudbuild.yaml"
       instructions: |
         Secrets DEVEM vir do Secret Manager (availableSecrets), NUNCA hardcoded.
         Anon key (sb_publishable_*) e Client ID sao publicos e podem ficar em substitutions.
 
-    - path: "src/**/*.test.ts"
+    - path: "src/**/*.test.{ts,tsx}"
       instructions: |
         Testes devem seguir RED-GREEN-REFACTOR (TDD).
         Verificar cobertura de edge cases e error paths.
 
-  # Tools configuration
-  tools:
-    # Enable ESLint
-    eslint:
-      enabled: true
-    # Enable Biome if present
-    biome:
-      enabled: true
+    - path: "tests/**/*.{ts,tsx}"
+      instructions: |
+        Testes E2E e de integracao.
+        Verificar cobertura de edge cases e error paths.
+        NUNCA hardcodar credenciais — usar variaveis de ambiente.
+
+    - path: ".claude/**"
+      instructions: |
+        Changes a hooks ou rules afetam o sistema de quality gates.
+        Verificar que nenhum gate existente foi enfraquecido ou removido.
+        Hooks com exit 1 sao blocking — nao remover sem justificativa.
+
+# Tools configuration (top-level, not nested under reviews)
+tools:
+  eslint:
+    enabled: true
+  biome:
+    enabled: true
 
 # Chat capabilities
 chat:

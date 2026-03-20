@@ -78,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && printf '⚠️  PR MERGE — VERIFY FIRST:\n\n- ✅ CodeRabbit review received and findings addressed?\n- ✅ All PR comments (CodeRabbit + human) resolved?\n- ✅ CI checks passing?\n- ✅ User explicitly approved merge?\n\nRun: gh pr view <number> --comments | grep coderabbitai\nIf no CodeRabbit review found, WAIT or use superpowers:requesting-code-review\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && printf 'BLOCKED: PR MERGE requires verification!\n\n- CodeRabbit review received and findings addressed?\n- All PR comments (CodeRabbit + human) resolved?\n- CI checks passing?\n- User explicitly approved merge?\n\nRun: gh pr view <number> --comments | grep coderabbitai\nIf no CodeRabbit review found, WAIT or use superpowers:requesting-code-review\n' && exit 1 || true"
           }
         ]
       },
