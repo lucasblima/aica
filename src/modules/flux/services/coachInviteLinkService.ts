@@ -38,17 +38,17 @@ export class CoachInviteLinkService {
     healthConfig: CoachInviteLink['health_config'],
     groupId?: string | null
   ): Promise<CoachInviteLink | null> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return null;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('coach_invite_links')
       .select('*')
       .eq('is_active', true)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (!data || data.length === 0) return null;
+    if (error || !data || data.length === 0) return null;
 
     // Find link with matching health config + group that's still usable
     for (const row of data) {

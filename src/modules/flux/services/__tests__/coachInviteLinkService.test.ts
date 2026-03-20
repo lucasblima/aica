@@ -74,13 +74,19 @@ vi.mock('@/services/supabaseClient', () => {
 });
 
 // Stub crypto.getRandomValues for deterministic token generation
-vi.stubGlobal('crypto', {
-  getRandomValues: vi.fn((array: Uint8Array) => {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = i * 17;
-    }
-    return array;
-  }),
+beforeAll(() => {
+  vi.stubGlobal('crypto', {
+    getRandomValues: vi.fn((array: Uint8Array) => {
+      for (let i = 0; i < array.length; i++) {
+        array[i] = i * 17;
+      }
+      return array;
+    }),
+  });
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
