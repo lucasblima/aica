@@ -1,5 +1,5 @@
 /**
- * useChatSessionV2 - AI SDK-powered chat session hook
+ * useChatSession - AI SDK-powered chat session hook
  *
  * Wraps `useChat` from `@ai-sdk/react` with AICA-specific logic:
  * - Session management (create, switch, archive)
@@ -8,8 +8,7 @@
  * - Morning briefing
  * - Title generation
  *
- * Returns the exact same `UseChatSessionReturn` interface as v1 for drop-in compatibility.
- * Key difference: streaming is handled natively by AI SDK (no manual SSE parsing).
+ * Uses Vercel AI SDK for native streaming (no manual SSE parsing).
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
@@ -19,9 +18,55 @@ import { chatService, type ChatSession, type ChatMessage } from '@/services/chat
 import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
-import type { InterviewMeta } from '@/services/chatStreamService'
+import type { ChatAction } from '@/types/chatActions'
 import { Sentry } from '@/lib/sentry'
-import type { DisplayMessage, UseChatSessionReturn } from '@/hooks/useChatSession'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** Metadata for interview-mode CTA triggers */
+export interface InterviewMeta {
+  type: 'interview_start'
+  intent: string
+}
+
+export interface DisplayMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+  agent?: string
+  actions?: ChatAction[]
+  sources?: Array<{ title: string; url: string }>
+  isStreaming?: boolean
+  parentMessageId?: string | null
+}
+
+export interface UseChatSessionReturn {
+  session: ChatSession | null
+  sessions: ChatSession[]
+  messages: DisplayMessage[]
+  isLoading: boolean
+  isStreaming: boolean
+  streamedText: string
+  error: string | null
+  limitReached: boolean
+  limitInfo: InteractionLimitResult | null
+  suggestedQuestions: string[]
+  sendMessage: (text: string, interviewMeta?: InterviewMeta, parentMessageId?: string) => Promise<void>
+  retryLastMessage: () => Promise<void>
+  createNewSession: () => void
+  switchSession: (sessionId: string) => Promise<void>
+  archiveSession: (sessionId: string) => Promise<void>
+  showSessions: boolean
+  setShowSessions: (show: boolean) => void
+  activeAgent: string | null
+  lastFailedMessage: string | null
+  connectionStatus: 'connected' | 'degraded' | 'offline'
+  replyTo: DisplayMessage | null
+  setReplyTo: (msg: DisplayMessage | null) => void
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -115,7 +160,7 @@ const chatTransport = new DefaultChatTransport({
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useChatSessionV2(): UseChatSessionReturn {
+export function useChatSession(): UseChatSessionReturn {
   // Session management state
   const [session, setSession] = useState<ChatSession | null>(null)
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -184,7 +229,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
         direction: 'outbound',
         modelUsed: 'gemini-chat-v2',
       }).catch(err => {
-        console.error('[useChatSessionV2] Failed to save assistant message:', err)
+        console.error('[useChatSession] Failed to save assistant message:', err)
       })
 
       // Generate title for new sessions (fire-and-forget)
@@ -203,7 +248,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
               s.id === currentSession.id ? { ...s, title: newTitle } : s
             ))
           }
-        }).catch(err => console.warn('[useChatSessionV2] Title generation failed:', err))
+        }).catch(err => console.warn('[useChatSession] Title generation failed:', err))
       }
 
       isSendingRef.current = false
@@ -223,7 +268,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
     // Callback: error
     onError: (error) => {
       isSendingRef.current = false
-      console.error('[useChatSessionV2] AI SDK error:', error)
+      console.error('[useChatSession] AI SDK error:', error)
       setHookError(error.message || 'Erro ao conectar com a Aica')
       setConnectionStatus('offline')
 
@@ -330,7 +375,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
         setAiMessages(prev => prev.length === 0 ? [briefingMsg] : prev)
       }
     } catch (err) {
-      console.warn('[useChatSessionV2] Morning briefing failed:', err)
+      console.warn('[useChatSession] Morning briefing failed:', err)
     }
   }, [setAiMessages])
 
@@ -372,7 +417,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
           return
         }
       } catch (limitErr) {
-        console.warn('[useChatSessionV2] Billing check failed, failing open:', limitErr)
+        console.warn('[useChatSession] Billing check failed, failing open:', limitErr)
       }
 
       // 2. Get userId
@@ -421,7 +466,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
       })
     } catch (err) {
       isSendingRef.current = false
-      console.error('[useChatSessionV2] sendMessage failed:', err)
+      console.error('[useChatSession] sendMessage failed:', err)
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
 
       Sentry.addBreadcrumb({
@@ -452,7 +497,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
       try {
         await regenerate()
       } catch (err) {
-        console.error('[useChatSessionV2] Retry failed:', err)
+        console.error('[useChatSession] Retry failed:', err)
       }
     }
   }, [lastFailedMessage, sendMessage, regenerate])
@@ -486,7 +531,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
       setActiveAgent(null)
       setConnectionStatus('connected')
     } catch (err) {
-      console.error('[useChatSessionV2] Failed to switch session:', sessionId, err)
+      console.error('[useChatSession] Failed to switch session:', sessionId, err)
       setHookError('Erro ao carregar conversa')
     }
   }, [sessions, setAiMessages])
@@ -506,9 +551,9 @@ export function useChatSessionV2(): UseChatSessionReturn {
       // Fire-and-forget: generate session summary for future context
       supabase.functions.invoke('summarize-chat-session', {
         body: { session_id: sessionId },
-      }).catch(err => console.warn('[useChatSessionV2] Summary generation failed:', err))
+      }).catch(err => console.warn('[useChatSession] Summary generation failed:', err))
     } catch (err) {
-      console.error('[useChatSessionV2] Failed to archive session:', sessionId, err)
+      console.error('[useChatSession] Failed to archive session:', sessionId, err)
       setHookError('Erro ao arquivar conversa')
     }
   }, [session, setAiMessages])

@@ -27,10 +27,7 @@ class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
               Ocorreu um erro ao carregar o chat. Tente recarregar a pagina.
             </p>
             <button
-              onClick={() => {
-                localStorage.removeItem('aica_chat_v2')
-                window.location.reload()
-              }}
+              onClick={() => window.location.reload()}
               className="bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-medium"
             >
               Recarregar chat
