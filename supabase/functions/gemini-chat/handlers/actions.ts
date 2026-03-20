@@ -1,4 +1,5 @@
 // handlers/actions.ts — Intent classification + chat action execution (permanent)
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { extractJSON } from '../../_shared/model-router.ts'
 
 // ============================================================================
@@ -123,7 +124,7 @@ Retorne APENAS JSON válido:
 const ALLOWED_ACTION_TYPES = ['complete_task', 'start_task', 'update_priority', 'reschedule_task', 'create_moment'] as const
 
 export async function handleExecuteChatAction(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   userId: string,
   payload: { action_type: string; params: Record<string, any> }
 ): Promise<{ success: boolean; action_type: string; result?: any; error?: string }> {
