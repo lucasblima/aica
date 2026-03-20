@@ -66,15 +66,22 @@ function isMessageStreaming(msg: UIMessage): boolean {
   return false
 }
 
+/** Cache timestamps per message so they don't change on every render. */
+const messageTimestamps = new Map<string, string>()
+
 /** Convert a UIMessage (AI SDK v3) to a DisplayMessage (AICA v1 compat). */
 function uiMessageToDisplay(msg: UIMessage, streaming: boolean = false): DisplayMessage {
   const text = getTextFromParts(msg)
+
+  if (!messageTimestamps.has(msg.id)) {
+    messageTimestamps.set(msg.id, new Date().toISOString())
+  }
 
   return {
     id: msg.id,
     role: msg.role as 'user' | 'assistant',
     content: text,
-    created_at: new Date().toISOString(),
+    created_at: messageTimestamps.get(msg.id)!,
     sources: getSourcesFromParts(msg),
     isStreaming: streaming || isMessageStreaming(msg),
   }
@@ -278,7 +285,6 @@ export function useChatSessionV2(): UseChatSessionReturn {
         const latest = list[0]
         setSession(latest)
         const msgs = await chatService.getSessionMessages(latest.id)
-        // Double-check: don't overwrite if a send started while we were fetching
         if (!isSendingRef.current) {
           setAiMessages(msgs.map(chatMsgToUIMessage))
         }
@@ -339,7 +345,13 @@ export function useChatSessionV2(): UseChatSessionReturn {
   // sendMessage - wraps AI SDK sendMessage with billing + persistence
   // -------------------------------------------------------------------------
 
-  const sendMessage = useCallback(async (text: string, _interviewMeta?: InterviewMeta) => {
+  const sendMessage = useCallback(async (
+    text: string,
+    _interviewMeta?: InterviewMeta,
+    parentMessageId?: string,
+    /** Skip DB persistence (used by retryLastMessage to avoid duplicates) */
+    skipPersist = false,
+  ) => {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
 
@@ -354,6 +366,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
         const limit = await checkInteractionLimit()
         setLimitInfo(limit)
         if (!limit.allowed) {
+          isSendingRef.current = false
           setLimitReached(true)
           setHookError(`Seus creditos mensais acabaram. ${limit.remaining} creditos restantes de ${limit.plan}.`)
           return
@@ -375,25 +388,27 @@ export function useChatSessionV2(): UseChatSessionReturn {
         setSessions(prev => [currentSession!, ...prev])
       }
 
-      // 4. Save user message to chat_messages DB
-      await chatService.saveMessage({
-        sessionId: currentSession.id,
-        userId,
-        content: trimmed,
-        direction: 'inbound',
-      })
+      // 4. Save user message to chat_messages DB (skip on retry to avoid duplicates)
+      if (!skipPersist) {
+        await chatService.saveMessage({
+          sessionId: currentSession.id,
+          userId,
+          content: trimmed,
+          direction: 'inbound',
+        })
+      }
 
       // Track state for onFinish callback
       messageCountOnSendRef.current = aiMessagesRef.current.length
       lastUserTextRef.current = trimmed
 
       // 5. Call AI SDK sendMessage -- it handles streaming automatically
-      //    Send session_id in the request body via ChatRequestOptions
       await aiSendMessage({
         text: trimmed,
       }, {
         body: {
           session_id: currentSession.id,
+          ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
         },
       })
 
@@ -430,7 +445,8 @@ export function useChatSessionV2(): UseChatSessionReturn {
     if (lastFailedMessage) {
       const msg = lastFailedMessage
       setHookError(null)
-      await sendMessage(msg)
+      // skipPersist=true: the user message was already saved on the first attempt
+      await sendMessage(msg, undefined, undefined, true)
     } else {
       // If no failed message, try to regenerate the last assistant response
       try {

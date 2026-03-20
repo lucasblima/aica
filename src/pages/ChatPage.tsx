@@ -29,7 +29,7 @@ class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
             <button
               onClick={() => {
                 localStorage.removeItem('aica_chat_v2')
-                this.setState({ hasError: false })
+                window.location.reload()
               }}
               className="bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-medium"
             >

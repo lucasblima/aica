@@ -33,7 +33,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
         task_id: z.string().uuid().describe('ID da tarefa a ser concluida'),
       }),
       execute: async ({ task_id }) => {
-        console.log(`[complete_task] userId=${userId}, task_id=${task_id}`)
+        console.log(`[complete_task] task_id=${task_id}`)
 
         // Verify the task belongs to the user before updating
         const { data: existing, error: fetchError } = await supabaseAdmin
@@ -44,7 +44,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           .single()
 
         if (fetchError || !existing) {
-          console.error('[complete_task] Task not found or unauthorized:', fetchError?.message)
+          console.error('[complete_task] Task not found or unauthorized')
           return {
             success: false,
             error: 'Tarefa nao encontrada ou voce nao tem permissao.',
@@ -54,14 +54,14 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
         if (existing.status === 'completed') {
           return {
             success: true,
-            message: `A tarefa "${existing.title}" ja estava concluida.`,
-            task: existing,
+            message: 'A tarefa ja estava concluida.',
+            task: { id: existing.id, status: existing.status },
           }
         }
 
-        // Update task status to completed
+        // Update task status to done (matches v1 action handler)
         const updateData: Record<string, any> = {
-          status: 'completed',
+          status: 'done',
           is_completed: true,
           completed_at: new Date().toISOString(),
         }
@@ -75,11 +75,11 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           .single()
 
         if (updateError) {
-          console.error('[complete_task] Update failed:', updateError.message)
+          console.error('[complete_task] Update failed')
           return { success: false, error: 'Erro ao concluir tarefa.' }
         }
 
-        console.log(`[complete_task] Success: "${updated.title}" marked as done`)
+        console.log(`[complete_task] Success: task ${updated.id} completed`)
         return {
           success: true,
           message: `Tarefa "${updated.title}" concluida com sucesso!`,
@@ -105,7 +105,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
         priority: z.enum(['urgent', 'high', 'medium', 'low', 'none']).optional().describe('Prioridade geral'),
       }),
       execute: async ({ title, description, is_urgent, is_important, due_date, priority }) => {
-        console.log(`[create_task] userId=${userId}, title="${title}", urgent=${is_urgent}, important=${is_important}`)
+        console.log(`[create_task] urgent=${is_urgent}, important=${is_important}`)
 
         const taskData: Record<string, any> = {
           user_id: userId,
@@ -129,7 +129,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           .single()
 
         if (error) {
-          console.error('[create_task] Insert failed:', error.message)
+          console.error('[create_task] Insert failed')
           return { success: false, error: 'Erro ao criar tarefa.' }
         }
 
@@ -139,7 +139,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           : is_urgent && !is_important ? 'Q3 (Urgente, Nao Importante: Delegar)'
           : 'Q4 (Nem Urgente, Nem Importante: Eliminar)'
 
-        console.log(`[create_task] Success: "${task.title}" created in ${quadrant}`)
+        console.log(`[create_task] Success: task ${task.id} in ${quadrant}`)
         return {
           success: true,
           message: `Tarefa "${task.title}" criada com sucesso! Categorizada como ${quadrant}.`,
@@ -178,7 +178,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           .describe('Tags opcionais para categorizar o momento (max 5)'),
       }),
       execute: async ({ content, emotion, tags }) => {
-        console.log(`[create_moment] userId=${userId}, emotion=${emotion}`)
+        console.log(`[create_moment] emotion=${emotion}`)
 
         const momentData: Record<string, any> = {
           user_id: userId,
@@ -196,11 +196,11 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           .single()
 
         if (error) {
-          console.error('[create_moment] Insert failed:', error.message)
+          console.error('[create_moment] Insert failed')
           return { success: false, error: 'Erro ao criar momento.' }
         }
 
-        console.log(`[create_moment] Success: moment ${moment.id} created`)
+        console.log('[create_moment] Success')
         return {
           success: true,
           message: `Momento registrado com sucesso! Emocao: ${emotion}`,
@@ -226,7 +226,7 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           .describe('Modulo de onde buscar dados do usuario'),
       }),
       execute: async ({ module }) => {
-        console.log(`[get_user_context] userId=${userId}, module=${module}`)
+        console.log(`[get_user_context] module=${module}`)
 
         try {
           const { contextString } = await buildUserContext(supabaseAdmin, userId, module)

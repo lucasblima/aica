@@ -77,14 +77,13 @@ Retorne APENAS o nome do modulo (ex: "atlas", "journey", "coordinator").`,
  * Log the chat interaction asynchronously (does not block response).
  * Uses the existing log_interaction RPC (same as gemini-chat v1).
  */
-function logInteraction(
+async function logInteraction(
   supabaseAdmin: any,
   userId: string,
   module: string,
 ) {
-  // Fire-and-forget — don't await
-  supabaseAdmin
-    .rpc('log_interaction', {
+  try {
+    const { error } = await supabaseAdmin.rpc('log_interaction', {
       p_user_id: userId,
       p_action: 'chat_aica_v2',
       p_module: module,
@@ -92,12 +91,14 @@ function logInteraction(
       p_tokens_in: 0,
       p_tokens_out: 0,
     })
-    .then(() => {
-      console.log(`[gemini-chat-v2] Logged interaction: module=${module}`)
-    })
-    .catch((err: any) => {
-      console.warn(`[gemini-chat-v2] Failed to log interaction: ${err.message}`)
-    })
+    if (error) {
+      console.warn(`[gemini-chat-v2] Failed to log interaction:`, error.message)
+    } else {
+      console.log(`[gemini-chat-v2] Interaction logged: module=${module}`)
+    }
+  } catch (err) {
+    console.warn(`[gemini-chat-v2] Unexpected log error:`, err)
+  }
 }
 
 // ============================================================================
@@ -122,7 +123,15 @@ serve(async (req: Request) => {
     }
 
     // --- PARSE REQUEST ---
-    const body = await req.json()
+    let body: any
+    try {
+      body = await req.json()
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Corpo da requisicao invalido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
     const { messages, session_id: sessionId } = body
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -187,7 +196,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('[gemini-chat-v2] Error:', (error as Error).message)
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor', details: (error as Error).message }),
+      JSON.stringify({ error: 'Erro interno do servidor' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
