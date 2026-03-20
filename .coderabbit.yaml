@@ -1,0 +1,106 @@
+# CodeRabbit Configuration for AICA Life OS
+# Docs: https://docs.coderabbit.ai/guides/configuration
+
+language: pt-BR
+
+reviews:
+  # Review every PR automatically
+  auto_review:
+    enabled: true
+    # Ignore drafts until ready
+    drafts: false
+    # Base branch for comparisons
+    base_branches:
+      - main
+
+  # Review profile: assertive catches more issues
+  profile: assertive
+
+  # Request changes on high-severity issues
+  request_changes_workflow: true
+
+  # High-level summary at the top of every review
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+
+  # Poem is fun but disable for professional reviews
+  poem: false
+
+  # Walkthrough of changes
+  review_status: true
+
+  # Collapse past review comments
+  collapse_previous_comments: true
+
+  # Path-specific instructions
+  path_instructions:
+    - path: "src/modules/**/*.{ts,tsx}"
+      instructions: |
+        Este projeto usa o Ceramic Design System (neumorphic, warm palettes).
+        Verifique se componentes usam tokens semanticos (ceramic-base, ceramic-text-primary, etc.)
+        em vez de cores Material Design (gray-*, bg-white).
+        Componentes base: PageShell, CeramicLoadingState, CeramicErrorState, AIThinkingState.
+
+    - path: "src/services/**/*.ts"
+      instructions: |
+        Supabase client DEVE ser importado de src/services/supabaseClient.ts (instancia unica).
+        Usar @supabase/ssr, NUNCA @supabase/supabase-js (exceto Telegram Mini App).
+        NUNCA chamar supabase.auth.refreshSession() incondicionalmente.
+        Verificar se queries filtram por user_id.
+
+    - path: "supabase/functions/**/*.ts"
+      instructions: |
+        Edge Functions DEVEM incluir CORS headers para dev.aica.guru e aica.guru.
+        NUNCA usar Access-Control-Allow-Origin: '*'.
+        Secrets via Deno.env.get(), NUNCA hardcoded.
+        Usar extractJSON() para parsing de respostas Gemini.
+        Modelos validos: gemini-2.5-flash e gemini-2.5-pro APENAS.
+        NUNCA usar responseMimeType: 'application/json' com thinking models.
+        maxOutputTokens >= 4096 para JSON output.
+
+    - path: "supabase/migrations/**/*.sql"
+      instructions: |
+        TODA nova tabela DEVE ter RLS habilitado + policies no mesmo migration.
+        SECURITY DEFINER functions devem ter SET search_path = public.
+        Nunca incluir PII (passwords, tokens) em migrations.
+        Tabela correta: 'moments' (nao 'moment_entries').
+
+    - path: "src/components/**/*.{ts,tsx}"
+      instructions: |
+        Componentes em ui/ devem ser puros (sem business logic).
+        Componentes em features/ sao cross-module reutilizaveis.
+        Componentes em domain/ contem business logic.
+
+    - path: "cloudbuild.yaml"
+      instructions: |
+        Secrets DEVEM vir do Secret Manager (availableSecrets), NUNCA hardcoded.
+        Anon key (sb_publishable_*) e Client ID sao publicos e podem ficar em substitutions.
+
+    - path: "src/**/*.test.ts"
+      instructions: |
+        Testes devem seguir RED-GREEN-REFACTOR (TDD).
+        Verificar cobertura de edge cases e error paths.
+
+  # Tools configuration
+  tools:
+    # Enable ESLint
+    eslint:
+      enabled: true
+    # Enable Biome if present
+    biome:
+      enabled: true
+
+# Chat capabilities
+chat:
+  auto_reply: true
+
+# Knowledge base from project docs
+knowledge_base:
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  jira:
+    enabled: false
+  linear:
+    enabled: false
