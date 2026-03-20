@@ -382,31 +382,36 @@ export function AicaChatFAB({
               >
                 <Plus size={16} />
               </button>
-              <button
-                className="aica-fab-header__action"
-                onClick={() => !fullPage && setIsExpanded(prev => !prev)}
-                aria-label={isExpanded ? 'Reduzir' : 'Expandir'}
-                title={isExpanded ? 'Reduzir' : 'Expandir'}
-              >
-                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-              </button>
-              <button
-                className="aica-fab-header__action"
-                onClick={() => {
-                  navigate('/chat')
-                  handleClose()
-                }}
-                aria-label="Abrir chat completo"
-                title="Chat completo"
-              >
-                <ArrowUpRight size={16} />
-              </button>
+              {!fullPage && (
+                <button
+                  className="aica-fab-header__action"
+                  onClick={() => setIsExpanded(prev => !prev)}
+                  aria-label={isExpanded ? 'Reduzir' : 'Expandir'}
+                  title={isExpanded ? 'Reduzir' : 'Expandir'}
+                >
+                  {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </button>
+              )}
+              {!fullPage && (
+                <button
+                  className="aica-fab-header__action"
+                  onClick={() => {
+                    navigate('/chat')
+                    handleClose()
+                  }}
+                  aria-label="Abrir chat completo"
+                  title="Chat completo"
+                >
+                  <ArrowUpRight size={16} />
+                </button>
+              )}
             </>
           )}
           <button
             className="aica-fab-drawer__close"
-            onClick={handleClose}
+            onClick={() => fullPage ? navigate('/vida') : handleClose()}
             aria-label="Fechar"
+            title="Fechar"
           >
             <X size={18} />
           </button>
