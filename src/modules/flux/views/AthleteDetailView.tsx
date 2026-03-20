@@ -1544,7 +1544,7 @@ export default function AthleteDetailView() {
                         entry.questionnaire.fatigue >= 2 ? 'bg-amber-100 text-amber-700' :
                         'bg-green-100 text-green-700'
                       }`}>
-                        Cansaco: {entry.questionnaire.fatigue}/5
+                        Cansaco: {entry.questionnaire.fatigue + 1}/6
                       </span>
                     )}
                     {entry.questionnaire.stress != null && (
@@ -1553,7 +1553,7 @@ export default function AthleteDetailView() {
                         entry.questionnaire.stress >= 2 ? 'bg-amber-100 text-amber-700' :
                         'bg-green-100 text-green-700'
                       }`}>
-                        Stress: {entry.questionnaire.stress}/5
+                        Stress: {entry.questionnaire.stress + 1}/6
                       </span>
                     )}
                     {entry.questionnaire.sleep != null && (
@@ -1561,7 +1561,7 @@ export default function AthleteDetailView() {
                         entry.questionnaire.sleep >= 3 ? 'bg-green-100 text-green-700' :
                         'bg-amber-100 text-amber-700'
                       }`}>
-                        Sono: {entry.questionnaire.sleep}/5
+                        Sono: {entry.questionnaire.sleep + 1}/6
                       </span>
                     )}
                     {entry.questionnaire.nutrition != null && (
@@ -1569,7 +1569,7 @@ export default function AthleteDetailView() {
                         entry.questionnaire.nutrition >= 3 ? 'bg-green-100 text-green-700' :
                         'bg-amber-100 text-amber-700'
                       }`}>
-                        Nutricao: {entry.questionnaire.nutrition}/5
+                        Nutricao: {entry.questionnaire.nutrition + 1}/6
                       </span>
                     )}
                   </div>

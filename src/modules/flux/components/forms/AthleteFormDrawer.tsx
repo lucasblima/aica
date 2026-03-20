@@ -150,11 +150,11 @@ export default function AthleteFormDrawer({
     }
   }, [submitSuccess, mode, coringaLink, formData.requires_cardio_exam, formData.requires_clearance_cert, formData.allow_parq_onboarding]);
 
-  // Accordion state — in create mode, open health (only section); in edit mode, open basic info
+  // Accordion state — in create mode, open health; in edit mode, health is the main section
   const [openSections, setOpenSections] = useState({
-    basic: mode === 'edit',
+    basic: mode === 'create',
     modalities: false,
-    health: mode === 'create',
+    health: true,
   });
 
   // Swipe to dismiss (mobile)
@@ -381,8 +381,8 @@ export default function AthleteFormDrawer({
                   </div>
                 )}
 
-                {/* Section 1: Basic Info (edit mode only) */}
-                {mode === 'edit' && (
+                {/* Section 1: Basic Info (create mode only — edit uses profile page) */}
+                {mode === 'create' && (
                   <div className="ceramic-card overflow-hidden">
                     <button
                       type="button"
@@ -473,8 +473,8 @@ export default function AthleteFormDrawer({
                   </div>
                 )}
 
-                {/* Section: Modalities (edit mode only — athlete chooses during onboarding) */}
-                {mode === 'edit' && (
+                {/* Section: Modalities (create mode only — edit uses profile page) */}
+                {mode === 'create' && (
                   <div className="ceramic-card overflow-hidden">
                     <button
                       type="button"

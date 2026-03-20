@@ -68,6 +68,11 @@ interface UnreadFeedbackRow {
   unread_count: number;
 }
 
+interface TotalFeedbackRow {
+  athlete_id: string;
+  total_count: number;
+}
+
 type SortOrder = 'none' | 'asc' | 'desc';
 
 type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado' | (string & {});
@@ -317,6 +322,8 @@ export default function CRMCommandCenterView() {
 
   // Unread feedback counts per athlete
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  // Total feedback counts per athlete
+  const [totalCounts, setTotalCounts] = useState<Record<string, number>>({});
 
   // Athlete form modal state
   const [athleteModalOpen, setAthleteModalOpen] = useState(false);
@@ -353,18 +360,30 @@ export default function CRMCommandCenterView() {
           .order('display_order');
         setCoachLevels((levelsData || []) as CoachLevel[]);
 
-        // Load unread feedback counts
-        const { data: unreadData, error: unreadError } = await supabase.rpc('get_unread_feedback_counts', {
-          p_coach_user_id: user.id,
-        });
-        if (unreadError) {
-          console.error('[CRM] Failed to fetch unread feedback counts:', unreadError);
-        } else if (unreadData) {
+        // Load unread + total feedback counts in parallel
+        const [unreadResult, totalResult] = await Promise.all([
+          supabase.rpc('get_unread_feedback_counts', { p_coach_user_id: user.id }),
+          supabase.rpc('get_total_feedback_counts', { p_coach_user_id: user.id }),
+        ]);
+
+        if (unreadResult.error) {
+          console.error('[CRM] Failed to fetch unread feedback counts:', unreadResult.error);
+        } else if (unreadResult.data) {
           const counts: Record<string, number> = {};
-          for (const row of unreadData as UnreadFeedbackRow[]) {
+          for (const row of unreadResult.data as UnreadFeedbackRow[]) {
             counts[row.athlete_id] = Number(row.unread_count);
           }
           setUnreadCounts(counts);
+        }
+
+        if (totalResult.error) {
+          console.error('[CRM] Failed to fetch total feedback counts:', totalResult.error);
+        } else if (totalResult.data) {
+          const counts: Record<string, number> = {};
+          for (const row of totalResult.data as TotalFeedbackRow[]) {
+            counts[row.athlete_id] = Number(row.total_count);
+          }
+          setTotalCounts(counts);
         }
       }
     };
@@ -1301,6 +1320,7 @@ export default function CRMCommandCenterView() {
                     onPrescreverClick={() => navigate('/flux/canvas/' + athlete.id)}
                     groupTags={athleteGroupTags}
                     unreadFeedbackCount={unreadCounts[athlete.id] || 0}
+                    totalFeedbackCount={totalCounts[athlete.id] || 0}
                   />
 
                   {/* Modalities now shown inside AthleteCard — external section removed (#972) */}
