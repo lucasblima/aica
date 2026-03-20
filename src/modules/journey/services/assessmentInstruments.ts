@@ -291,12 +291,8 @@ export function scoreAssessment(
   for (const rule of instrument.scoringRules) {
     const values: number[] = [];
     for (const code of rule.itemCodes) {
-      const item = instrument.items.find(i => i.code === code);
       const raw = responses[code];
       if (raw == null) continue;
-
-      // MAAS items are already on the "reverse" scale (1=always, 6=almost never)
-      // Higher raw value = more mindful. No need to numerically reverse.
       values.push(raw);
     }
 

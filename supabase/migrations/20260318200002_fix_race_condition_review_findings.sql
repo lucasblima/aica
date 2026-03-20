@@ -77,12 +77,15 @@ AS $$
 DECLARE
   last_created TIMESTAMPTZ;
 BEGIN
+  -- Advisory lock serializes concurrent inserts per user.
+  -- FOR UPDATE alone cannot lock rows that don't exist yet.
+  PERFORM pg_advisory_xact_lock(hashtext('moment_rate_limit_' || NEW.user_id::text));
+
   SELECT created_at INTO last_created
   FROM moments
   WHERE user_id = NEW.user_id
   ORDER BY created_at DESC
-  LIMIT 1
-  FOR UPDATE;
+  LIMIT 1;
 
   -- Use NOW() instead of NEW.created_at to prevent timestamp spoofing
   IF last_created IS NOT NULL AND
