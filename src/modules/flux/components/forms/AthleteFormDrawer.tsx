@@ -94,40 +94,40 @@ export default function AthleteFormDrawer({
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
 
-          // Load custom levels
-          const { data: levelsData, error: levelsError } = await supabase
-            .from('coach_levels')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('display_order');
-          if (levelsError) console.error('[AthleteFormDrawer] Failed to load coach levels:', levelsError);
-          setCoachLevels((levelsData || []) as CoachLevel[]);
+          // Load levels, groups, and memberships in parallel
+          const [levelsResult, groupsResult, membershipsResult] = await Promise.all([
+            supabase
+              .from('coach_levels')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('display_order'),
+            supabase
+              .from('athlete_groups')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('created_at'),
+            initialData?.id
+              ? supabase
+                  .from('athlete_group_members')
+                  .select('group_id')
+                  .eq('athlete_id', initialData.id)
+              : Promise.resolve({ data: null, error: null }),
+          ]);
 
-          // Load groups
-          const { data: groupsData, error: groupsError } = await supabase
-            .from('athlete_groups')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at');
-          if (groupsError) console.error('[AthleteFormDrawer] Failed to load groups:', groupsError);
+          if (levelsResult.error) console.error('[AthleteFormDrawer] Failed to load coach levels:', levelsResult.error);
+          if (groupsResult.error) console.error('[AthleteFormDrawer] Failed to load groups:', groupsResult.error);
+          if (membershipsResult.error) console.error('[AthleteFormDrawer] Failed to load group memberships:', membershipsResult.error);
+
+          setCoachLevels((levelsResult.data || []) as CoachLevel[]);
           setCoachGroups(
-            (groupsData || []).map((g: { id: string; name: string; color: string; created_at: string }) => ({
+            (groupsResult.data || []).map((g: { id: string; name: string; color: string; created_at: string }) => ({
               id: g.id,
               name: g.name,
               color: g.color,
               createdAt: g.created_at,
             }))
           );
-
-          // Load athlete's group assignments
-          if (initialData?.id) {
-            const { data: memberships, error: membershipsError } = await supabase
-              .from('athlete_group_members')
-              .select('group_id')
-              .eq('athlete_id', initialData.id);
-            if (membershipsError) console.error('[AthleteFormDrawer] Failed to load group memberships:', membershipsError);
-            setAthleteGroupIds((memberships || []).map((m: { group_id: string }) => m.group_id));
-          }
+          setAthleteGroupIds((membershipsResult.data || []).map((m: { group_id: string }) => m.group_id));
         } catch (err) {
           console.error('[AthleteFormDrawer] Failed to load coach data:', err);
         }
