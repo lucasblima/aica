@@ -190,13 +190,48 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
     range: { start: dateRange.today, end: dateRange.nextWeek },
   });
 
-  // Merge Google Calendar + cross-module events
+  // Fetch LOCAL calendar events (source: 'manual', 'chat', etc.) — independent of Google
+  const [localCalendarEvents, setLocalCalendarEvents] = useState<typeof googleCalendarEvents>([]);
+  useEffect(() => {
+    if (!userId) return;
+    const fetchLocal = async () => {
+      try {
+        const { data } = await supabase
+          .from('calendar_events')
+          .select('id, title, description, start_time, end_time, location, source')
+          .eq('user_id', userId)
+          .neq('source', 'google')
+          .gte('start_time', dateRange.today.toISOString())
+          .lte('start_time', dateRange.nextWeek.toISOString())
+          .order('start_time', { ascending: true });
+        if (data) {
+          setLocalCalendarEvents(data.map(e => ({
+            id: e.id,
+            title: e.title,
+            description: e.description || '',
+            startTime: e.start_time,
+            endTime: e.end_time || e.start_time,
+            duration: Math.round((new Date(e.end_time || e.start_time).getTime() - new Date(e.start_time).getTime()) / 60000) || 60,
+            isAllDay: false,
+            source: e.source || 'manual',
+            color: '#f59e0b',
+            location: e.location || undefined,
+          })));
+        }
+      } catch (err) {
+        console.warn('[AgendaPageShell] Failed to fetch local events:', err);
+      }
+    };
+    fetchLocal();
+  }, [userId, dateRange.today, dateRange.nextWeek]);
+
+  // Merge Google Calendar + local events + cross-module events
   const calendarEvents = useMemo(() => {
     const externalGoogleEvents = googleCalendarEvents.filter(e => !e.aicaModule);
-    return [...externalGoogleEvents, ...crossModuleEvents].sort((a, b) =>
+    return [...externalGoogleEvents, ...localCalendarEvents, ...crossModuleEvents].sort((a, b) =>
       a.startTime.localeCompare(b.startTime)
     );
-  }, [googleCalendarEvents, crossModuleEvents]);
+  }, [googleCalendarEvents, localCalendarEvents, crossModuleEvents]);
 
   const calendarGridEvents = useMemo(() => {
     return calendarEvents.map(e => ({
