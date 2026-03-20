@@ -78,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && printf '⚠️  PR MERGE — VERIFY FIRST:\n\n- All PR comments addressed?\n- CI checks passing?\n- User explicitly approved merge?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && printf '⚠️  PR MERGE — VERIFY FIRST:\n\n- ✅ CodeRabbit review received and findings addressed?\n- ✅ All PR comments (CodeRabbit + human) resolved?\n- ✅ CI checks passing?\n- ✅ User explicitly approved merge?\n\nRun: gh pr view <number> --comments | grep coderabbitai\nIf no CodeRabbit review found, WAIT or use superpowers:requesting-code-review\n' || true"
           }
         ]
       },
@@ -102,6 +102,15 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr create' && printf '\n🐰 CodeRabbit review will start automatically in 2-5 minutes.\n\nNEXT STEPS (mandatory):\n1. Wait 3 min, then run: gh pr view <number> --comments\n2. Read CodeRabbit findings\n3. Fix valid issues, reply to false positives\n4. Only then ask user for merge approval\n\nDO NOT skip this step. See .claude/rules/workflow.md \"CodeRabbit Workflow\"\n' || true"
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [

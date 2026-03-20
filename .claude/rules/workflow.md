@@ -45,9 +45,50 @@ Standard tasks skip this — plan in chat if needed.
 3. **Commit** with descriptive message + co-authorship
 4. **Push** feature branch
 5. **Finish** — `superpowers:finishing-a-development-branch`: Present 4 options (Merge / PR / Keep / Discard)
-6. **If PR**: Read comments (`gh pr view`, `gh api`), address them, report status
+6. **If PR**: Wait for CodeRabbit + address findings (see CodeRabbit Workflow below)
 7. **Push migrations** if any `.sql` files created
 8. **Deploy Edge Functions** if any created/modified
+
+## CodeRabbit Workflow — MANDATORY for all PRs
+
+CodeRabbit is the external AI code reviewer. It runs automatically on every PR.
+**NEVER merge a PR without reading and addressing CodeRabbit findings.**
+
+### After creating a PR:
+
+1. **Wait for CodeRabbit** — it takes 2-5 minutes to review. Poll with:
+   ```bash
+   # Check if CodeRabbit posted its review
+   gh pr view <pr-number> --comments | grep -c "coderabbitai"
+   ```
+
+2. **Read the review** — CodeRabbit posts a summary + inline comments:
+   ```bash
+   # Full review comments
+   gh pr view <pr-number> --comments
+
+   # Inline code comments (where the real findings are)
+   gh api repos/lucasblima/aica/pulls/<pr-number>/comments
+   ```
+
+3. **Triage findings** — For each CodeRabbit comment:
+   - **Valid issue**: Fix it, commit, push. CodeRabbit will re-review.
+   - **False positive**: Reply to the comment explaining why (CodeRabbit learns).
+   - **Nitpick**: Fix if quick, otherwise acknowledge and move on.
+
+4. **Confirm clean** — After addressing findings, verify CodeRabbit is satisfied:
+   ```bash
+   gh pr checks <pr-number>
+   gh pr view <pr-number> --comments | tail -30
+   ```
+
+5. **Only then**: Ask user for merge approval.
+
+### Key rules:
+- **NEVER** merge while CodeRabbit review is pending or has unresolved issues
+- **NEVER** dismiss CodeRabbit findings without technical justification
+- CodeRabbit review **replaces** the manual `superpowers:requesting-code-review` for PRs (step 2 still runs for pre-push local review, but CodeRabbit is the final gate)
+- If CodeRabbit is down or not responding after 10 minutes, fall back to `superpowers:requesting-code-review`
 
 ## PR Workflow
 
