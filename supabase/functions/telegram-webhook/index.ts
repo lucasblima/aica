@@ -401,7 +401,7 @@ async function handleEmailRegistration(
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
-        emailRedirectTo: `${redirectUrl}/welcome`,
+        emailRedirectTo: `${redirectUrl}/welcome?source=telegram`,
         shouldCreateUser: false,
       },
     })
