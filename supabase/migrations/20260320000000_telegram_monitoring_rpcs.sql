@@ -117,6 +117,9 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: Admin access required';
   END IF;
 
+  -- Sanitize inputs
+  p_limit := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 200);
+
   SELECT COALESCE(json_agg(row_to_json(m)), '[]'::json)
   INTO result
   FROM (
@@ -243,6 +246,9 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: Admin access required';
   END IF;
 
+  -- Sanitize inputs
+  p_limit := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 200);
+
   SELECT COALESCE(json_agg(row_to_json(c)), '[]'::json)
   INTO result
   FROM (
@@ -293,17 +299,21 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: Admin access required';
   END IF;
 
+  -- Sanitize inputs
+  p_limit := LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+  p_hours := LEAST(GREATEST(COALESCE(p_hours, 24), 1), 168);
+
   -- Total messages in period
   SELECT COUNT(*)
   INTO v_total_in_period
   FROM telegram_message_log
-  WHERE created_at > now() - (p_hours || ' hours')::interval;
+  WHERE created_at > now() - make_interval(hours => p_hours);
 
   -- Failed messages in period
   SELECT COUNT(*)
   INTO v_failed_in_period
   FROM telegram_message_log
-  WHERE created_at > now() - (p_hours || ' hours')::interval
+  WHERE created_at > now() - make_interval(hours => p_hours)
     AND processing_status = 'failed';
 
   -- Error rate
@@ -326,7 +336,7 @@ BEGIN
       processing_duration_ms
     FROM telegram_message_log
     WHERE processing_status = 'failed'
-      AND created_at > now() - (p_hours || ' hours')::interval
+      AND created_at > now() - make_interval(hours => p_hours)
     ORDER BY created_at DESC
     LIMIT p_limit
   ) e;

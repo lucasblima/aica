@@ -4,6 +4,7 @@ import { supabase } from '@/services/supabaseClient'
 import { useAuth } from '@/hooks/useAuth'
 import { CeramicLoadingState } from '@/components'
 import { connectGoogleCalendar } from '@/services/googleAuthService'
+import { Calendar } from 'lucide-react'
 
 export default function WelcomePage() {
   const navigate = useNavigate()
@@ -68,7 +69,8 @@ export default function WelcomePage() {
       return
     }
 
-    await supabase.auth.updateUser({ data: { web_onboarded: true } })
+    const { error: flagError } = await supabase.auth.updateUser({ data: { web_onboarded: true } })
+    if (flagError) console.warn('Failed to set web_onboarded:', flagError)
     setStep('done')
   }
 
@@ -123,7 +125,7 @@ export default function WelcomePage() {
                 }}
                 className="w-full bg-ceramic-cool hover:bg-ceramic-border text-ceramic-text-primary font-medium rounded-lg px-4 py-2.5 transition-colors text-sm flex items-center justify-center gap-2"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19.5 4H18V2h-2v2H8V2H6v2H4.5C3.12 4 2 5.12 2 6.5v13C2 20.88 3.12 22 4.5 22h15c1.38 0 2.5-1.12 2.5-2.5v-13C22 5.12 20.88 4 19.5 4zM20 19.5c0 .28-.22.5-.5.5h-15c-.28 0-.5-.22-.5-.5V9h16v10.5z"/></svg>
+                <Calendar className="w-4 h-4" />
                 Conectar Google Calendar
               </button>
             </div>
@@ -201,7 +203,7 @@ export default function WelcomePage() {
               onClick={() => connectGoogleCalendar()}
               className="w-full bg-ceramic-cool hover:bg-ceramic-border text-ceramic-text-primary font-medium rounded-lg px-4 py-2.5 transition-colors text-sm flex items-center justify-center gap-2 mb-3"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19.5 4H18V2h-2v2H8V2H6v2H4.5C3.12 4 2 5.12 2 6.5v13C2 20.88 3.12 22 4.5 22h15c1.38 0 2.5-1.12 2.5-2.5v-13C22 5.12 20.88 4 19.5 4zM20 19.5c0 .28-.22.5-.5.5h-15c-.28 0-.5-.22-.5-.5V9h16v10.5z"/></svg>
+              <Calendar className="w-4 h-4" />
               Conectar Google Calendar
             </button>
             <button
