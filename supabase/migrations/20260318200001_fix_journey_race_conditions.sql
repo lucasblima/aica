@@ -15,7 +15,11 @@ CREATE OR REPLACE FUNCTION award_consciousness_points(
   p_reference_id UUID DEFAULT NULL,
   p_reference_type TEXT DEFAULT NULL
 )
-RETURNS JSONB AS $$
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_new_total INT;
   v_level INT;
@@ -67,7 +71,7 @@ BEGIN
     'leveled_up', v_leveled_up
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- ============================================================
 -- P0-3: Fix rate limit race condition on moments creation
@@ -79,6 +83,7 @@ CREATE OR REPLACE FUNCTION check_moment_rate_limit()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   last_created TIMESTAMPTZ;

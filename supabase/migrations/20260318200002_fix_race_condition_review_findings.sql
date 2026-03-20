@@ -25,6 +25,12 @@ DECLARE
   v_leveled_up BOOLEAN := false;
   v_old_level INT;
 BEGIN
+  -- Guard: reject negative points (SECURITY DEFINER — defensive coding)
+  IF p_points < 0 THEN
+    RAISE EXCEPTION 'p_points must be non-negative: %', p_points
+      USING ERRCODE = 'check_violation';
+  END IF;
+
   INSERT INTO consciousness_points_log (user_id, points, reason, reference_id, reference_type)
   VALUES (p_user_id, p_points, p_reason, p_reference_id, p_reference_type);
 
@@ -77,12 +83,15 @@ AS $$
 DECLARE
   last_created TIMESTAMPTZ;
 BEGIN
+  -- Advisory lock serializes concurrent inserts per user.
+  -- FOR UPDATE alone cannot lock rows that don't exist yet.
+  PERFORM pg_advisory_xact_lock(hashtext('moment_rate_limit_' || NEW.user_id::text));
+
   SELECT created_at INTO last_created
   FROM moments
   WHERE user_id = NEW.user_id
   ORDER BY created_at DESC
-  LIMIT 1
-  FOR UPDATE;
+  LIMIT 1;
 
   -- Use NOW() instead of NEW.created_at to prevent timestamp spoofing
   IF last_created IS NOT NULL AND
