@@ -83,20 +83,22 @@ export async function loadGroupData(coachUserId: string): Promise<AthleteGroupDa
   // Migrate legacy data first (no-op if already migrated)
   await migrateFromLocalStorage(coachUserId);
 
-  const { data: groups } = await supabase
+  const { data: groups, error: groupsError } = await supabase
     .from('athlete_groups')
     .select('*')
     .eq('user_id', coachUserId)
     .order('created_at');
+  if (groupsError) throw groupsError;
 
   const groupIds = (groups || []).map((g) => g.id);
 
   let members: { group_id: string; athlete_id: string }[] = [];
   if (groupIds.length > 0) {
-    const { data } = await supabase
+    const { data, error: membersError } = await supabase
       .from('athlete_group_members')
       .select('group_id, athlete_id')
       .in('group_id', groupIds);
+    if (membersError) throw membersError;
     members = data || [];
   }
 
@@ -217,9 +219,10 @@ export function AthleteGroupManager({
 
     setIsSaving(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from('athlete_groups')
         .insert({ user_id: coachUserId, name: trimmed, color: newGroupColor });
+      if (error) throw error;
 
       await reloadData();
       setNewGroupName('');
@@ -240,10 +243,11 @@ export function AthleteGroupManager({
 
     setIsSaving(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from('athlete_groups')
         .update({ name: trimmed, updated_at: new Date().toISOString() })
         .eq('id', groupId);
+      if (error) throw error;
 
       await reloadData();
       setEditingGroupId(null);
@@ -257,10 +261,18 @@ export function AthleteGroupManager({
 
   // DELETE group
   const handleDeleteGroup = async (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    const memberCount = Object.values(assignments).filter(ids => ids.includes(groupId)).length;
+    const msg = memberCount > 0
+      ? `Excluir grupo "${group?.name}"? ${memberCount} atleta(s) serão removidos.`
+      : `Excluir grupo "${group?.name}"?`;
+    if (!window.confirm(msg)) return;
+
     setIsSaving(true);
     try {
       // Members cascade-delete via FK
-      await supabase.from('athlete_groups').delete().eq('id', groupId);
+      const { error } = await supabase.from('athlete_groups').delete().eq('id', groupId);
+      if (error) throw error;
 
       await reloadData();
 
@@ -279,17 +291,20 @@ export function AthleteGroupManager({
   const handleToggleAthleteInGroup = async (athleteId: string, groupId: string) => {
     setIsSaving(true);
     try {
-      const { data: existing } = await supabase
+      const { data: existing, error: selectError } = await supabase
         .from('athlete_group_members')
         .select('id')
         .eq('group_id', groupId)
         .eq('athlete_id', athleteId)
         .maybeSingle();
+      if (selectError) throw selectError;
 
       if (existing) {
-        await supabase.from('athlete_group_members').delete().eq('id', existing.id);
+        const { error: deleteError } = await supabase.from('athlete_group_members').delete().eq('id', existing.id);
+        if (deleteError) throw deleteError;
       } else {
-        await supabase.from('athlete_group_members').insert({ group_id: groupId, athlete_id: athleteId });
+        const { error: insertError } = await supabase.from('athlete_group_members').insert({ group_id: groupId, athlete_id: athleteId });
+        if (insertError) throw insertError;
       }
 
       await reloadData();
@@ -309,11 +324,12 @@ export function AthleteGroupManager({
         requires_clearance_cert: false,
         allow_parq_onboarding: false,
       };
-      const { data: link } = await CoachInviteLinkService.getOrCreateLink(
+      const { data: link, error } = await CoachInviteLinkService.getOrCreateLink(
         defaultHealthConfig,
         10,
         groupId
       );
+      if (error) throw error;
       if (link) {
         const url = `https://aica.guru/join/${link.token}`;
         await navigator.clipboard.writeText(url);

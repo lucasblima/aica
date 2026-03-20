@@ -2,6 +2,7 @@
  * Coach Invite Link Service — manages reusable invite links ("Link Coringa")
  */
 import { supabase } from '@/services/supabaseClient';
+import type { PostgrestError } from '@supabase/postgrest-js';
 
 export interface CoachInviteLink {
   id: string;
@@ -37,10 +38,14 @@ export class CoachInviteLinkService {
     healthConfig: CoachInviteLink['health_config'],
     groupId?: string | null
   ): Promise<CoachInviteLink | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
     const { data } = await supabase
       .from('coach_invite_links')
       .select('*')
       .eq('is_active', true)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (!data || data.length === 0) return null;
@@ -69,8 +74,7 @@ export class CoachInviteLinkService {
     groupId?: string | null
   ): Promise<{
     data: CoachInviteLink | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
-    error: any;
+    error: PostgrestError | null;
   }> {
     const token = generateToken();
     const insertData = {
@@ -94,16 +98,14 @@ export class CoachInviteLinkService {
     groupId?: string | null
   ): Promise<{
     data: CoachInviteLink | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
-    error: any;
+    error: PostgrestError | null;
   }> {
     const existing = await this.findActiveLink(healthConfig, groupId);
     if (existing) return { data: existing, error: null };
     return this.createLink(healthConfig, maxUses, groupId);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
-  static async getMyLinks(): Promise<{ data: CoachInviteLink[]; error: any }> {
+  static async getMyLinks(): Promise<{ data: CoachInviteLink[]; error: PostgrestError | null }> {
     const { data, error } = await supabase
       .from('coach_invite_links')
       .select('*')
@@ -111,8 +113,7 @@ export class CoachInviteLinkService {
     return { data: (data || []) as CoachInviteLink[], error };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
-  static async deactivateLink(linkId: string): Promise<{ error: any }> {
+  static async deactivateLink(linkId: string): Promise<{ error: PostgrestError | null }> {
     const { error } = await supabase
       .from('coach_invite_links')
       .update({ is_active: false, updated_at: new Date().toISOString() })
