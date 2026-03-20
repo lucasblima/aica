@@ -49,46 +49,80 @@ Standard tasks skip this — plan in chat if needed.
 7. **Push migrations** if any `.sql` files created
 8. **Deploy Edge Functions** if any created/modified
 
-## CodeRabbit Workflow — MANDATORY for all PRs
+## PR Review Pipeline — MANDATORY for all PRs
 
-CodeRabbit is the external AI code reviewer. It runs automatically on every PR.
-**NEVER merge a PR without reading and addressing CodeRabbit findings.**
+Two external AI reviewers run automatically on every PR:
+1. **CodeRabbit** — Code quality, patterns, design system compliance
+2. **Panto** — Security vulnerabilities, performance, critical bugs
+
+**NEVER merge a PR without reading and addressing findings from BOTH.**
 
 ### After creating a PR:
 
-1. **Wait for CodeRabbit** — it takes 2-5 minutes to review. Poll with:
+1. **Trigger Panto** (if not auto-triggered) — comment `/review` on the PR
+2. **Wait for both reviews** — CodeRabbit (2-5 min), Panto (1-2 min). Poll:
    ```bash
-   # Check if CodeRabbit posted its review
-   gh pr view <pr-number> --comments | grep -c "coderabbitai"
+   gh pr view <pr-number> --comments | grep -cE "coderabbitai|pantoaibot"
+   # Expected: 2 (one from each)
    ```
 
-2. **Read the review** — CodeRabbit posts a summary + inline comments:
+3. **Read the reviews**:
    ```bash
-   # Full review comments
+   # Full review comments (both bots)
    gh pr view <pr-number> --comments
 
-   # Inline code comments (where the real findings are)
+   # Inline code comments
    gh api repos/{owner}/{repo}/pulls/<pr-number>/comments
    ```
 
-3. **Triage findings** — For each CodeRabbit comment:
-   - **Valid issue**: Fix it, commit, push. CodeRabbit will re-review.
-   - **False positive**: Reply to the comment explaining why (CodeRabbit learns).
+4. **Triage findings** — For each comment from either bot:
+   - **Valid issue**: Fix it, commit, push. Bots will re-review.
+   - **False positive**: Reply explaining why (both bots learn).
    - **Nitpick**: Fix if quick, otherwise acknowledge and move on.
 
-4. **Confirm clean** — After addressing findings, verify CodeRabbit is satisfied:
+5. **Check Sentry** — Before merge, verify no new production errors:
+   ```bash
+   # Use the sentry-debugger skill or directly:
+   # mcp__sentry__search_issues(organizationSlug="comtxae", projectSlug="javascript-react", query="is:unresolved age:-24h")
+   ```
+
+6. **Confirm clean** — All reviews addressed + no new Sentry issues:
    ```bash
    gh pr checks <pr-number>
    gh pr view <pr-number> --comments | tail -30
    ```
 
-5. **Only then**: Ask user for merge approval.
+7. **Only then**: Ask user for merge approval.
 
 ### Key rules:
-- **NEVER** merge while CodeRabbit review is pending or has unresolved issues
-- **NEVER** dismiss CodeRabbit findings without technical justification
-- CodeRabbit review **replaces** the manual `superpowers:requesting-code-review` for PRs (step 2 still runs for pre-push local review, but CodeRabbit is the final gate)
-- If CodeRabbit is down or not responding after 10 minutes, fall back to `superpowers:requesting-code-review`
+- **NEVER** merge while CodeRabbit or Panto review is pending
+- **NEVER** dismiss findings without technical justification
+- CodeRabbit + Panto **replace** `superpowers:requesting-code-review` for PRs (step 2 still runs for pre-push local review, but the bots are the final gate)
+- If a bot is down after 10 minutes, fall back to `superpowers:requesting-code-review`
+
+## Sentry Integration — Error Monitoring
+
+Sentry monitors production errors at https://comtxae.sentry.io (project: `javascript-react`).
+
+### When to check Sentry:
+- **Before merging PRs** — verify no new unresolved issues
+- **After deploying** — check for regressions (hook reminds automatically)
+- **When investigating bugs** — use `sentry-debugger` skill or MCP tools directly
+- **Session start** — quick check for critical unresolved issues
+
+### How to check:
+```bash
+# Use the sentry-debugger skill for guided investigation
+# Or use MCP tools directly:
+# mcp__sentry__search_issues(organizationSlug="comtxae", projectSlug="javascript-react", query="is:unresolved", regionUrl="https://de.sentry.io")
+# mcp__sentry__get_issue_details(organizationSlug="comtxae", issueId="JAVASCRIPT-REACT-123", regionUrl="https://de.sentry.io")
+```
+
+### After fixing a Sentry issue:
+```bash
+# Mark as resolved via MCP:
+# mcp__sentry__update_issue(organizationSlug="comtxae", issueId="JAVASCRIPT-REACT-123", status="resolved", regionUrl="https://de.sentry.io")
+```
 
 ## PR Workflow
 

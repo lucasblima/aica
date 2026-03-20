@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'git commit' && STAGED=$(git diff --cached --name-only 2>/dev/null | wc -l) && [ \"$STAGED\" -gt 3 ] && printf '🧠 BRAINSTORM CHECK: %s files staged!\n\nFor changes touching >3 files:\n- Was superpowers:brainstorming invoked?\n- Was a plan created in docs/plans/?\n- Is this really a Micro task?\n' \"$STAGED\" || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'git commit' && STAGED=$(git diff --cached --name-only 2>/dev/null | wc -l) && [ \"$STAGED\" -gt 3 ] && printf 'BRAINSTORM CHECK: %s files staged!\n\nFor changes touching >3 files:\n- Was superpowers:brainstorming invoked?\n- Was a plan created in docs/plans/?\n- Is this really a Micro task?\n' \"$STAGED\" || true"
           }
         ]
       },
@@ -69,7 +69,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr create' && printf '📋 PR CREATION CHECKLIST:\n\n- npm run build passed? (FRESH output)\n- npm run typecheck passed? (FRESH output)\n- npm run test passed? (FRESH output)\n- superpowers:verification-before-completion invoked?\n- superpowers:requesting-code-review invoked?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr create' && printf 'PR CREATION CHECKLIST:\n\n- npm run build passed? (FRESH output)\n- npm run typecheck passed? (FRESH output)\n- npm run test passed? (FRESH output)\n- superpowers:verification-before-completion invoked?\n- superpowers:requesting-code-review invoked?\n- Sentry issues checked? (use sentry-debugger skill or mcp__sentry__search_issues)\n' || true"
           }
         ]
       },
@@ -78,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && printf 'BLOCKED: PR MERGE requires verification!\n\n- CodeRabbit review received and findings addressed?\n- All PR comments (CodeRabbit + human) resolved?\n- CI checks passing?\n- User explicitly approved merge?\n\nRun: gh pr view <number> --comments | grep coderabbitai\nIf no CodeRabbit review found, WAIT or use superpowers:requesting-code-review\n' && exit 1 || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr merge' && printf 'BLOCKED: PR MERGE requires verification!\n\n- CodeRabbit review received and findings addressed?\n- Panto review received? (comment /review on PR if not triggered)\n- All PR comments (CodeRabbit + Panto + human) resolved?\n- CI checks passing?\n- Sentry: no new unresolved issues in production?\n- User explicitly approved merge?\n\nRun: gh pr view <number> --comments | grep -E \"coderabbitai|pantoaibot\"\n' && exit 1 || true"
           }
         ]
       },
@@ -107,7 +107,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr create' && printf '\n🐰 CodeRabbit review will start automatically in 2-5 minutes.\n\nNEXT STEPS (mandatory):\n1. Wait 3 min, then run: gh pr view <number> --comments\n2. Read CodeRabbit findings\n3. Fix valid issues, reply to false positives\n4. Only then ask user for merge approval\n\nDO NOT skip this step. See .claude/rules/workflow.md \"CodeRabbit Workflow\"\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gh pr create' && printf '\nPR CREATED — Review bots will start automatically:\n\n1. CodeRabbit (2-5 min) — AI code review\n2. Panto (1-2 min) — Security + performance review\n   If Panto did not trigger, comment /review on the PR\n\nNEXT STEPS (mandatory):\n1. Wait 3 min, then run: gh pr view <number> --comments\n2. Read CodeRabbit AND Panto findings\n3. Fix valid issues, reply to false positives\n4. Check Sentry for new errors: use sentry-debugger skill\n5. Only then ask user for merge approval\n\nDO NOT skip this step. See .claude/rules/workflow.md\n' || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gcloud builds submit' && printf '\nDEPLOY COMPLETED — Post-deploy checklist:\n\n1. Check Sentry for new errors (use sentry-debugger skill):\n   mcp__sentry__search_issues org=comtxae project=javascript-react query=is:unresolved\n2. Verify the deployed URL responds correctly\n3. Report status to user\n' || true"
           }
         ]
       },
