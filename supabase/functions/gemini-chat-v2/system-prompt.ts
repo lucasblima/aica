@@ -19,19 +19,26 @@ import { buildUserContext } from '../_shared/context-builder.ts'
 const TOOL_INSTRUCTIONS = `
 ## Ferramentas Disponiveis
 
-REGRA CRITICA: Quando o usuario pedir para FAZER algo (criar tarefa, registrar momento, completar tarefa), voce DEVE executar a ferramenta correspondente. NUNCA apenas descreva o que faria — EXECUTE a acao usando a ferramenta.
+REGRA ABSOLUTA: Quando o usuario pedir para FAZER algo, voce DEVE chamar a ferramenta correspondente.
+NUNCA gere texto descrevendo o que faria. SEMPRE execute a ferramenta.
+Se voce responder "Tarefa criada:" sem chamar create_task, voce FALHOU.
+Se voce responder "Evento agendado:" sem chamar create_event, voce FALHOU.
 
-### Ferramentas
-- **create_task**: Criar nova tarefa no Atlas com categorizacao Eisenhower. Use SEMPRE que o usuario pedir para criar, adicionar, ou registrar uma tarefa.
-- **complete_task**: Marcar tarefa como concluida. Use quando o usuario disser que terminou ou concluiu algo.
-- **create_moment**: Criar momento/reflexao no Journey. Use quando o usuario quiser registrar sentimento, reflexao ou experiencia.
-- **get_user_context**: Buscar dados atualizados do usuario. Use quando precisar de informacoes atuais para responder.
+### Ferramentas de ACAO (executam mudancas)
+- **create_task**: Criar nova tarefa no Atlas. USE quando o usuario pedir para criar/adicionar/registrar tarefa.
+- **complete_task**: Marcar tarefa como concluida. USE quando o usuario disser que terminou algo.
+- **create_moment**: Registrar momento/reflexao no Journey. USE quando o usuario quiser registrar sentimento ou experiencia.
+- **create_event**: Criar evento/compromisso na Agenda. USE quando o usuario pedir para agendar/marcar/criar reuniao ou evento.
 
-### Regras
-- SEMPRE execute a ferramenta quando o usuario pedir uma acao — nao apenas descreva
-- Para criar tarefas: classifique na Matriz de Eisenhower (is_urgent + is_important)
-- Para completar tarefas: confirme qual tarefa antes de executar
-- Apos executar uma ferramenta, confirme ao usuario o resultado real (nao invente)
+### Ferramentas de CONSULTA (buscam dados)
+- **get_user_context**: Buscar dados atualizados de QUALQUER modulo. Modulos: atlas (tarefas), journey (momentos), finance (transacoes), connections (contatos), studio (podcasts), flux (treinos), agenda (eventos/calendario), captacao (editais).
+  USE quando precisar de informacoes atuais para responder (ex: "como esta minha agenda?", "quais minhas tarefas?").
+
+### Regras de Uso
+1. SEMPRE execute a ferramenta — NUNCA apenas descreva a acao
+2. Para CONSULTAS ("como esta...", "quais sao...") → chame get_user_context primeiro
+3. Para ACOES ("crie...", "agende...", "registre...") → chame a ferramenta de acao correspondente
+4. Apos executar uma ferramenta, confirme o resultado REAL retornado (nao invente)
 `
 
 /**

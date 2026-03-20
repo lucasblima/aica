@@ -174,8 +174,10 @@ serve(async (req: Request) => {
 
     // --- CREATE TOOLS ---
     const tools = createChatTools(supabaseAdmin, userId)
+    console.log(`[gemini-chat-v2] Tools available: ${Object.keys(tools).join(', ')}`)
 
     // --- STREAM RESPONSE ---
+    // maxSteps: 3 allows up to 3 tool call rounds (e.g., query context → create task → confirm)
     const result = streamText({
       model: google('gemini-2.5-flash'),
       system: systemPrompt,

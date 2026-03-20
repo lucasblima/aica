@@ -210,6 +210,63 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
     }),
 
     // ========================================================================
+    // CREATE EVENT — Create a calendar event in Agenda
+    // ========================================================================
+    create_event: tool({
+      description:
+        'Criar um evento ou compromisso no modulo Agenda. ' +
+        'Use SEMPRE que o usuario pedir para agendar, marcar, criar uma reuniao, evento ou compromisso. ' +
+        'NUNCA apenas descreva o evento — SEMPRE execute esta ferramenta para cria-lo de fato.',
+      parameters: z.object({
+        title: z.string().min(1).max(200).describe('Titulo do evento'),
+        start_time: z.string().describe('Data e hora de inicio no formato ISO 8601 (ex: 2026-03-21T19:00:00-03:00)'),
+        end_time: z.string().optional().describe('Data e hora de fim no formato ISO 8601. Se nao informado, assume 1 hora apos inicio.'),
+        description: z.string().max(2000).optional().describe('Descricao do evento'),
+        location: z.string().max(500).optional().describe('Local do evento'),
+      }),
+      execute: async ({ title, start_time, end_time, description, location }) => {
+        console.log(`[create_event] title length=${title.length}`)
+
+        // Default end_time to 1 hour after start
+        const startDate = new Date(start_time)
+        const defaultEnd = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString()
+
+        const eventData: Record<string, any> = {
+          user_id: userId,
+          title,
+          start_time,
+          end_time: end_time || defaultEnd,
+          description: description || null,
+          location: location || null,
+          source: 'manual',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
+        const { data: event, error } = await supabaseAdmin
+          .from('calendar_events')
+          .insert(eventData)
+          .select('id, title, start_time, end_time, location')
+          .single()
+
+        if (error) {
+          console.error('[create_event] Insert failed')
+          return { success: false, error: 'Erro ao criar evento.' }
+        }
+
+        const dateStr = new Date(event.start_time).toLocaleDateString('pt-BR')
+        const timeStr = new Date(event.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+        console.log(`[create_event] Success: event ${event.id}`)
+        return {
+          success: true,
+          message: `Evento "${event.title}" agendado para ${dateStr} as ${timeStr}${event.location ? ' em ' + event.location : ''}.`,
+          event,
+        }
+      },
+    }),
+
+    // ========================================================================
     // GET USER CONTEXT — Fetch cross-module data on demand
     // ========================================================================
     get_user_context: tool({
