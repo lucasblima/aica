@@ -130,6 +130,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
   const sessionRef = useRef<ChatSession | null>(null)
   const currentUserIdRef = useRef<string | null>(null)
   const messageCountOnSendRef = useRef(0)
+  const isSendingRef = useRef(false)
 
   // Keep sessionRef in sync
   sessionRef.current = session
@@ -198,6 +199,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
         }).catch(err => console.warn('[useChatSessionV2] Title generation failed:', err))
       }
 
+      isSendingRef.current = false
       setConnectionStatus('connected')
       setLastFailedMessage(null)
       setHookError(null)
@@ -213,6 +215,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
 
     // Callback: error
     onError: (error) => {
+      isSendingRef.current = false
       console.error('[useChatSessionV2] AI SDK error:', error)
       setHookError(error.message || 'Erro ao conectar com a Aica')
       setConnectionStatus('offline')
@@ -228,6 +231,8 @@ export function useChatSessionV2(): UseChatSessionReturn {
 
   // Ref to track the last user message text (for title generation in onFinish)
   const lastUserTextRef = useRef('')
+  const aiMessagesRef = useRef(aiMessages)
+  aiMessagesRef.current = aiMessages
 
   // Reply-to state (mirrors V1 hook interface)
   const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null)
@@ -268,12 +273,15 @@ export function useChatSessionV2(): UseChatSessionReturn {
       const list = await chatService.getActiveSessions(10)
       setSessions(list)
 
-      // Auto-load most recent session's messages
-      if (list.length > 0) {
+      // Auto-load most recent session's messages (only if not mid-send)
+      if (list.length > 0 && !isSendingRef.current) {
         const latest = list[0]
         setSession(latest)
         const msgs = await chatService.getSessionMessages(latest.id)
-        setAiMessages(msgs.map(chatMsgToUIMessage))
+        // Double-check: don't overwrite if a send started while we were fetching
+        if (!isSendingRef.current) {
+          setAiMessages(msgs.map(chatMsgToUIMessage))
+        }
       }
     } catch {
       // Silently fail -- user can still start new conversation
@@ -320,9 +328,9 @@ export function useChatSessionV2(): UseChatSessionReturn {
     }
   }, [setAiMessages])
 
-  // Trigger briefing when hook loads with no messages
+  // Trigger briefing when hook loads with no messages (guard against mid-send)
   useEffect(() => {
-    if (aiMessages.length === 0 && !session) {
+    if (aiMessages.length === 0 && !session && !isSendingRef.current) {
       fetchMorningBriefing()
     }
   }, [aiMessages.length, session, fetchMorningBriefing])
@@ -335,6 +343,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
 
+    isSendingRef.current = true
     setLimitReached(false)
     setHookError(null)
     const sendStartMs = Date.now()
@@ -375,7 +384,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
       })
 
       // Track state for onFinish callback
-      messageCountOnSendRef.current = aiMessages.length
+      messageCountOnSendRef.current = aiMessagesRef.current.length
       lastUserTextRef.current = trimmed
 
       // 5. Call AI SDK sendMessage -- it handles streaming automatically
@@ -396,6 +405,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
         data: { latencyMs: Date.now() - sendStartMs },
       })
     } catch (err) {
+      isSendingRef.current = false
       console.error('[useChatSessionV2] sendMessage failed:', err)
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
 
@@ -410,7 +420,7 @@ export function useChatSessionV2(): UseChatSessionReturn {
       setLastFailedMessage(trimmed)
       setConnectionStatus('offline')
     }
-  }, [isLoading, getUserId, aiMessages.length, aiSendMessage])
+  }, [isLoading, getUserId, aiSendMessage])
 
   // -------------------------------------------------------------------------
   // retryLastMessage
