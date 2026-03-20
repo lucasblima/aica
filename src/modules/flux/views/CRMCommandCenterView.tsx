@@ -56,7 +56,6 @@ import type { WorkoutAutomation } from '../types/flow';
 import {
   MODALITY_CONFIG,
   TRAINING_MODALITIES,
-  LEVEL_LABELS,
   getGroupColorClasses,
 } from '../types/flux';
 
