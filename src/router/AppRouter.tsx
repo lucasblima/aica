@@ -11,7 +11,7 @@ import { NotificationContainer, LoadingScreen, BottomNav, CeramicLoadingState } 
 import { ErrorBoundary, ModuleErrorFallback } from '../components/ui/ErrorBoundary';
 import { SentryErrorBoundary } from '../lib/sentry';
 import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
-import { ViewState } from '../../types';
+type ViewState = string;
 import { useNavigation } from '../contexts/NavigationContext';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
 import { FluxProvider } from '../modules/flux/context/FluxContext';

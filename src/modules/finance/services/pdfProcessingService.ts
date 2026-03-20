@@ -90,7 +90,7 @@ export class PDFProcessingService {
         const page = await pdf.getPage(i)
         const textContent = await page.getTextContent()
         const pageText = textContent.items
-          .map((item: { str?: string }) => item.str || '')
+          .map((item: any) => item.str || '')
           .join(' ')
         fullText += pageText + '\n\n'
 
@@ -152,7 +152,7 @@ export class PDFProcessingService {
       progress: 33,
     })
 
-    const bankHint = this.detectBankFromText(extraction.rawText)
+    const bankHint = this.detectBankFromText(extraction.rawText, file.name)
 
     onProgress?.({
       stage: 'detecting_bank',
@@ -381,7 +381,6 @@ export class PDFProcessingService {
           closingBalance: Number(parsed.closingBalance) || 0,
           currency: parsed.currency || 'BRL',
           transactions: normalizedTransactions,
-          piiSanitized: false
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
@@ -471,29 +470,44 @@ export class PDFProcessingService {
   }
 
   /**
-   * Quick local heuristic to detect bank from PDF text
+   * Quick local heuristic to detect bank from PDF text and optional filename
    */
-  private detectBankFromText(text: string): string | null {
-    const lower = text.toLowerCase()
+  private detectBankFromText(text: string, filename?: string): string | null {
+    const combined = filename ? `${filename} ${text}` : text
     const bankPatterns: [RegExp, string][] = [
-      [/nubank|nu pagamentos/i, 'Nubank'],
+      [/nubank|nu pagamentos|^nu[_\s]/im, 'Nubank'],
       [/banco inter|inter s\.?a/i, 'Banco Inter'],
-      [/itaú|itau unibanco/i, 'Itaú'],
+      [/itaú|itau(?:\s+unibanco)?/i, 'Itaú'],
       [/bradesco/i, 'Bradesco'],
       [/santander/i, 'Santander'],
       [/banco do brasil|bb s\.?a/i, 'Banco do Brasil'],
-      [/caixa econ[oô]mica|cef/i, 'Caixa'],
-      [/c6 bank|c6 s\.?a/i, 'C6 Bank'],
+      [/caixa econ[oô]mica|cef\b/i, 'Caixa'],
+      [/c6 bank|c6 s\.?a|c6\b/i, 'C6 Bank'],
       [/btg pactual/i, 'BTG Pactual'],
       [/xp investimentos|xp s\.?a/i, 'XP'],
-      [/neon/i, 'Neon'],
-      [/next/i, 'Next'],
+      [/neon\b/i, 'Neon'],
+      [/\bnext\b/i, 'Next'],
       [/picpay/i, 'PicPay'],
-      [/mercado pago/i, 'Mercado Pago'],
+      [/mercado pago|mercadopago/i, 'Mercado Pago'],
+      [/sicoob/i, 'Sicoob'],
+      [/sicredi/i, 'Sicredi'],
+      [/banco safra|safra s\.?a/i, 'Safra'],
+      [/banco original|original s\.?a/i, 'Original'],
+      [/pagbank|pagseguro/i, 'PagBank'],
+      [/banco pan|pan s\.?a/i, 'Banco Pan'],
+      [/daycoval/i, 'Daycoval'],
+      [/banco modal|modal s\.?a/i, 'Modal'],
+      [/stone\s+(?:pagamentos|banking)/i, 'Stone'],
+      [/banco bmg|bmg s\.?a/i, 'BMG'],
+      [/banco votorantim|bv s\.?a|bv financeira/i, 'BV'],
+      [/ame digital/i, 'Ame Digital'],
+      [/will bank|willbank/i, 'Will Bank'],
+      [/banco sofisa|sofisa direto/i, 'Sofisa'],
+      [/banco abc|abc brasil/i, 'ABC Brasil'],
     ]
 
     for (const [pattern, name] of bankPatterns) {
-      if (pattern.test(lower)) return name
+      if (pattern.test(combined)) return name
     }
     return null
   }
@@ -516,7 +530,7 @@ export class PDFProcessingService {
       `**Período:** ${data.periodStart} a ${data.periodEnd}`,
       `**Tipo de Conta:** ${this.getAccountTypeLabel(data.accountType)}`,
       `**Moeda:** ${data.currency}`,
-      data.piiSanitized ? '**PII Sanitizado:** Sim (conforme LGPD)' : '',
+      '',
       '',
       '## Resumo',
       '',

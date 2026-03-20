@@ -91,7 +91,7 @@ export function useIntentTimeline(
 
       if (queryError) throw queryError
 
-      const entries = (data || []) as IntentEntry[]
+      const entries = (data || []) as unknown as IntentEntry[]
 
       if (reset) {
         setIntents(entries)

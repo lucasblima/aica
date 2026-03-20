@@ -11,8 +11,8 @@
  */
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabaseClient'
+import type { Session, User } from '@/services/supabaseClient'
 import { invalidateAuthCache } from '@/services/authCacheService'
 import { createNamespacedLogger } from '@/lib/logger'
 

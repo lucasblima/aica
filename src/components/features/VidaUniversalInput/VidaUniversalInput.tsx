@@ -70,14 +70,14 @@ export function VidaUniversalInput() {
     }
   }
 
-  // Waveform bars from áudio level
+  // Waveform bars from áudio level — use recordSeconds as animation driver instead of Date.now()
   const waveformBars = useMemo(() => {
     const bars = 8
     return Array.from({ length: bars }, (_, i) => {
-      const variance = Math.sin((Date.now() / 200) + i) * 0.3 + 0.7
+      const variance = Math.sin((speech.recordSeconds * 5) + i) * 0.3 + 0.7
       return Math.max(4, (speech.audioLevel / 100) * 24 * variance)
     })
-  }, [speech.audioLevel])
+  }, [speech.audioLevel, speech.recordSeconds])
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60)

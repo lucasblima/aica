@@ -1,11 +1,11 @@
 // handlers/stream.ts — SSE streaming chat handler (permanent)
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.21.0'
 import { MODELS, getDateContext } from '../../_shared/gemini-helpers.ts'
-import { buildUserContext, generateSuggestedActions } from '../../_shared/context-builder.ts'
+import { buildUserContext, generateSuggestedActions, generateSuggestedQuestions } from '../../_shared/context-builder.ts'
 import { AGENT_SYSTEM_PROMPTS, VALID_AGENTS, INTERVIEWER_SYSTEM_PROMPT } from '../../_shared/agent-prompts.ts'
 import type { UserContextResult } from '../../_shared/gemini-types.ts'
-import { handleClassifyIntent } from './actions.ts'
-import { generateSuggestedQuestions } from './chat.ts'
+import { classifyIntent } from '../../_shared/intent-classifier.ts'
+import { fetchRelevantDocuments } from '../../_shared/document-search.ts'
 
 export async function handleStreamChat(
   genAI: GoogleGenerativeAI,
@@ -15,6 +15,7 @@ export async function handleStreamChat(
   corsHeaders: Record<string, string>,
   apiKey: string
 ): Promise<Response> {
+  const requestStartMs = Date.now()
   const streamMessage = payload?.message
   if (!streamMessage) throw new Error('Mensagem e obrigatoria')
 
@@ -40,7 +41,7 @@ export async function handleStreamChat(
     console.log(`[chat_aica_stream] Interview mode: intent=${interviewIntent}, module=${streamModule}`)
   } else if (!payload?.module) {
     try {
-      const classifyResult = await handleClassifyIntent(
+      const classifyResult = await classifyIntent(
         { message: streamMessage, history: payload?.history },
         apiKey
       )
@@ -75,6 +76,20 @@ export async function handleStreamChat(
       streamRawData = ctxResult.rawData
     } catch (e) {
       console.warn('[chat_aica_stream] Failed to build context:', (e as Error).message)
+    }
+  }
+
+  // RAG: search user's indexed documents for relevant context (grants, studio, etc.)
+  let documentContext = ''
+  if (userId && supabaseAdmin && !isInterviewMode) {
+    try {
+      const docResult = await fetchRelevantDocuments(supabaseAdmin, userId, streamModule, streamMessage, apiKey)
+      if (docResult.found) {
+        documentContext = docResult.contextString
+        console.log(`[chat_aica_stream] RAG enrichment: ${docResult.sources.length} source(s), ${documentContext.length} chars`)
+      }
+    } catch (e) {
+      console.warn('[chat_aica_stream] Document search failed (non-blocking):', (e as Error).message)
     }
   }
 
@@ -114,13 +129,39 @@ export async function handleStreamChat(
     streamSystemPrompt += `\n\n## Dados Reais do Usuario\n${streamUserContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- NUNCA pergunte qual e a data atual — voce JA SABE a data (veja acima)\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Liste dados em formato organizado (bullet points) quando houver multiplos itens\n- Se nao tiver dados suficientes, sugira acoes concretas`
   }
 
+  // Append RAG document context if available
+  if (documentContext) {
+    streamSystemPrompt += `\n\n${documentContext}\n\n- Quando relevante, cite informacoes dos documentos acima\n- Indique a fonte quando usar dados dos documentos`
+  }
+
   const streamHistory = payload?.history?.map((msg: any) => ({
     role: msg.role === 'user' ? 'user' : 'model',
     parts: [{ text: msg.content }],
   })) || []
 
+  // Thread context: if replying to a specific message, fetch parent content
+  let threadContext = ''
+  if (payload?.parent_message_id && userId && supabaseAdmin) {
+    try {
+      const { data: parentMsg } = await supabaseAdmin
+        .from('chat_messages')
+        .select('content, direction')
+        .eq('id', payload.parent_message_id)
+        .eq('user_id', userId)
+        .single()
+      if (parentMsg) {
+        const role = parentMsg.direction === 'inbound' ? 'usuario' : 'assistente'
+        threadContext = `[Respondendo a mensagem do ${role}: "${parentMsg.content.substring(0, 300)}"]`
+        console.log(`[chat_aica_stream] Thread context: replying to ${payload.parent_message_id}`)
+      }
+    } catch (e) {
+      console.warn('[chat_aica_stream] Failed to fetch parent message:', (e as Error).message)
+    }
+  }
+
   let streamFinalMessage = streamMessage
-  if (payload?.context) streamFinalMessage = `Contexto:\n${payload.context}\n\nPergunta: ${streamMessage}`
+  if (threadContext) streamFinalMessage = `${threadContext}\n\n${streamMessage}`
+  if (payload?.context) streamFinalMessage = `Contexto:\n${payload.context}\n\n${streamFinalMessage}`
 
   const streamChat = streamModel.startChat({
     history: [
@@ -142,12 +183,13 @@ export async function handleStreamChat(
     const fallbackActions = generateSuggestedActions(streamMessage, streamRawData)
     const fallbackQuestions = generateSuggestedQuestions(streamMessage, nonStreamText, streamModule, streamRawData)
     const fallbackUsage = nonStreamResult.response.usageMetadata
+    const fallbackLatencyMs = Date.now() - requestStartMs
+    console.log(`[chat_aica_stream] METRIC module=${streamModule} latency=${fallbackLatencyMs}ms streaming=false fallback=true tokens_in=${fallbackUsage?.promptTokenCount || 0} tokens_out=${fallbackUsage?.candidatesTokenCount || 0}`)
     return new Response(JSON.stringify({
       success: true,
       fullText: nonStreamText,
       text: nonStreamText,
       agent: detectedAgent,
-      actions: fallbackActions,
       suggestedActions: fallbackActions,
       suggested_questions: fallbackQuestions,
       usage: { input: fallbackUsage?.promptTokenCount || 0, output: fallbackUsage?.candidatesTokenCount || 0 },
@@ -200,6 +242,12 @@ export async function handleStreamChat(
           message: (streamError as Error).message || 'Erro no streaming',
         })}\n\n`))
       } finally {
+        const latencyMs = Date.now() - requestStartMs
+        const streamingSuccess = fullText.length > 0
+
+        // Structured metric log for observability (no PII)
+        console.log(`[chat_aica_stream] METRIC module=${streamModule} latency=${latencyMs}ms streaming=${streamingSuccess} tokens_in=${usageMeta?.promptTokenCount || 0} tokens_out=${usageMeta?.candidatesTokenCount || 0}`)
+
         // Fire-and-forget: log interaction with real token counts from stream
         if (userId && supabaseAdmin) {
           supabaseAdmin.rpc('log_interaction', {

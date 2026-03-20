@@ -14,8 +14,8 @@
 
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
-import { logAttribution } from '@/services/scoring/scoringEngine';
-import type { ScoreTrend } from '@/services/scoring/types';
+import { logAttribution, registerDomainProvider } from '@/services/scoring/scoringEngine';
+import type { DomainScore, ScoreTrend } from '@/services/scoring/types';
 
 const log = createNamespacedLogger('FinancialHealthScoring');
 
@@ -477,9 +477,13 @@ export async function storeFinancialHealth(
  */
 export async function getLatestFinancialHealth(): Promise<FinancialHealthResult | null> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
     const { data, error } = await supabase
       .from('financial_health_scores')
       .select('*')
+      .eq('user_id', user.id)
       .order('computed_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -519,9 +523,13 @@ export async function getFinancialHealthHistory(
   limit: number = 10
 ): Promise<{ composite: number; computedAt: string }[]> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
     const { data, error } = await supabase
       .from('financial_health_scores')
       .select('composite_score, computed_at')
+      .eq('user_id', user.id)
       .order('computed_at', { ascending: false })
       .limit(limit);
 
@@ -535,4 +543,114 @@ export async function getFinancialHealthHistory(
     log.error('getFinancialHealthHistory failed:', err);
     return [];
   }
+}
+
+// ============================================================================
+// DOMAIN SCORE PROVIDER — Life Score Integration
+// ============================================================================
+
+/**
+ * Compute the Finance domain score for the current user.
+ * Tries to use the latest stored financial health score; falls back to
+ * a simplified categorization-rate heuristic based on recent transactions.
+ */
+async function computeFinanceDomainScoreProvider(): Promise<DomainScore | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // ------------------------------------------------------------------
+    // Attempt 1: Use latest stored financial health score
+    // ------------------------------------------------------------------
+    try {
+      const { data: healthScore, error: healthError } = await supabase
+        .from('financial_health_scores')
+        .select('composite_score, computed_at')
+        .eq('user_id', user.id)
+        .order('computed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!healthError && healthScore) {
+        const normalized = Math.max(0, Math.min(1, healthScore.composite_score / 100));
+        const trend: ScoreTrend = normalized > 0.7
+          ? 'improving'
+          : normalized < 0.3
+            ? 'declining'
+            : 'stable';
+
+        return {
+          module: 'finance',
+          normalized,
+          raw: healthScore.composite_score,
+          label: 'Finanças',
+          confidence: 0.8,
+          trend,
+        };
+      }
+    } catch {
+      // Table may not exist — fall through to simplified approach
+      log.debug('financial_health_scores not available, using simplified scoring');
+    }
+
+    // ------------------------------------------------------------------
+    // Attempt 2: Simplified scoring from recent transactions
+    // ------------------------------------------------------------------
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+
+    const { data: transactions, error: txError } = await supabase
+      .from('finance_transactions')
+      .select('id, category')
+      .eq('user_id', user.id)
+      .gte('created_at', thirtyDaysAgoISO);
+
+    if (txError || !transactions || transactions.length === 0) {
+      log.debug('No finance transactions found — domain score skipped');
+      return null;
+    }
+
+    const totalTransactions = transactions.length;
+    const categorizedTransactions = transactions.filter(
+      (t) => t.category != null && t.category !== ''
+    ).length;
+    const categorizationRate = categorizedTransactions / totalTransactions;
+
+    const normalized = computeFinanceDomainScore(
+      categorizationRate * 100,
+      0.5,
+      categorizationRate
+    );
+
+    // Trend heuristic
+    const trend: ScoreTrend = categorizationRate > 0.7
+      ? 'improving'
+      : categorizationRate < 0.3
+        ? 'declining'
+        : 'stable';
+
+    // Confidence: 0.3 base + 0.7 if we have transactions
+    const confidence = 0.3 + 0.7 * (totalTransactions > 0 ? 1 : 0);
+
+    return {
+      module: 'finance',
+      normalized,
+      raw: Math.round(normalized * 100),
+      label: 'Finanças',
+      confidence,
+      trend,
+    };
+  } catch (err) {
+    log.error('Finance domain score computation failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Register the Finance domain provider with the scoring engine.
+ * Call this once during app initialization.
+ */
+export function registerFinanceDomainProvider(): void {
+  registerDomainProvider('finance', computeFinanceDomainScoreProvider);
 }

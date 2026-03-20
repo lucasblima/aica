@@ -1,43 +1,10 @@
-// handlers/chat.ts — Legacy chat + suggested questions (permanent)
+// handlers/chat.ts — Legacy chat handler (permanent)
+// Suggested questions generator moved to _shared/context-builder.ts
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.21.0'
-import { MODELS } from '../../_shared/gemini-helpers.ts'
-import { getDateContext } from '../../_shared/gemini-helpers.ts'
+import { MODELS, getDateContext } from '../../_shared/gemini-helpers.ts'
 import { buildUserContext, generateSuggestedActions } from '../../_shared/context-builder.ts'
 import type { ChatRequest, ChatAction, UserContextResult } from '../../_shared/gemini-types.ts'
 
-// ============================================================================
-// SUGGESTED QUESTIONS GENERATOR (pure function, no async)
-// ============================================================================
-
-export function generateSuggestedQuestions(
-  _userMessage: string,
-  _aiResponse: string,
-  module: string,
-  rawData: UserContextResult['rawData']
-): string[] {
-  const questions: string[] = []
-
-  // Context-aware suggestions based on module and data
-  if (module === 'atlas' && rawData.tasks.length > 0) {
-    const { today } = getDateContext()
-    const overdue = rawData.tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done')
-    if (overdue.length > 0) questions.push(`Tenho ${overdue.length} tarefa(s) atrasada(s). Pode me ajudar a priorizar?`)
-  }
-  if (module === 'journey') {
-    questions.push('Como estou me sentindo em relação à semana passada?')
-  }
-  if (module === 'finance' && rawData.transactions.length > 0) {
-    questions.push('Qual foi meu maior gasto este mês?')
-  }
-  if (module === 'coordinator') {
-    if (rawData.tasks.length > 0) questions.push('Quais são minhas prioridades para hoje?')
-    if (rawData.moments.length > 0) questions.push('Quais padrões você nota nas minhas reflexões recentes?')
-    if (rawData.events.length > 0) questions.push('O que tenho na agenda para amanhã?')
-  }
-
-  // Always limit to 3 suggestions
-  return questions.slice(0, 3)
-}
 
 export async function handleLegacyChat(
   genAI: GoogleGenerativeAI,

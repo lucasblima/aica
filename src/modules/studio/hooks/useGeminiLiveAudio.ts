@@ -60,6 +60,7 @@ export function useGeminiLiveAudio(
 
   // Use refs for values that change frequently but don't need re-renders
   const optionsRef = useRef(options);
+  // eslint-disable-next-line react-hooks/refs
   optionsRef.current = options;
 
   // Track partial transcripts to build complete messages

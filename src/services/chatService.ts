@@ -29,6 +29,7 @@ export interface ChatMessage {
   model_used: string | null
   tokens_input: number | null
   tokens_output: number | null
+  parent_message_id: string | null
   created_at: string
 }
 
@@ -40,6 +41,7 @@ export interface SaveMessageInput {
   modelUsed?: string
   tokensInput?: number
   tokensOutput?: number
+  parentMessageId?: string
 }
 
 export const chatService = {
@@ -116,6 +118,7 @@ export const chatService = {
         model_used: input.modelUsed || null,
         tokens_input: input.tokensInput || null,
         tokens_output: input.tokensOutput || null,
+        ...(input.parentMessageId ? { parent_message_id: input.parentMessageId } : {}),
       })
       .select()
       .single()

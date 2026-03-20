@@ -64,6 +64,66 @@ function getAdapter(): TelegramAdapter {
 }
 
 // ============================================================================
+// RATE LIMITING (#894)
+// In-memory sliding window per chat_id. Limits: 20 msgs/min, 5 msgs/10s burst.
+// Resets on cold start (acceptable — rate limiting targets sustained abuse).
+// ============================================================================
+
+const RATE_LIMIT_WINDOW_MS = 60_000   // 1 minute window
+const RATE_LIMIT_MAX = 20             // max messages per window
+const BURST_WINDOW_MS = 10_000        // 10 second burst window
+const BURST_MAX = 5                   // max messages per burst window
+const CLEANUP_INTERVAL_MS = 300_000   // cleanup stale entries every 5 min
+
+interface RateLimitEntry {
+  timestamps: number[]
+}
+
+const rateLimitMap = new Map<string, RateLimitEntry>()
+let lastCleanup = Date.now()
+
+function isRateLimited(chatId: string): { limited: boolean; retryAfterMs?: number } {
+  const now = Date.now()
+
+  // Periodic cleanup to prevent memory growth
+  if (now - lastCleanup > CLEANUP_INTERVAL_MS) {
+    lastCleanup = now
+    for (const [key, entry] of rateLimitMap) {
+      if (entry.timestamps.length === 0 ||
+          now - entry.timestamps[entry.timestamps.length - 1] > RATE_LIMIT_WINDOW_MS) {
+        rateLimitMap.delete(key)
+      }
+    }
+  }
+
+  let entry = rateLimitMap.get(chatId)
+  if (!entry) {
+    entry = { timestamps: [] }
+    rateLimitMap.set(chatId, entry)
+  }
+
+  // Remove timestamps outside the window
+  entry.timestamps = entry.timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS)
+
+  // Check burst limit (short window)
+  const recentBurst = entry.timestamps.filter(t => now - t < BURST_WINDOW_MS)
+  if (recentBurst.length >= BURST_MAX) {
+    const oldestBurst = recentBurst[0]
+    return { limited: true, retryAfterMs: BURST_WINDOW_MS - (now - oldestBurst) }
+  }
+
+  // Check sustained limit (full window)
+  if (entry.timestamps.length >= RATE_LIMIT_MAX) {
+    const oldest = entry.timestamps[0]
+    return { limited: true, retryAfterMs: RATE_LIMIT_WINDOW_MS - (now - oldest) }
+  }
+
+  // Allow — record this timestamp
+  entry.timestamps.push(now)
+  return { limited: false }
+}
+
+// ============================================================================
 // MESSAGE LOGGING
 // ============================================================================
 
@@ -1052,12 +1112,23 @@ serve(async (req) => {
       )
     }
 
-    // 4. Initialize Supabase client (service role for webhook operations)
+    // 4. Rate limit check (per chat_id)
+    const rateCheck = isRateLimited(message.chat.chatId)
+    if (rateCheck.limited) {
+      console.warn(`[telegram-webhook] Rate limited chat ${message.chat.chatId}, retry after ${rateCheck.retryAfterMs}ms`)
+      // Return 200 to Telegram (avoid retries) but don't process
+      return new Response(
+        JSON.stringify({ received: true, processed: false, error: 'rate_limited' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 5. Initialize Supabase client (service role for webhook operations)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 5. Resolve AICA user (if linked)
+    // 6. Resolve AICA user (if linked)
     const telegramId = Number(message.sender.channelUserId)
     const { data: userData } = await supabase
       .rpc('get_telegram_user', { p_telegram_id: telegramId })
@@ -1069,7 +1140,7 @@ serve(async (req) => {
     }
 
     try {
-      // 6. Route by message type
+      // 7. Route by message type
       if (message.content.type === 'command') {
         // Send typing indicator
         await tg.sendTypingAction(message.chat.chatId, message.chat.messageThreadId)

@@ -1,5 +1,9 @@
 import { createBrowserClient } from '@supabase/ssr';
 
+// Re-export commonly used Supabase types so modules import from here
+// instead of directly from @supabase/supabase-js
+export type { Session, User, RealtimeChannel } from '@supabase/supabase-js';
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -11,6 +15,7 @@ const DEBUG = import.meta.env.DEV;
 
 function authLog(message: string, data?: unknown) {
     if (DEBUG) {
+        // eslint-disable-next-line no-console -- debug-only auth logging behind DEV flag
         console.debug(`[SupabaseClient] [Supabase Auth] ${message}`, data ?? '');
     }
 }
@@ -59,6 +64,17 @@ function cleanupLegacyCookies(): void {
 cleanupLegacyCookies();
 
 /**
+ * No-op lock that bypasses navigator.locks.
+ *
+ * Some browsers return null from LockManager.request(), causing gotrue-js
+ * to loop with warnings and fail to complete auth operations.
+ * Safe for single-tab session management.
+ */
+function noOpLock<R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> {
+    return fn();
+}
+
+/**
  * Single Supabase client instance for the entire application
  *
  * Uses @supabase/ssr createBrowserClient which natively handles browser cookies
@@ -91,6 +107,11 @@ export const supabase = createBrowserClient(
             detectSessionInUrl: true,
             flowType: 'pkce',
             debug: DEBUG,
+            // Bypass navigator.locks — some browsers (Chrome on certain configs)
+            // return null from LockManager.request(), causing gotrue-js to loop
+            // with warnings and fail to complete auth operations.
+            // This no-op lock is safe for single-tab session management.
+            lock: noOpLock,
         },
     }
 );

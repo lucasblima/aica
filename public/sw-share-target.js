@@ -22,17 +22,23 @@ async function handleShareTarget(request) {
 
     if (files.length > 0) {
       const file = files[0];
-      const cache = await caches.open('share-target-cache');
+      try {
+        const cache = await caches.open('share-target-cache');
 
-      // Store the file in cache with metadata
-      const response = new Response(file, {
-        headers: {
-          'Content-Type': file.type || 'text/plain',
-          'X-Filename': file.name || 'whatsapp-export.txt',
-        },
-      });
+        // Store the file in cache with metadata
+        const response = new Response(file, {
+          headers: {
+            'Content-Type': file.type || 'text/plain',
+            'X-Filename': file.name || 'whatsapp-export.txt',
+          },
+        });
 
-      await cache.put('/share-target-file', response);
+        await cache.put('/share-target-file', response);
+      } catch (cacheErr) {
+        // CacheStorage may be unavailable (corrupted, quota exceeded, etc.)
+        // Fall through to redirect — user can re-upload via the import UI
+        console.warn('[SW] CacheStorage unavailable, skipping file cache:', cacheErr.message);
+      }
     }
 
     // Redirect to the share target page

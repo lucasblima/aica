@@ -10,7 +10,7 @@ import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { addXP, FLUX_XP_REWARDS } from '@/services/gamificationService';
 import type { Alert } from '../types';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@/services/supabaseClient';
 
 const log = createNamespacedLogger('useAlerts');
 

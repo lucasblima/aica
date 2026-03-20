@@ -41,15 +41,6 @@ export async function buildUserContext(supabaseAdmin: any, userId: string, modul
   const rawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
   console.log(`[buildUserContext] Starting module=${module}`)
 
-  const appendSection = async (name: string, fn: () => Promise<void>) => {
-    try {
-      await fn()
-    } catch (error) {
-      console.warn(`[buildUserContext] ${name} failed:`, (error as Error).message)
-      contextParts.push(`\n(${name} indisponivel)`)
-    }
-  }
-
   try {
     // Always fetch basic stats for coordinator context
     if (module === 'atlas' || module === 'coordinator') {
@@ -356,6 +347,41 @@ export async function buildUserContext(supabaseAdmin: any, userId: string, modul
 
   const contextString = contextParts.length === 0 ? '' : contextParts.join('\n')
   return { contextString, rawData }
+}
+
+// ============================================================================
+// SUGGESTED QUESTIONS GENERATOR (pure function, no async)
+// Moved from handlers/chat.ts to eliminate cross-handler imports
+// ============================================================================
+
+export function generateSuggestedQuestions(
+  _userMessage: string,
+  _aiResponse: string,
+  module: string,
+  rawData: UserContextResult['rawData']
+): string[] {
+  const questions: string[] = []
+
+  // Context-aware suggestions based on module and data
+  if (module === 'atlas' && rawData.tasks.length > 0) {
+    const today = getTodayBRT()
+    const overdue = rawData.tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done')
+    if (overdue.length > 0) questions.push(`Tenho ${overdue.length} tarefa(s) atrasada(s). Pode me ajudar a priorizar?`)
+  }
+  if (module === 'journey') {
+    questions.push('Como estou me sentindo em relação à semana passada?')
+  }
+  if (module === 'finance' && rawData.transactions.length > 0) {
+    questions.push('Qual foi meu maior gasto este mês?')
+  }
+  if (module === 'coordinator') {
+    if (rawData.tasks.length > 0) questions.push('Quais são minhas prioridades para hoje?')
+    if (rawData.moments.length > 0) questions.push('Quais padrões você nota nas minhas reflexões recentes?')
+    if (rawData.events.length > 0) questions.push('O que tenho na agenda para amanhã?')
+  }
+
+  // Always limit to 3 suggestions
+  return questions.slice(0, 3)
 }
 
 // ============================================================================

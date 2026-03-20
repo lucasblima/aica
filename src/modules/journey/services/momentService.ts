@@ -9,6 +9,7 @@ import { trackAIUsage } from '@/services/aiUsageTrackingService'
 import { createNamespacedLogger } from '@/lib/logger'
 import {
   Moment,
+  MomentType,
   CreateMomentInput,
   MomentWithCP,
   MomentFilter,
@@ -50,7 +51,7 @@ export async function createMoment(
     }
     // Transcribe áudio if provided (must complete before insert)
     let finalContent = input.content
-    let momentType: 'text' | 'audio' = input.type || 'text'
+    let momentType: MomentType = input.type || 'text'
     if (input.audioBlob && input.audioBlob.size > 0) {
       const transcription = await transcribeAudio(input.audioBlob)
       finalContent = finalContent ? `${finalContent}\n\n${transcription}` : transcription
@@ -113,11 +114,14 @@ export async function createMoment(
         supabase.rpc('update_moment_streak', { p_user_id: userId })
           .then(({ error: legacyErr }) => {
             if (legacyErr) {
-              log.error('CRITICAL: Both streak update RPCs failed — user streak may be lost', {
+              // P1-12: Structured error telemetry for streak failures
+              // Sentry captures structured log.error — no DB persistence needed
+              log.error('STREAK_LOST: Both streak RPCs failed', {
                 userId,
                 momentId: moment.id,
                 primaryError: streakError.message,
                 fallbackError: legacyErr.message,
+                errorCode: 'STREAK_DOUBLE_FAILURE',
               })
             }
           })
@@ -406,3 +410,4 @@ export async function reanalyzeMoments(limit: number = 50): Promise<{
     throw error
   }
 }
+

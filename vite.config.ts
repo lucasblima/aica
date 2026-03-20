@@ -88,19 +88,12 @@ export default defineConfig(() => {
           cleanupOutdatedCaches: true,
           // Vite hashed chunks already have unique filenames — skip cache-busting query params
           dontCacheBustURLsMatching: /[-.][\da-f]{7,8}\./,
-          // Prevent Workbox navigation fallback from serving index.html for /assets/ paths
-          navigateFallbackDenylist: [/^\/assets\//, /^\/api\//],
+          // Prevent Workbox navigation fallback from intercepting these paths
+          navigateFallbackDenylist: [/^\/assets\//, /^\/api\//, /^\/auth\//],
           importScripts: ['/sw-share-target.js'],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'supabase-api',
-                expiration: { maxEntries: 50, maxAgeSeconds: 300 },
-              },
-            },
-          ],
+          // No runtimeCaching for Supabase — auth requests must NEVER go through
+          // the service worker cache. When CacheStorage is broken (browser storage
+          // corruption), intercepting these requests blocks login entirely.
         },
       }),
     ],

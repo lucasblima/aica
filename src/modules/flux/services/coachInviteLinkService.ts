@@ -14,6 +14,7 @@ export interface CoachInviteLink {
     requires_clearance_cert: boolean;
     allow_parq_onboarding: boolean;
   };
+  group_id: string | null;
   expires_at: string | null;
   is_active: boolean;
   created_at: string;
@@ -32,7 +33,10 @@ function generateToken(): string {
 }
 
 export class CoachInviteLinkService {
-  static async findActiveLink(healthConfig: CoachInviteLink['health_config']): Promise<CoachInviteLink | null> {
+  static async findActiveLink(
+    healthConfig: CoachInviteLink['health_config'],
+    groupId?: string | null
+  ): Promise<CoachInviteLink | null> {
     const { data } = await supabase
       .from('coach_invite_links')
       .select('*')
@@ -41,7 +45,7 @@ export class CoachInviteLinkService {
 
     if (!data || data.length === 0) return null;
 
-    // Find link with matching health config that's still usable
+    // Find link with matching health config + group that's still usable
     for (const row of data) {
       const link = row as CoachInviteLink;
       const cfg = link.health_config;
@@ -49,6 +53,7 @@ export class CoachInviteLinkService {
         cfg.requires_cardio_exam === healthConfig.requires_cardio_exam &&
         cfg.requires_clearance_cert === healthConfig.requires_clearance_cert &&
         cfg.allow_parq_onboarding === healthConfig.allow_parq_onboarding &&
+        (link.group_id || null) === (groupId || null) &&
         link.current_uses < link.max_uses &&
         (!link.expires_at || new Date(link.expires_at) > new Date())
       ) {
@@ -58,28 +63,46 @@ export class CoachInviteLinkService {
     return null;
   }
 
-  static async createLink(healthConfig: CoachInviteLink['health_config'], maxUses = 10): Promise<{
+  static async createLink(
+    healthConfig: CoachInviteLink['health_config'],
+    maxUses = 10,
+    groupId?: string | null
+  ): Promise<{
     data: CoachInviteLink | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
     error: any;
   }> {
     const token = generateToken();
+    const insertData = {
+      token,
+      max_uses: maxUses,
+      health_config: healthConfig,
+      ...(groupId ? { group_id: groupId } : {}),
+    };
+
     const { data, error } = await supabase
       .from('coach_invite_links')
-      .insert({ token, max_uses: maxUses, health_config: healthConfig })
+      .insert(insertData)
       .select()
       .single();
     return { data: data as CoachInviteLink | null, error };
   }
 
-  static async getOrCreateLink(healthConfig: CoachInviteLink['health_config'], maxUses = 10): Promise<{
+  static async getOrCreateLink(
+    healthConfig: CoachInviteLink['health_config'],
+    maxUses = 10,
+    groupId?: string | null
+  ): Promise<{
     data: CoachInviteLink | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
     error: any;
   }> {
-    const existing = await this.findActiveLink(healthConfig);
+    const existing = await this.findActiveLink(healthConfig, groupId);
     if (existing) return { data: existing, error: null };
-    return this.createLink(healthConfig, maxUses);
+    return this.createLink(healthConfig, maxUses, groupId);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
   static async getMyLinks(): Promise<{ data: CoachInviteLink[]; error: any }> {
     const { data, error } = await supabase
       .from('coach_invite_links')
@@ -88,6 +111,7 @@ export class CoachInviteLinkService {
     return { data: (data || []) as CoachInviteLink[], error };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns untyped errors
   static async deactivateLink(linkId: string): Promise<{ error: any }> {
     const { error } = await supabase
       .from('coach_invite_links')

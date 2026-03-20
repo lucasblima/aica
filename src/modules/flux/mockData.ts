@@ -711,6 +711,7 @@ export function getMockAthleteCountsByModality(): Record<TrainingModality, numbe
     cycling: 0,
     strength: 0,
     walking: 0,
+    triathlon: 0,
   };
 
   for (const athlete of MOCK_ATHLETES) {

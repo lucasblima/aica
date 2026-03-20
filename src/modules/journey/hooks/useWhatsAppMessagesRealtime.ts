@@ -13,8 +13,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabaseClient'
+import type { RealtimeChannel } from '@/services/supabaseClient'
 import { useAuth } from '@/hooks/useAuth'
 import { createNamespacedLogger } from '@/lib/logger'
 

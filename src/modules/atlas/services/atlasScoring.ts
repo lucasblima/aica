@@ -16,6 +16,8 @@
 
 import { supabase } from '@/services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
+import { registerDomainProvider } from '@/services/scoring/scoringEngine'
+import type { DomainScore, ScoreTrend } from '@/services/scoring/types'
 
 const log = createNamespacedLogger('atlasScoring')
 
@@ -600,4 +602,109 @@ export function computeFlowZoneState(profile: CognitiveProfile): FlowZoneState {
     optimalTaskTypes,
     nextFlowWindow,
   }
+}
+
+// =============================================================================
+// ATLAS DOMAIN SCORE PROVIDER — Life Score Integration
+// =============================================================================
+
+/**
+ * Compute the Atlas domain score for the current user.
+ * Fetches work_items from the last 30 days and derives:
+ * - taskCompletionRate: completed items / total items
+ * - avgFlowProbability: 0.5 default (cognitive profile data not easily accessible for MVP)
+ * - planningAccuracy: 1 - abs(1 - avg(actual/estimated)), clamped 0-1
+ */
+async function computeAtlasDomainScoreProvider(): Promise<DomainScore | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const since = thirtyDaysAgo.toISOString();
+
+    const { data: items, error } = await supabase
+      .from('work_items')
+      .select('status, estimated_duration, actual_duration')
+      .eq('user_id', user.id)
+      .gte('created_at', since);
+
+    if (error) {
+      log.error('Failed to fetch work_items for Atlas domain score:', error);
+      return null;
+    }
+
+    if (!items || items.length === 0) {
+      log.debug('No work_items found in last 30 days — Atlas domain score skipped');
+      return null;
+    }
+
+    // 1. Task completion rate
+    const completedCount = items.filter(
+      (i) => i.status === 'completed' || i.status === 'done'
+    ).length;
+    const taskCompletionRate = items.length > 0 ? completedCount / items.length : 0;
+    const hasCompletionData = items.length > 0;
+
+    // 2. Average flow probability — MVP default (cognitive profile not easily accessible)
+    const avgFlowProbability = 0.5;
+
+    // 3. Planning accuracy: 1 - abs(1 - avg(actual_duration / estimated_duration)), clamped 0-1
+    const itemsWithBothDurations = items.filter(
+      (i) =>
+        i.estimated_duration != null &&
+        i.estimated_duration > 0 &&
+        i.actual_duration != null &&
+        i.actual_duration > 0
+    );
+    const hasDurationData = itemsWithBothDurations.length > 0;
+
+    let planningAccuracy = 0.5; // default when no duration data
+    if (hasDurationData) {
+      const avgRatio =
+        itemsWithBothDurations.reduce(
+          (sum, i) => sum + (i.actual_duration as number) / (i.estimated_duration as number),
+          0
+        ) / itemsWithBothDurations.length;
+      planningAccuracy = Math.max(0, Math.min(1, 1 - Math.abs(1 - avgRatio)));
+    }
+
+    // Compute normalized score (0-1)
+    const normalized = computeAtlasDomainScore(avgFlowProbability, taskCompletionRate, planningAccuracy);
+
+    // Determine trend
+    let trend: ScoreTrend = 'stable';
+    if (taskCompletionRate > 0.6) {
+      trend = 'improving';
+    } else if (taskCompletionRate < 0.3) {
+      trend = 'declining';
+    }
+
+    // Confidence based on data availability
+    const confidence = Math.min(
+      1,
+      0.3 + 0.4 * (hasCompletionData ? 1 : 0) + 0.3 * (hasDurationData ? 1 : 0)
+    );
+
+    return {
+      module: 'atlas',
+      normalized,
+      raw: Math.round(normalized * 100),
+      label: 'Produtividade',
+      confidence,
+      trend,
+    };
+  } catch (err) {
+    log.error('Atlas domain score computation failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Register the Atlas domain provider with the scoring engine.
+ * Call this once during app initialization.
+ */
+export function registerAtlasDomainProvider(): void {
+  registerDomainProvider('atlas', computeAtlasDomainScoreProvider);
 }

@@ -71,8 +71,10 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
   useEffect(() => {
     const active = projects.filter(p => !p.archived_at);
     const archived = projects.filter(p => p.archived_at);
+    /* eslint-disable react-hooks/set-state-in-effect */
     setActiveProjects(active);
     setArchivedProjects(archived);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [projects]);
 
   /**
@@ -632,8 +634,8 @@ Campos: ${(opportunity?.form_fields || []).length} campos de aplicação.`,
         )}
       </div>
 
-      {/* Form Fields Editor Modal */}
-      <FormFieldsEditorModal
+      {/* Form Fields Editor Drawer */}
+      <FormFieldsEditorDrawer
         isOpen={isEditingFields}
         opportunityTitle={opportunity.title}
         initialFields={opportunity.form_fields}
@@ -641,8 +643,8 @@ Campos: ${(opportunity?.form_fields || []).length} campos de aplicação.`,
         onClose={() => setIsEditingFields(false)}
       />
 
-      {/* PDF Preview Modal */}
-      <PdfPreviewModal
+      {/* PDF Preview Drawer */}
+      <PdfPreviewDrawer
         isOpen={isPdfModalOpen}
         onClose={() => setIsPdfModalOpen(false)}
         opportunity={opportunity}

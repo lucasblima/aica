@@ -116,6 +116,38 @@ interface EmotionTrendChartProps {
 export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
   const uid = useId().replace(/:/g, '')
 
+  const width = 400
+  const height = 160
+  const padding = { top: 20, right: 20, bottom: 28, left: 20 }
+  const chartW = width - padding.left - padding.right
+  const chartH = height - padding.top - padding.bottom
+
+  const minVal = 0.5
+  const maxVal = 4.5
+  const yRange = maxVal - minVal
+
+  const points: Point[] = useMemo(
+    () =>
+      data.map((d, i) => {
+        const x = padding.left + (i / Math.max(data.length - 1, 1)) * chartW
+        const val = TREND_VALUES[d.trend] ?? 2
+        const y = padding.top + chartH - ((val - minVal) / yRange) * chartH
+        return { x, y, trend: d.trend, week: d.weekNumber, emotions: d.dominantEmotions }
+      }),
+    [data, chartW, chartH]
+  )
+
+  // Estimate path length for stroke-dasharray animation
+  const estimatedLength = useMemo(() => {
+    let len = 0
+    for (let i = 1; i < points.length; i++) {
+      const dx = points[i].x - points[i - 1].x
+      const dy = points[i].y - points[i - 1].y
+      len += Math.sqrt(dx * dx + dy * dy)
+    }
+    return Math.ceil(len * 1.4) // extra for curves
+  }, [points])
+
   if (data.length < 2) {
     return (
       <div className="ceramic-tile p-4">
@@ -148,27 +180,6 @@ export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
     )
   }
 
-  const width = 400
-  const height = 160
-  const padding = { top: 20, right: 20, bottom: 28, left: 20 }
-  const chartW = width - padding.left - padding.right
-  const chartH = height - padding.top - padding.bottom
-
-  const minVal = 0.5
-  const maxVal = 4.5
-  const yRange = maxVal - minVal
-
-  const points: Point[] = useMemo(
-    () =>
-      data.map((d, i) => {
-        const x = padding.left + (i / Math.max(data.length - 1, 1)) * chartW
-        const val = TREND_VALUES[d.trend] ?? 2
-        const y = padding.top + chartH - ((val - minVal) / yRange) * chartH
-        return { x, y, trend: d.trend, week: d.weekNumber, emotions: d.dominantEmotions }
-      }),
-    [data, chartW, chartH]
-  )
-
   // Determine gradient color from the last data point's trend
   const lastTrend = points[points.length - 1].trend
   const gradientColor = TREND_GRADIENT_COLORS[lastTrend] ?? '#9ca3af'
@@ -177,17 +188,6 @@ export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
   const tension = 0.3
   const linePath = smoothPath(points, tension)
   const areaPath = smoothAreaPath(points, tension, padding.top + chartH)
-
-  // Estimate path length for stroke-dasharray animation
-  const estimatedLength = useMemo(() => {
-    let len = 0
-    for (let i = 1; i < points.length; i++) {
-      const dx = points[i].x - points[i - 1].x
-      const dy = points[i].y - points[i - 1].y
-      len += Math.sqrt(dx * dx + dy * dy)
-    }
-    return Math.ceil(len * 1.4) // extra for curves
-  }, [points])
 
   const gradId = `trendGrad-${uid}`
   const areaGradId = `areaGrad-${uid}`

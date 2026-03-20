@@ -254,6 +254,82 @@ export function computeGrantsDomainScore(
 }
 
 // ============================================================================
+// DOMAIN PROVIDER (for Life Score)
+// ============================================================================
+
+/**
+ * Compute Grants domain score for the scoring engine.
+ * Fetches researcher profile and active projects to build a composite score.
+ */
+async function computeGrantsDomainScoreProvider(): Promise<import('@/services/scoring/types').DomainScore | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Fetch researcher profile
+    const { data: profile } = await supabase
+      .from('researcher_profiles')
+      .select('researcher_strength_score')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // Fetch active projects
+    const { data: projects } = await supabase
+      .from('grant_projects')
+      .select('id, status, trl_level')
+      .eq('user_id', user.id)
+      .eq('status', 'active');
+
+    if ((!profile || !profile.researcher_strength_score) && (!projects || projects.length === 0)) {
+      return null;
+    }
+
+    const rss = profile?.researcher_strength_score || 0;
+    const activeProjectTRL = projects && projects.length > 0
+      ? Math.max(...projects.map(p => p.trl_level || 1))
+      : 1;
+
+    // Fetch best match probability from opportunities
+    const { data: opportunities } = await supabase
+      .from('grant_opportunities')
+      .select('match_score')
+      .in('project_id', (projects || []).map(p => p.id))
+      .order('match_score', { ascending: false })
+      .limit(1);
+
+    const bestMatchProbability = opportunities && opportunities.length > 0
+      ? (opportunities[0].match_score || 0) / 100
+      : 0;
+
+    const normalized = computeGrantsDomainScore(rss, activeProjectTRL, bestMatchProbability);
+
+    return {
+      module: 'grants' as const,
+      normalized: Math.max(0, Math.min(1, normalized)),
+      raw: Math.round(normalized * 100),
+      label: 'Captacao',
+      confidence: Math.min(1, 0.3 + (rss > 0 ? 0.4 : 0) + ((projects?.length || 0) > 0 ? 0.3 : 0)),
+      trend: 'stable' as const,
+    };
+  } catch (err) {
+    log.warn('Grants domain score computation failed (non-critical):', err);
+    return null;
+  }
+}
+
+/**
+ * Register the Grants domain provider with the scoring engine.
+ * Call this once during app initialization.
+ */
+export function registerGrantsDomainProvider(): void {
+  import('@/services/scoring/scoringEngine').then(({ registerDomainProvider }) => {
+    registerDomainProvider('grants', computeGrantsDomainScoreProvider);
+  }).catch((err) => {
+    log.warn('Failed to register grants provider:', err);
+  });
+}
+
+// ============================================================================
 // SUFFICIENCY HELPER (re-exported for convenience)
 // ============================================================================
 

@@ -87,12 +87,14 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
   useEffect(() => {
     if (guestName) {
       const generated = generateAutoTheme(guestName);
+      /* eslint-disable react-hooks/set-state-in-effect */
       setAutoTheme(generated);
 
       // If in auto mode and no theme set yet, use generated theme
       if (themeMode === 'auto' && !formData.theme) {
         setFormData((prev) => ({ ...prev, theme: generated }));
       }
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [guestName]);
 

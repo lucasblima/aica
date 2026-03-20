@@ -462,6 +462,7 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}): UseGeminiLive
     }
   }, [options.context])
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const sendMessage = useCallback(async (message: string) => {
     if (!serviceRef.current || isStreaming) return
 

@@ -28,6 +28,7 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   LockClosedIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/solid'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -166,6 +167,16 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
           </p>
         )}
       </div>
+
+      {/* Fallback indicator — subtle notice when AI summary was unavailable */}
+      {summary.summary_data.source === 'fallback' && (
+        <div className="mx-6 mt-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-ceramic-warning/10 border border-ceramic-warning/20">
+          <InformationCircleIcon className="h-4 w-4 text-ceramic-warning shrink-0" />
+          <p className="text-xs text-ceramic-text-secondary">
+            Resumo simplificado — a análise por IA estará disponível em breve.
+          </p>
+        </div>
+      )}
 
       {/* Content area */}
       <div className="p-6 space-y-6">

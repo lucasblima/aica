@@ -7,13 +7,26 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, Square, Loader2, RotateCcw } from 'lucide-react'
+import { MessageCircle, X, Send, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2, PenLine, Brain, ArrowUpRight, Mic, Square, Loader2, RotateCcw, Reply, CornerDownRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { useChatSession } from '@/hooks/useChatSession'
-import type { DisplayMessage } from '@/hooks/useChatSession'
+import { useChatSessionV2 } from '@/hooks/useChatSessionV2'
+import type { DisplayMessage, UseChatSessionReturn } from '@/hooks/useChatSession'
+
+/**
+ * Feature flag: localStorage.setItem('aica_chat_v2', 'true') to enable AI SDK chat.
+ * Read once at module load — stable for hooks.
+ */
+const CHAT_V2_ENABLED = typeof window !== 'undefined' && localStorage.getItem('aica_chat_v2') === 'true'
+
+/** Route to v1 or v2 chat hook. Falls back to v1 on any v2 crash. */
+function useChatHook(): UseChatSessionReturn {
+  if (CHAT_V2_ENABLED) return useChatSessionV2() // eslint-disable-line react-hooks/rules-of-hooks
+  return useChatSession() // eslint-disable-line react-hooks/rules-of-hooks
+}
 import type { InterviewMeta } from '@/services/chatStreamService'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import { formatAgentName } from '@/lib/agents/formatAgentName'
@@ -55,15 +68,18 @@ interface AicaChatFABProps {
   bottomOffset?: number
   /** When true, hides the FAB circle button but keeps the drawer functional (openable via CustomEvent). Used on /vida where VidaChatHero replaces the FAB button. */
   hideButton?: boolean
+  /** When true, chat starts open+expanded and cannot be minimized. Used on /chat full-page route. */
+  fullPage?: boolean
 }
 
 export function AicaChatFAB({
   position = 'bottom-right',
   bottomOffset = 80,
   hideButton = false,
+  fullPage = false,
 }: AicaChatFABProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isOpen, setIsOpen] = useState(fullPage)
+  const [isExpanded, setIsExpanded] = useState(fullPage)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -74,7 +90,7 @@ export function AicaChatFAB({
     sessions,
     messages,
     isLoading,
-    isStreaming,
+    isStreaming: _isStreaming,
     streamedText,
     error,
     limitReached,
@@ -90,7 +106,9 @@ export function AicaChatFAB({
     activeAgent,
     lastFailedMessage,
     connectionStatus,
-  } = useChatSession()
+    replyTo,
+    setReplyTo,
+  } = useChatHook()
 
   const activeModule = activeAgent
     ? activeAgent.replace(/_agent$/, '').replace('aica_', '')
@@ -98,19 +116,37 @@ export function AicaChatFAB({
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
 
-  const { isListening, isTranscribing, isSupported, audioLevel, recordSeconds, toggle: toggleMic } = useVoiceRecorder({
+  const preVoiceInputRef = useRef('')
+
+  const { isListening, isTranscribing, isSupported, audioLevel, recordSeconds, interimText, mode: voiceMode, toggle: rawToggleMic } = useVoiceRecorder({
     onResult: (transcript) => {
-      setInput(prev => prev ? `${prev} ${transcript}` : transcript)
+      // Append transcription to whatever was typed before voice started
+      const prefix = preVoiceInputRef.current
+      setInput(prefix ? `${prefix} ${transcript}` : transcript)
+      preVoiceInputRef.current = ''
+    },
+    onInterim: (text) => {
+      // Show pre-voice text + interim transcription
+      const prefix = preVoiceInputRef.current
+      setInput(prefix ? `${prefix} ${text}` : text)
     },
   })
+
+  const toggleMic = useCallback(() => {
+    if (!isListening) {
+      // Capture current input before voice starts
+      preVoiceInputRef.current = input.trim()
+    }
+    rawToggleMic()
+  }, [isListening, input, rawToggleMic])
 
   const waveformBars = useMemo(() => {
     const bars = 6
     return Array.from({ length: bars }, (_, i) => {
-      const variance = Math.sin((Date.now() / 200) + i) * 0.3 + 0.7
+      const variance = Math.sin((recordSeconds * 5) + i) * 0.3 + 0.7
       return Math.max(3, (audioLevel / 100) * 16 * variance)
     })
-  }, [audioLevel])
+  }, [audioLevel, recordSeconds])
 
   const formatRecordTime = (secs: number) => {
     const m = Math.floor(secs / 60)
@@ -165,21 +201,21 @@ export function AicaChatFAB({
       if (e.key === 'Escape' && isOpen) {
         if (showSessions) {
           setShowSessions(false)
-        } else if (isExpanded) {
+        } else if (isExpanded && !fullPage) {
           setIsExpanded(false)
-        } else {
+        } else if (!fullPage) {
           setIsOpen(false)
         }
       }
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, isExpanded, showSessions, setShowSessions])
+  }, [isOpen, isExpanded, showSessions, setShowSessions, fullPage])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+  }, [messages.length, isLoading, streamedText])
 
   // Update consciousness streak once per chat session after first AI response
   useEffect(() => {
@@ -215,6 +251,7 @@ export function AicaChatFAB({
   }, [isOpen, showSessions])
 
   const handleClose = () => {
+    if (fullPage) return // Cannot close in full-page mode
     setIsExpanded(false)
     setIsOpen(false)
   }
@@ -224,7 +261,7 @@ export function AicaChatFAB({
     if (!trimmed || isLoading) return
 
     setInput('')
-    await sendMessage(trimmed)
+    await sendMessage(trimmed, undefined, replyTo?.id)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -347,7 +384,7 @@ export function AicaChatFAB({
               </button>
               <button
                 className="aica-fab-header__action"
-                onClick={() => setIsExpanded(prev => !prev)}
+                onClick={() => !fullPage && setIsExpanded(prev => !prev)}
                 aria-label={isExpanded ? 'Reduzir' : 'Expandir'}
                 title={isExpanded ? 'Reduzir' : 'Expandir'}
               >
@@ -470,52 +507,92 @@ export function AicaChatFAB({
                   </div>
                 )}
 
-                {messages.map((msg, idx) => (
-                  <div key={msg.id}>
-                    <div
-                      className={cn(
-                        'aica-fab-message',
-                        msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+                {messages.map((msg, idx) => {
+                  // Find parent message for thread indicator
+                  const parentMsg = msg.parentMessageId
+                    ? messages.find(m => m.id === msg.parentMessageId)
+                    : null
+
+                  return (
+                    <div key={msg.id}>
+                      {/* Thread indicator: show quoted parent message */}
+                      {parentMsg && (
+                        <div className="flex items-start gap-1 px-3 pt-1">
+                          <CornerDownRight size={12} className="text-ceramic-text-secondary mt-0.5 shrink-0" />
+                          <div className="text-[10px] text-ceramic-text-secondary bg-ceramic-cool/50 rounded px-2 py-0.5 truncate max-w-[80%]">
+                            {parentMsg.content.substring(0, 100)}{parentMsg.content.length > 100 ? '...' : ''}
+                          </div>
+                        </div>
                       )}
-                    >
-                      {msg.role === 'assistant' ? (
-                        <div
-                          className="aica-fab-message__content"
-                          dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
-                        />
-                      ) : (
-                        <p>{msg.content}</p>
-                      )}
-                    </div>
 
-                    {/* Action buttons on last assistant message */}
-                    {isLastAssistantMessage(msg, idx) && msg.actions && msg.actions.length > 0 && (
-                      <ChatActionButtons
-                        actions={msg.actions}
-                        onExecute={handleExecuteAction}
-                      />
-                    )}
-
-                    {/* Agent badge for non-coordinator assistant messages */}
-                    {msg.role === 'assistant' && msg.agent && msg.agent !== 'aica_coordinator' && (
-                      <div className="aica-fab-agent-badge">
-                        {formatAgentName(msg.agent)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {isLoading && (
-                  isStreaming && streamedText ? (
-                    <div className="aica-fab-message aica-fab-message--assistant">
                       <div
-                        className="aica-fab-message__content"
-                        dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(streamedText) }}
-                      />
+                        className={cn(
+                          'aica-fab-message group',
+                          msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+                        )}
+                      >
+                        {msg.role === 'assistant' ? (
+                          msg.isStreaming ? (
+                            streamedText ? (
+                              <div className="aica-fab-message__content">
+                                <span dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(streamedText) }} />
+                                <span className="typing-cursor" aria-hidden="true">▍</span>
+                              </div>
+                            ) : (
+                              <div className="aica-fab-thinking">
+                                <span className="aica-fab-thinking__label">Pensando...</span>
+                                <span className="typing-dots" aria-hidden="true">
+                                  <span /><span /><span />
+                                </span>
+                              </div>
+                            )
+                          ) : (
+                            <div
+                              className="aica-fab-message__content"
+                              dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
+                            />
+                          )
+                        ) : (
+                          <p>{msg.content}</p>
+                        )}
+
+                        {/* Reply button — appears on hover for assistant messages */}
+                        {msg.role === 'assistant' && !isLoading && (
+                          <button
+                            className="absolute -bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-ceramic-base border border-ceramic-border rounded-full p-1 shadow-sm hover:bg-ceramic-cool"
+                            onClick={() => {
+                              setReplyTo(msg)
+                              inputRef.current?.focus()
+                            }}
+                            aria-label="Responder"
+                            title="Responder a esta mensagem"
+                          >
+                            <Reply size={12} className="text-ceramic-text-secondary" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Action buttons on last assistant message */}
+                      {isLastAssistantMessage(msg, idx) && msg.actions && msg.actions.length > 0 && (
+                        <ChatActionButtons
+                          actions={msg.actions}
+                          onExecute={handleExecuteAction}
+                        />
+                      )}
+
+                      {/* Agent badge for non-coordinator assistant messages */}
+                      {msg.role === 'assistant' && msg.agent && msg.agent !== 'aica_coordinator' && (
+                        <div className="aica-fab-agent-badge">
+                          {formatAgentName(msg.agent)}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <AicaThinkingIndicator />
                   )
+                })}
+
+                {/* Thinking indicator only when loading and no streaming placeholder exists yet */}
+                {isLoading && !messages.some(m => m.isStreaming) && (
+                  <AicaThinkingIndicator />
                 )}
 
                 {error && (
@@ -580,24 +657,50 @@ export function AicaChatFAB({
               {/* Recording / Transcribing strip */}
               {isListening && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-ceramic-error/5 border-t border-ceramic-error/20">
-                  <div className="flex items-center gap-0.5 h-4">
-                    {waveformBars.map((h, i) => (
-                      <div
-                        key={i}
-                        className="w-0.5 bg-ceramic-error rounded-full transition-all duration-75"
-                        style={{ height: `${h}px` }}
-                      />
-                    ))}
-                  </div>
+                  {voiceMode === 'media-recorder' && (
+                    <div className="flex items-center gap-0.5 h-4">
+                      {waveformBars.map((h, i) => (
+                        <div
+                          key={i}
+                          className="w-0.5 bg-ceramic-error rounded-full transition-all duration-75"
+                          style={{ height: `${h}px` }}
+                        />
+                      ))}
+                    </div>
+                  )}
                   <span className="text-[10px] font-mono text-ceramic-error">{formatRecordTime(recordSeconds)}</span>
                   <div className="w-1.5 h-1.5 bg-ceramic-error rounded-full animate-pulse" />
-                  <span className="text-[10px] text-ceramic-text-secondary">Gravando...</span>
+                  <span className="text-[10px] text-ceramic-text-secondary">
+                    {voiceMode === 'speech-api' ? 'Ouvindo...' : 'Gravando...'}
+                  </span>
+                  {voiceMode === 'speech-api' && interimText && (
+                    <span className="text-[10px] text-ceramic-text-primary truncate flex-1">
+                      {interimText.substring(interimText.length - 40)}
+                    </span>
+                  )}
                 </div>
               )}
               {isTranscribing && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-t border-amber-200">
                   <Loader2 className="w-3 h-3 text-amber-600 animate-spin" />
                   <span className="text-[10px] text-amber-700">Transcrevendo...</span>
+                </div>
+              )}
+
+              {/* Reply preview */}
+              {replyTo && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50/50 border-t border-amber-200/50">
+                  <Reply size={12} className="text-amber-600 shrink-0" />
+                  <span className="text-[11px] text-amber-700 truncate flex-1">
+                    {replyTo.content.substring(0, 80)}{replyTo.content.length > 80 ? '...' : ''}
+                  </span>
+                  <button
+                    onClick={() => setReplyTo(null)}
+                    className="text-ceramic-text-secondary hover:text-ceramic-text-primary"
+                    aria-label="Cancelar resposta"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               )}
 

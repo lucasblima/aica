@@ -11,7 +11,7 @@ const CATEGORY_HINTS: Record<InterviewCategory, string> = {
   biografia: 'Conhecer sua historia ajuda a personalizar recomendacoes e entender seu contexto de vida.',
   anamnese: 'Reconhecer padrões de saúde e bem-estar ajuda a identificar o que impacta sua energia e humor.',
   censo: 'Entender seu contexto socioeconomico permite sugestoes mais relevantes para sua realidade.',
-  preferencias: 'Saber como você aprende e trabalha permite adaptar a experiência ao seu estilo.',
+  'preferências': 'Saber como você aprende e trabalha permite adaptar a experiência ao seu estilo.',
   conexoes: 'Mapear seus relacionamentos ajuda a fortalecer sua rede de apoio e conexoes importantes.',
   objetivos: 'Refletir sobre metas mantem o foco no que importa e ajuda a acompanhar seu progresso.',
 }

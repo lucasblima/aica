@@ -16,7 +16,9 @@ export function EraForgeAccessGuard({ children }: EraForgeAccessGuardProps) {
       const timer = setTimeout(() => setShowLoading(true), 300);
       return () => clearTimeout(timer);
     }
+    /* eslint-disable react-hooks/set-state-in-effect */
     setShowLoading(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [loading]);
 
   if (loading) {

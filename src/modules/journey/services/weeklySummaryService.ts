@@ -308,7 +308,9 @@ async function generateSummaryWithAI(moments: Moment[]): Promise<WeeklySummaryDa
       log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
-    return response.result as WeeklySummaryData
+    const summaryData = response.result as WeeklySummaryData
+    summaryData.source = 'ai'
+    return summaryData
   } catch (error) {
     log.error('Error generating summary with AI:', error)
     // Return fallback summary
@@ -348,7 +350,7 @@ function generateFallbackSummary(moments: Moment[]): WeeklySummaryData {
   const posRatio = positive / total
   const negRatio = negative / total
 
-  let trend: import('../types/weeklySummary').EmotionalTrend = 'stable'
+  let trend: import('../types/weeklySummary').WeeklyEmotionalTrend = 'stable'
   let trendJustification = 'Seus momentos apresentaram sentimento predominantemente neutro ou equilibrado esta semana.'
 
   if (posRatio > 0.6) {
@@ -372,6 +374,7 @@ function generateFallbackSummary(moments: Moment[]): WeeklySummaryData {
     keyMoments,
     insights: ['Você registrou ' + moments.length + ' momentos esta semana.'],
     suggestedFocus: 'Continue registrando seus momentos para insights mais profundos.',
+    source: 'fallback',
   }
 }
 
@@ -389,5 +392,6 @@ function generateEmptyWeekSummary(): WeeklySummaryData {
       'Comece a registrar suas experiências para receber insights personalizados.',
     ],
     suggestedFocus: 'Capture pelo menos um momento por dia para construir autoconsciência.',
+    source: 'fallback',
   }
 }

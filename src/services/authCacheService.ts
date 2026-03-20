@@ -16,7 +16,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
-import type { Session, User } from '@supabase/supabase-js'
+import type { Session, User } from '@/services/supabaseClient'
 
 const CACHE_TTL_MS = 2000
 

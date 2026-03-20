@@ -19,10 +19,6 @@ export const ShareTargetPage: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    handleShareTarget();
-  }, []);
-
   async function handleShareTarget() {
     try {
       // The Share Target API sends a POST with multipart/form-data
@@ -57,6 +53,11 @@ export const ShareTargetPage: React.FC = () => {
       setErrorMsg(err instanceof Error ? err.message : 'Erro ao processar arquivo compartilhado');
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    handleShareTarget();
+  }, []);
 
   if (status === 'error') {
     return (

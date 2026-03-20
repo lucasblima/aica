@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@/services/supabaseClient';
 import {
   DndContext,
   DragOverlay,
@@ -116,13 +116,6 @@ export default function MicrocycleEditorView() {
     };
   });
 
-  // Load data
-  useEffect(() => {
-    if (microcycleId) {
-      loadMicrocycle();
-    }
-  }, [microcycleId]);
-
   // Real-time subscription for slot updates
   useEffect(() => {
     if (!microcycleId) return;
@@ -228,6 +221,14 @@ export default function MicrocycleEditorView() {
 
     setLoading(false);
   };
+
+  // Load data
+  useEffect(() => {
+    if (microcycleId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadMicrocycle();
+    }
+  }, [microcycleId]);
 
   const handleSave = async () => {
     if (!microcycle) return;

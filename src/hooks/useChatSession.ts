@@ -12,8 +12,9 @@ import { supabase } from '@/services/supabaseClient'
 import { getCachedSession } from '@/services/authCacheService'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 import { getUserAIContext } from '@/services/userAIContextService'
-import { streamChat, fetchChatNonStreaming, type InterviewMeta } from '@/services/chatStreamService'
+import { streamChat, fetchChatNonStreaming, fetchReactChat, type InterviewMeta } from '@/services/chatStreamService'
 import type { ChatAction } from '@/types/chatActions'
+import { Sentry } from '@/lib/sentry'
 
 export interface DisplayMessage {
   id: string
@@ -23,6 +24,8 @@ export interface DisplayMessage {
   agent?: string
   actions?: ChatAction[]
   sources?: Array<{ title: string; url: string }>
+  isStreaming?: boolean
+  parentMessageId?: string | null
 }
 
 export interface UseChatSessionReturn {
@@ -36,7 +39,7 @@ export interface UseChatSessionReturn {
   limitReached: boolean
   limitInfo: InteractionLimitResult | null
   suggestedQuestions: string[]
-  sendMessage: (text: string, interviewMeta?: InterviewMeta) => Promise<void>
+  sendMessage: (text: string, interviewMeta?: InterviewMeta, parentMessageId?: string) => Promise<void>
   retryLastMessage: () => Promise<void>
   createNewSession: () => void
   switchSession: (sessionId: string) => Promise<void>
@@ -46,6 +49,8 @@ export interface UseChatSessionReturn {
   activeAgent: string | null
   lastFailedMessage: string | null
   connectionStatus: 'connected' | 'degraded' | 'offline'
+  replyTo: DisplayMessage | null
+  setReplyTo: (msg: DisplayMessage | null) => void
 }
 
 function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
@@ -54,6 +59,7 @@ function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
     role: msg.direction === 'inbound' ? 'user' : 'assistant',
     content: msg.content,
     created_at: msg.created_at,
+    parentMessageId: msg.parent_message_id,
   }
 }
 
@@ -72,7 +78,10 @@ export function useChatSession(): UseChatSessionReturn {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'degraded' | 'offline'>('connected')
+  const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null)
   const initRef = useRef(false)
+  const streamedTextRef = useRef('')
+  const streamingMsgIdRef = useRef<string | null>(null)
 
   // Load sessions on mount
   useEffect(() => {
@@ -80,6 +89,7 @@ export function useChatSession(): UseChatSessionReturn {
     initRef.current = true
 
     loadSessions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadSessions = useCallback(async () => {
@@ -99,6 +109,42 @@ export function useChatSession(): UseChatSessionReturn {
     }
   }, [])
 
+  // Morning briefing: show once per day between 6-12h BRT
+  const fetchMorningBriefing = useCallback(async () => {
+    const now = new Date()
+    const brtHour = parseInt(now.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' }))
+    if (brtHour < 6 || brtHour >= 12) return // Only 6-12h BRT
+
+    const todayKey = `aica_briefing_${now.toISOString().split('T')[0]}`
+    if (localStorage.getItem(todayKey)) return // Already shown today
+
+    try {
+      const resp = await supabase.functions.invoke('gemini-chat', {
+        body: { action: 'generate_morning_briefing', payload: {} },
+      })
+      if (resp.data?.success && resp.data?.briefing) {
+        localStorage.setItem(todayKey, '1')
+        const briefingMsg: DisplayMessage = {
+          id: `briefing-${Date.now()}`,
+          role: 'assistant',
+          content: resp.data.briefing,
+          created_at: new Date().toISOString(),
+          agent: 'aica_coordinator',
+        }
+        setMessages(prev => prev.length === 0 ? [briefingMsg] : prev)
+      }
+    } catch (err) {
+      console.warn('[useChatSession] Morning briefing failed:', err)
+    }
+  }, [])
+
+  // Trigger briefing when hook loads with no messages
+  useEffect(() => {
+    if (messages.length === 0 && !session) {
+      fetchMorningBriefing()
+    }
+  }, [messages.length, session, fetchMorningBriefing])
+
   const getUserId = useCallback(async (): Promise<string> => {
     const { session: authSession } = await getCachedSession()
     if (!authSession?.user?.id) throw new Error('Não autenticado')
@@ -115,6 +161,7 @@ export function useChatSession(): UseChatSessionReturn {
     history: Array<{ role: string; content: string }>,
     context?: Record<string, unknown>,
     interviewMeta?: InterviewMeta,
+    parentMessageId?: string,
   ): Promise<{
     text: string
     agent: string
@@ -124,6 +171,7 @@ export function useChatSession(): UseChatSessionReturn {
   }> => {
     setIsStreaming(true)
     setStreamedText('')
+    streamedTextRef.current = ''
 
     let fullText = ''
     let agent = 'aica_coordinator'
@@ -131,10 +179,11 @@ export function useChatSession(): UseChatSessionReturn {
     let usage: { input: number; output: number } | undefined
     let suggestedQs: string[] = []
 
-    for await (const event of streamChat(sessionId, message, history, context, interviewMeta)) {
+    for await (const event of streamChat(sessionId, message, history, context, interviewMeta, parentMessageId)) {
       if (event.type === 'token') {
         fullText += event.content
         setStreamedText(fullText)
+        streamedTextRef.current = fullText
       } else if (event.type === 'done') {
         fullText = event.fullText || fullText
         agent = event.agent || 'aica_coordinator'
@@ -156,7 +205,7 @@ export function useChatSession(): UseChatSessionReturn {
     return { text: fullText, agent, actions, usage, suggestedQuestions: suggestedQs }
   }, [])
 
-  const sendMessage = useCallback(async (text: string, interviewMeta?: InterviewMeta) => {
+  const sendMessage = useCallback(async (text: string, interviewMeta?: InterviewMeta, parentMessageId?: string) => {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
 
@@ -164,6 +213,7 @@ export function useChatSession(): UseChatSessionReturn {
     setLimitReached(false)
     setSuggestedQuestions([])
     setIsLoading(true)
+    const sendStartMs = Date.now()
 
     try {
       // Check interaction limit before calling AI (fail-open)
@@ -190,12 +240,18 @@ export function useChatSession(): UseChatSessionReturn {
         setSessions(prev => [currentSession!, ...prev])
       }
 
+      // Resolve reply target
+      const replyTargetId = parentMessageId || replyTo?.id || undefined
+      // Clear replyTo after capturing
+      if (replyTo) setReplyTo(null)
+
       // Optimistic user message
       const tempUserMsg: DisplayMessage = {
         id: `temp-${Date.now()}`,
         role: 'user',
         content: trimmed,
         created_at: new Date().toISOString(),
+        parentMessageId: replyTargetId,
       }
       setMessages(prev => [...prev, tempUserMsg])
 
@@ -205,6 +261,7 @@ export function useChatSession(): UseChatSessionReturn {
         userId,
         content: trimmed,
         direction: 'inbound',
+        parentMessageId: replyTargetId,
       })
 
       // Replace temp with saved
@@ -236,7 +293,17 @@ export function useChatSession(): UseChatSessionReturn {
       }
 
       // Build history for context (last 10 messages)
-      const history = [...messages, { role: 'user' as const, content: trimmed }]
+      // If replying to a specific message, prepend context about the reply target
+      let historyMessages = [...messages, { role: 'user' as const, content: trimmed, id: '', created_at: '' }]
+      if (replyTargetId) {
+        const parentMsg = messages.find(m => m.id === replyTargetId)
+        if (parentMsg) {
+          // Insert a context note so the AI knows this is a reply
+          const replyContext = `[Respondendo à mensagem: "${parentMsg.content.substring(0, 200)}"]`
+          historyMessages = [...messages, { role: 'user' as const, content: `${replyContext}\n\n${trimmed}`, id: '', created_at: '' }]
+        }
+      }
+      const history = historyMessages
         .slice(-10)
         .map(m => ({ role: m.role, content: m.content }))
 
@@ -247,6 +314,17 @@ export function useChatSession(): UseChatSessionReturn {
       let tokensOutput: number | undefined
       let modelUsed = 'gemini-chat-stream'
 
+      // Insert streaming placeholder — single render path, no separate bubble
+      const streamingId = `streaming-${Date.now()}`
+      streamingMsgIdRef.current = streamingId
+      setMessages(prev => [...prev, {
+        id: streamingId,
+        role: 'assistant' as const,
+        content: '',
+        created_at: new Date().toISOString(),
+        isStreaming: true,
+      }])
+
       // Strategy: try streaming first, fallback to non-streaming gemini-chat
       try {
         const streamResult = await tryStreaming(
@@ -255,6 +333,7 @@ export function useChatSession(): UseChatSessionReturn {
           history,
           userContext,
           interviewMeta,
+          replyTargetId,
         )
         finalText = streamResult.text
         respondingAgent = streamResult.agent
@@ -264,33 +343,92 @@ export function useChatSession(): UseChatSessionReturn {
         setSuggestedQuestions(streamResult.suggestedQuestions || [])
         setConnectionStatus('connected')
       } catch (streamErr) {
-        // Streaming failed — fallback to non-streaming chat_aica
-        console.warn('[useChatSession] Streaming failed, falling back to non-streaming:', streamErr)
+        // Streaming failed — check if we got partial content before falling back
+        console.warn('[useChatSession] Streaming failed:', streamErr)
         setIsStreaming(false)
-        setStreamedText('')
-        modelUsed = 'gemini-chat-fallback'
 
-        const fallbackResult = await fetchChatNonStreaming(
-          currentSession.id,
-          trimmed,
-          history,
-          userContext,
-        )
+        const partialContent = streamedTextRef.current
+        if (partialContent && partialContent.length > 50) {
+          // Streaming delivered substantial content — use it, skip fallback
+          // eslint-disable-next-line no-console
+          console.info('[useChatSession] Using partial streamed content (%d chars)', partialContent.length)
+          finalText = partialContent
+          respondingAgent = 'aica_coordinator'
+          responseActions = []
+          modelUsed = 'gemini-chat-stream-partial'
+          setStreamedText('')
+          streamedTextRef.current = ''
+          setSuggestedQuestions([])
+          setConnectionStatus('connected')
+        } else {
+          // No substantial content — run fallback chain
+          setStreamedText('')
+          streamedTextRef.current = ''
 
-        finalText = fallbackResult.text
-        respondingAgent = fallbackResult.agent
-        responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
-        tokensInput = fallbackResult.usage?.input
-        tokensOutput = fallbackResult.usage?.output
-        setSuggestedQuestions([])
-        setConnectionStatus('degraded')
+          try {
+            // Try ReACT agent first — provides context-enriched responses
+            modelUsed = 'react-agent'
+            const reactResult = await fetchReactChat(
+              currentSession.id,
+              trimmed,
+              history,
+              userContext,
+            )
+            finalText = reactResult.text
+            respondingAgent = reactResult.agent
+            responseActions = []
+            tokensInput = reactResult.usage?.input
+            tokensOutput = reactResult.usage?.output
+            setSuggestedQuestions([])
+            setConnectionStatus('connected')
+          } catch (reactErr) {
+            // ReACT also failed — final fallback to basic non-streaming chat
+            console.warn('[useChatSession] ReACT failed, falling back to basic chat:', reactErr)
+            modelUsed = 'gemini-chat-fallback'
+
+            const fallbackResult = await fetchChatNonStreaming(
+              currentSession.id,
+              trimmed,
+              history,
+              userContext,
+            )
+            finalText = fallbackResult.text
+            respondingAgent = fallbackResult.agent
+            responseActions = Array.isArray(fallbackResult.actions) ? fallbackResult.actions as ChatAction[] : []
+            tokensInput = fallbackResult.usage?.input
+            tokensOutput = fallbackResult.usage?.output
+            setSuggestedQuestions([])
+            setConnectionStatus('degraded')
+          }
+        }
       }
 
-      // Success — clear streaming state, save to DB, append final message
+      // Replace streaming placeholder with final message (in-place, never append)
+      const tempAssistantId = `temp-assistant-${Date.now()}`
+      const streamingIdForReplace = streamingMsgIdRef.current
+      setMessages(prev => prev.map(m =>
+        m.id === streamingIdForReplace
+          ? {
+              id: tempAssistantId,
+              role: 'assistant' as const,
+              content: finalText,
+              created_at: m.created_at,
+              agent: respondingAgent,
+              actions: responseActions,
+              isStreaming: false,
+            }
+          : m
+      ))
+      streamingMsgIdRef.current = null
+      setActiveAgent(respondingAgent)
+
+      // Clear streaming state
       setIsStreaming(false)
       setStreamedText('')
+      streamedTextRef.current = ''
 
-      const savedAssistantMsg = await chatService.saveMessage({
+      // Save to DB (fire-and-forget for display, but await for consistency)
+      chatService.saveMessage({
         sessionId: currentSession.id,
         userId,
         content: finalText,
@@ -298,14 +436,16 @@ export function useChatSession(): UseChatSessionReturn {
         modelUsed,
         tokensInput,
         tokensOutput,
+        parentMessageId: replyTargetId,
+      }).then(savedMsg => {
+        // Replace temp with DB-saved version (gets real ID)
+        setMessages(prev => prev.map(m =>
+          m.id === tempAssistantId ? { ...chatMsgToDisplay(savedMsg), agent: respondingAgent, actions: responseActions } : m
+        ))
+      }).catch(err => {
+        console.error('[useChatSession] Failed to save assistant message:', err)
+        // Message stays visible with temp ID — user doesn't lose the response
       })
-
-      setMessages(prev => [...prev, {
-        ...chatMsgToDisplay(savedAssistantMsg),
-        agent: respondingAgent,
-        actions: responseActions,
-      }])
-      setActiveAgent(respondingAgent)
 
       // Generate AI title for new sessions (fire-and-forget)
       if (currentSession && messages.length <= 1) {
@@ -327,12 +467,36 @@ export function useChatSession(): UseChatSessionReturn {
         }).catch(err => console.warn('[useChatSession] Title generation failed:', err))
       }
 
+      // Sentry breadcrumb: success
+      Sentry.addBreadcrumb({
+        category: 'chat',
+        message: 'message_sent',
+        level: 'info',
+        data: { modelUsed, latencyMs: Date.now() - sendStartMs, success: true },
+      })
+
       // Clear error and failed message on success
       setError(null)
       setLastFailedMessage(null)
     } catch (err) {
       console.error('[useChatSession] sendMessage failed:', err)
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
+
+      // Remove streaming placeholder on total failure
+      if (streamingMsgIdRef.current) {
+        const failedId = streamingMsgIdRef.current
+        setMessages(prev => prev.filter(m => m.id !== failedId))
+        streamingMsgIdRef.current = null
+      }
+
+      // Sentry breadcrumb: failure
+      Sentry.addBreadcrumb({
+        category: 'chat',
+        message: 'message_failed',
+        level: 'error',
+        data: { latencyMs: Date.now() - sendStartMs, error: message },
+      })
+
       setError(message)
       setLastFailedMessage(trimmed)
       setConnectionStatus('offline')
@@ -340,8 +504,10 @@ export function useChatSession(): UseChatSessionReturn {
       setIsLoading(false)
       setIsStreaming(false)
       setStreamedText('')
+      streamedTextRef.current = ''
+      streamingMsgIdRef.current = null
     }
-  }, [session, messages, isLoading, getUserId, tryStreaming])
+  }, [session, messages, isLoading, getUserId, tryStreaming, replyTo])
 
   const retryLastMessage = useCallback(async () => {
     if (!lastFailedMessage) return
@@ -422,5 +588,7 @@ export function useChatSession(): UseChatSessionReturn {
     activeAgent,
     lastFailedMessage,
     connectionStatus,
+    replyTo,
+    setReplyTo,
   }
 }

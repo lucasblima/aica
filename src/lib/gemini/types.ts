@@ -111,6 +111,10 @@ export type GeminiAction =
   // Chat Action Buttons
   | 'execute_chat_action'
 
+  // Sentiment Analysis
+  | 'analyze_sentiment'
+  | 'generate_sentiment_insights'
+
   // Generic generation (adaptive insights, etc.)
   | 'generate'
 
@@ -136,6 +140,12 @@ export interface GeminiChatResponse {
     output: number
   }
   latencyMs?: number
+  model?: string
+  usageMetadata?: {
+    promptTokenCount?: number
+    candidatesTokenCount?: number
+    totalTokenCount?: number
+  }
 }
 
 /**
@@ -202,7 +212,8 @@ export type FileSearchCategory =
   | 'venture_documents'
   | 'academia_documents'
   | 'tribo_documents'
-  | 'onboarding_resources';
+  | 'onboarding_resources'
+  | 'journey_moments';
 
 export interface FileSearchResult {
   answer: string;

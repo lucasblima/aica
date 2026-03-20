@@ -288,50 +288,7 @@ function DistanceInput({
 // SHARED: DURATION INPUT (min + seg)
 // ============================================================================
 
-function DurationInput({
-  label,
-  minutes,
-  seconds,
-  onMinutesChange,
-  onSecondsChange,
-}: {
-  label: string;
-  minutes: number;
-  seconds: number;
-  onMinutesChange: (v: number) => void;
-  onSecondsChange: (v: number) => void;
-}) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">{label}</label>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={minutes}
-            onChange={(e) => onMinutesChange(parseInt(e.target.value) || 0)}
-            className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
-          />
-          <span className="text-xs text-ceramic-text-secondary font-medium">min</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            min="0"
-            max="59"
-            step="1"
-            value={seconds}
-            onChange={(e) => onSecondsChange(Math.min(59, parseInt(e.target.value) || 0))}
-            className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
-          />
-          <span className="text-xs text-ceramic-text-secondary font-medium">seg</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+// DurationInput removed — replaced by inline h/min/seg fields in modality-specific components
 
 // ============================================================================
 // SHARED: HOURS + MINUTES DURATION INPUT (for cycling distance mode — #427)
@@ -878,20 +835,31 @@ function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: 
 
       {/* Zone selector — optional for cycling (speed/power are the primary intensity) */}
       <div>
+        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Zonas de Esforço</label>
         <button
           type="button"
           onClick={() => {
             setShowZones(!showZones);
             if (showZones) onUpdate({ zone: undefined });
           }}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            showZones
-              ? 'bg-ceramic-accent/10 text-ceramic-accent'
-              : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
-          }`}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg ceramic-inset hover:bg-white/50 transition-all"
         >
-          <Zap className="w-3.5 h-3.5" />
-          {showZones ? 'Zonas ativas' : 'Adicionar zonas FC'}
+          <Zap className={`w-4 h-4 ${showZones ? 'text-ceramic-accent' : 'text-ceramic-text-secondary'}`} />
+          <span className={`flex-1 text-left text-xs font-medium ${showZones ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'}`}>
+            {showZones ? 'Zonas de esforço ativadas' : 'Zonas de esforço desativadas'}
+          </span>
+          {/* Toggle switch */}
+          <div
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+              showZones ? 'bg-ceramic-accent' : 'bg-ceramic-text-secondary/30'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                showZones ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </div>
         </button>
       </div>
       {showZones && (

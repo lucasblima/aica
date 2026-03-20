@@ -464,6 +464,7 @@ class PautaPersistenceService {
       controversies,
       keyFacts: saved.pauta.key_facts || [],
       technicalSheet: saved.pauta.technical_sheet || undefined,
+      stepsFailed: (saved.pauta as Record<string, any>).steps_failed || [],
     }
   }
 

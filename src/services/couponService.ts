@@ -88,7 +88,7 @@ export async function getUserRedemptions(): Promise<CouponRedemption[]> {
       log.error('getUserRedemptions error:', error);
       return [];
     }
-    return data ?? [];
+    return (data ?? []) as unknown as CouponRedemption[];
   } catch (err) {
     log.error('getUserRedemptions error:', err);
     return [];

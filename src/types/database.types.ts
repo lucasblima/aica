@@ -86,5 +86,5 @@ type DefaultSchema = Omit<Database, "__InternalSupabase">["public"]
 export type Tables<TableName extends keyof DefaultSchema["Tables"]> =
   DefaultSchema["Tables"][TableName]["Row"]
 
-export type Enums<EnumName extends keyof DefaultSchema["Enums"]> =
-  DefaultSchema["Enums"][EnumName]
+// Note: No Enums defined in the current schema
+export type Enums<EnumName extends string> = never

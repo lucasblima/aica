@@ -84,6 +84,7 @@ const useRotatingMessage = (stage: string | null, interval = 2500): string => {
 
   useEffect(() => {
     // Reset index when stage changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMessageIndex(0);
   }, [stage]);
 
@@ -214,6 +215,7 @@ const FileProgressDisplay: React.FC<FileProgressDisplayProps> = ({ fileWithMeta 
   // Elapsed time counter
   useEffect(() => {
     if (!fileWithMeta.progress || fileWithMeta.progress.stage === 'complete' || fileWithMeta.progress.stage === 'error') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setElapsed(0);
       return;
     }
@@ -225,6 +227,7 @@ const FileProgressDisplay: React.FC<FileProgressDisplayProps> = ({ fileWithMeta 
   // Smooth progress interpolation — gradually fills between target stages
   useEffect(() => {
     const target = fileWithMeta.progress?.progress || 0;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (target <= smoothProgress) { setSmoothProgress(target); return; }
     const timer = setInterval(() => {
       setSmoothProgress(prev => {

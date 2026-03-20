@@ -93,12 +93,13 @@ export function useTrustLevel(): UseTrustLevelReturn {
       ]
       const moduleChecks = await Promise.all(
         moduleTables.map(table =>
-          supabase
-            .from(table)
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .then(({ count }) => (count ?? 0) > 0 ? 1 : 0)
-            .catch(() => 0)
+          Promise.resolve(
+            supabase
+              .from(table)
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+          ).then(({ count }) => (count ?? 0) > 0 ? 1 : 0)
+            .catch(() => 0 as 0 | 1)
         )
       )
       modulesUsed = moduleChecks.reduce((sum, v) => sum + v, 0)

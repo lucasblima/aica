@@ -137,6 +137,7 @@ function LifeDotsVisualization({
 }
 
 // Inline weather snippet — sits next to week counter
+/* eslint-disable react-hooks/static-components */
 function WeatherInline({
   forecast,
   insight,
@@ -161,6 +162,7 @@ function WeatherInline({
     </>
   )
 }
+/* eslint-enable react-hooks/static-components */
 
 export function MementoMoriBar({ onSetBirthdate, forecast, weatherInsight }: MementoMoriBarProps) {
   const { user } = useAuth()

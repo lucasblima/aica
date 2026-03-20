@@ -38,7 +38,7 @@ export interface TimelineFilterProps {
  */
 const SOURCE_CONFIG: Record<
   UnifiedEventSource,
-  { icon: React.ComponentType<{ className?: string }>; label: string; color: string }
+  { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; color: string }
 > = {
   whatsapp: {
     icon: ChatBubbleLeftIcon,

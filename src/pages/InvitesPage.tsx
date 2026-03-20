@@ -78,6 +78,7 @@ export default function InvitesPage() {
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDashboardError(null);
     refreshDashboard().catch((err) => {
       console.error('[InvitesPage] Dashboard load failed:', err);
@@ -105,7 +106,8 @@ export default function InvitesPage() {
   };
 
   const formatCode = (code: string) => code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
-  const getDaysRemaining = (expiresAt: string) => Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000));
+  const [nowMs] = useState(() => Date.now());
+  const getDaysRemaining = (expiresAt: string) => Math.max(0, Math.ceil((new Date(expiresAt).getTime() - nowMs) / 86400000));
 
   const pendingCount = enrichedReferrals.filter(r => r.status === 'pending').length;
   const acceptedCount = enrichedReferrals.filter(r => r.status === 'accepted').length;

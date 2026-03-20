@@ -1,0 +1,4 @@
+-- Applied via Supabase Dashboard / PR branch work.
+-- Local stub for migration tracking consistency.
+-- See PR #966 (feat/flux-coach-upgrade) for full details.
+-- Content already applied to remote — DO NOT re-run.

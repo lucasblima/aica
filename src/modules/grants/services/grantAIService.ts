@@ -151,7 +151,7 @@ export async function analyzeEditalStructure(editalText: string): Promise<{
     if (usageMetadata) {
       trackAIUsage({
         operation_type: 'text_generation',
-        ai_model: (result as any).model || 'gemini-2.5-flash',
+        ai_model: (data as any).model || 'gemini-2.5-flash',
         input_tokens: usageMetadata.promptTokenCount || 0,
         output_tokens: usageMetadata.candidatesTokenCount || 0,
         module_type: 'grants',

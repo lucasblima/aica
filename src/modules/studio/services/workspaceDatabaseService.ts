@@ -17,7 +17,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { RealtimeChannel } from '@/services/supabaseClient'
 import type { Topic, TopicCategory, EpisodeProduction, EpisodePublication } from '../types'
 import { createNamespacedLogger } from '@/lib/logger';
 import { syncEntityToGoogle } from '@/services/calendarSyncService';

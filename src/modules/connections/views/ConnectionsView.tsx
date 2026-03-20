@@ -8,6 +8,7 @@ import { NetworkGraph } from '@/components/features/visualizations';
 import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';
 import type { ArchetypeType } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';
+import TelegramLinkCard from '../components/telegram/TelegramLinkCard';
 import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('ConnectionsView');
 

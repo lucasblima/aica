@@ -510,7 +510,7 @@ export default function AthletePortalView() {
       {/* Header */}
       <header className="pt-6 px-5 pb-2">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => { window.history.length > 1 ? navigate(-1) : navigate('/'); }} className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors">
+          <button onClick={() => { if (window.history.length > 1) { navigate(-1); } else { navigate('/'); } }} className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors">
             <ArrowLeft className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
           </button>

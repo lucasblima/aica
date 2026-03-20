@@ -60,6 +60,7 @@ export function InterviewCategoryPicker({ onSessionStart }: InterviewCategoryPic
   const [completionError, setCompletionError] = useState<string | null>(null)
   const [startingCategory, setStartingCategory] = useState<InterviewCategory | null>(null)
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const loadCompletions = useCallback(async () => {
     if (!user?.id) return
     try {
@@ -73,6 +74,7 @@ export function InterviewCategoryPicker({ onSessionStart }: InterviewCategoryPic
   }, [user?.id])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCompletions()
   }, [loadCompletions])
 

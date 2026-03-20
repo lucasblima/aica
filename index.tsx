@@ -8,7 +8,7 @@ import App from './App';
 import './index.css';
 import { cleanExpiredOAuthParams, suppressExpiredSessionWarnings } from './src/utils/authUrlCleaner';
 import { validateEnv, logEnvStatus } from './src/lib/envCheck';
-import { registerFluxDomainProvider } from './src/modules/flux/services';
+import { registerAllDomainProviders } from './src/services/scoring/registerAllProviders';
 
 // =============================================================================
 // ENVIRONMENT VALIDATION
@@ -47,8 +47,8 @@ cleanExpiredOAuthParams();
 // Suprime warnings esperados sobre sessoes expiradas que ja estamos tratando
 suppressExpiredSessionWarnings();
 
-// Register Life Score domain providers
-registerFluxDomainProvider();
+// Register Life Score domain providers (all modules)
+registerAllDomainProviders();
 
 // Cria instância do QueryClient para React Query
 const queryClient = new QueryClient({

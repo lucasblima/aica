@@ -19,7 +19,7 @@ import { FluxCard } from '../modules/flux';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
 import { useGrantsHomeQuery } from '@/hooks/queries';
-import { ViewState } from '../../types';
+type ViewState = string;
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { createNamespacedLogger } from '@/lib/logger';

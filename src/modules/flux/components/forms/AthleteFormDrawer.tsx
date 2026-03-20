@@ -28,10 +28,12 @@ import {
   Users,
   FileText,
   Loader2,
+  GraduationCap,
 } from 'lucide-react';
-import type { Athlete, ModalityLevel } from '../../types/flux';
-import { AthleteService } from '../../services/athleteService';
+import type { Athlete, ModalityLevel, CoachLevel } from '../../types/flux';
+import { getGroupColorClasses } from '../../types/flux';
 import { CoachInviteLinkService, type CoachInviteLink } from '../../services/coachInviteLinkService';
+import { supabase } from '@/services/supabaseClient';
 import {
   useAthleteForm,
   MODALITY_OPTIONS,
@@ -75,6 +77,30 @@ export default function AthleteFormDrawer({
   const createdAthleteId = lastCreatedId;
   const [coringaLink, setCoringaLink] = useState<CoachInviteLink | null>(null);
   const [coringaCopyToast, setCoringaCopyToast] = useState(false);
+
+  // Custom levels for level selector (edit mode)
+  const [coachLevels, setCoachLevels] = useState<CoachLevel[]>([]);
+
+  React.useEffect(() => {
+    if (mode === 'edit' && isOpen) {
+      const loadLevels = async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const { data, error } = await supabase
+            .from('coach_levels')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('display_order');
+          if (error) console.error('[AthleteFormDrawer] Failed to load coach levels:', error);
+          setCoachLevels((data || []) as CoachLevel[]);
+        } catch (err) {
+          console.error('[AthleteFormDrawer] Failed to load coach levels:', err);
+        }
+      };
+      loadLevels();
+    }
+  }, [mode, isOpen]);
 
   // Generate coringa link on success
   React.useEffect(() => {
@@ -492,6 +518,53 @@ export default function AthleteFormDrawer({
                         )}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Section: Custom Level (edit mode, only if coach has levels) */}
+                {mode === 'edit' && coachLevels.length > 0 && (
+                  <div className="ceramic-card p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="ceramic-inset p-2">
+                        <GraduationCap className="w-4 h-4 text-ceramic-text-primary" />
+                      </div>
+                      <span className="text-sm font-bold text-ceramic-text-primary">
+                        Nivel Personalizado
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleChange('custom_level_id', undefined)}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          !formData.custom_level_id
+                            ? 'bg-ceramic-text-primary text-white shadow-md'
+                            : 'ceramic-inset text-ceramic-text-secondary hover:bg-white/50'
+                        }`}
+                      >
+                        Nenhum
+                      </button>
+                      {coachLevels.map((level) => {
+                        const colors = getGroupColorClasses(level.color);
+                        return (
+                          <button
+                            key={level.id}
+                            type="button"
+                            onClick={() => handleChange('custom_level_id', level.id)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                              formData.custom_level_id === level.id
+                                ? `${colors.bg} text-white shadow-md`
+                                : 'ceramic-inset text-ceramic-text-secondary hover:bg-white/50'
+                            }`}
+                          >
+                            <div className={`w-2 h-2 rounded-full ${colors.bg} ${
+                              formData.custom_level_id === level.id ? 'bg-white' : ''
+                            }`} />
+                            {level.name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

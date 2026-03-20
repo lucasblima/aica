@@ -7,12 +7,12 @@ const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
+    tunnel: '/api/sentry-tunnel',
     environment: import.meta.env.PROD ? 'production' : 'development',
     enabled: import.meta.env.PROD,
     tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0.5,
-    autoSessionTracking: true,
     beforeSend(event) {
       // Strip PII from breadcrumbs
       if (event.breadcrumbs) {
@@ -32,6 +32,7 @@ if (SENTRY_DSN) {
     },
   });
 } else if (import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
   console.debug('[Sentry] No DSN configured, skipping initialization');
 }
 

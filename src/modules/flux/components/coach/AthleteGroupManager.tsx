@@ -8,10 +8,11 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, Pencil, Trash2, Check, Users, Tag, Loader2 } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Check, Users, Tag, Loader2, Link2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import type { Athlete, AthleteGroup, AthleteGroupData } from '../../types/flux';
 import { GROUP_COLORS, getGroupColorClasses } from '../../types/flux';
+import { CoachInviteLinkService } from '../../services/coachInviteLinkService';
 
 // ============================================
 // Supabase persistence helpers
@@ -66,6 +67,7 @@ async function migrateFromLocalStorage(coachUserId: string): Promise<void> {
     }
 
     localStorage.removeItem(storageKey);
+    // eslint-disable-next-line no-console -- one-time migration diagnostic log
     console.log('[AthleteGroupManager] Migrated groups from localStorage to Supabase');
   } catch (err) {
     console.error('[AthleteGroupManager] Migration failed:', err);
@@ -76,6 +78,7 @@ async function migrateFromLocalStorage(coachUserId: string): Promise<void> {
  * Load all groups + membership from Supabase.
  * Triggers localStorage migration on first call.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export async function loadGroupData(coachUserId: string): Promise<AthleteGroupData> {
   // Migrate legacy data first (no-op if already migrated)
   await migrateFromLocalStorage(coachUserId);
@@ -118,6 +121,7 @@ export async function loadGroupData(coachUserId: string): Promise<AthleteGroupDa
  * @deprecated No longer needed — mutations go directly to Supabase.
  * Kept for backward compatibility; does nothing.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function saveGroupData(_coachUserId: string, _data: AthleteGroupData): void {
   // no-op — persistence is now handled per-mutation via Supabase
 }
@@ -125,6 +129,7 @@ export function saveGroupData(_coachUserId: string, _data: AthleteGroupData): vo
 /**
  * Get groups assigned to a specific athlete
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getAthleteGroups(data: AthleteGroupData, athleteId: string): AthleteGroup[] {
   const groupIds = data.assignments[athleteId] || [];
   return data.groups.filter((g) => groupIds.includes(g.id));
@@ -133,6 +138,7 @@ export function getAthleteGroups(data: AthleteGroupData, athleteId: string): Ath
 /**
  * Get all unique group names (for filter pills)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getAllGroups(data: AthleteGroupData): AthleteGroup[] {
   return data.groups;
 }
@@ -140,6 +146,7 @@ export function getAllGroups(data: AthleteGroupData): AthleteGroup[] {
 /**
  * Check if an athlete is in a specific group
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function isAthleteInGroup(data: AthleteGroupData, athleteId: string, groupId: string): boolean {
   return (data.assignments[athleteId] || []).includes(groupId);
 }
@@ -177,6 +184,8 @@ export function AthleteGroupManager({
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
+  const [linkLoading, setLinkLoading] = useState<string | null>(null);
 
   const newGroupInputRef = useRef<HTMLInputElement>(null);
 
@@ -288,6 +297,33 @@ export function AthleteGroupManager({
       console.error('[AthleteGroupManager] Failed to toggle athlete:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // COPY group invite link
+  const handleCopyGroupLink = async (groupId: string) => {
+    setLinkLoading(groupId);
+    try {
+      const defaultHealthConfig = {
+        requires_cardio_exam: false,
+        requires_clearance_cert: false,
+        allow_parq_onboarding: false,
+      };
+      const { data: link } = await CoachInviteLinkService.getOrCreateLink(
+        defaultHealthConfig,
+        10,
+        groupId
+      );
+      if (link) {
+        const url = `https://aica.guru/join/${link.token}`;
+        await navigator.clipboard.writeText(url);
+        setCopiedGroupId(groupId);
+        setTimeout(() => setCopiedGroupId(null), 3000);
+      }
+    } catch (err) {
+      console.error('[AthleteGroupManager] Failed to copy group link:', err);
+    } finally {
+      setLinkLoading(null);
     }
   };
 
@@ -443,6 +479,29 @@ export function AthleteGroupManager({
 
                         {/* Actions */}
                         <div className="flex items-center gap-1">
+                          {/* Copy group invite link */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyGroupLink(group.id);
+                            }}
+                            disabled={isSaving || linkLoading === group.id}
+                            className={`p-1.5 rounded transition-colors ${
+                              copiedGroupId === group.id
+                                ? 'bg-ceramic-success/10'
+                                : 'hover:bg-ceramic-info/10'
+                            }`}
+                            title={copiedGroupId === group.id ? 'Link copiado!' : 'Copiar link de convite do grupo'}
+                          >
+                            {linkLoading === group.id ? (
+                              <Loader2 className="w-3.5 h-3.5 text-ceramic-text-secondary animate-spin" />
+                            ) : copiedGroupId === group.id ? (
+                              <Check className="w-3.5 h-3.5 text-ceramic-success" />
+                            ) : (
+                              <Link2 className="w-3.5 h-3.5 text-ceramic-info" />
+                            )}
+                          </button>
+
                           {isEditing ? (
                             <button
                               onClick={() => handleRenameGroup(group.id)}
