@@ -361,6 +361,12 @@ COMMENT ON FUNCTION get_admin_telegram_error_log IS 'Returns Telegram error rate
 -- Using service_role would require an Edge Function intermediary for each RPC.
 -- =============================================================================
 
+REVOKE EXECUTE ON FUNCTION get_admin_telegram_stats() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION get_admin_telegram_message_log(INTEGER, TEXT) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION get_admin_telegram_user_status() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION get_admin_telegram_conversations(INTEGER) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION get_admin_telegram_error_log(INTEGER, INTEGER) FROM PUBLIC, anon;
+
 GRANT EXECUTE ON FUNCTION get_admin_telegram_stats() TO authenticated;
 GRANT EXECUTE ON FUNCTION get_admin_telegram_message_log(INTEGER, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_admin_telegram_user_status() TO authenticated;
