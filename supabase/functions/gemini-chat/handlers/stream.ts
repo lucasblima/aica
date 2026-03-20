@@ -190,6 +190,7 @@ export async function handleStreamChat(
       fullText: nonStreamText,
       text: nonStreamText,
       agent: detectedAgent,
+      actions: fallbackActions,
       suggestedActions: fallbackActions,
       suggested_questions: fallbackQuestions,
       usage: { input: fallbackUsage?.promptTokenCount || 0, output: fallbackUsage?.candidatesTokenCount || 0 },

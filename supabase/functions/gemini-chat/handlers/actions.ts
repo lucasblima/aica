@@ -1,5 +1,6 @@
 // handlers/actions.ts — Chat action execution (permanent)
 // Intent classification logic lives in _shared/intent-classifier.ts
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { classifyIntent } from '../../_shared/intent-classifier.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 

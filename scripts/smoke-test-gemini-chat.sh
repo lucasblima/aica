@@ -41,9 +41,6 @@ test_action() {
   if [ "$http_code" = "200" ]; then
     echo "  PASS [$http_code]: $action"
     PASS=$((PASS + 1))
-  elif [ "$http_code" = "000" ]; then
-    echo "  SKIP [timeout]: $action"
-    SKIP=$((SKIP + 1))
   else
     echo "  FAIL [$http_code]: $action"
     FAIL=$((FAIL + 1))
