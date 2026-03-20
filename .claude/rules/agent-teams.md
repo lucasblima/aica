@@ -122,7 +122,8 @@ Choose the right strategy based on the task shape:
    - **Stage 1 — Spec compliance**: Does the code match the plan/requirements? Missing features, wrong behavior, incomplete acceptance criteria.
    - **Stage 2 — Code quality**: Is the code well-written? Types, error handling, naming, Ceramic compliance, test coverage, security (RLS, no exposed keys).
    - Both stages must pass before moving to the next task. Reviewer must verify technically — no performative agreement.
-8. **Shutdown**: Always shut down teammates and clean up the team when work is complete.
+8. **CodeRabbit gate**: PRs created in team mode MUST follow the CodeRabbit Workflow from `workflow.md`. NEVER merge without CodeRabbit review.
+9. **Shutdown**: Always shut down teammates and clean up the team when work is complete.
 
 ## Teammate Agent Types
 

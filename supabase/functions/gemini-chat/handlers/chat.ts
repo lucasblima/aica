@@ -5,6 +5,7 @@ import { MODELS, getDateContext } from '../../_shared/gemini-helpers.ts'
 import { buildUserContext, generateSuggestedActions } from '../../_shared/context-builder.ts'
 import type { ChatRequest, ChatAction, UserContextResult } from '../../_shared/gemini-types.ts'
 
+
 export async function handleLegacyChat(
   genAI: GoogleGenerativeAI,
   request: ChatRequest & { module?: string },
@@ -20,13 +21,13 @@ export async function handleLegacyChat(
   // Build user context if we have userId and supabaseAdmin
   let userContext = ''
   let rawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
-  console.log(`[handleLegacyChat] userId=${userId}, hasSupabaseAdmin=${!!supabaseAdmin}, module=${module} (raw=${rawModule})`)
+  console.log(`[handleLegacyChat] hasSupabaseAdmin=${!!supabaseAdmin}, module=${module} (raw=${rawModule})`)
   if (userId && supabaseAdmin && module) {
     try {
       const contextResult = await buildUserContext(supabaseAdmin, userId, module)
       userContext = contextResult.contextString
       rawData = contextResult.rawData
-      console.log(`[handleLegacyChat] userContext length=${userContext.length}, preview=${userContext.substring(0, 200)}`)
+      console.log(`[handleLegacyChat] userContext present=true length=${userContext.length}`)
     } catch (e) {
       console.warn('[handleLegacyChat] Failed to build user context:', (e as Error).message)
     }

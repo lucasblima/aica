@@ -1,6 +1,7 @@
 // handlers/actions.ts — Chat action execution (permanent)
 // Intent classification logic lives in _shared/intent-classifier.ts
 import { classifyIntent } from '../../_shared/intent-classifier.ts'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 // Re-export for backward compatibility (index.ts imports from here)
 export const handleClassifyIntent = classifyIntent
@@ -12,7 +13,7 @@ export const handleClassifyIntent = classifyIntent
 const ALLOWED_ACTION_TYPES = ['complete_task', 'start_task', 'update_priority', 'reschedule_task', 'create_moment'] as const
 
 export async function handleExecuteChatAction(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   userId: string,
   payload: { action_type: string; params: Record<string, any> }
 ): Promise<{ success: boolean; action_type: string; result?: any; error?: string }> {
@@ -32,7 +33,7 @@ export async function handleExecuteChatAction(
         if (!params.task_id) return { success: false, action_type, error: 'task_id e obrigatorio' }
         const { data, error } = await supabaseAdmin
           .from('work_items')
-          .update({ status: 'done', updated_at: new Date().toISOString() })
+          .update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq('id', params.task_id)
           .eq('user_id', userId)
           .select('id, title, status')

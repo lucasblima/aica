@@ -53,11 +53,12 @@ export function CustomLevelManager({
   if (!isOpen) return null;
 
   const reloadLevels = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('coach_levels')
       .select('*')
       .eq('user_id', coachUserId)
       .order('display_order');
+    if (error) throw error;
     onLevelsChange((data || []) as CoachLevel[]);
   };
 
@@ -68,12 +69,13 @@ export function CustomLevelManager({
 
     setIsSaving(true);
     try {
-      await supabase.from('coach_levels').insert({
+      const { error } = await supabase.from('coach_levels').insert({
         user_id: coachUserId,
         name: trimmed,
         color: newLevelColor,
         display_order: levels.length,
       });
+      if (error) throw error;
       setNewLevelName('');
       const currentIdx = GROUP_COLORS.findIndex((c) => c.id === newLevelColor);
       setNewLevelColor(GROUP_COLORS[(currentIdx + 1) % GROUP_COLORS.length].id);
@@ -91,10 +93,11 @@ export function CustomLevelManager({
 
     setIsSaving(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from('coach_levels')
         .update({ name: trimmed, updated_at: new Date().toISOString() })
         .eq('id', levelId);
+      if (error) throw error;
       setEditingLevelId(null);
       setEditingName('');
       await reloadLevels();
@@ -106,9 +109,17 @@ export function CustomLevelManager({
   };
 
   const handleDelete = async (levelId: string) => {
+    const level = levels.find(l => l.id === levelId);
+    const athleteCount = athletes.filter(a => a.custom_level_id === levelId).length;
+    const msg = athleteCount > 0
+      ? `Excluir nivel "${level?.name}"? ${athleteCount} atleta(s) perderão este nivel.`
+      : `Excluir nivel "${level?.name}"?`;
+    if (!window.confirm(msg)) return;
+
     setIsSaving(true);
     try {
-      await supabase.from('coach_levels').delete().eq('id', levelId);
+      const { error } = await supabase.from('coach_levels').delete().eq('id', levelId);
+      if (error) throw error;
       if (selectedLevelId === levelId) {
         setSelectedLevelId(null);
       }
@@ -126,10 +137,12 @@ export function CustomLevelManager({
     try {
       const prev = levels[index - 1];
       const curr = levels[index];
-      await Promise.all([
+      const results = await Promise.all([
         supabase.from('coach_levels').update({ display_order: index - 1 }).eq('id', curr.id),
         supabase.from('coach_levels').update({ display_order: index }).eq('id', prev.id),
       ]);
+      const promiseError = results.find(r => r.error)?.error;
+      if (promiseError) throw promiseError;
       await reloadLevels();
     } catch (err) {
       console.error('[CustomLevelManager] Failed to reorder:', err);
@@ -144,10 +157,12 @@ export function CustomLevelManager({
     try {
       const next = levels[index + 1];
       const curr = levels[index];
-      await Promise.all([
+      const results = await Promise.all([
         supabase.from('coach_levels').update({ display_order: index + 1 }).eq('id', curr.id),
         supabase.from('coach_levels').update({ display_order: index }).eq('id', next.id),
       ]);
+      const promiseError = results.find(r => r.error)?.error;
+      if (promiseError) throw promiseError;
       await reloadLevels();
     } catch (err) {
       console.error('[CustomLevelManager] Failed to reorder:', err);

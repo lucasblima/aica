@@ -20,7 +20,7 @@ export async function handleChatWithAgent(
   }
 
   const agentConfig = AGENT_SYSTEM_PROMPTS[agent]
-  console.log(`[chat_with_agent] agent=${agent}, userId=${userId}`)
+  console.log(`[chat_with_agent] agent=${agent}`)
 
   // Build user context (same as handleLegacyChat)
   let userContext = ''

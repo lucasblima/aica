@@ -89,7 +89,7 @@ export async function handleGenerateDossier(genAI: GoogleGenerativeAI, payload: 
 export async function handleGenerateIceBreakers(genAI: GoogleGenerativeAI, payload: IceBreakerPayload): Promise<IceBreakerResult> {
   if (!payload.guestName) throw new Error('Campo "guestName" e obrigatorio')
 
-  const model = genAI.getGenerativeModel({ model: MODELS.smart, generationConfig: { temperature: 0.8, topP: 0.95, topK: 40, maxOutputTokens: 2048 } })
+  const model = genAI.getGenerativeModel({ model: MODELS.smart, generationConfig: { temperature: 0.8, topP: 0.95, topK: 40, maxOutputTokens: 4096 } })
   const result = await model.generateContent(STUDIO_PROMPTS.generate_ice_breakers(payload.guestName, payload.keyFacts || [], payload.occupation))
   const text = result.response.text()
 
