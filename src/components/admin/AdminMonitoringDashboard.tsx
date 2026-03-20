@@ -20,6 +20,13 @@ import {
   AlertTriangle,
   CheckCircle,
   ArrowLeft,
+  Send,
+  Users,
+  MessageSquare,
+  Zap,
+  Clock,
+  XCircle,
+  Link2,
 } from 'lucide-react';
 import { CacheStatsWidget } from '../fileSearch/CacheStatsWidget';
 import { BudgetMonitor } from '../aiCost/BudgetMonitor';
@@ -33,20 +40,37 @@ import {
 import { getUserAIBudget } from '../../services/userSettingsService';
 import type { DailyCostSummary, MonthlyCostSummary } from '../../types/aiCost';
 import { createNamespacedLogger } from '@/lib/logger';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  getAdminTelegramStats,
+  getAdminTelegramMessageLog,
+  getAdminTelegramUserStatus,
+  getAdminTelegramConversations,
+  getAdminTelegramErrorLog,
+} from '../../services/telegramMonitoringService';
+import type {
+  TelegramStats,
+  TelegramMessageLogEntry,
+  TelegramUserStatus,
+  TelegramConversation,
+  TelegramErrorLog,
+} from '../../types/telegramMonitoring';
 
 const log = createNamespacedLogger('AdminMonitoringDashboard');
 
 interface AdminMonitoringDashboardProps {
-  userId: string;
+  userId?: string;
   onBack?: () => void;
 }
 
-type DashboardTab = 'overview' | 'cache' | 'costs' | 'file-search' | 'health';
+type DashboardTab = 'overview' | 'cache' | 'costs' | 'file-search' | 'health' | 'telegram';
 
 export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> = ({
-  userId,
+  userId: userIdProp,
   onBack,
 }) => {
+  const { user } = useAuth();
+  const userId = userIdProp ?? user?.id ?? '';
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [loading, setLoading] = useState(true);
   const [budget, setBudget] = useState(0);
@@ -54,6 +78,7 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
   const [dailyCosts, setDailyCosts] = useState<DailyCostSummary[]>([]);
 
   useEffect(() => {
+    if (!userId) return;
     loadData();
   }, [userId]);
 
@@ -84,6 +109,7 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
     { id: 'costs', label: 'Custos de IA', icon: DollarSign },
     { id: 'file-search', label: 'File Search', icon: FileSearch },
     { id: 'health', label: 'Saúde do Sistema', icon: CheckCircle },
+    { id: 'telegram', label: 'Telegram', icon: Send },
   ];
 
   if (loading) {
@@ -178,6 +204,8 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
         {activeTab === 'file-search' && <FileSearchTab userId={userId} />}
 
         {activeTab === 'health' && <HealthTab userId={userId} />}
+
+        {activeTab === 'telegram' && <TelegramTab />}
       </main>
     </div>
   );
@@ -489,6 +517,269 @@ const HealthTab: React.FC<HealthTabProps> = ({ userId }) => {
             <span>File Search operando com performance ideal</span>
           </li>
         </ul>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// TELEGRAM TAB
+// =====================================================
+
+const STATUS_COLORS: Record<string, string> = {
+  completed: 'bg-ceramic-success/10 text-ceramic-success',
+  processing: 'bg-ceramic-info/10 text-ceramic-info',
+  received: 'bg-ceramic-cool text-ceramic-text-secondary',
+  failed: 'bg-ceramic-error/10 text-ceramic-error',
+  skipped: 'bg-ceramic-warning/10 text-ceramic-warning',
+};
+
+const TelegramTab: React.FC = () => {
+  const [stats, setStats] = useState<TelegramStats | null>(null);
+  const [messages, setMessages] = useState<TelegramMessageLogEntry[]>([]);
+  const [userStatus, setUserStatus] = useState<TelegramUserStatus | null>(null);
+  const [conversations, setConversations] = useState<TelegramConversation[]>([]);
+  const [errorLog, setErrorLog] = useState<TelegramErrorLog | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showErrors, setShowErrors] = useState(false);
+
+  useEffect(() => {
+    loadTelegramData();
+  }, []);
+
+  const loadTelegramData = async () => {
+    try {
+      setLoading(true);
+      const [s, m, u, c, e] = await Promise.all([
+        getAdminTelegramStats(),
+        getAdminTelegramMessageLog(20),
+        getAdminTelegramUserStatus(),
+        getAdminTelegramConversations(10),
+        getAdminTelegramErrorLog(50, 24),
+      ]);
+      setStats(s);
+      setMessages(m);
+      setUserStatus(u);
+      setConversations(c);
+      setErrorLog(e);
+    } catch (err) {
+      log.error('Error loading Telegram data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-32 bg-ceramic-cool rounded-2xl animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Mensagens 24h', value: stats?.messages_24h ?? 0, icon: MessageSquare, color: 'text-ceramic-info' },
+          { label: 'Taxa de Erro', value: `${(stats?.error_rate ?? 0).toFixed(1)}%`, icon: AlertTriangle, color: (stats?.error_rate ?? 0) > 10 ? 'text-ceramic-error' : 'text-ceramic-success' },
+          { label: 'Usuarios Ativos', value: stats?.active_users ?? 0, icon: Users, color: 'text-ceramic-accent' },
+          { label: 'Contas Vinculadas', value: stats?.linked_accounts ?? 0, icon: Link2, color: 'text-ceramic-success' },
+          { label: 'Tokens AI', value: stats?.ai_tokens_used ?? 0, icon: Zap, color: 'text-ceramic-warning' },
+          { label: 'Tempo Medio', value: `${(stats?.avg_processing_ms ?? 0).toFixed(0)}ms`, icon: Clock, color: 'text-ceramic-info' },
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="ceramic-card p-3"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Icon className={`w-4 h-4 ${card.color}`} />
+                <span className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider">{card.label}</span>
+              </div>
+              <p className="text-lg font-black text-ceramic-text-primary">{card.value}</p>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Message Log */}
+      <div className="ceramic-card p-5">
+        <h3 className="text-sm font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-ceramic-info" />
+          Log de Mensagens (ultimas 20)
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-left text-ceramic-text-secondary border-b border-ceramic-border">
+                <th className="pb-2 pr-3">Hora</th>
+                <th className="pb-2 pr-3">Usuario</th>
+                <th className="pb-2 pr-3">Tipo</th>
+                <th className="pb-2 pr-3">Resumo</th>
+                <th className="pb-2 pr-3">Status</th>
+                <th className="pb-2 pr-3">Acao AI</th>
+                <th className="pb-2">Duracao</th>
+              </tr>
+            </thead>
+            <tbody>
+              {messages.map((msg) => (
+                <tr key={msg.id} className="border-b border-ceramic-border/50 hover:bg-ceramic-cool/50">
+                  <td className="py-2 pr-3 text-ceramic-text-secondary whitespace-nowrap">
+                    {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td className="py-2 pr-3 text-ceramic-text-primary font-medium">
+                    {msg.telegram_username ? `@${msg.telegram_username}` : msg.user_id?.slice(0, 8) ?? '—'}
+                  </td>
+                  <td className="py-2 pr-3">
+                    <span className="px-1.5 py-0.5 rounded bg-ceramic-cool text-ceramic-text-secondary">
+                      {msg.direction === 'inbound' ? '→' : '←'} {msg.message_type}
+                    </span>
+                  </td>
+                  <td className="py-2 pr-3 text-ceramic-text-secondary max-w-[200px] truncate">
+                    {msg.intent_summary ?? '—'}
+                  </td>
+                  <td className="py-2 pr-3">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${STATUS_COLORS[msg.processing_status] ?? 'bg-ceramic-cool text-ceramic-text-secondary'}`}>
+                      {msg.processing_status}
+                    </span>
+                  </td>
+                  <td className="py-2 pr-3 text-ceramic-text-secondary">{msg.ai_action ?? '—'}</td>
+                  <td className="py-2 text-ceramic-text-secondary">
+                    {msg.processing_duration_ms != null ? `${msg.processing_duration_ms}ms` : '—'}
+                  </td>
+                </tr>
+              ))}
+              {messages.length === 0 && (
+                <tr><td colSpan={7} className="py-8 text-center text-ceramic-text-secondary">Nenhuma mensagem registrada</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Error Log (Collapsible) */}
+      <div className="ceramic-card p-5">
+        <button
+          onClick={() => setShowErrors(!showErrors)}
+          className="flex items-center justify-between w-full"
+        >
+          <h3 className="text-sm font-bold text-ceramic-text-primary flex items-center gap-2">
+            <XCircle className="w-4 h-4 text-ceramic-error" />
+            Erros ({errorLog?.errors.length ?? 0})
+            {errorLog && errorLog.error_rate > 0 && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-ceramic-error/10 text-ceramic-error font-bold">
+                {errorLog.error_rate.toFixed(1)}% taxa de erro
+              </span>
+            )}
+          </h3>
+          <span className="text-ceramic-text-secondary text-xs">{showErrors ? '▲' : '▼'}</span>
+        </button>
+
+        {showErrors && errorLog && (
+          <div className="mt-4 space-y-2">
+            {errorLog.errors.map((err) => (
+              <div key={err.id} className="p-3 rounded-lg bg-ceramic-error/5 border border-ceramic-error/10">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-ceramic-text-secondary">
+                    {new Date(err.created_at).toLocaleString('pt-BR')}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-ceramic-cool text-ceramic-text-secondary">
+                    {err.message_type} | tentativas: {err.retry_count}
+                  </span>
+                </div>
+                <p className="text-xs text-ceramic-error font-medium">{err.error_message ?? 'Erro desconhecido'}</p>
+              </div>
+            ))}
+            {errorLog.errors.length === 0 && (
+              <p className="text-xs text-ceramic-text-secondary text-center py-4">Nenhum erro nas ultimas 24h</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* User Status + Active Conversations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* User Status */}
+        <div className="ceramic-card p-5">
+          <h3 className="text-sm font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+            <Users className="w-4 h-4 text-ceramic-accent" />
+            Status dos Usuarios
+          </h3>
+          {userStatus && (
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="text-center p-2 rounded-lg bg-ceramic-success/10">
+                  <p className="text-lg font-black text-ceramic-success">{userStatus.total_linked}</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Vinculados</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-ceramic-warning/10">
+                  <p className="text-lg font-black text-ceramic-warning">{userStatus.total_pending}</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Pendentes</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-ceramic-info/10">
+                  <p className="text-lg font-black text-ceramic-info">{userStatus.consent_rate.toFixed(0)}%</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Consentiram</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mb-2">Links Recentes</p>
+                {userStatus.recent_links.map((link) => (
+                  <div key={link.user_id} className="flex items-center justify-between py-1.5 border-b border-ceramic-border/50 text-xs">
+                    <span className="text-ceramic-text-primary font-medium">
+                      {link.telegram_username ? `@${link.telegram_username}` : link.user_id.slice(0, 8)}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${link.status === 'linked' ? 'bg-ceramic-success/10 text-ceramic-success' : 'bg-ceramic-warning/10 text-ceramic-warning'}`}>
+                      {link.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Active Conversations */}
+        <div className="ceramic-card p-5">
+          <h3 className="text-sm font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-ceramic-info" />
+            Conversas Ativas
+          </h3>
+          <div className="space-y-2">
+            {conversations.map((conv) => (
+              <div key={conv.id} className="p-3 rounded-lg bg-ceramic-cool/50">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-ceramic-text-primary font-medium">
+                    {conv.telegram_username ? `@${conv.telegram_username}` : conv.user_id.slice(0, 8)}
+                  </span>
+                  <span className="text-[10px] text-ceramic-text-secondary">
+                    {new Date(conv.last_message_at).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {conv.active_flow && (
+                    <span className="px-1.5 py-0.5 rounded bg-ceramic-info/10 text-ceramic-info text-[10px] font-bold">
+                      {conv.active_flow}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-ceramic-text-secondary">
+                    {conv.context_token_count} tokens
+                  </span>
+                </div>
+              </div>
+            ))}
+            {conversations.length === 0 && (
+              <p className="text-xs text-ceramic-text-secondary text-center py-4">Nenhuma conversa ativa</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { PageShell } from '@/components/ui/PageShell';
 import { Logo } from '@/components/ui/Logo';
-import { ArrowLeft, Gift, Calculator, CreditCard } from 'lucide-react';
+import { ArrowLeft, Gift, Calculator, CreditCard, Activity } from 'lucide-react';
 
 interface AdminCard {
   title: string;
@@ -26,6 +26,14 @@ const ADMIN_CARDS: AdminCard[] = [
     description: 'Simular cenarios de precificacao com 20+ variaveis e projecao de 24 meses.',
     icon: Calculator,
     path: '/admin/simulator',
+    color: 'text-ceramic-info',
+    ready: true,
+  },
+  {
+    title: 'Monitoramento',
+    description: 'Dashboard de monitoramento: Telegram, cache, custos de IA e saude do sistema.',
+    icon: Activity,
+    path: '/admin/monitoring',
     color: 'text-ceramic-info',
     ready: true,
   },

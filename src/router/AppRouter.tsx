@@ -131,6 +131,9 @@ const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => 
 // Life Score Analytics - Issue #575
 const LifeScoreAnalyticsPage = lazy(() => import('../pages/LifeScoreAnalyticsPage'));
 
+// Admin Monitoring Dashboard
+const AdminMonitoringDashboard = lazy(() => import('../components/admin/AdminMonitoringDashboard'));
+
 // Evangelist Module
 const EvangelistDashboard = lazy(() => import('../modules/evangelist/views/EvangelistDashboard').then(m => ({ default: m.EvangelistDashboard })));
 const EvangelistsAdmin = lazy(() => import('../modules/evangelist/views/EvangelistsAdmin').then(m => ({ default: m.EvangelistsAdmin })));
@@ -976,6 +979,7 @@ export function AppRouter() {
                <Route path="/admin/coupons" element={<ProtectedRoute><AdminGuard><AdminCouponsPage /></AdminGuard></ProtectedRoute>} />
                <Route path="/admin/simulator" element={<ProtectedRoute><AdminGuard><PricingSimulatorPage /></AdminGuard></ProtectedRoute>} />
                <Route path="/admin/evangelists" element={<ProtectedRoute><AdminGuard><EvangelistsAdmin /></AdminGuard></ProtectedRoute>} />
+               <Route path="/admin/monitoring" element={<ProtectedRoute><AdminGuard><AdminMonitoringDashboard /></AdminGuard></ProtectedRoute>} />
 
                {/* Evangelist Module - Partner program dashboard */}
                <Route path="/evangelist" element={<ProtectedRoute><EvangelistDashboard /></ProtectedRoute>} />

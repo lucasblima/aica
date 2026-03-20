@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/services/supabaseClient'
 import { useAuth } from '@/hooks/useAuth'
 import { CeramicLoadingState } from '@/components'
+import { connectGoogleCalendar } from '@/services/googleAuthService'
+import { Calendar } from 'lucide-react'
 
 export default function WelcomePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user, isLoading } = useAuth()
   const [step, setStep] = useState<'welcome' | 'password' | 'done'>('welcome')
   const [password, setPassword] = useState('')
@@ -17,13 +20,22 @@ export default function WelcomePage() {
   const firstName = user?.user_metadata?.first_name || 'usuario'
   const source = user?.user_metadata?.source
   const isTelegramUser = source === 'telegram_bot'
+  const urlSource = searchParams.get('source')
 
-  // If user is not from Telegram or already has a password, redirect to home
+  // If user is already onboarded, or not a Telegram user, redirect to home
   useEffect(() => {
-    if (!isLoading && user && !isTelegramUser) {
-      navigate('/', { replace: true })
+    if (!isLoading && user) {
+      // Already onboarded? Go home
+      if (user.user_metadata?.web_onboarded) {
+        navigate('/', { replace: true })
+        return
+      }
+      // Not a Telegram user AND no source=telegram in URL? Go home
+      if (!isTelegramUser && urlSource !== 'telegram') {
+        navigate('/', { replace: true })
+      }
     }
-  }, [isLoading, user, isTelegramUser, navigate])
+  }, [isLoading, user, isTelegramUser, urlSource, navigate])
 
   if (isLoading) {
     return (
@@ -57,10 +69,13 @@ export default function WelcomePage() {
       return
     }
 
+    const { error: flagError } = await supabase.auth.updateUser({ data: { web_onboarded: true } })
+    if (flagError) console.warn('Failed to set web_onboarded:', flagError)
     setStep('done')
   }
 
-  const handleSkipPassword = () => {
+  const handleSkipPassword = async () => {
+    await supabase.auth.updateUser({ data: { web_onboarded: true } })
     navigate('/', { replace: true })
   }
 
@@ -79,7 +94,9 @@ export default function WelcomePage() {
               Bem-vindo, {firstName}!
             </h1>
             <p className="text-ceramic-text-secondary mb-6">
-              Sua conta AICA esta pronta. Você já pode acessar todos os modulos pelo navegador.
+              {urlSource === 'telegram'
+                ? 'Voce veio do Telegram! Sua conta AICA esta pronta. Crie uma senha para acessar pelo navegador.'
+                : 'Sua conta AICA esta pronta. Voce ja pode acessar todos os modulos pelo navegador.'}
             </p>
 
             <div className="space-y-3">
@@ -97,9 +114,21 @@ export default function WelcomePage() {
               </button>
             </div>
 
-            <p className="text-xs text-ceramic-text-secondary mt-6">
-              Você também pode conectar o Google Calendar depois em Configurações.
-            </p>
+            <div className="mt-6 pt-4 border-t border-ceramic-border">
+              <p className="text-xs text-ceramic-text-secondary mb-2">
+                Conecte seu Google Calendar para sincronizar eventos:
+              </p>
+              <button
+                onClick={async () => {
+                  await supabase.auth.updateUser({ data: { web_onboarded: true } })
+                  connectGoogleCalendar()
+                }}
+                className="w-full bg-ceramic-cool hover:bg-ceramic-border text-ceramic-text-primary font-medium rounded-lg px-4 py-2.5 transition-colors text-sm flex items-center justify-center gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                Conectar Google Calendar
+              </button>
+            </div>
           </div>
         )}
 
@@ -170,6 +199,13 @@ export default function WelcomePage() {
             <p className="text-ceramic-text-secondary mb-6">
               Agora você pode acessar a AICA com email e senha, alem do Telegram.
             </p>
+            <button
+              onClick={() => connectGoogleCalendar()}
+              className="w-full bg-ceramic-cool hover:bg-ceramic-border text-ceramic-text-primary font-medium rounded-lg px-4 py-2.5 transition-colors text-sm flex items-center justify-center gap-2 mb-3"
+            >
+              <Calendar className="w-4 h-4" />
+              Conectar Google Calendar
+            </button>
             <button
               onClick={handleGoToDashboard}
               className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg px-4 py-3 transition-colors"
