@@ -56,6 +56,8 @@ interface ExtendedAthleteCardProps extends Omit<AthleteCardProps, 'recentFeedbac
   groupTags?: AthleteGroup[];
   /** Number of unread feedback entries from this athlete */
   unreadFeedbackCount?: number;
+  /** Total number of feedback entries from this athlete */
+  totalFeedbackCount?: number;
 }
 
 export function AthleteCard({
@@ -73,6 +75,7 @@ export function AthleteCard({
   inviteStatus = 'none',
   groupTags = [],
   unreadFeedbackCount = 0,
+  totalFeedbackCount = 0,
 }: ExtendedAthleteCardProps) {
   // Menu dropdown state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -339,13 +342,9 @@ export function AthleteCard({
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
                 Feedbacks
               </p>
-              {unreadFeedbackCount > 0 ? (
-                <p className="text-xs font-bold text-ceramic-accent">
-                  {unreadFeedbackCount} novo{unreadFeedbackCount > 1 ? 's' : ''}
-                </p>
-              ) : recentFeedbacks.length > 0 && recentFeedbacks[0].completed_at ? (
+              {(totalFeedbackCount > 0 || unreadFeedbackCount > 0) ? (
                 <p className="text-xs font-bold text-ceramic-text-primary">
-                  {recentFeedbacks.length} · {new Date(recentFeedbacks[0].completed_at).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
+                  {Math.max(totalFeedbackCount, unreadFeedbackCount)}{unreadFeedbackCount > 0 ? ` (${unreadFeedbackCount} novo${unreadFeedbackCount > 1 ? 's' : ''})` : ''}
                 </p>
               ) : (
                 <p className="text-xs font-medium text-ceramic-text-secondary">Nenhum</p>

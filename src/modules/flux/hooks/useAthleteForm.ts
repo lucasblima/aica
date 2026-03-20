@@ -355,11 +355,13 @@ export function useAthleteForm({
   }, [isDirty, resetForm, onClose]);
 
   const errorCount = Object.keys(errors).length;
+  // In edit mode, name/phone fields are hidden (managed on athlete profile page),
+  // so we skip their validation to prevent a silent form lock
   const isFormValid =
     errorCount === 0 &&
     (mode === 'create'
       ? true  // Create mode: no name/phone required (athlete fills during onboarding)
-      : !!formData.name && !!formData.phone);
+      : true); // Edit mode: name/phone not editable in drawer, skip validation
 
   return {
     formData,
