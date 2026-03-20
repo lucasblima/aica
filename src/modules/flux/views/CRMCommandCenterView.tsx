@@ -2,7 +2,7 @@
  * CRMCommandCenterView - Painel do Treinador (Coach Panel)
  *
  * Tela 5: Central de gestao com filtros visuais (modality/level/group tabs),
- * ações em massa, sort por adesão, AthleteCard integrado, e Novo Atleta.
+ * ações em massa, sort por feedbacks respondidos, AthleteCard integrado, e Novo Atleta.
  * Substitui os dropdowns por pill tabs iguais ao FluxDashboard.
  *
  * Renamed from "Command Center" to "Painel do Treinador" (#460).
@@ -56,7 +56,6 @@ import type { WorkoutAutomation } from '../types/flow';
 import {
   MODALITY_CONFIG,
   TRAINING_MODALITIES,
-  LEVEL_LABELS,
   getGroupColorClasses,
 } from '../types/flux';
 
@@ -301,7 +300,7 @@ export default function CRMCommandCenterView() {
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
   const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [adherenceSort, setAdherenceSort] = useState<SortOrder>('none');
+  const [feedbackSort, setFeedbackSort] = useState<SortOrder>('none');
 
   // Group filter states
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
@@ -458,12 +457,12 @@ export default function CRMCommandCenterView() {
       });
     }
 
-    // Sort by adherence
-    if (adherenceSort !== 'none') {
+    // Sort by feedback count (unread feedbacks responded)
+    if (feedbackSort !== 'none') {
       result.sort((a, b) => {
-        const rateA = a.adherence_rate ?? 0;
-        const rateB = b.adherence_rate ?? 0;
-        return adherenceSort === 'asc' ? rateA - rateB : rateB - rateA;
+        const countA = unreadCounts[a.id] ?? 0;
+        const countB = unreadCounts[b.id] ?? 0;
+        return feedbackSort === 'asc' ? countA - countB : countB - countA;
       });
     }
 
@@ -475,13 +474,14 @@ export default function CRMCommandCenterView() {
     selectedLevel,
     selectedGroupIds,
     groupData,
-    adherenceSort,
+    feedbackSort,
     coachLevels,
+    unreadCounts,
   ]);
 
   // ---- Helpers ----
-  const toggleAdherenceSort = () => {
-    setAdherenceSort((current) => {
+  const toggleFeedbackSort = () => {
+    setFeedbackSort((current) => {
       if (current === 'none') return 'desc';
       if (current === 'desc') return 'asc';
       return 'none';
@@ -541,7 +541,7 @@ export default function CRMCommandCenterView() {
     setSelectedModality('all');
     setSelectedLevel('all');
     setSelectedGroupIds([]);
-    setAdherenceSort('none');
+    setFeedbackSort('none');
   };
 
   // ---- Athlete CRUD handlers (same pattern as FluxDashboard) ----
@@ -1152,39 +1152,44 @@ export default function CRMCommandCenterView() {
             )}
           </div>
 
-          {/* Sort by Adherence */}
+          {/* Sort by Feedbacks */}
           <button
-            onClick={toggleAdherenceSort}
+            onClick={toggleFeedbackSort}
             className={`flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all whitespace-nowrap ${
-              adherenceSort !== 'none'
+              feedbackSort !== 'none'
                 ? 'ceramic-card bg-ceramic-base shadow-md'
                 : 'ceramic-inset hover:bg-white/50'
             }`}
             title={
-              adherenceSort === 'none'
-                ? 'Ordenar por adesão'
-                : adherenceSort === 'desc'
-                ? 'Maior adesão primeiro'
-                : 'Menor adesão primeiro'
+              feedbackSort === 'none'
+                ? 'Ordenar por feedbacks pendentes'
+                : feedbackSort === 'desc'
+                ? 'Mais pendentes primeiro'
+                : 'Menos pendentes primeiro'
             }
           >
-            {adherenceSort === 'none' && (
+            {feedbackSort === 'none' && (
               <ArrowUpDown className="w-4 h-4 text-ceramic-text-secondary" />
             )}
-            {adherenceSort === 'desc' && (
+            {feedbackSort === 'desc' && (
               <ArrowDown className="w-4 h-4 text-ceramic-success" />
             )}
-            {adherenceSort === 'asc' && (
+            {feedbackSort === 'asc' && (
               <ArrowUp className="w-4 h-4 text-ceramic-error" />
             )}
+            <MessageCircle className={`w-3.5 h-3.5 ${
+              feedbackSort !== 'none'
+                ? 'text-ceramic-accent'
+                : 'text-ceramic-text-secondary'
+            }`} />
             <span
               className={`text-xs font-bold uppercase tracking-wider ${
-                adherenceSort !== 'none'
+                feedbackSort !== 'none'
                   ? 'text-ceramic-text-primary'
                   : 'text-ceramic-text-secondary'
               }`}
             >
-              Adesao
+              Feedbacks
             </span>
           </button>
 
@@ -1298,29 +1303,7 @@ export default function CRMCommandCenterView() {
                     unreadFeedbackCount={unreadCounts[athlete.id] || 0}
                   />
 
-                  {/* CRM extra info: all practiced modalities + level */}
-                  {athlete.practiced_modalities && athlete.practiced_modalities.length > 1 && (
-                    <div className="px-4 py-2 bg-ceramic-cool/50 border-t border-ceramic-border flex items-center gap-1.5 flex-wrap rounded-b-xl -mt-1">
-                      <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mr-1">
-                        Modalidades:
-                      </span>
-                      {athlete.practiced_modalities.map((mod) => {
-                        const config = MODALITY_CONFIG[mod as TrainingModality];
-                        return config ? (
-                          <span
-                            key={mod}
-                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-ceramic-base rounded text-[10px] font-medium text-ceramic-text-primary"
-                            title={config.label}
-                          >
-                            {config.icon} {config.label}
-                          </span>
-                        ) : null;
-                      })}
-                      <span className="text-[10px] text-ceramic-text-secondary ml-1">
-                        &bull; {LEVEL_LABELS[athlete.level]}
-                      </span>
-                    </div>
-                  )}
+                  {/* Modalities now shown inside AthleteCard — external section removed (#972) */}
                 </div>
               );
             })}

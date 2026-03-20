@@ -29,8 +29,9 @@ import {
   FileText,
   Loader2,
   GraduationCap,
+  Tag,
 } from 'lucide-react';
-import type { Athlete, ModalityLevel, CoachLevel } from '../../types/flux';
+import type { Athlete, ModalityLevel, CoachLevel, AthleteGroup } from '../../types/flux';
 import { getGroupColorClasses } from '../../types/flux';
 import { CoachInviteLinkService, type CoachInviteLink } from '../../services/coachInviteLinkService';
 import { supabase } from '@/services/supabaseClient';
@@ -81,26 +82,59 @@ export default function AthleteFormDrawer({
   // Custom levels for level selector (edit mode)
   const [coachLevels, setCoachLevels] = useState<CoachLevel[]>([]);
 
+  // Groups for group selector (edit mode)
+  const [coachGroups, setCoachGroups] = useState<AthleteGroup[]>([]);
+  const [athleteGroupIds, setAthleteGroupIds] = useState<string[]>([]);
+  const [groupSaving, setGroupSaving] = useState(false);
+
   React.useEffect(() => {
     if (mode === 'edit' && isOpen) {
-      const loadLevels = async () => {
+      const loadCoachData = async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
-          const { data, error } = await supabase
-            .from('coach_levels')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('display_order');
-          if (error) console.error('[AthleteFormDrawer] Failed to load coach levels:', error);
-          setCoachLevels((data || []) as CoachLevel[]);
+
+          // Load levels, groups, and memberships in parallel
+          const [levelsResult, groupsResult, membershipsResult] = await Promise.all([
+            supabase
+              .from('coach_levels')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('display_order'),
+            supabase
+              .from('athlete_groups')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('created_at'),
+            initialData?.id
+              ? supabase
+                  .from('athlete_group_members')
+                  .select('group_id')
+                  .eq('athlete_id', initialData.id)
+              : Promise.resolve({ data: null, error: null }),
+          ]);
+
+          if (levelsResult.error) console.error('[AthleteFormDrawer] Failed to load coach levels:', levelsResult.error);
+          if (groupsResult.error) console.error('[AthleteFormDrawer] Failed to load groups:', groupsResult.error);
+          if (membershipsResult.error) console.error('[AthleteFormDrawer] Failed to load group memberships:', membershipsResult.error);
+
+          setCoachLevels((levelsResult.data || []) as CoachLevel[]);
+          setCoachGroups(
+            (groupsResult.data || []).map((g: { id: string; name: string; color: string; created_at: string }) => ({
+              id: g.id,
+              name: g.name,
+              color: g.color,
+              createdAt: g.created_at,
+            }))
+          );
+          setAthleteGroupIds((membershipsResult.data || []).map((m: { group_id: string }) => m.group_id));
         } catch (err) {
-          console.error('[AthleteFormDrawer] Failed to load coach levels:', err);
+          console.error('[AthleteFormDrawer] Failed to load coach data:', err);
         }
       };
-      loadLevels();
+      loadCoachData();
     }
-  }, [mode, isOpen]);
+  }, [mode, isOpen, initialData?.id]);
 
   // Generate coringa link on success
   React.useEffect(() => {
@@ -158,6 +192,31 @@ export default function AthleteFormDrawer({
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.y > 150) {
       handleClose();
+    }
+  };
+
+  const handleToggleGroup = async (groupId: string) => {
+    if (!initialData?.id) return;
+    setGroupSaving(true);
+    try {
+      const isInGroup = athleteGroupIds.includes(groupId);
+      if (isInGroup) {
+        await supabase
+          .from('athlete_group_members')
+          .delete()
+          .eq('group_id', groupId)
+          .eq('athlete_id', initialData.id);
+        setAthleteGroupIds((prev) => prev.filter((id) => id !== groupId));
+      } else {
+        await supabase
+          .from('athlete_group_members')
+          .insert({ group_id: groupId, athlete_id: initialData.id });
+        setAthleteGroupIds((prev) => [...prev, groupId]);
+      }
+    } catch (err) {
+      console.error('[AthleteFormDrawer] Failed to toggle group:', err);
+    } finally {
+      setGroupSaving(false);
     }
   };
 
@@ -335,7 +394,7 @@ export default function AthleteFormDrawer({
                           <UserIcon className="w-4 h-4 text-ceramic-text-primary" />
                         </div>
                         <span className="text-sm font-bold text-ceramic-text-primary">
-                          1. Informações Basicas
+                          Informações Basicas
                         </span>
                       </div>
                       <ChevronDown
@@ -427,7 +486,7 @@ export default function AthleteFormDrawer({
                           <Target className="w-4 h-4 text-ceramic-text-primary" />
                         </div>
                         <span className="text-sm font-bold text-ceramic-text-primary">
-                          2. Modalidades
+                          Modalidades
                         </span>
                       </div>
                       <ChevronDown
@@ -568,7 +627,52 @@ export default function AthleteFormDrawer({
                   </div>
                 )}
 
-                {/* Section 3: Health Configuration */}
+                {/* Section: Groups (edit mode, only if coach has groups) */}
+                {mode === 'edit' && coachGroups.length > 0 && (
+                  <div className="ceramic-card p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="ceramic-inset p-2">
+                        <Tag className="w-4 h-4 text-ceramic-text-primary" />
+                      </div>
+                      <span className="text-sm font-bold text-ceramic-text-primary">
+                        Grupos
+                      </span>
+                      {groupSaving && (
+                        <Loader2 className="w-3.5 h-3.5 text-ceramic-text-secondary animate-spin" />
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {coachGroups.map((group) => {
+                        const colors = getGroupColorClasses(group.color);
+                        const isInGroup = athleteGroupIds.includes(group.id);
+                        return (
+                          <button
+                            key={group.id}
+                            type="button"
+                            onClick={() => handleToggleGroup(group.id)}
+                            disabled={groupSaving}
+                            aria-pressed={isInGroup}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                              isInGroup
+                                ? `${colors.bg} ${colors.text} shadow-md`
+                                : 'ceramic-inset text-ceramic-text-secondary hover:bg-white/50'
+                            }`}
+                          >
+                            <div className={`w-2 h-2 rounded-full ${colors.bg} ${
+                              isInGroup ? 'ring-1 ring-current ring-offset-1' : ''
+                            }`} />
+                            {group.name}
+                            {isInGroup && (
+                              <CheckCircle className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Section: Health Configuration */}
                 <div className="ceramic-card overflow-hidden">
                   <button
                     type="button"
@@ -580,7 +684,7 @@ export default function AthleteFormDrawer({
                         <Heart className="w-4 h-4 text-ceramic-text-primary" />
                       </div>
                       <span className="text-sm font-bold text-ceramic-text-primary">
-                        {mode === 'create' ? '1' : '3'}. Dados de Saude
+                        Dados de Saude
                       </span>
                     </div>
                     <ChevronDown
