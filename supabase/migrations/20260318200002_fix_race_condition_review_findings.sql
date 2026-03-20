@@ -25,6 +25,12 @@ DECLARE
   v_leveled_up BOOLEAN := false;
   v_old_level INT;
 BEGIN
+  -- Guard: reject negative points (SECURITY DEFINER — defensive coding)
+  IF p_points < 0 THEN
+    RAISE EXCEPTION 'p_points must be non-negative: %', p_points
+      USING ERRCODE = 'check_violation';
+  END IF;
+
   INSERT INTO consciousness_points_log (user_id, points, reason, reference_id, reference_type)
   VALUES (p_user_id, p_points, p_reason, p_reference_id, p_reference_type);
 

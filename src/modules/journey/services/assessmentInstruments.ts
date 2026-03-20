@@ -144,6 +144,9 @@ const MAAS: AssessmentInstrument = {
   validationReference: 'Brown & Ryan (2003). PT-BR: Barros et al. (2015), alpha=0.83.',
   estimatedMinutes: 4,
   scoreRange: { min: 1, max: 6 },
+  // MAAS items use a "reverse" scale by design: 1="Quase sempre" (low mindfulness),
+  // 6="Quase nunca" (high mindfulness). isReversed is set to true for documentation
+  // but no numeric reversal is needed — higher raw values already map to greater mindfulness.
   items: [
     { code: 'MA1', text: 'Posso experienciar uma emoção e só tomo consciência dela algum tempo depois.', subscale: 'mindfulness', inputType: 'likert', scaleMin: 1, scaleMax: 6, scaleMinLabel: 'Quase sempre', scaleMaxLabel: 'Quase nunca', isReversed: true },
     { code: 'MA2', text: 'Quebro ou derrubo coisas por descuido, por não prestar atenção ou por estar pensando em outra coisa.', subscale: 'mindfulness', inputType: 'likert', scaleMin: 1, scaleMax: 6, scaleMinLabel: 'Quase sempre', scaleMaxLabel: 'Quase nunca', isReversed: true },
