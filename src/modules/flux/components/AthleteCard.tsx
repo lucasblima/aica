@@ -161,14 +161,26 @@ export function AthleteCard({
                 />
               )}
             </div>
-            {/* Modality icons (level removed — can vary per modality) */}
-            {athlete.modality && (
-              <div className="mt-0.5 flex items-center gap-1">
-                <span className="text-sm" title={MODALITY_CONFIG[athlete.modality]?.label}>
-                  {MODALITY_CONFIG[athlete.modality]?.icon}
-                </span>
-              </div>
-            )}
+            {/* Modality emoji icons — show all practiced modalities */}
+            {(() => {
+              const allModalities = athlete.practiced_modalities?.length
+                ? athlete.practiced_modalities
+                : athlete.modality
+                  ? [athlete.modality]
+                  : [];
+              return allModalities.length > 0 ? (
+                <div className="mt-0.5 flex items-center gap-1">
+                  {allModalities.map((mod) => {
+                    const config = MODALITY_CONFIG[mod as keyof typeof MODALITY_CONFIG];
+                    return config ? (
+                      <span key={mod} className="text-sm" title={config.label}>
+                        {config.icon}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              ) : null;
+            })()}
           </div>
 
           {/* Status Badge — #693: hover tooltip for ATIVO/INATIVO */}
