@@ -93,7 +93,7 @@ function logInteraction(
       p_tokens_out: 0,
     })
     .then(() => {
-      console.log(`[gemini-chat-v2] Logged interaction: module=${module}`)
+      console.log(`[gemini-chat-v2] Interaction logged: module=${module}`)
     })
     .catch((err: any) => {
       console.warn(`[gemini-chat-v2] Failed to log interaction: ${err.message}`)
@@ -122,7 +122,15 @@ serve(async (req: Request) => {
     }
 
     // --- PARSE REQUEST ---
-    const body = await req.json()
+    let body: any
+    try {
+      body = await req.json()
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Corpo da requisicao invalido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
     const { messages, session_id: sessionId } = body
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -187,7 +195,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('[gemini-chat-v2] Error:', (error as Error).message)
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor', details: (error as Error).message }),
+      JSON.stringify({ error: 'Erro interno do servidor' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
