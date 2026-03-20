@@ -78,6 +78,7 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
   const [dailyCosts, setDailyCosts] = useState<DailyCostSummary[]>([]);
 
   useEffect(() => {
+    if (!userId) return;
     loadData();
   }, [userId]);
 

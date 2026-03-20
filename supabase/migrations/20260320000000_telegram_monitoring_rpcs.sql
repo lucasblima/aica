@@ -345,6 +345,10 @@ COMMENT ON FUNCTION get_admin_telegram_error_log IS 'Returns Telegram error rate
 
 -- =============================================================================
 -- GRANTS
+-- Granted to 'authenticated' because the frontend calls these RPCs directly.
+-- Each function checks is_admin() internally and raises an exception for
+-- non-admin users, so the authorization gate is inside the function body.
+-- Using service_role would require an Edge Function intermediary for each RPC.
 -- =============================================================================
 
 GRANT EXECUTE ON FUNCTION get_admin_telegram_stats() TO authenticated;
