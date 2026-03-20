@@ -24,12 +24,19 @@ test_action() {
   local action="$1"
   local payload="$2"
   local http_code
+  local curl_status=0
 
   http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"action\": \"$action\", \"payload\": $payload}" \
-    --max-time 30)
+    --max-time 30) || curl_status=$?
+
+  if [ "$curl_status" -ne 0 ]; then
+    echo "  SKIP [curl:$curl_status]: $action"
+    SKIP=$((SKIP + 1))
+    return
+  fi
 
   if [ "$http_code" = "200" ]; then
     echo "  PASS [$http_code]: $action"

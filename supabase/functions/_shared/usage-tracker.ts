@@ -20,7 +20,7 @@ export async function logInteraction(
   params: UsageLogParams
 ): Promise<void> {
   try {
-    await supabaseClient.rpc('log_interaction', {
+    const { error } = await supabaseClient.rpc('log_interaction', {
       p_user_id: userId,
       p_action: params.action,
       p_module: params.module || null,
@@ -28,7 +28,10 @@ export async function logInteraction(
       p_tokens_in: params.tokensIn || 0,
       p_tokens_out: params.tokensOut || 0,
     })
-  } catch {
-    // Fire-and-forget: tracking errors never break main flow
+    if (error) {
+      console.warn('[logInteraction] log_interaction failed:', error.message)
+    }
+  } catch (error) {
+    console.warn('[logInteraction] unexpected failure:', error)
   }
 }

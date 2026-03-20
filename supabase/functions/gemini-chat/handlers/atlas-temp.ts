@@ -119,7 +119,8 @@ export async function handleTranscribeAudio(genAI: GoogleGenerativeAI, payload: 
 
 export async function handleGenerateTags(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
   const { prompt, temperature, maxOutputTokens } = payload
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.7, maxOutputTokens: maxOutputTokens || 200 } })
+  const safeMaxTokens = Math.max(100, Math.min(8192, Number(maxOutputTokens) || 4096))
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.7, maxOutputTokens: safeMaxTokens } })
   const result = await model.generateContent(prompt)
   return {
     text: result.response.text(),

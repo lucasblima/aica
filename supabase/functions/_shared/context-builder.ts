@@ -12,7 +12,16 @@ import type { UserContextResult, ChatAction } from './gemini-types.ts'
 export async function buildUserContext(supabaseAdmin: any, userId: string, module: string): Promise<UserContextResult> {
   const contextParts: string[] = []
   const rawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
-  console.log(`[buildUserContext] Starting for userId=${userId}, module=${module}`)
+  console.log(`[buildUserContext] Starting module=${module}`)
+
+  const appendSection = async (name: string, fn: () => Promise<void>) => {
+    try {
+      await fn()
+    } catch (error) {
+      console.warn(`[buildUserContext] ${name} failed:`, (error as Error).message)
+      contextParts.push(`\n(${name} indisponivel)`)
+    }
+  }
 
   try {
     // Always fetch basic stats for coordinator context

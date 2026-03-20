@@ -92,6 +92,10 @@ PIX - REGRAS CRITICAS:
 TEXTO:
 ${rawText.substring(0, 15000).trim()}`
 
+  if (rawText.length > 15000) {
+    console.warn(`[parse_statement] Input truncated: ${rawText.length} chars → 15000. Some transactions may be missing.`)
+  }
+
   try {
     const result = await model.generateContent(prompt)
     const response = result.response
@@ -222,6 +226,9 @@ ${txList}`
   } catch (err) {
     const error = err as Error
     console.error(`[categorize_transactions] FAILED:`, error.message)
+    if (transactions.length > 0) {
+      return { categories: [], error: `Classification failed: ${error.message}` }
+    }
     return { categories: [] }
   }
 }

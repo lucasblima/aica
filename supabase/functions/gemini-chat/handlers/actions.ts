@@ -143,7 +143,7 @@ export async function handleExecuteChatAction(
         if (!params.task_id) return { success: false, action_type, error: 'task_id e obrigatorio' }
         const { data, error } = await supabaseAdmin
           .from('work_items')
-          .update({ status: 'done', updated_at: new Date().toISOString() })
+          .update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq('id', params.task_id)
           .eq('user_id', userId)
           .select('id, title, status')

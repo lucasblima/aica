@@ -61,7 +61,7 @@ export async function handleGenerateWeeklySummary(genAI: GoogleGenerativeAI, pay
   if (!payload.moments || !Array.isArray(payload.moments)) throw new Error('Campo "moments" e obrigatorio')
   if (payload.moments.length === 0) throw new Error('Array de momentos esta vazio')
 
-  const model = genAI.getGenerativeModel({ model: MODELS.smart, generationConfig: { temperature: 0.5, topP: 0.9, topK: 40, maxOutputTokens: 2048 } })
+  const model = genAI.getGenerativeModel({ model: MODELS.smart, generationConfig: { temperature: 0.5, topP: 0.9, topK: 40, maxOutputTokens: 4096 } })
   const result = await model.generateContent(JOURNEY_PROMPTS.generate_weekly_summary(payload.moments))
   const text = result.response.text()
 
@@ -280,7 +280,9 @@ Retorne JSON: { "quality_score": number, "relevance": number, "depth": number, "
 
 export async function handleAnalyzeContentRealtime(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
   const { prompt, temperature, maxOutputTokens } = payload
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.8, maxOutputTokens: maxOutputTokens || 150 } })
+  const safeTemp = Math.max(0, Math.min(2, Number(temperature) || 0.8))
+  const safeTokens = Math.max(100, Math.min(8192, Number(maxOutputTokens) || 150))
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: safeTemp, maxOutputTokens: safeTokens } })
   const result = await model.generateContent(prompt)
   return {
     text: result.response.text(),
@@ -290,7 +292,9 @@ export async function handleAnalyzeContentRealtime(genAI: GoogleGenerativeAI, pa
 
 export async function handleGeneratePostCaptureInsight(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
   const { prompt, temperature, maxOutputTokens } = payload
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.7, maxOutputTokens: maxOutputTokens || 200 } })
+  const safeTemp = Math.max(0, Math.min(2, Number(temperature) || 0.7))
+  const safeTokens = Math.max(100, Math.min(8192, Number(maxOutputTokens) || 200))
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: safeTemp, maxOutputTokens: safeTokens } })
   const result = await model.generateContent(prompt)
   return {
     text: result.response.text(),
@@ -300,7 +304,9 @@ export async function handleGeneratePostCaptureInsight(genAI: GoogleGenerativeAI
 
 export async function handleClusterMomentsByTheme(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
   const { prompt, temperature, maxOutputTokens } = payload
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.6, maxOutputTokens: maxOutputTokens || 500 } })
+  const safeTemp = Math.max(0, Math.min(2, Number(temperature) || 0.6))
+  const safeTokens = Math.max(100, Math.min(8192, Number(maxOutputTokens) || 500))
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: safeTemp, maxOutputTokens: safeTokens } })
   const result = await model.generateContent(prompt)
   return {
     text: result.response.text(),
@@ -311,7 +317,7 @@ export async function handleClusterMomentsByTheme(genAI: GoogleGenerativeAI, pay
 export async function handleGenerateDailyReport(genAI: GoogleGenerativeAI, payload: DailyReportPayload): Promise<DailyReportResult> {
   const { date, tasksCompleted, tasksTotal, productivityScore, moodScore, energyLevel, activeModules, content } = payload
 
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 } })
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 4096 } })
   const completionRate = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0
 
   const prompt = `Voce e um coach de produtividade e bem-estar. Gere um relatorio diario baseado nos dados abaixo:
@@ -339,8 +345,7 @@ Seja empatico, construtivo e especifico. Retorne APENAS JSON valido.`
 
   let parsed: DailyReportResult
   try {
-    const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
-    parsed = JSON.parse(jsonStr)
+    parsed = extractJSON(text)
   } catch {
     console.error('[generate_daily_report] Failed to parse JSON:', text)
     return {

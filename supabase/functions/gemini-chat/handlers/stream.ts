@@ -23,8 +23,11 @@ export async function handleStreamChat(
   let isInterviewMode = interviewMeta?.type === 'interview_start'
 
   // Phase 3: Detect module via intent classification (fast, low tokens)
-  let streamModule = payload?.module || 'coordinator'
-  let detectedAgent = 'aica_coordinator'
+  const requestedModule = typeof payload?.module === 'string' ? payload.module : undefined
+  let streamModule = requestedModule && VALID_AGENTS.includes(requestedModule)
+    ? requestedModule
+    : 'coordinator'
+  let detectedAgent = streamModule === 'coordinator' ? 'aica_coordinator' : `aica_${streamModule}`
   let detectedInterviewIntent: string | null = null
 
   if (isInterviewMode) {
@@ -141,8 +144,10 @@ export async function handleStreamChat(
     const fallbackUsage = nonStreamResult.response.usageMetadata
     return new Response(JSON.stringify({
       success: true,
+      fullText: nonStreamText,
       text: nonStreamText,
       agent: detectedAgent,
+      actions: fallbackActions,
       suggestedActions: fallbackActions,
       suggested_questions: fallbackQuestions,
       usage: { input: fallbackUsage?.promptTokenCount || 0, output: fallbackUsage?.candidatesTokenCount || 0 },
