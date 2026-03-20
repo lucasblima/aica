@@ -150,12 +150,23 @@ export default function AthleteFormDrawer({
     }
   }, [submitSuccess, mode, coringaLink, formData.requires_cardio_exam, formData.requires_clearance_cert, formData.allow_parq_onboarding]);
 
-  // Accordion state — in create mode, open health; in edit mode, health is the main section
+  // Accordion state — in create mode, open basic; in edit mode, health is the main section
   const [openSections, setOpenSections] = useState({
     basic: mode === 'create',
     modalities: false,
     health: true,
   });
+
+  // Reset accordion when mode or drawer open state changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setOpenSections({
+        basic: mode === 'create',
+        modalities: false,
+        health: true,
+      });
+    }
+  }, [isOpen, mode]);
 
   // Swipe to dismiss (mobile)
   const y = useMotionValue(0);

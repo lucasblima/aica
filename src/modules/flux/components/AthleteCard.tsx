@@ -342,9 +342,9 @@ export function AthleteCard({
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
                 Feedbacks
               </p>
-              {totalFeedbackCount > 0 ? (
+              {(totalFeedbackCount > 0 || unreadFeedbackCount > 0) ? (
                 <p className="text-xs font-bold text-ceramic-text-primary">
-                  {totalFeedbackCount}{unreadFeedbackCount > 0 ? ` (${unreadFeedbackCount} novo${unreadFeedbackCount > 1 ? 's' : ''})` : ''}
+                  {Math.max(totalFeedbackCount, unreadFeedbackCount)}{unreadFeedbackCount > 0 ? ` (${unreadFeedbackCount} novo${unreadFeedbackCount > 1 ? 's' : ''})` : ''}
                 </p>
               ) : (
                 <p className="text-xs font-medium text-ceramic-text-secondary">Nenhum</p>

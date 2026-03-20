@@ -8,7 +8,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF auth.uid() != p_coach_user_id THEN
+  IF auth.uid() IS DISTINCT FROM p_coach_user_id THEN
     RAISE EXCEPTION 'Unauthorized: can only query own feedback counts';
   END IF;
 
