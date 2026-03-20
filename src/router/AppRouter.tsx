@@ -482,7 +482,7 @@ export function AppRouter() {
             associations={associations}
             lifeAreas={lifeAreas}
             onLogout={() => supabase.auth.signOut()}
-            onNavigateToView={(view: ViewState) => view === 'finance' ? navigate('/financeiro') : setCurrentView(view)}
+            onNavigateToView={(view: ViewState) => view === 'finance' ? navigate('/financeiro') : view === 'life-score' ? navigate('/life-score') : setCurrentView(view)}
             onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
             onOpenAssociation={handleOpenAssociation}
             onSelectArchetype={handleSelectArchetype}
