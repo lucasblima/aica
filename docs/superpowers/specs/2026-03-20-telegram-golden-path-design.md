@@ -87,11 +87,31 @@ Telegram is AICA's primary conversational interface. The web app handles complex
 | `onboarding_email_sent` | Magic link sent, awaiting validation | `null` (active) |
 | `null` | Active user, normal operation | Any flow |
 
-### 2.3 Interaction Limits
+**Note:** `GUEST_LIMITED` is a derived state, not stored in `active_flow`. It is determined by: `active_flow IS NULL` AND `email ends with @telegram.aica.guru` AND `flow_state.interaction_count > 5`.
 
-- After 3 interactions without email → ask gently
-- After 5 interactions without email → limit to 1 response/hour until email provided
+### 2.3 Backwards Compatibility
+
+The existing `email_registration` flow (in production) is **replaced** by `onboarding_ask_email` + `onboarding_email_sent`. The existing `handleEmailRegistration` function is refactored into the new onboarding handlers. Users currently in `email_registration` state (if any) will be migrated to `onboarding_ask_email` via migration.
+
+### 2.4 Interaction Limits
+
+- Interaction counter stored in `telegram_conversations.flow_state.interaction_count` (incremented on each user message)
+- Last response timestamp stored in `flow_state.last_limited_response_at`
+- After 3 interactions without email → WOW moment + gentle email ask
+- After 5 interactions without email → limit to 1 response/hour (check `last_limited_response_at`)
+- Rate-limited response: "Para continuar conversando sem limites, me diz seu email 📧"
+- The existing 20 msgs/min burst rate limit applies independently (spam protection, not onboarding)
 - Never block completely — but make clear email is needed for permanence
+
+### 2.5 Error / Edge States
+
+| Scenario | Behavior |
+|---|---|
+| User sends `/start` again during onboarding | Reset to `onboarding_greeting`, don't create duplicate account |
+| User sends a command (`/help`, `/status`) during onboarding | Execute command normally, then resume onboarding flow |
+| Magic link expires (not clicked within 1h) | On next Telegram message, detect expired state, offer to resend |
+| User blocks bot and returns weeks later | Check existing state, resume from where they left off |
+| Stale session (no message >30 days) | Reset `active_flow` to `onboarding_greeting` on next `/start` |
 
 ---
 
@@ -123,7 +143,9 @@ The bot's responses are AI-generated, not hardcoded templates. The system prompt
 
 ### 3.3 WOW Moment
 
-After 2-3 interactions, the bot generates a visual summary:
+**Trigger condition:** `flow_state.interaction_count >= 3` OR `flow_state.actions_captured >= 2` (whichever comes first). The WOW summary and email ask are combined in the same message. If the user has 0 captured actions (all messages were casual chat), the summary shows only moments/emotions detected.
+
+After the trigger, the bot generates a visual summary:
 
 ```
 "Here's what we've built together:
@@ -154,6 +176,9 @@ Merge transcription + NLP into a single Gemini call:
 
 ```
 Voice message → Download OGG to memory
+  → Base64 encode using Deno std (NOT btoa/spread — fails on large files):
+     import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+     const base64Audio = encode(audioBytes);
   → Single Gemini call:
      - Input: Audio OGG (base64) + conversation context + tools
      - System prompt includes function calling tools
@@ -163,6 +188,8 @@ Voice message → Download OGG to memory
   → Discard audio + transcript from memory
   → Send response to Telegram
 ```
+
+**Note:** The existing `btoa(String.fromCharCode(...audioBytes))` pattern will crash on voice messages >100KB due to call stack limits. Must use Deno's `encode()` from std library.
 
 ### 4.3 Function Calling Tools (Available for Audio + Text)
 
@@ -181,18 +208,23 @@ Voice message → Download OGG to memory
 
 ### 5.1 Consent Model
 
-Replace the current 3-button LGPD dialog with inline conversational consent:
+**Keep the existing button-based consent** (legally stronger under LGPD Article 8 — requires "free, informed, and unambiguous" consent). However, integrate it into the Golden Path greeting rather than as a separate step:
 
 ```
-/start greeting includes:
-"I process your messages with AI to help you.
-I never store original text — only a short summary
-of your intent. Your data is yours (LGPD).
+/start greeting:
+"Oi! Eu sou a AICA, sua assistente de vida pessoal 🌿
 
-📜 Full policy: /privacidade"
+Eu processo suas mensagens com IA para te ajudar.
+Nunca guardo o texto original — só um resumo curtinho
+da sua intencao. Seus dados sao seus (LGPD).
+📜 Politica completa: /privacidade
+
+[✅ Aceitar e comecar]  [❌ Recusar]"
 ```
 
-The act of sending the first message after this notice constitutes opt-in consent. `consent_given` is set to `true` on first user message (not on `/start`).
+On `consent_accept` → set `consent_given = true`, then immediately send the Golden Path opener ("Me manda um audio ou texto..."). This preserves the existing `grant_telegram_consent` RPC and `consent_accept`/`consent_reject` callback handlers while making the flow feel seamless.
+
+The existing consent handlers in the webhook remain functional. No migration needed for users who already consented via the old flow.
 
 ### 5.2 Audio Data Lifecycle
 
@@ -218,25 +250,54 @@ The act of sending the first message after this notice constitutes opt-in consen
 **Global quota** — Monthly ceiling on how many new users the bot can activate:
 
 ```sql
+-- Singleton table — enforced by CHECK constraint on id
 CREATE TABLE bot_invite_pool (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  id INTEGER NOT NULL DEFAULT 1 CHECK (id = 1) PRIMARY KEY,
   monthly_limit INTEGER NOT NULL DEFAULT 100,
   used_this_month INTEGER NOT NULL DEFAULT 0,
-  current_month DATE NOT NULL DEFAULT date_trunc('month', now()),
+  current_month TIMESTAMPTZ NOT NULL DEFAULT date_trunc('month', now()),
   waitlist_enabled BOOLEAN NOT NULL DEFAULT false,
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+ALTER TABLE bot_invite_pool ENABLE ROW LEVEL SECURITY;
+-- Admin-only access via SECURITY DEFINER RPCs (same pattern as monitoring)
+
+INSERT INTO bot_invite_pool (id) VALUES (1);
+
+-- Monthly reset function (called by cron)
+CREATE OR REPLACE FUNCTION reset_monthly_invite_pool()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE bot_invite_pool
+  SET used_this_month = 0,
+      current_month = date_trunc('month', now()),
+      waitlist_enabled = false,
+      updated_at = now()
+  WHERE id = 1
+    AND current_month < date_trunc('month', now());
+END;
+$$;
 ```
 
 **Individual quota** — Each activated user gets N invites:
 
 ```sql
 -- New columns on user_telegram_links:
+-- Note: referral_code is for INVITING new users (distinct from
+-- link_code which is for LINKING Telegram to existing web account)
 ALTER TABLE user_telegram_links
   ADD COLUMN invites_remaining INTEGER DEFAULT 3,
   ADD COLUMN invites_used INTEGER DEFAULT 0,
   ADD COLUMN invited_by_user_id UUID REFERENCES auth.users(id),
-  ADD COLUMN invite_code TEXT UNIQUE;
+  ADD COLUMN referral_code TEXT UNIQUE;
+
+CREATE INDEX idx_telegram_referral_code ON user_telegram_links(referral_code)
+  WHERE referral_code IS NOT NULL;
 ```
 
 ### 6.2 Invite Flow
@@ -257,7 +318,19 @@ t.me/AicaLifeBot?start=ref_{INVITE_CODE}
 
 The `/start` handler parses the `ref_` prefix to identify the inviter and track the referral chain.
 
-### 6.4 Notifications
+### 6.4 Email Validation → Telegram Callback
+
+The Telegram bot cannot detect email validation in real-time (no Supabase auth webhook). Instead, use a **lazy check** approach:
+
+1. On User B's next Telegram message after email sent, the webhook checks `auth.users.email_confirmed_at`
+2. If confirmed → transition from `onboarding_email_sent` to `null` (active)
+3. Call `consume_bot_invite` RPC (atomic quota consumption)
+4. Send activation celebration message ("Email confirmado! Voce tem 3 convites")
+5. Notify inviter via `telegram-send-notification` Edge Function
+
+If the user clicks the magic link but never returns to Telegram, the activation still happens server-side (via `WelcomePage` calling `consume_bot_invite`), and the bot sends the celebration on the next Telegram interaction.
+
+### 6.5 Notifications
 
 | Event | Who is notified | Message |
 |---|---|---|
@@ -277,19 +350,16 @@ The button should open a simple form (email already known from auth) that adds t
 
 ### 7.2 ActivationGuard.tsx
 
-**Change:** Add bypass for Telegram-originated users with validated email:
+**Change:** No client-side bypass needed. Instead, when a Telegram user validates their email (magic link clicked), the backend `consume_bot_invite` RPC sets `is_activated = true` in the same table/RPC the existing invite system uses (`check_user_activated` RPC). This way `ActivationGuard` works without modification — Telegram users are activated server-side, not via mutable `user_metadata`.
 
-```typescript
-// In ActivationGuard, before checking isActivated:
-const isTelegramActivated =
-  user?.user_metadata?.source === 'telegram_bot' &&
-  user?.email_confirmed_at != null &&
-  !user?.email?.endsWith('@telegram.aica.guru'); // Has real email
-
-if (isTelegramActivated) {
-  return <>{children}</>;
-}
-```
+The activation happens in the Golden Path's email validation step:
+1. User clicks magic link → lands on `/welcome?source=telegram`
+2. `WelcomePage` calls `supabase.auth.updateUser({ data: { web_onboarded: true } })`
+3. The `consume_bot_invite` RPC is called (from webhook or WelcomePage) which:
+   - Decrements inviter's `invites_remaining`
+   - Increments `bot_invite_pool.used_this_month`
+   - Sets `is_activated = true` for the user (same flag existing invite system uses)
+4. `ActivationGuard` sees `is_activated = true` → grants access
 
 ### 7.3 WelcomePage.tsx (already implemented in PR #982)
 
