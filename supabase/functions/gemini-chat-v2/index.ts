@@ -1,104 +1,98 @@
 /**
- * gemini-chat-v2 — AI SDK-powered chat Edge Function.
+ * gemini-chat-v2 — Action-First Chat Architecture
  *
- * This is the v2 chat endpoint that uses the Vercel AI SDK (`streamText`)
- * with the `@ai-sdk/google` provider for streaming responses + tool calling.
+ * Flow:
+ * 1. CLASSIFY: Fast generateText (no thinking) → action or conversation?
+ * 2a. ACTION: Extract params → execute DB → stream confirmation
+ * 2b. CONVERSATION: streamText with full context (with thinking)
  *
- * Request format (from AI SDK `useChat` hook):
- * { messages: [{role, content}, ...], session_id?: string }
- *
- * Response: AI SDK UI Message Stream (streaming text + tool results)
+ * The server decides and acts. Gemini only generates natural text.
+ * No dependency on Gemini function calling.
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
-import { streamText, generateText, convertToModelMessages } from 'npm:ai@^6'
+import { streamText, generateText, convertToModelMessages, createUIMessageStream } from 'npm:ai@^6'
 import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@^3'
 
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { extractUserId } from '../_shared/gemini-helpers.ts'
-import { VALID_AGENTS } from '../_shared/agent-prompts.ts'
 import { buildSystemPrompt } from './system-prompt.ts'
-import { createChatTools } from './tools.ts'
+import { executeAction, type ActionResult } from './actions.ts'
 
 // ============================================================================
-// INTENT CLASSIFICATION — Lightweight module detection using AI SDK
+// STEP 1: CLASSIFY — Is this an action or a conversation?
 // ============================================================================
 
-/**
- * Classify the user's last message into a module using generateText.
- * Returns a module name from VALID_AGENTS (defaults to 'coordinator').
- */
-async function classifyIntent(
+interface ClassifyResult {
+  type: 'action' | 'conversation'
+  action?: string
+  params?: Record<string, any>
+  module: string
+  ack?: string
+}
+
+async function classifyAndExtract(
   google: ReturnType<typeof createGoogleGenerativeAI>,
   lastMessage: string,
-): Promise<string> {
+): Promise<ClassifyResult> {
   try {
     const { text } = await generateText({
       model: google('gemini-2.5-flash'),
-      temperature: 0.1,
-      maxTokens: 256,
-      system: `Voce e um classificador de intencoes. Analise a mensagem e retorne APENAS o nome do modulo mais relevante, sem explicacao.
+      temperature: 0,
+      maxTokens: 512,
+      providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
+      system: `Voce classifica mensagens de chat. Retorne APENAS JSON valido, sem explicacao.
 
-Modulos disponiveis:
-- atlas: tarefas, prioridades, produtividade, to-do, prazos
-- journey: momentos, emocoes, diario, autoconhecimento, reflexao
-- connections: contatos, CRM, WhatsApp, pessoas, networking
-- finance: dinheiro, contas, orcamento, gastos, investimentos
-- flux: treinos, atletas, exercicios, coaching, academia
-- studio: podcast, episodios, convidados, gravacao, pauta
-- captacao: editais, grants, FAPERJ, CNPq, propostas, captacao
-- agenda: reunioes, eventos, calendario, horarios, compromissos
-- coordinator: conversa geral, saudacao, ou multiplos modulos
+Se o usuario pede uma ACAO (criar, agendar, registrar, completar, marcar):
+{"type":"action","action":"<tipo>","params":{...},"module":"<modulo>","ack":"<frase curta de confirmacao>"}
 
-Retorne APENAS o nome do modulo (ex: "atlas", "journey", "coordinator").`,
+Acoes disponiveis:
+- create_task: params: {title, description?, is_urgent, is_important, due_date?, priority?}
+- create_event: params: {title, start_time (ISO 8601 com timezone -03:00), end_time?, description?, location?}
+- create_moment: params: {content, emotion (happy|sad|anxious|angry|thoughtful|calm|grateful|tired|inspired|neutral|excited|disappointed|frustrated|loving|scared|determined|sleepy|overwhelmed|confident|confused), tags?}
+- complete_task: params: {task_id} (requer ID, se nao tem, use conversation)
+
+Se o usuario faz uma PERGUNTA ou CONVERSA:
+{"type":"conversation","module":"<modulo>"}
+
+Modulos: atlas, journey, connections, finance, flux, studio, captacao, agenda, coordinator
+
+Hoje: ${new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+Amanha: ${new Date(Date.now() + 86400000).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+Hora: ${new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })}
+
+Exemplos:
+"Crie uma tarefa para comprar leite" → {"type":"action","action":"create_task","params":{"title":"Comprar leite","is_urgent":false,"is_important":false},"module":"atlas","ack":"Criando tarefa..."}
+"Reuniao amanha as 15h na gavea" → {"type":"action","action":"create_event","params":{"title":"Reunião na Gávea","start_time":"${new Date(Date.now() + 86400000).toISOString().split('T')[0]}T15:00:00-03:00","location":"Gávea"},"module":"agenda","ack":"Agendando reunião..."}
+"Como estou me sentindo?" → {"type":"conversation","module":"journey"}
+"Estou frustrado com o trabalho" → {"type":"action","action":"create_moment","params":{"content":"Estou frustrado com o trabalho","emotion":"frustrated"},"module":"journey","ack":"Registrando momento..."}`,
       prompt: lastMessage,
     })
 
-    const module = text.trim().toLowerCase().replace(/[^a-z]/g, '')
-    if (VALID_AGENTS.includes(module)) {
-      console.log(`[classifyIntent] Classified as: ${module}`)
-      return module
-    }
-
-    console.log(`[classifyIntent] Invalid classification "${text}", defaulting to coordinator`)
-    return 'coordinator'
+    // Parse JSON from response (strip code fences if present)
+    const cleaned = text.replace(/```(?:json)?\s*\n?/g, '').replace(/\n?```$/g, '').trim()
+    const result = JSON.parse(cleaned)
+    console.log(`[classify] type=${result.type}, action=${result.action || 'none'}, module=${result.module}`)
+    return result
   } catch (error) {
-    console.error('[classifyIntent] Error:', (error as Error).message)
-    return 'coordinator'
+    console.error('[classify] Failed, defaulting to conversation:', (error as Error).message)
+    return { type: 'conversation', module: 'coordinator' }
   }
 }
 
 // ============================================================================
-// FIRE-AND-FORGET: Log chat interaction
+// FIRE-AND-FORGET: Log interaction
 // ============================================================================
 
-/**
- * Log the chat interaction asynchronously (does not block response).
- * Uses the existing log_interaction RPC (same as gemini-chat v1).
- */
-async function logInteraction(
-  supabaseAdmin: any,
-  userId: string,
-  module: string,
-) {
-  try {
-    const { error } = await supabaseAdmin.rpc('log_interaction', {
-      p_user_id: userId,
-      p_action: 'chat_aica_v2',
-      p_module: module,
-      p_model: 'gemini-2.5-flash',
-      p_tokens_in: 0,
-      p_tokens_out: 0,
+function logInteraction(supabaseAdmin: any, userId: string, module: string) {
+  supabaseAdmin
+    .rpc('log_interaction', {
+      p_user_id: userId, p_action: 'chat_aica_v2', p_module: module,
+      p_model: 'gemini-2.5-flash', p_tokens_in: 0, p_tokens_out: 0,
     })
-    if (error) {
-      console.warn(`[gemini-chat-v2] Failed to log interaction:`, error.message)
-    } else {
-      console.log(`[gemini-chat-v2] Interaction logged: module=${module}`)
-    }
-  } catch (err) {
-    console.warn(`[gemini-chat-v2] Unexpected log error:`, err)
-  }
+    .then(() => console.log(`[log] module=${module}`))
+    .catch((err: any) => console.warn('[log] failed:', err.message))
 }
 
 // ============================================================================
@@ -106,11 +100,8 @@ async function logInteraction(
 // ============================================================================
 
 serve(async (req: Request) => {
-  // --- CORS ---
   const corsHeaders = getCorsHeaders(req)
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
     // --- AUTH ---
@@ -122,78 +113,83 @@ serve(async (req: Request) => {
       )
     }
 
-    // --- PARSE REQUEST ---
+    // --- PARSE ---
     let body: any
-    try {
-      body = await req.json()
-    } catch {
+    try { body = await req.json() } catch {
       return new Response(
         JSON.stringify({ error: 'Corpo da requisicao invalido' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
-    const { messages, session_id: sessionId } = body
-
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    const { messages } = body
+    if (!messages?.length) {
       return new Response(
         JSON.stringify({ error: 'Mensagens sao obrigatorias' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
-    // --- INIT PROVIDERS ---
+    // --- INIT ---
     const apiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY not set')
-    }
-
+    if (!apiKey) throw new Error('GEMINI_API_KEY not set')
     const google = createGoogleGenerativeAI({ apiKey })
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    // --- CONVERT UI MESSAGES TO MODEL MESSAGES ---
-    // useChat sends UIMessage[] (with parts array), streamText needs CoreMessage[]
-    const modelMessages = await convertToModelMessages(messages)
-
-    // --- INTENT CLASSIFICATION ---
-    // Extract last user message text for classification
+    // --- EXTRACT LAST USER MESSAGE ---
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')
     const lastUserText = lastUserMsg?.parts
       ?.filter((p: any) => p.type === 'text')
       ?.map((p: any) => p.text)
       ?.join('') || lastUserMsg?.content || ''
 
-    const module = await classifyIntent(google, lastUserText)
+    // --- STEP 1: CLASSIFY (fast, no thinking) ---
+    const classified = await classifyAndExtract(google, lastUserText)
 
-    // --- BUILD SYSTEM PROMPT ---
-    const systemPrompt = await buildSystemPrompt(module, userId, supabaseAdmin)
+    // --- LOG (fire-and-forget) ---
+    logInteraction(supabaseAdmin, userId, classified.module)
 
-    // --- CREATE TOOLS ---
-    const tools = createChatTools(supabaseAdmin, userId)
-    console.log(`[gemini-chat-v2] Tools available: ${Object.keys(tools).join(', ')}`)
+    // --- STEP 2a: ACTION PATH ---
+    if (classified.type === 'action' && classified.action && classified.params) {
+      console.log(`[action] Executing: ${classified.action}`)
 
-    // --- STREAM RESPONSE ---
-    // maxSteps: 3 allows up to 3 tool call rounds (e.g., query context → create task → confirm)
+      // Execute DB action directly
+      const actionResult = await executeAction(
+        supabaseAdmin, userId, classified.action, classified.params
+      )
+
+      // Stream: ACK + confirmation
+      const confirmPrompt = actionResult.success
+        ? `Acao executada com sucesso. Resultado: ${actionResult.message}. Confirme ao usuario de forma natural e calorosa em portugues. Seja breve (1-2 frases).`
+        : `Acao falhou: ${actionResult.error}. Informe ao usuario de forma gentil em portugues. Sugira alternativa se possivel.`
+
+      const result = streamText({
+        model: google('gemini-2.5-flash'),
+        temperature: 0.7,
+        maxTokens: 1024,
+        providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
+        system: 'Voce e a Aica, assistente pessoal calorosa e brasileira. Responda em portugues, de forma breve e natural.',
+        prompt: confirmPrompt,
+      })
+
+      return result.toUIMessageStreamResponse({ headers: corsHeaders })
+    }
+
+    // --- STEP 2b: CONVERSATION PATH ---
+    const modelMessages = await convertToModelMessages(messages)
+    const systemPrompt = await buildSystemPrompt(classified.module, userId, supabaseAdmin)
+
     const result = streamText({
       model: google('gemini-2.5-flash'),
       system: systemPrompt,
       messages: modelMessages,
-      tools,
-      maxSteps: 3,
       temperature: 0.7,
       maxTokens: 4096,
     })
 
-    // --- LOG INTERACTION (fire-and-forget) ---
-    logInteraction(supabaseAdmin, userId, module)
-
-    // --- RETURN UI MESSAGE STREAM WITH CORS ---
-    // Must use toUIMessageStreamResponse (NOT toDataStreamResponse)
-    // because DefaultChatTransport on the client expects UIMessageChunk format
     return result.toUIMessageStreamResponse({ headers: corsHeaders })
   } catch (error) {
     console.error('[gemini-chat-v2] Error:', (error as Error).message)
