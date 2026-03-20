@@ -651,6 +651,7 @@ export default function AthleteFormDrawer({
                             type="button"
                             onClick={() => handleToggleGroup(group.id)}
                             disabled={groupSaving}
+                            aria-pressed={isInGroup}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                               isInGroup
                                 ? `${colors.bg} ${colors.text} shadow-md`

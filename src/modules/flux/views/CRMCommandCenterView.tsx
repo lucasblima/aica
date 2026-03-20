@@ -1163,10 +1163,10 @@ export default function CRMCommandCenterView() {
             }`}
             title={
               feedbackSort === 'none'
-                ? 'Ordenar por feedbacks respondidos'
+                ? 'Ordenar por feedbacks pendentes'
                 : feedbackSort === 'desc'
-                ? 'Mais feedbacks primeiro'
-                : 'Menos feedbacks primeiro'
+                ? 'Mais pendentes primeiro'
+                : 'Menos pendentes primeiro'
             }
           >
             {feedbackSort === 'none' && (
