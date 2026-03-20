@@ -116,12 +116,12 @@ reviews:
         Verificar que nenhum gate existente foi enfraquecido ou removido.
         Hooks com exit 1 sao blocking — nao remover sem justificativa.
 
-# Tools configuration (top-level, not nested under reviews)
-tools:
-  eslint:
-    enabled: true
-  biome:
-    enabled: true
+  # Tools for code analysis during review
+  tools:
+    eslint:
+      enabled: true
+    biome:
+      enabled: true
 
 # Chat capabilities
 chat:
