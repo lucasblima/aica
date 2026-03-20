@@ -59,9 +59,9 @@ export function createChatTools(supabaseAdmin: any, userId: string) {
           }
         }
 
-        // Update task status to completed
+        // Update task status to done (matches v1 action handler)
         const updateData: Record<string, any> = {
-          status: 'completed',
+          status: 'done',
           is_completed: true,
           completed_at: new Date().toISOString(),
         }

@@ -66,15 +66,22 @@ function isMessageStreaming(msg: UIMessage): boolean {
   return false
 }
 
+/** Cache timestamps per message so they don't change on every render. */
+const messageTimestamps = new Map<string, string>()
+
 /** Convert a UIMessage (AI SDK v3) to a DisplayMessage (AICA v1 compat). */
 function uiMessageToDisplay(msg: UIMessage, streaming: boolean = false): DisplayMessage {
   const text = getTextFromParts(msg)
+
+  if (!messageTimestamps.has(msg.id)) {
+    messageTimestamps.set(msg.id, new Date().toISOString())
+  }
 
   return {
     id: msg.id,
     role: msg.role as 'user' | 'assistant',
     content: text,
-    created_at: new Date().toISOString(),
+    created_at: messageTimestamps.get(msg.id)!,
     sources: getSourcesFromParts(msg),
     isStreaming: streaming || isMessageStreaming(msg),
   }
