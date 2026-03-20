@@ -11,6 +11,7 @@ import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, typ
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
+import { LifeScoreWidget } from '@/components/features';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -288,6 +289,20 @@ export default function VidaPage({
                   <JourneyHeroCard
                      onOpenJourney={() => onNavigateToView('journey')}
                      stats={cpStats}
+                  />
+               </motion.div>
+            )}
+
+            {/* Life Score — cross-domain composite (cascade step 3) */}
+            {cascadeStep >= 3 && (
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={0.5}
+               >
+                  <LifeScoreWidget
+                     onViewDetails={() => onNavigateToView('life-score')}
                   />
                </motion.div>
             )}
