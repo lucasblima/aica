@@ -75,9 +75,16 @@ Two external AI reviewers run automatically on every PR:
    gh api repos/{owner}/{repo}/pulls/<pr-number>/comments
    ```
 
-4. **Triage findings** — For each comment from either bot:
+4. **Triage findings** — Invoke `superpowers:receiving-code-review` for EVERY review round.
+   This is NOT optional. The skill enforces:
+   - READ all feedback without reacting
+   - VERIFY each suggestion against the codebase (is it technically correct?)
+   - PUSH BACK with reasoning if the bot is wrong
+   - IMPLEMENT one fix at a time, test each
+   - NO performative agreement ("Great point!", "You're right!")
+   Classification per finding:
    - **Valid issue**: Fix it, commit, push. Bots will re-review.
-   - **False positive**: Reply explaining why (both bots learn).
+   - **False positive**: Reply in the PR comment thread explaining why (bots learn).
    - **Nitpick**: Fix if quick, otherwise acknowledge and move on.
 
 5. **Check Sentry** — Before merge, verify no new production errors:
