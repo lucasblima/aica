@@ -1,6 +1,7 @@
 // handlers/grants-temp.ts — Grants module handlers (temporary — until gemini-grants Edge Function)
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.21.0'
 import { MODELS } from '../../_shared/gemini-helpers.ts'
+import { extractJSON } from '../../_shared/model-router.ts'
 import type {
   GenerateFieldContentPayload, AnalyzeEditalStructurePayload,
   ParseFormFieldsPayload, ParsedFormField,
@@ -178,9 +179,7 @@ ${editalText.substring(0, 50000)}`
   const result = await model.generateContent(prompt)
   const text = result.response.text()
 
-  // Clean JSON from markdown
-  const jsonText = text.replace(/```json\n?|\n?```/g, '').trim()
-  const data = JSON.parse(jsonText)
+  const data = extractJSON(text)
 
   return {
     ...data,
@@ -197,7 +196,7 @@ export async function handleParseFormFields(genAI: GoogleGenerativeAI, payload: 
       temperature: 0.2,
       topP: 0.8,
       topK: 40,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 4096,
     },
   })
 
@@ -230,8 +229,8 @@ TEXTO:
 ${text}`
 
   const result = await model.generateContent(prompt)
-  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
-  const fields = JSON.parse(jsonText) as ParsedFormField[]
+  const jsonText = result.response.text()
+  const fields = extractJSON<ParsedFormField[]>(jsonText)
 
   return {
     fields,
@@ -255,7 +254,7 @@ export async function handleGenerateAutoBriefing(genAI: GoogleGenerativeAI, payl
       temperature: 0.3,
       topP: 0.8,
       topK: 20,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 4096,
     },
   })
 
@@ -295,8 +294,8 @@ Retorne APENAS o JSON.`
     { text: userPrompt }
   ])
 
-  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
-  const briefing = JSON.parse(jsonText) as Record<string, string>
+  const jsonText = result.response.text()
+  const briefing = extractJSON<Record<string, string>>(jsonText)
 
   return {
     briefing,
@@ -354,7 +353,7 @@ export async function handleExtractRequiredDocuments(genAI: GoogleGenerativeAI, 
       temperature: 0.2,
       topP: 0.8,
       topK: 20,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 4096,
     },
   })
 
@@ -375,8 +374,8 @@ FORMATO:
 Retorne APENAS o JSON.`
 
   const result = await model.generateContent(prompt)
-  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
-  const documents = JSON.parse(jsonText)
+  const jsonText = result.response.text()
+  const documents = extractJSON(jsonText)
 
   return {
     documents,
@@ -393,7 +392,7 @@ export async function handleExtractTimelinePhases(genAI: GoogleGenerativeAI, pay
       temperature: 0.2,
       topP: 0.8,
       topK: 20,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 4096,
     },
   })
 
@@ -414,8 +413,8 @@ FORMATO (ORDENADO por data):
 Use formato ISO (YYYY-MM-DD). Retorne APENAS o JSON.`
 
   const result = await model.generateContent(prompt)
-  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
-  const phases = JSON.parse(jsonText)
+  const jsonText = result.response.text()
+  const phases = extractJSON(jsonText)
 
   // Sort by date
   phases.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())

@@ -85,18 +85,31 @@ export function getDateContext(): {
   tomorrow: string
   timeStr: string
 } {
+  const timeZone = 'America/Sao_Paulo'
+  const formatDate = (date: Date) => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(date)
+    const year = parts.find(part => part.type === 'year')?.value ?? ''
+    const month = parts.find(part => part.type === 'month')?.value ?? ''
+    const day = parts.find(part => part.type === 'day')?.value ?? ''
+    return `${year}-${month}-${day}`
+  }
   const now = new Date()
-  const today = now.toISOString().split('T')[0]
-  const dayOfWeek = [
-    'domingo', 'segunda-feira', 'terca-feira', 'quarta-feira',
-    'quinta-feira', 'sexta-feira', 'sabado',
-  ][now.getDay()]
-  const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
-  const timeStr = now.toLocaleTimeString('pt-BR', {
+  const today = formatDate(now)
+  const dayOfWeek = new Intl.DateTimeFormat('pt-BR', {
+    timeZone,
+    weekday: 'long',
+  }).format(now)
+  const tomorrow = formatDate(new Date(now.getTime() + 86400000))
+  const timeStr = new Intl.DateTimeFormat('pt-BR', {
+    timeZone,
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Sao_Paulo',
-  })
+  }).format(now)
   return { today, dayOfWeek, tomorrow, timeStr }
 }
 
@@ -113,10 +126,12 @@ export function extractUserId(req: Request): string | null {
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) return null
-    const token = authHeader.replace('Bearer ', '')
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
     const payloadB64 = token.split('.')[1]
     if (!payloadB64) return null
-    const decoded = JSON.parse(atob(payloadB64))
+    const normalized = payloadB64.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(normalized.length + (4 - normalized.length % 4) % 4, '=')
+    const decoded = JSON.parse(atob(padded))
     return decoded.sub || null
   } catch {
     return null

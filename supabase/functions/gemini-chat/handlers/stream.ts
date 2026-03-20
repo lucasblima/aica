@@ -24,8 +24,11 @@ export async function handleStreamChat(
   let isInterviewMode = interviewMeta?.type === 'interview_start'
 
   // Phase 3: Detect module via intent classification (fast, low tokens)
-  let streamModule = payload?.module || 'coordinator'
-  let detectedAgent = 'aica_coordinator'
+  const requestedModule = typeof payload?.module === 'string' ? payload.module : undefined
+  let streamModule = requestedModule && VALID_AGENTS.includes(requestedModule)
+    ? requestedModule
+    : 'coordinator'
+  let detectedAgent = streamModule === 'coordinator' ? 'aica_coordinator' : `aica_${streamModule}`
   let detectedInterviewIntent: string | null = null
 
   if (isInterviewMode) {
@@ -181,9 +184,10 @@ export async function handleStreamChat(
     const fallbackQuestions = generateSuggestedQuestions(streamMessage, nonStreamText, streamModule, streamRawData)
     const fallbackUsage = nonStreamResult.response.usageMetadata
     const fallbackLatencyMs = Date.now() - requestStartMs
-    console.log(`[chat_aica_stream] METRIC user=${userId} module=${streamModule} latency=${fallbackLatencyMs}ms streaming=false fallback=true tokens_in=${fallbackUsage?.promptTokenCount || 0} tokens_out=${fallbackUsage?.candidatesTokenCount || 0}`)
+    console.log(`[chat_aica_stream] METRIC module=${streamModule} latency=${fallbackLatencyMs}ms streaming=false fallback=true tokens_in=${fallbackUsage?.promptTokenCount || 0} tokens_out=${fallbackUsage?.candidatesTokenCount || 0}`)
     return new Response(JSON.stringify({
       success: true,
+      fullText: nonStreamText,
       text: nonStreamText,
       agent: detectedAgent,
       suggestedActions: fallbackActions,
@@ -241,8 +245,8 @@ export async function handleStreamChat(
         const latencyMs = Date.now() - requestStartMs
         const streamingSuccess = fullText.length > 0
 
-        // Structured metric log for observability
-        console.log(`[chat_aica_stream] METRIC user=${userId} module=${streamModule} latency=${latencyMs}ms streaming=${streamingSuccess} tokens_in=${usageMeta?.promptTokenCount || 0} tokens_out=${usageMeta?.candidatesTokenCount || 0}`)
+        // Structured metric log for observability (no PII)
+        console.log(`[chat_aica_stream] METRIC module=${streamModule} latency=${latencyMs}ms streaming=${streamingSuccess} tokens_in=${usageMeta?.promptTokenCount || 0} tokens_out=${usageMeta?.candidatesTokenCount || 0}`)
 
         // Fire-and-forget: log interaction with real token counts from stream
         if (userId && supabaseAdmin) {

@@ -6,13 +6,40 @@
 import type { UserContextResult, ChatAction } from './gemini-types.ts'
 
 // ============================================================================
+// BRT DATE HELPERS (America/Sao_Paulo timezone)
+// ============================================================================
+
+const BRT_TZ = 'America/Sao_Paulo'
+
+function formatDateBRT(date: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BRT_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const y = parts.find(p => p.type === 'year')?.value ?? ''
+  const m = parts.find(p => p.type === 'month')?.value ?? ''
+  const d = parts.find(p => p.type === 'day')?.value ?? ''
+  return `${y}-${m}-${d}`
+}
+
+function getTodayBRT(): string {
+  return formatDateBRT(new Date())
+}
+
+function getOffsetDateBRT(days: number): string {
+  return formatDateBRT(new Date(Date.now() + days * 86400000))
+}
+
+// ============================================================================
 // BUILD USER CONTEXT (async, fetches data from Supabase)
 // ============================================================================
 
 export async function buildUserContext(supabaseAdmin: any, userId: string, module: string): Promise<UserContextResult> {
   const contextParts: string[] = []
   const rawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
-  console.log(`[buildUserContext] Starting for userId=${userId}, module=${module}`)
+  console.log(`[buildUserContext] Starting module=${module}`)
 
   try {
     // Always fetch basic stats for coordinator context
@@ -190,8 +217,8 @@ export async function buildUserContext(supabaseAdmin: any, userId: string, modul
     }
 
     if (module === 'agenda' || module === 'coordinator') {
-      const today = new Date().toISOString().split('T')[0]
-      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const today = getTodayBRT()
+      const nextWeek = getOffsetDateBRT(7)
       const { data: events } = await supabaseAdmin
         .from('calendar_events')
         .select('title, start_time, end_time, location, description')
@@ -337,7 +364,7 @@ export function generateSuggestedQuestions(
 
   // Context-aware suggestions based on module and data
   if (module === 'atlas' && rawData.tasks.length > 0) {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayBRT()
     const overdue = rawData.tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done')
     if (overdue.length > 0) questions.push(`Tenho ${overdue.length} tarefa(s) atrasada(s). Pode me ajudar a priorizar?`)
   }
@@ -364,7 +391,7 @@ export function generateSuggestedQuestions(
 export function generateSuggestedActions(message: string, rawData: UserContextResult['rawData']): ChatAction[] {
   const actions: ChatAction[] = []
   const msg = message.toLowerCase()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayBRT()
 
   // Keyword groups
   const completeKeywords = ['concluir', 'terminar', 'feita', 'pronta', 'finalizar', 'completar', 'terminei', 'fiz', 'concluida', 'concluido']
@@ -445,7 +472,7 @@ export function generateSuggestedActions(message: string, rawData: UserContextRe
   if (rescheduleKeywords.some(k => msg.includes(k)) && overdueTasks.length > 0) {
     const target = overdueTasks[0]
     if (!actions.some(a => a.params.task_id === target.id)) {
-      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+      const tomorrow = getOffsetDateBRT(1)
       actions.push({
         id: `reschedule_task_${target.id}`,
         type: 'reschedule_task',
@@ -472,7 +499,7 @@ export function generateSuggestedActions(message: string, rawData: UserContextRe
   // Fallback: if overdue tasks exist and no actions matched yet, suggest reschedule
   if (actions.length === 0 && overdueTasks.length > 0) {
     const target = overdueTasks[0]
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+    const tomorrow = getOffsetDateBRT(1)
     actions.push({
       id: `reschedule_task_${target.id}`,
       type: 'reschedule_task',

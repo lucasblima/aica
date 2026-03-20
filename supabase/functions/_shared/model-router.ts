@@ -290,25 +290,21 @@ export function extractJSON<T = unknown>(text: string): T {
     // continue to fallback strategies
   }
 
-  // 3. Find first { or [ and match to last } or ]
-  const objStart = cleaned.indexOf('{')
-  const arrStart = cleaned.indexOf('[')
-  let start = -1
-  let end = -1
+  // 3. Try both { } and [ ] candidates in order of first appearance
+  const candidates = [
+    { start: cleaned.indexOf('{'), endChar: '}' },
+    { start: cleaned.indexOf('['), endChar: ']' },
+  ]
+    .filter(({ start }) => start >= 0)
+    .sort((a, b) => a.start - b.start)
 
-  if (objStart >= 0 && (arrStart < 0 || objStart < arrStart)) {
-    start = objStart
-    end = cleaned.lastIndexOf('}')
-  } else if (arrStart >= 0) {
-    start = arrStart
-    end = cleaned.lastIndexOf(']')
-  }
-
-  if (start >= 0 && end > start) {
+  for (const { start, endChar } of candidates) {
+    const end = cleaned.lastIndexOf(endChar)
+    if (end <= start) continue
     try {
-      return JSON.parse(cleaned.substring(start, end + 1))
+      return JSON.parse(cleaned.slice(start, end + 1))
     } catch {
-      // fall through
+      // try next candidate
     }
   }
 
