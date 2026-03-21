@@ -10,7 +10,7 @@ import { LayoutTemplate } from 'lucide-react';
 import { createNamespacedLogger } from '@/lib/logger';
 import { NextTwoDaysView } from '@/components/features/NextTwoDaysView';
 import { AgendaTimeline } from '@/modules/agenda/components/calendar';
-import { TaskCreationQuickAdd, TemplateSelector } from '@/modules/agenda/components/editors';
+import { TaskCreationQuickAdd, TemplateSelector, EventDetailModal } from '@/modules/agenda/components/editors';
 import { CompletedTasksSection } from '@/modules/agenda/components/shared';
 import { notificationService } from '@/services/notificationService';
 import type { Task } from '@/types';
@@ -26,8 +26,10 @@ interface TimelineRestOfDayEvent {
   type: 'event' | 'task';
   location?: string;
   color?: string;
+  description?: string;
   isCompleted?: boolean;
   checklist?: any;
+  source?: string;
 }
 
 interface NextTwoDaysEvent {
@@ -64,6 +66,8 @@ export interface TimelineViewProps {
   onUncomplete: (taskId: string) => Promise<boolean>;
   /** Ref map for cancelling completion animation timers */
   completionTimers: React.MutableRefObject<Map<string, ReturnType<typeof setTimeout>>>;
+  lastSyncTime?: Date | null;
+  isCalendarConnected?: boolean;
 }
 
 export const TimelineView: React.FC<TimelineViewProps> = ({
@@ -80,8 +84,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onTaskCreated,
   onUncomplete,
   completionTimers,
+  lastSyncTime,
+  isCalendarConnected,
 }) => {
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<TimelineRestOfDayEvent | null>(null);
 
   return (
     <>
@@ -126,10 +133,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
             Mais Tarde
           </h2>
+          {isCalendarConnected && lastSyncTime && (
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <div className="w-2 h-2 rounded-full bg-ceramic-success animate-pulse" />
+              <span className="text-xs text-ceramic-text-secondary">
+                Sincronizado {lastSyncTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          )}
           <AgendaTimeline
             events={restOfDay}
             onEventClick={(eventId) => {
-              log.debug('Event clicked:', eventId);
+              const event = restOfDay.find(e => e.id === eventId && e.type === 'event');
+              if (event) setSelectedEvent(event);
             }}
             onTaskToggle={async (taskId) => {
               log.debug('Task toggled:', taskId);
@@ -172,6 +188,20 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           isLoading={isLoadingCompleted}
         />
       </section>
+
+      <EventDetailModal
+        isOpen={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        event={selectedEvent ? {
+          title: selectedEvent.title,
+          startTime: selectedEvent.startTime,
+          endTime: selectedEvent.endTime,
+          description: selectedEvent.description,
+          location: selectedEvent.location,
+          color: selectedEvent.color,
+          source: selectedEvent.source || 'manual',
+        } : null}
+      />
     </>
   );
 };

@@ -11,6 +11,7 @@ interface TimelineEvent {
   isCompleted?: boolean;
   color?: string;
   location?: string;
+  description?: string;
   checklist?: Array<{ text: string; done: boolean }> | null;
 }
 
@@ -50,26 +51,11 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
   onTaskToggle,
   onEventEdit
 }) => {
-  // Helper to check if event ID is from Google Calendar (not UUID format)
-  const isGoogleCalendarEvent = (eventId: string): boolean => {
-    // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return !uuidPattern.test(eventId);
-  };
-
   const handleEventAction = (item: TimelineEvent) => {
     if (item.type === 'task') {
       onTaskToggle?.(item.id);
     } else {
-      // Event type
-      if (isGoogleCalendarEvent(item.id)) {
-        // Google Calendar event - open in new tab
-        const googleCalendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit/${item.id}`;
-        window.open(googleCalendarUrl, '_blank');
-      } else {
-        // Supabase event - call edit handler
-        onEventEdit?.(item.id);
-      }
+      onEventClick?.(item.id);
     }
   };
   const formatTime = (isoString: string) => {

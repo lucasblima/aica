@@ -363,7 +363,9 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
       endTime: event.endTime,
       type: 'event' as const,
       location: event.location,
-      color: event.color || '#D97706'
+      color: event.color || '#D97706',
+      description: event.description,
+      source: event.source,
     }));
     const todayTasks = timelineTasks
       .filter(task => {
@@ -882,6 +884,8 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
                 onTaskCreated={() => loadAllTasks()}
                 onUncomplete={handleUncomplete}
                 completionTimers={completionTimers}
+                lastSyncTime={lastSyncTime}
+                isCalendarConnected={isCalendarConnected}
               />
             </main>
           ) : (
@@ -915,6 +919,8 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
                     onTaskCreated={() => loadAllTasks()}
                     onUncomplete={handleUncomplete}
                     completionTimers={completionTimers}
+                    lastSyncTime={lastSyncTime}
+                    isCalendarConnected={isCalendarConnected}
                   />
                 ) : (
                   <>
