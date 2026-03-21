@@ -29,6 +29,7 @@ interface NextTwoDaysViewProps {
   onSkipEvent: (eventId: string) => void;
   onUnskipEvent: (eventId: string) => void;
   onTaskComplete?: (taskId: string) => void;
+  onEventClick?: (event: EventWithCategory) => void;
   completingTaskIds?: Set<string>;
   forecast?: WeatherData['forecast'] | null;
 }
@@ -134,6 +135,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   onSkipEvent,
   onUnskipEvent,
   onTaskComplete,
+  onEventClick,
   completingTaskIds,
   forecast
 }) => {
@@ -230,7 +232,10 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
       <AnimatePresence mode="popLayout" key={event.id}>
         <motion.div
           layout
-          className={`ceramic-tile p-4 ${quadrantBorder && !completing ? `border-l-4 ${quadrantBorder}` : ''} ${stateClasses} ${
+          onClick={() => {
+            if (!event.isTask && !completing && onEventClick) onEventClick(event);
+          }}
+          className={`ceramic-tile p-4 ${!event.isTask && onEventClick ? 'cursor-pointer hover:scale-[1.01] transition-transform' : ''} ${quadrantBorder && !completing ? `border-l-4 ${quadrantBorder}` : ''} ${stateClasses} ${
             completing ? 'border-l-4 border-ceramic-success bg-ceramic-success/5' : ''
           }`}
           initial={{ opacity: 0, x: -10 }}

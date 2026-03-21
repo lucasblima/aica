@@ -99,6 +99,18 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           onSkipEvent={onSkipEvent}
           onUnskipEvent={onUnskipEvent}
           onTaskComplete={async (taskId: string) => { await onTaskComplete(taskId); }}
+          onEventClick={(event) => {
+            setSelectedEvent({
+              id: event.id,
+              title: event.title,
+              startTime: event.startTime,
+              endTime: event.endTime,
+              type: 'event',
+              description: event.description,
+              location: event.location,
+              source: 'google_calendar',
+            });
+          }}
           completingTaskIds={completingTaskIds}
           forecast={forecast}
         />
