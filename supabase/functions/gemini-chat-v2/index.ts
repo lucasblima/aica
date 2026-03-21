@@ -70,9 +70,11 @@ Exemplos:
       prompt: lastMessage,
     })
 
-    // Parse JSON from response (strip code fences if present)
+    // Parse JSON from response (strip code fences if present, find JSON object)
     const cleaned = text.replace(/```(?:json)?\s*\n?/g, '').replace(/\n?```$/g, '').trim()
-    const result = JSON.parse(cleaned)
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('No JSON object found in classifier response')
+    const result = JSON.parse(jsonMatch[0])
     console.log(`[classify] type=${result.type}, action=${result.action || 'none'}, module=${result.module}`)
     return result
   } catch (error) {
@@ -166,16 +168,25 @@ serve(async (req: Request) => {
         ? `Acao executada com sucesso. Resultado: ${actionResult.message}. Confirme ao usuario de forma natural e calorosa em portugues. Seja breve (1-2 frases).`
         : `Acao falhou: ${actionResult.error}. Informe ao usuario de forma gentil em portugues. Sugira alternativa se possivel.`
 
-      const result = streamText({
-        model: google('gemini-2.5-flash'),
-        temperature: 0.7,
-        maxTokens: 1024,
-        providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
-        system: 'Voce e a Aica, assistente pessoal calorosa e brasileira. Responda em portugues, de forma breve e natural.',
-        prompt: confirmPrompt,
-      })
+      try {
+        const result = streamText({
+          model: google('gemini-2.5-flash'),
+          temperature: 0.7,
+          maxTokens: 1024,
+          providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
+          system: 'Voce e a Aica, assistente pessoal calorosa e brasileira. Responda em portugues, de forma breve e natural.',
+          prompt: confirmPrompt,
+        })
 
-      return result.toUIMessageStreamResponse({ headers: corsHeaders })
+        return result.toUIMessageStreamResponse({ headers: corsHeaders })
+      } catch (streamErr) {
+        console.warn('[gemini-chat-v2] Confirmation stream failed, using fallback:', (streamErr as Error).message)
+        // Return action result as a simple streaming text
+        return new Response(
+          JSON.stringify({ role: 'assistant', content: actionResult.message || 'Acao executada.' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
     }
 
     // --- STEP 2b: CONVERSATION PATH ---

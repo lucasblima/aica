@@ -74,6 +74,17 @@ const createEvent: ActionFn = async (supabaseAdmin, userId, params) => {
   if (!title || !start_time) return { success: false, error: 'Titulo e horario sao obrigatorios.' }
 
   const startDate = new Date(start_time)
+  if (isNaN(startDate.getTime())) {
+    return { success: false, error: 'Data de inicio invalida.' }
+  }
+
+  if (end_time) {
+    const endDate = new Date(end_time)
+    if (isNaN(endDate.getTime())) {
+      return { success: false, error: 'Data de termino invalida.' }
+    }
+  }
+
   const defaultEnd = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString()
 
   const { data: event, error } = await supabaseAdmin
@@ -160,11 +171,11 @@ const completeTask: ActionFn = async (supabaseAdmin, userId, params) => {
     .single()
 
   if (!existing) return { success: false, error: 'Tarefa nao encontrada.' }
-  if (existing.status === 'done') return { success: true, message: `"${existing.title}" ja estava concluida.` }
+  if (existing.status === 'completed') return { success: true, message: `"${existing.title}" ja estava concluida.` }
 
   const { error } = await supabaseAdmin
     .from('work_items')
-    .update({ status: 'done', is_completed: true, completed_at: new Date().toISOString() })
+    .update({ status: 'completed', is_completed: true, completed_at: new Date().toISOString() })
     .eq('id', task_id)
     .eq('user_id', userId)
 
