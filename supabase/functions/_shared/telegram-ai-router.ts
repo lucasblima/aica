@@ -13,6 +13,7 @@
  */
 
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 import { withHealthTracking } from "./health-tracker.ts";
 
 // ============================================================================
@@ -535,23 +536,46 @@ async function executeLogMood(
 }
 
 async function executeCreateEvent(
-  _supabase: SupabaseClient,
-  _userId: string,
+  supabase: SupabaseClient,
+  userId: string,
   params: Record<string, unknown>,
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
-  // calendar_events table doesn't exist — AICA uses Google Calendar as source of truth.
-  // Return a helpful message instead of crashing.
-  const timeStr = params.time || '';
-  const dateStr = params.date || 'a data solicitada';
+  const title = params.title as string;
+  const date = params.date as string;
+  const time = (params.time as string) || '09:00';
+  const durationMinutes = (params.duration_minutes as number) || 60;
+  const description = (params.description as string) || null;
+
+  // Use Brazil timezone to avoid UTC mismatch on TIMESTAMPTZ columns
+  const startDateTime = new Date(`${date}T${time}:00-03:00`).toISOString();
+  const endDate = new Date(`${date}T${time}:00-03:00`);
+  endDate.setMinutes(endDate.getMinutes() + durationMinutes);
+  const endDateTime = endDate.toISOString();
+
+  const { error } = await supabase
+    .from('calendar_events')
+    .insert({
+      user_id: userId,
+      title,
+      description,
+      start_time: startDateTime,
+      end_time: endDateTime,
+      source: 'manual',
+    })
+    .select('id, title')
+    .single();
+
+  if (error) {
+    console.error('[executeCreateEvent] Insert error:', error);
+    return {
+      reply: `Erro ao criar evento: ${error.message}`,
+      data: { error: error.message },
+    };
+  }
 
   return {
-    reply: [
-      `📅 Para criar o evento "<b>${params.title}</b>"${timeStr ? ` as ${timeStr}` : ''} em ${dateStr}:`,
-      '',
-      'Acesse <b>aica.guru</b> → Agenda para sincronizar com seu Google Calendar.',
-      'A criacao de eventos pelo Telegram estara disponivel em breve!',
-    ].join('\n'),
-    data: {},
+    reply: `📅 Evento "<b>${title}</b>" agendado para ${date} as ${time} (${durationMinutes}min).`,
+    data: { title, date, time, duration_minutes: durationMinutes },
   };
 }
 
@@ -1546,8 +1570,9 @@ export async function processNaturalLanguage(
 
 /**
  * Process a voice message from Telegram.
- * Downloads the OGG audio, sends to Gemini for transcription + intent,
- * then routes through the same NLP pipeline.
+ * Downloads the OGG audio, sends to Gemini as a single multimodal call
+ * with function calling tools — so voice can create tasks, expenses,
+ * events, moods, etc. directly from audio (no separate transcription step).
  */
 export async function processVoiceMessage(
   supabase: SupabaseClient,
@@ -1577,60 +1602,117 @@ export async function processVoiceMessage(
   const audioBytes = new Uint8Array(await audioResponse.arrayBuffer());
 
   // 3. Convert to base64 for Gemini
-  const base64Audio = btoa(String.fromCharCode(...audioBytes));
+  const base64Audio = base64Encode(audioBytes);
 
-  // 4. Send to Gemini for transcription + intent extraction
+  // 4. Build conversation context (same pattern as processNaturalLanguage)
+  const history = await fetchConversationContext(supabase, userId, chatId);
+
+  const contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [];
+  for (const msg of history) {
+    contents.push({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }],
+    });
+  }
+  // Add current voice message as audio inline data
+  contents.push({
+    role: 'user',
+    parts: [
+      {
+        inlineData: {
+          mimeType: 'audio/ogg',
+          data: base64Audio,
+        },
+      },
+    ],
+  });
+
+  const systemPrompt = buildSystemPrompt(userName);
+
+  // 5. Single Gemini call: understand audio + function calling
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  const transcriptionResult = await withHealthTracking(
-    { functionName: 'telegram-webhook', actionName: 'telegram_voice_transcribe' },
+  const result = await withHealthTracking(
+    { functionName: 'telegram-webhook', actionName: 'telegram_voice_unified' },
     supabase as unknown as Parameters<typeof withHealthTracking>[1],
     async () => {
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
+        systemInstruction: systemPrompt,
+        tools: [{ functionDeclarations: FUNCTION_DECLARATIONS }],
         generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 2048,
+          temperature: 0.3,
+          maxOutputTokens: 4096,
         },
       });
 
-      return await model.generateContent({
-        contents: [{
-          role: 'user',
-          parts: [
-            {
-              inlineData: {
-                mimeType: 'audio/ogg',
-                data: base64Audio,
-              },
-            },
-            {
-              text: 'Transcreva este audio em portugues (BR). Retorne APENAS o texto transcrito, sem formatacao adicional.',
-            },
-          ],
-        }],
-      });
+      return await model.generateContent({ contents });
     },
   );
 
-  const transcribedText = transcriptionResult.response.text()?.trim();
+  const response = result.response;
+  const candidate = response.candidates?.[0];
+  const intentSummary = '[voice] audio message';
 
-  if (!transcribedText) {
-    return {
-      reply: 'Desculpe, nao consegui entender o audio. Tente enviar uma mensagem de texto.',
-      model: 'gemini-2.5-flash',
-      intentSummary: '[voice:transcription_failed]',
-    };
+  if (!candidate) {
+    console.warn('[processVoiceMessage] Gemini returned no candidates:', {
+      promptFeedback: response.promptFeedback,
+      blockReason: response.candidates?.[0]?.finishReason,
+    });
   }
 
-  console.log(`[telegram-ai-router] Voice transcribed: "${transcribedText.substring(0, 100)}"`);
+  // 6. Check if Gemini returned a function call
+  const functionCall = candidate?.content?.parts?.find(
+    (part: { functionCall?: unknown }) => part.functionCall,
+  )?.functionCall;
 
-  // 5. Route the transcribed text through the NLP pipeline
-  const nlpResult = await processNaturalLanguage(supabase, userId, chatId, transcribedText, userName);
+  if (functionCall) {
+    const fnName = functionCall.name;
+    const fnArgs = functionCall.args || {};
 
-  // Prepend transcription note to reply
-  nlpResult.reply = `🎙️ <i>"${transcribedText.substring(0, 150)}"</i>\n\n${nlpResult.reply}`;
-  nlpResult.intentSummary = `[voice] ${transcribedText.substring(0, 180)}`;
+    console.log(`[telegram-ai-router] Voice function call: ${fnName}(${JSON.stringify(fnArgs)})`);
 
-  return nlpResult;
+    try {
+      const execResult = await executeFunctionCall(supabase, userId, fnName, fnArgs as Record<string, unknown>);
+
+      // Update conversation context
+      await updateConversationContext(supabase, userId, chatId, intentSummary, execResult.reply);
+
+      return {
+        reply: `🎙️ ${execResult.reply}`,
+        action: fnName,
+        actionData: execResult.data,
+        model: 'gemini-2.5-flash',
+        intentSummary: `[voice:${fnName}] ${JSON.stringify(fnArgs).substring(0, 150)}`,
+      };
+    } catch (execError) {
+      const errMsg = (execError as Error).message;
+      console.error(`[telegram-ai-router] Voice function execution error: ${errMsg}`);
+
+      const errorReply = 'Desculpe, tive um problema ao processar seu pedido de voz. Tente novamente.';
+      await updateConversationContext(supabase, userId, chatId, intentSummary, errorReply);
+
+      return {
+        reply: `🎙️ ${errorReply}`,
+        action: fnName,
+        model: 'gemini-2.5-flash',
+        intentSummary: `[voice:${fnName}:error] ${errMsg.substring(0, 150)}`,
+      };
+    }
+  }
+
+  // 7. No function call — Gemini replied with text (conversational or transcription)
+  const replyText = candidate?.content?.parts
+    ?.filter((part: { text?: string }) => part.text)
+    ?.map((part: { text?: string }) => part.text)
+    ?.join('') || 'Desculpe, nao consegui entender o audio. Tente enviar uma mensagem de texto.';
+
+  // Update conversation context
+  await updateConversationContext(supabase, userId, chatId, intentSummary, replyText.substring(0, 200));
+
+  return {
+    reply: `🎙️ ${replyText}`,
+    model: 'gemini-2.5-flash',
+    intentSummary: `[voice] ${replyText.substring(0, 180)}`,
+  };
 }
