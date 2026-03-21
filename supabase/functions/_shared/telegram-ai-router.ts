@@ -13,6 +13,7 @@
  */
 
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 import { withHealthTracking } from "./health-tracker.ts";
 
 // ============================================================================
@@ -535,23 +536,43 @@ async function executeLogMood(
 }
 
 async function executeCreateEvent(
-  _supabase: SupabaseClient,
-  _userId: string,
+  supabase: SupabaseClient,
+  userId: string,
   params: Record<string, unknown>,
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
-  // calendar_events table doesn't exist — AICA uses Google Calendar as source of truth.
-  // Return a helpful message instead of crashing.
-  const timeStr = params.time || '';
-  const dateStr = params.date || 'a data solicitada';
+  const title = params.title as string;
+  const date = params.date as string;
+  const time = (params.time as string) || '09:00';
+  const durationMinutes = (params.duration_minutes as number) || 60;
+  const description = (params.description as string) || null;
+
+  const startDateTime = `${date}T${time}:00`;
+  const endDate = new Date(startDateTime);
+  endDate.setMinutes(endDate.getMinutes() + durationMinutes);
+  const endDateTime = endDate.toISOString();
+
+  const { error } = await supabase
+    .from('calendar_events')
+    .insert({
+      user_id: userId,
+      title,
+      description,
+      start_time: startDateTime,
+      end_time: endDateTime,
+      source: 'manual',
+    });
+
+  if (error) {
+    console.error('[executeCreateEvent] Insert error:', error);
+    return {
+      reply: `Erro ao criar evento: ${error.message}`,
+      data: { error: error.message },
+    };
+  }
 
   return {
-    reply: [
-      `📅 Para criar o evento "<b>${params.title}</b>"${timeStr ? ` as ${timeStr}` : ''} em ${dateStr}:`,
-      '',
-      'Acesse <b>aica.guru</b> → Agenda para sincronizar com seu Google Calendar.',
-      'A criacao de eventos pelo Telegram estara disponivel em breve!',
-    ].join('\n'),
-    data: {},
+    reply: `📅 Evento "<b>${title}</b>" agendado para ${date} as ${time} (${durationMinutes}min).`,
+    data: { title, date, time, duration_minutes: durationMinutes },
   };
 }
 
@@ -1577,7 +1598,7 @@ export async function processVoiceMessage(
   const audioBytes = new Uint8Array(await audioResponse.arrayBuffer());
 
   // 3. Convert to base64 for Gemini
-  const base64Audio = btoa(String.fromCharCode(...audioBytes));
+  const base64Audio = base64Encode(audioBytes);
 
   // 4. Send to Gemini for transcription + intent extraction
   const genAI = new GoogleGenerativeAI(apiKey);
