@@ -546,8 +546,9 @@ async function executeCreateEvent(
   const durationMinutes = (params.duration_minutes as number) || 60;
   const description = (params.description as string) || null;
 
-  const startDateTime = `${date}T${time}:00`;
-  const endDate = new Date(startDateTime);
+  // Use Brazil timezone to avoid UTC mismatch on TIMESTAMPTZ columns
+  const startDateTime = new Date(`${date}T${time}:00-03:00`).toISOString();
+  const endDate = new Date(`${date}T${time}:00-03:00`);
   endDate.setMinutes(endDate.getMinutes() + durationMinutes);
   const endDateTime = endDate.toISOString();
 
@@ -560,7 +561,9 @@ async function executeCreateEvent(
       start_time: startDateTime,
       end_time: endDateTime,
       source: 'manual',
-    });
+    })
+    .select('id, title')
+    .single();
 
   if (error) {
     console.error('[executeCreateEvent] Insert error:', error);
@@ -1650,6 +1653,13 @@ export async function processVoiceMessage(
   const response = result.response;
   const candidate = response.candidates?.[0];
   const intentSummary = '[voice] audio message';
+
+  if (!candidate) {
+    console.warn('[processVoiceMessage] Gemini returned no candidates:', {
+      promptFeedback: response.promptFeedback,
+      blockReason: response.candidates?.[0]?.finishReason,
+    });
+  }
 
   // 6. Check if Gemini returned a function call
   const functionCall = candidate?.content?.parts?.find(
