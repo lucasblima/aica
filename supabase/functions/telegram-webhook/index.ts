@@ -195,31 +195,44 @@ function isValidEmail(email: string): boolean {
 /**
  * Extract email from text, including spoken Portuguese patterns.
  * Handles: "joao arroba gmail ponto com", "joao @ gmail . com", etc.
+ * Uses token-based approach to avoid false positives from blanket whitespace removal.
  */
 function extractEmailFromText(text: string): string | null {
   if (!text) return null
   const normalized = text.trim().toLowerCase()
 
-  // First, try to find a standard email in the text
-  const emailMatch = normalized.match(/[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+/)
-  if (emailMatch) {
-    const candidate = emailMatch[0]
+  // 1) Try to find a standard email directly in the text
+  const directMatch = normalized.match(/[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+/)
+  if (directMatch) {
+    const candidate = directMatch[0]
     if (isValidEmail(candidate)) return candidate
   }
 
-  // Try spoken Portuguese pattern: "joao arroba gmail ponto com"
-  const spoken = normalized
-    .replace(/\s*arroba\s*/g, '@')
-    .replace(/\s*traco\s*/g, '-')
-    .replace(/\s*hifen\s*/g, '-')
-    .replace(/\s*underline\s*/g, '_')
-    .replace(/\s*ponto\s*/g, '.')
-    // Remove common filler words
-    .replace(/\b(meu email e|meu e-?mail e|o email e|email)\b/g, '')
-    .replace(/\s+/g, '')
-    .trim()
+  // 2) Tokenize and normalize spoken PT-BR patterns
+  const tokenMap: Record<string, string> = {
+    'arroba': '@',
+    'ponto': '.',
+    'dot': '.',
+    'traco': '-',
+    'traço': '-',
+    'hifen': '-',
+    'hífen': '-',
+    'underline': '_',
+    'sublinhado': '_',
+  }
 
-  if (isValidEmail(spoken)) return spoken
+  const fillerWords = new Set([
+    'meu', 'email', 'e-mail', 'e', 'é', 'o', 'eh', 'seria',
+  ])
+
+  // Split into tokens, skip filler words, map spoken symbols
+  const tokens = normalized.split(/\s+/).filter(Boolean)
+  const mapped = tokens
+    .filter(t => !fillerWords.has(t))
+    .map(t => tokenMap[t] ?? t)
+
+  const spokenCandidate = mapped.join('')
+  if (isValidEmail(spokenCandidate)) return spokenCandidate
 
   return null
 }
@@ -417,7 +430,7 @@ async function handleEmailRegistration(
         ].join('\n'), {
           inlineKeyboard: {
             rows: [[
-              { text: '⏭️ Pular por agora', callbackData: 'email_skip' },
+              { text: '⏭️ Deixar pra depois', callbackData: 'email_skip' },
             ]],
           },
         })
@@ -1326,6 +1339,8 @@ async function handleCallbackQuery(
           step: 'ask_email',
         })
       }
+    } else {
+      console.warn(`[telegram-webhook] email_confirm_yes: could not resolve user for telegramId ${telegramId}`)
     }
 
   } else if (data === 'email_confirm_no') {
@@ -1351,6 +1366,8 @@ async function handleCallbackQuery(
           ]],
         },
       })
+    } else {
+      console.warn(`[telegram-webhook] email_confirm_no: could not resolve user for telegramId ${telegramId}`)
     }
 
   // Phase 2: Module interaction callbacks
