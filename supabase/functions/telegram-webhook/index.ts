@@ -218,6 +218,7 @@ function extractEmailFromText(text: string): string | null {
     'hifen': '-',
     'hífen': '-',
     'underline': '_',
+    'underscore': '_',
     'sublinhado': '_',
   }
 
@@ -1368,6 +1369,7 @@ async function handleCallbackQuery(
       })
     } else {
       console.warn(`[telegram-webhook] email_confirm_no: could not resolve user for telegramId ${telegramId}`)
+      await reply(tg, msg, 'Use /start para criar sua conta primeiro!')
     }
 
   // Phase 2: Module interaction callbacks
@@ -1467,16 +1469,21 @@ async function handleCallbackQuery(
       } else {
         await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
         const firstName = msg.sender.firstName || 'usuario'
-        const aiResult = await processNaturalLanguage(
-          supabase, helpUserId, msg.chat.chatId, helpQueries[data], firstName,
-        )
-        let keyboard: Partial<OutboundMessage> = {}
-        if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
-          keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
-        } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
-          keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+        try {
+          const aiResult = await processNaturalLanguage(
+            supabase, helpUserId, msg.chat.chatId, helpQueries[data], firstName,
+          )
+          let keyboard: Partial<OutboundMessage> = {}
+          if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
+            keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
+          } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
+            keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+          }
+          await reply(tg, msg, aiResult.reply, keyboard)
+        } catch (err) {
+          console.error(`[telegram-webhook] Help shortcut AI error: ${(err as Error).message}`)
+          await reply(tg, msg, 'Desculpa, tive um problema. Tenta de novo em alguns segundos.')
         }
-        await reply(tg, msg, aiResult.reply, keyboard)
       }
     } else {
       await reply(tg, msg, 'Use /start para criar sua conta primeiro!')
