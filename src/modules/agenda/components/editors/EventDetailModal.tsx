@@ -65,6 +65,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/10 backdrop-blur-[4px]"
           onClick={onClose}
+          role="dialog"
+          aria-modal="true"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -87,6 +89,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               </div>
               <button
                 onClick={onClose}
+                aria-label="Fechar"
                 className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -129,7 +132,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-ceramic-text-secondary">
                     <FileText className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-xs font-medium uppercase tracking-wide">Descricao</span>
+                    <span className="text-xs font-medium uppercase tracking-wide">Descrição</span>
                   </div>
                   <div className="bg-ceramic-cool/50 rounded-xl p-4">
                     <p className="text-sm text-ceramic-text-primary whitespace-pre-wrap">

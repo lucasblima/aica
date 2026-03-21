@@ -330,6 +330,7 @@ export const AgendaPageShell: React.FC<AgendaPageShellProps> = ({ userId, userEm
       location: event.location,
       color: event.color || '#D97706',
       description: event.description,
+      source: event.source,
     }));
     const todayTasks = timelineTasks
       .filter(task => {

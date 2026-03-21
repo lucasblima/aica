@@ -29,6 +29,7 @@ interface TimelineRestOfDayEvent {
   description?: string;
   isCompleted?: boolean;
   checklist?: any;
+  source?: string;
 }
 
 interface NextTwoDaysEvent {
@@ -198,7 +199,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           description: selectedEvent.description,
           location: selectedEvent.location,
           color: selectedEvent.color,
-          source: 'google_calendar',
+          source: selectedEvent.source || 'manual',
         } : null}
       />
     </>
