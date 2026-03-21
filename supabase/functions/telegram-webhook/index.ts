@@ -192,6 +192,38 @@ function isValidEmail(email: string): boolean {
   return EMAIL_REGEX.test(email)
 }
 
+/**
+ * Extract email from text, including spoken Portuguese patterns.
+ * Handles: "joao arroba gmail ponto com", "joao @ gmail . com", etc.
+ */
+function extractEmailFromText(text: string): string | null {
+  if (!text) return null
+  const normalized = text.trim().toLowerCase()
+
+  // First, try to find a standard email in the text
+  const emailMatch = normalized.match(/[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+/)
+  if (emailMatch) {
+    const candidate = emailMatch[0]
+    if (isValidEmail(candidate)) return candidate
+  }
+
+  // Try spoken Portuguese pattern: "joao arroba gmail ponto com"
+  const spoken = normalized
+    .replace(/\s*arroba\s*/g, '@')
+    .replace(/\s*traco\s*/g, '-')
+    .replace(/\s*hifen\s*/g, '-')
+    .replace(/\s*underline\s*/g, '_')
+    .replace(/\s*ponto\s*/g, '.')
+    // Remove common filler words
+    .replace(/\b(meu email e|meu e-?mail e|o email e|email)\b/g, '')
+    .replace(/\s+/g, '')
+    .trim()
+
+  if (isValidEmail(spoken)) return spoken
+
+  return null
+}
+
 /** Escape HTML special chars to prevent injection in Telegram HTML messages */
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -333,24 +365,26 @@ async function handleEmailRegistration(
   const text = (msg.content.text || '').trim()
 
   if (flowState.step === 'waiting_email') {
-    // Validate email format
-    if (!isValidEmail(text)) {
+    // Try to extract email (supports spoken PT-BR patterns)
+    const extractedEmail = extractEmailFromText(text)
+    if (!extractedEmail) {
       await reply(tg, msg, [
-        '⚠️ Esse email nao parece valido. Envie no formato:',
-        '<code>seu@email.com</code>',
+        'Hmm, nao consegui entender o email.',
         '',
-        'Ou use o botao abaixo para pular esta etapa.',
+        'Tenta de novo: digita seu email completo (exemplo: maria@gmail.com)',
+        '',
+        'Ou fala por audio: "meu email e maria arroba gmail ponto com" 🎙️',
       ].join('\n'), {
         inlineKeyboard: {
           rows: [[
-            { text: '⏭️ Pular por agora', callbackData: 'email_skip' },
+            { text: '⏭️ Deixar pra depois', callbackData: 'email_skip' },
           ]],
         },
       })
       return
     }
 
-    const email = text.toLowerCase()
+    const email = extractedEmail
     const chatId = Number(msg.chat.chatId)
 
     // Update guest account: replace synthetic email with real email
@@ -411,20 +445,20 @@ async function handleEmailRegistration(
       console.error(`[telegram-webhook] Magic link send failed: ${otpError.message}`)
       // Email was updated successfully, so the user can still use /status to see their email
       await reply(tg, msg, [
-        '✅ Email registrado: <b>' + escapeHtml(email) + '</b>',
+        `Pronto! Registrei seu email: <b>${escapeHtml(email)}</b> ✅`,
         '',
-        '⚠️ Nao consegui enviar o link magico agora.',
-        'Acesse <b>aica.guru</b> e use "Entrar com email" para receber um novo link.',
+        '⚠️ Nao consegui enviar a mensagem pro seu email agora.',
+        'Acesse <b>aica.guru</b> e use "Entrar com email" para receber.',
+        '',
+        'Mas nao precisa fazer isso agora! Pode continuar conversando comigo aqui 😊',
       ].join('\n'))
     } else {
       await reply(tg, msg, [
-        '✅ <b>Email registrado!</b>',
+        `Pronto! Registrei seu email: <b>${escapeHtml(email)}</b> ✅`,
         '',
-        `Enviei um link magico para <b>${escapeHtml(email)}</b>.`,
-        'Clique no link do email para acessar a AICA pelo navegador.',
+        'Mandei uma mensagem pro seu email. Abre o email e aperta no botao azul la dentro.',
         '',
-        '💡 O link expira em 1 hora.',
-        '📱 Enquanto isso, voce pode continuar usando a AICA aqui pelo Telegram!',
+        'Mas nao precisa fazer isso agora! Pode continuar conversando comigo aqui 😊',
       ].join('\n'))
     }
 
@@ -451,9 +485,9 @@ function buildWowMessage(interactions: number, actions: number): string {
   }
   lines.push(`  💬 ${interactions} ${interactions === 1 ? 'interacao' : 'interacoes'}`)
   lines.push('')
-  lines.push('Isso e so o comeco — com o tempo eu identifico padroes e te ajudo a melhorar cada area.')
+  lines.push('Para salvar tudo, me diz seu email.')
   lines.push('')
-  lines.push('Para salvar tudo e acompanhar sua evolucao, me diz seu email (digita ou manda por audio):')
+  lines.push('Pode falar por audio (ex: "meu email e joao arroba gmail ponto com") ou digitar.')
   return lines.join('\n')
 }
 
@@ -548,22 +582,20 @@ async function handleOnboardingEmailSubmission(
   const emailDisplay = escapeHtml(email)
   if (otpError) {
     await reply(tg, msg, [
-      `✅ Email registrado: <b>${emailDisplay}</b>`,
+      `Pronto! Registrei seu email: <b>${emailDisplay}</b> ✅`,
       '',
-      '⚠️ Nao consegui enviar o link magico agora.',
-      'Acesse <b>aica.guru</b> e use "Entrar com email" para receber um novo link.',
+      '⚠️ Nao consegui enviar a mensagem pro seu email agora.',
+      'Acesse <b>aica.guru</b> e use "Entrar com email" para receber.',
       '',
-      '📱 Enquanto isso, pode continuar conversando comigo aqui!',
+      'Mas nao precisa fazer isso agora! Pode continuar conversando comigo aqui 😊',
     ].join('\n'))
   } else {
     await reply(tg, msg, [
-      `✅ <b>Email registrado!</b>`,
+      `Pronto! Registrei seu email: <b>${emailDisplay}</b> ✅`,
       '',
-      `Enviei um link para <b>${emailDisplay}</b>. Abre seu email e clica no link para confirmar ✉️`,
+      'Mandei uma mensagem pro seu email. Abre o email e aperta no botao azul la dentro.',
       '',
-      `🎟️ Voce ganhou 3 convites! Depois de confirmar, mande /convidar para compartilhar.`,
-      '',
-      '📱 Enquanto isso, pode continuar conversando comigo aqui.',
+      'Mas nao precisa fazer isso agora! Pode continuar conversando comigo aqui 😊',
     ].join('\n'))
   }
 }
@@ -622,20 +654,79 @@ async function handleOnboardingConversation(
       invited_by_user_id: flowState.invited_by_user_id || null,
     })
   } else if (flowState.step === 'ask_email') {
-    // User responded but maybe didn't give email — check if this IS an email
+    // User responded — try to extract email from text (supports spoken PT-BR)
     const text = (msg.content.text || '').trim()
-    if (isValidEmail(text)) {
-      await handleOnboardingEmailSubmission(tg, msg, supabase, userId, chatId, text.toLowerCase(), firstName, flowState)
+    const extractedEmail = extractEmailFromText(text)
+    if (extractedEmail) {
+      // Show confirmation button before processing (especially important for voice-extracted emails)
+      const emailDisplay = escapeHtml(extractedEmail)
+      await setActiveFlow(supabase, userId, chatId, 'onboarding_conversation', {
+        ...flowState,
+        step: 'confirm_email',
+        pending_email: extractedEmail,
+        interaction_count: interactionCount,
+        actions_captured: newActionsCaptured,
+      })
+      await reply(tg, msg, `Entendi! Seu email e <b>${emailDisplay}</b>?`, {
+        inlineKeyboard: {
+          rows: [[
+            { text: '👍 Isso mesmo!', callbackData: 'email_confirm_yes' },
+            { text: '❌ Nao, vou corrigir', callbackData: 'email_confirm_no' },
+          ]],
+        },
+      })
     } else {
       // Continue conversation but update state + periodic reminder
       if (interactionCount > 5 && interactionCount % 3 === 0) {
-        // Rate-limited reminder every 3 messages after 5
         await reply(tg, msg, 'Para salvar tudo e acompanhar sua evolucao, me diz seu email 📧')
       }
       await setActiveFlow(supabase, userId, chatId, 'onboarding_conversation', {
         ...flowState,
         interaction_count: interactionCount,
         actions_captured: newActionsCaptured,
+      })
+    }
+  } else if (flowState.step === 'confirm_email') {
+    // User typed something instead of pressing button — try extracting email again
+    const text = (msg.content.text || '').trim()
+    const extractedEmail = extractEmailFromText(text)
+    if (extractedEmail) {
+      const emailDisplay = escapeHtml(extractedEmail)
+      await setActiveFlow(supabase, userId, chatId, 'onboarding_conversation', {
+        ...flowState,
+        step: 'confirm_email',
+        pending_email: extractedEmail,
+        interaction_count: interactionCount,
+        actions_captured: newActionsCaptured,
+      })
+      await reply(tg, msg, `Entendi! Seu email e <b>${emailDisplay}</b>?`, {
+        inlineKeyboard: {
+          rows: [[
+            { text: '👍 Isso mesmo!', callbackData: 'email_confirm_yes' },
+            { text: '❌ Nao, vou corrigir', callbackData: 'email_confirm_no' },
+          ]],
+        },
+      })
+    } else {
+      // Go back to ask_email
+      await setActiveFlow(supabase, userId, chatId, 'onboarding_conversation', {
+        ...flowState,
+        step: 'ask_email',
+        interaction_count: interactionCount,
+        actions_captured: newActionsCaptured,
+      })
+      await reply(tg, msg, [
+        'Hmm, nao consegui entender o email.',
+        '',
+        'Tenta de novo: digita seu email completo (exemplo: maria@gmail.com)',
+        '',
+        'Ou fala por audio: "meu email e maria arroba gmail ponto com" 🎙️',
+      ].join('\n'), {
+        inlineKeyboard: {
+          rows: [[
+            { text: '⏭️ Deixar pra depois', callbackData: 'email_skip' },
+          ]],
+        },
       })
     }
   } else {
@@ -709,22 +800,21 @@ async function handleStart(
   await reply(tg, msg, [
     `Ola, <b>${name}</b>! 👋`,
     '',
-    'Eu sou a <b>AICA</b> — seu Sistema Operacional de Vida Integrada.',
+    'Eu sou a <b>AICA</b>, sua assistente pessoal.',
     '',
-    `Criei uma conta para voce! Para continuar, preciso da sua autorizacao para processar mensagens com IA.${referralNote}`,
+    `Vou te ajudar a organizar tarefas, gastos e o dia a dia.${referralNote}`,
     '',
-    '📋 <b>Dados coletados:</b> ID Telegram, resumo de mensagens',
-    '🤖 <b>Processamento:</b> IA analisa para executar acoes',
-    '🗑️ <b>Retencao:</b> Historico de 30 dias',
+    'Para funcionar, eu guardo um resumo das nossas conversas por 30 dias.',
+    'Tudo protegido pela lei de dados (LGPD).',
   ].join('\n'), {
     inlineKeyboard: {
       rows: [
         [
-          { text: '✅ Aceitar e Continuar', callbackData: 'consent_accept' },
-          { text: '❌ Recusar', callbackData: 'consent_reject' },
+          { text: '👍 Concordo, vamos la!', callbackData: 'consent_accept' },
         ],
         [
-          { text: '📜 Ver Politica Completa', url: 'https://aica.guru/privacy' },
+          { text: 'Nao quero', callbackData: 'consent_reject' },
+          { text: '📜 Saber mais', url: 'https://aica.guru/privacy' },
         ],
       ],
     },
@@ -736,28 +826,30 @@ async function handleHelp(
   msg: UnifiedMessage,
 ): Promise<void> {
   await reply(tg, msg, [
-    '<b>Comandos disponiveis:</b>',
+    'Oi! Aqui esta o que voce pode fazer comigo:',
     '',
-    '/start — Boas-vindas e instrucoes',
-    '/help — Lista de comandos',
-    '/status — Status da vinculacao',
-    '/vincular <code>CODIGO</code> — Vincular conta AICA',
-    '/desvincular — Desvincular conta',
+    'Me fala ou digita coisas como:',
     '',
-    '<b>Privacidade (LGPD):</b>',
-    '/privacidade — Politica de privacidade',
-    '/meus_dados — Exportar seus dados',
-    '/apagar_dados — Solicitar exclusao de dados',
+    '"Preciso comprar leite" → eu anoto pra voce 📝',
+    '"Gastei 30 reais no mercado" → eu registro o gasto 💰',
+    '"To cansado hoje" → eu acompanho como voce esta 😊',
+    '"O que tenho pra fazer?" → eu mostro suas tarefas 📋',
     '',
-    '<b>Voce tambem pode conversar naturalmente:</b>',
-    '• "Adiciona tarefa: revisar proposta"',
-    '• "Gastei R$50 no almoco"',
-    '• "To me sentindo bem hoje"',
-    '• "Agenda reuniao amanha as 14h"',
-    '• "Como ta meu dia?"',
-    '• "Quanto gastei esse mes?"',
-    '• Ou envie um audio! 🎙️',
-  ].join('\n'))
+    '🎙️ Pode mandar audio, nao precisa digitar!',
+  ].join('\n'), {
+    inlineKeyboard: {
+      rows: [
+        [
+          { text: '📋 Minhas tarefas', callbackData: 'help_my_tasks' },
+          { text: '💰 Meus gastos', callbackData: 'help_my_expenses' },
+        ],
+        [
+          { text: '😊 Como estou?', callbackData: 'help_my_mood' },
+          { text: '🔒 Privacidade', callbackData: 'help_privacy' },
+        ],
+      ],
+    },
+  })
 }
 
 async function handleStatus(
@@ -871,21 +963,17 @@ async function handleVincular(
   await reply(tg, msg, [
     '✅ <b>Conta vinculada com sucesso!</b>',
     '',
-    'Para usar a AICA pelo Telegram, preciso da sua autorizacao:',
-    '',
-    '📋 <b>Dados coletados:</b> ID Telegram, mensagens enviadas ao bot',
-    '🤖 <b>Processamento:</b> IA analisa suas mensagens para executar acoes',
-    '🌐 <b>Transferencia:</b> Mensagens transitam pelos servidores do Telegram',
-    '🗑️ <b>Retencao:</b> Historico de 30 dias, depois apagado',
+    'Para funcionar, eu guardo um resumo das nossas conversas por 30 dias.',
+    'Tudo protegido pela lei de dados (LGPD).',
   ].join('\n'), {
     inlineKeyboard: {
       rows: [
         [
-          { text: '✅ Aceitar e Continuar', callbackData: 'consent_accept' },
-          { text: '❌ Recusar', callbackData: 'consent_reject' },
+          { text: '👍 Concordo, vamos la!', callbackData: 'consent_accept' },
         ],
         [
-          { text: '📜 Ver Politica Completa', url: 'https://aica.guru/privacy' },
+          { text: 'Nao quero', callbackData: 'consent_reject' },
+          { text: '📜 Saber mais', url: 'https://aica.guru/privacy' },
         ],
       ],
     },
@@ -1077,14 +1165,36 @@ async function handleCallbackQuery(
           invited_by_user_id: invitedByUserId,
         })
 
+        // Tutorial in 3 short messages with typing pauses
+        // Msg 1 — What I can do
         await reply(tg, msg, [
-          `Oi, ${firstName}! 🌿`,
+          `Oi, ${firstName}! Que bom ter voce aqui 🌿`,
           '',
-          'Me manda um audio ou texto com o que esta na sua cabeca agora.',
+          'Olha o que eu consigo fazer por voce:',
           '',
-          'Pode ser qualquer coisa — como foi seu dia, algo que precisa resolver, ou uma area da vida que quer organizar.',
+          '📝 Anotar tarefas e lembretes',
+          '💰 Controlar seus gastos',
+          '😊 Acompanhar como voce esta se sentindo',
+          '📅 Organizar sua agenda',
+        ].join('\n'))
+
+        // Msg 2 — How to use audio (the key message)
+        await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
+        await reply(tg, msg, [
+          'A melhor parte: voce pode falar comigo por audio! 🎙️',
           '',
-          'Eu escuto, entendo e ja comeco a te ajudar.',
+          'Ve o botao do microfone aqui embaixo, do lado direito?',
+          'Segura ele e fala. Quando soltar, eu recebo.',
+          '',
+          'E igualzinho mandar audio no WhatsApp.',
+        ].join('\n'))
+
+        // Msg 3 — Call to action
+        await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
+        await reply(tg, msg, [
+          'Vamos comecar? Me conta uma coisa:',
+          '',
+          'O que voce precisa fazer hoje? Pode falar por audio ou digitar 😊',
         ].join('\n'))
         return
       }
@@ -1197,6 +1307,52 @@ async function handleCallbackQuery(
       await reply(tg, msg, '❌ Nao consegui acessar sua conta. Tente /start para reiniciar.')
     }
 
+  // Email confirmation callbacks (from extractEmailFromText)
+  } else if (data === 'email_confirm_yes') {
+    const { data: confirmUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const confirmUserId = confirmUser?.[0]?.user_id
+    if (confirmUserId) {
+      const chatId = Number(msg.chat.chatId)
+      const { flowState } = await getActiveFlow(supabase, confirmUserId, chatId)
+      const pendingEmail = flowState.pending_email as string
+      if (pendingEmail && isValidEmail(pendingEmail)) {
+        const firstName = msg.sender.firstName || 'usuario'
+        await handleOnboardingEmailSubmission(tg, msg, supabase, confirmUserId, chatId, pendingEmail, firstName, flowState)
+      } else {
+        await reply(tg, msg, 'Hmm, algo deu errado. Me diz seu email de novo?')
+        await setActiveFlow(supabase, confirmUserId, chatId, 'onboarding_conversation', {
+          ...flowState,
+          step: 'ask_email',
+        })
+      }
+    }
+
+  } else if (data === 'email_confirm_no') {
+    const { data: confirmUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const confirmUserId = confirmUser?.[0]?.user_id
+    if (confirmUserId) {
+      const chatId = Number(msg.chat.chatId)
+      const { flowState } = await getActiveFlow(supabase, confirmUserId, chatId)
+      await setActiveFlow(supabase, confirmUserId, chatId, 'onboarding_conversation', {
+        ...flowState,
+        step: 'ask_email',
+        pending_email: null,
+      })
+      await reply(tg, msg, [
+        'Sem problema! Me diz o email correto.',
+        '',
+        'Pode digitar ou falar por audio: "meu email e maria arroba gmail ponto com" 🎙️',
+      ].join('\n'), {
+        inlineKeyboard: {
+          rows: [[
+            { text: '⏭️ Deixar pra depois', callbackData: 'email_skip' },
+          ]],
+        },
+      })
+    }
+
   // Phase 2: Module interaction callbacks
   } else if (data.startsWith('task_priority:')) {
     const parts = data.split(':')
@@ -1274,6 +1430,39 @@ async function handleCallbackQuery(
           `✅ Humor registrado: ${moodEmojis[score]} ${score}/5`
         )
       }
+    }
+
+  // Help shortcut callbacks — route to AI as natural language
+  } else if (data === 'help_my_tasks' || data === 'help_my_expenses' || data === 'help_my_mood' || data === 'help_privacy') {
+    const { data: helpUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const helpUserId = helpUser?.[0]?.user_id
+    if (helpUserId) {
+      const helpQueries: Record<string, string> = {
+        help_my_tasks: 'O que tenho pra fazer?',
+        help_my_expenses: 'Quanto gastei esse mes?',
+        help_my_mood: 'Como estou me sentindo?',
+        help_privacy: '',
+      }
+
+      if (data === 'help_privacy') {
+        await handlePrivacidade(tg, msg)
+      } else {
+        await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
+        const firstName = msg.sender.firstName || 'usuario'
+        const aiResult = await processNaturalLanguage(
+          supabase, helpUserId, msg.chat.chatId, helpQueries[data], firstName,
+        )
+        let keyboard: Partial<OutboundMessage> = {}
+        if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
+          keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
+        } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
+          keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+        }
+        await reply(tg, msg, aiResult.reply, keyboard)
+      }
+    } else {
+      await reply(tg, msg, 'Use /start para criar sua conta primeiro!')
     }
   }
 }
@@ -1599,7 +1788,7 @@ serve(async (req) => {
 
             if (!message.content.voiceFileId) {
               await reply(tg, message,
-                '❌ Nao consegui processar o audio. Tente enviar novamente.'
+                'Nao consegui entender esse audio. Pode tentar de novo?\nFala devagar e perto do celular 🎙️\n\nSe preferir, pode digitar tambem.'
               )
               result.processed = false
             } else {
@@ -1633,7 +1822,7 @@ serve(async (req) => {
               } catch (voiceErr) {
                 console.error(`[telegram-webhook] Voice processing error: ${(voiceErr as Error).message}`)
                 await reply(tg, message,
-                  '❌ Desculpe, tive um problema ao processar o audio. Tente enviar uma mensagem de texto.'
+                  'Nao consegui entender esse audio. Pode tentar de novo?\nFala devagar e perto do celular 🎙️\n\nSe preferir, pode digitar tambem.'
                 )
                 result.processed = false
               }
