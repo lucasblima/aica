@@ -43,40 +43,6 @@
 <body
   class="bg-slate-50 text-slate-900 min-h-screen w-screen selection:bg-indigo-200 selection:text-indigo-900">
   <div id="root" class="min-h-screen w-full relative"></div>
-  <script>
-    // One-time SW cleanup: unregister broken service workers and clear stale caches.
-    // Runs in main thread (not SW context) so CacheStorage errors in SW don't block it.
-    // Tracked via localStorage flag — only runs once per browser.
-    (function() {
-      var flag = 'aica_sw_cleanup_v1';
-      try {
-        if (localStorage.getItem(flag)) return;
-        localStorage.setItem(flag, Date.now().toString());
-        var didCleanup = false;
-        var done = function() { if (didCleanup) location.reload(); };
-        var pending = 0;
-        if ('serviceWorker' in navigator) {
-          pending++;
-          navigator.serviceWorker.getRegistrations().then(function(regs) {
-            if (regs.length > 0) didCleanup = true;
-            Promise.all(regs.map(function(r) { return r.unregister(); })).then(function() {
-              pending--; if (pending === 0) done();
-            });
-          }).catch(function() { pending--; if (pending === 0) done(); });
-        }
-        if ('caches' in window) {
-          pending++;
-          caches.keys().then(function(names) {
-            if (names.length > 0) didCleanup = true;
-            Promise.all(names.map(function(n) { return caches.delete(n); })).then(function() {
-              pending--; if (pending === 0) done();
-            });
-          }).catch(function() { pending--; if (pending === 0) done(); });
-        }
-        if (pending === 0) done();
-      } catch(e) {}
-    })();
-  </script>
   <script type="module" src="/index.tsx"></script>
   <script>
     window.CalloutConfig = {

@@ -83,8 +83,8 @@ export default defineConfig(() => {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
           // Exclude unhashed files from precache manifest to prevent stale entries
           globIgnores: ['**/sw-share-target.js'],
-          skipWaiting: true,
-          clientsClaim: true,
+          skipWaiting: false,
+          clientsClaim: false,
           cleanupOutdatedCaches: true,
           // Vite hashed chunks already have unique filenames — skip cache-busting query params
           dontCacheBustURLsMatching: /[-.][\da-f]{7,8}\./,

@@ -39,6 +39,7 @@ interface State {
 export class ErrorBoundary extends Component<Props, State> {
   private _retryCount = 0;
   private _autoRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  private _visibilityHandler: (() => void) | null = null;
 
   constructor(props: Props) {
     super(props);
@@ -48,6 +49,25 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo: null,
       isAutoRetrying: false,
     };
+  }
+
+  componentDidMount() {
+    // Track when the page becomes visible so chunk-load auto-reload can
+    // distinguish "just switched back to tab" from "been using the app".
+    const VISIBLE_SINCE_KEY = 'aica_page_visible_since';
+    const updateVisibleTimestamp = () => {
+      try {
+        if (document.visibilityState === 'visible') {
+          sessionStorage.setItem(VISIBLE_SINCE_KEY, String(Date.now()));
+        }
+      } catch {
+        // sessionStorage may be unavailable (private browsing, storage full, etc.)
+      }
+    };
+    // Set initial timestamp
+    updateVisibleTimestamp();
+    this._visibilityHandler = updateVisibleTimestamp;
+    document.addEventListener('visibilitychange', updateVisibleTimestamp);
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -70,19 +90,33 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Auto-reload for chunk load errors — stale 404s can only be fixed by a full page reload
     if (isChunkLoadError(error)) {
-      const RELOAD_KEY = 'aica_chunk_reload_ts';
-      const lastReload = Number(sessionStorage.getItem(RELOAD_KEY) || '0');
-      const now = Date.now();
+      try {
+        const RELOAD_KEY = 'aica_chunk_reload_ts';
+        const VISIBLE_SINCE_KEY = 'aica_page_visible_since';
+        const lastReload = Number(sessionStorage.getItem(RELOAD_KEY) || '0');
+        const now = Date.now();
 
-      // Guard: only auto-reload if last reload was >10s ago (prevents infinite loop)
-      if (now - lastReload > 10_000) {
-        log.debug('Chunk load error detected, auto-reloading page to fetch fresh assets');
-        sessionStorage.setItem(RELOAD_KEY, String(now));
-        window.location.reload();
-        return;
+        // Guard: only auto-reload if the page has been visible for at least 5 seconds.
+        // This prevents reload loops triggered by tab switches (visibilitychange events).
+        const visibleSince = Number(sessionStorage.getItem(VISIBLE_SINCE_KEY) || String(now));
+        if (now - visibleSince < 5_000) {
+          log.debug('Chunk load error detected but page was visible for less than 5s, skipping auto-reload');
+          return;
+        }
+
+        // Guard: only auto-reload if last reload was >10s ago (prevents infinite loop)
+        if (now - lastReload > 10_000) {
+          log.debug('Chunk load error detected, auto-reloading page to fetch fresh assets');
+          sessionStorage.setItem(RELOAD_KEY, String(now));
+          window.location.reload();
+          return;
+        }
+
+        log.debug('Chunk load error detected but recent reload already attempted, showing manual fallback');
+      } catch {
+        // sessionStorage unavailable — skip auto-reload guards, show manual fallback
+        log.debug('Chunk load error detected but sessionStorage unavailable, showing manual fallback');
       }
-
-      log.debug('Chunk load error detected but recent reload already attempted, showing manual fallback');
       return;
     }
 
@@ -106,6 +140,9 @@ export class ErrorBoundary extends Component<Props, State> {
   componentWillUnmount() {
     if (this._autoRetryTimer) {
       clearTimeout(this._autoRetryTimer);
+    }
+    if (this._visibilityHandler) {
+      document.removeEventListener('visibilitychange', this._visibilityHandler);
     }
   }
 
