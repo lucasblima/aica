@@ -65,14 +65,14 @@ export function WaitingRoomPage() {
     }
   }, [code, activate]);
 
-  // Share / ask for invite
-  const handleAskInvite = useCallback(async () => {
-    const shareText = 'Me convida pro AICA! É um Life OS incrível. aica.guru';
+  // Share / waitlist
+  const handleWaitlist = useCallback(async () => {
+    const shareText = 'Conhece a AICA? Um assistente de vida pessoal incrível. aica.guru';
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Me convida pro AICA!',
+          title: 'Conhece a AICA?',
           text: shareText,
         });
       } catch {
@@ -311,14 +311,14 @@ export function WaitingRoomPage() {
 
         {/* Ask for invite CTA */}
         <motion.button
-          onClick={handleAskInvite}
+          onClick={handleWaitlist}
           className="w-full ceramic-card p-4 rounded-xl flex items-center justify-center gap-3 text-ceramic-text-primary font-bold hover:scale-[1.01] active:scale-[0.99] transition-transform"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
           <Share2 className="w-5 h-5 text-amber-500" />
-          Pedir convite a um amigo
+          Entrar na lista de espera
         </motion.button>
 
         {/* Sign out */}
