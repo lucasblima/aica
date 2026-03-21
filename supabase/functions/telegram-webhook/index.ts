@@ -911,7 +911,7 @@ async function handleStatus(
     await reply(tg, msg, [
       '❌ <b>Conta nao encontrada</b>',
       '',
-      'Use /start para criar sua conta e comecar a usar a AICA!',
+      'Oi! Me manda /start pra gente comecar 😊',
     ].join('\n'))
   }
 }
@@ -1216,15 +1216,15 @@ async function handleCallbackQuery(
 
     // Fallback: user already has real email or couldn't resolve user
     await reply(tg, msg, [
-      '✅ <b>Consentimento registrado!</b>',
+      '✅ Tudo certo! Pode conversar comigo normalmente.',
       '',
-      'Pronto! Agora voce pode conversar comigo naturalmente. Experimente:',
+      'Me fala ou digita coisas como:',
       '',
-      '• "Adiciona tarefa: revisar proposta"',
-      '• "Gastei R$50 no almoco"',
-      '• "Como ta meu dia?"',
+      '"Preciso comprar leite" → eu anoto pra voce 📝',
+      '"Gastei 30 reais no mercado" → eu registro o gasto 💰',
+      '"Como ta meu dia?" → eu te mostro um resumo 📋',
       '',
-      'Use /help para ver todos os comandos.',
+      '🎙️ Pode mandar audio tambem!',
     ].join('\n'))
 
   } else if (data === 'consent_reject' || data.startsWith('consent_reject:')) {
@@ -1280,15 +1280,11 @@ async function handleCallbackQuery(
       console.warn(`[telegram-webhook] email_skip: could not resolve user for telegramId ${telegramId}`)
     }
     await reply(tg, msg, [
-      '👍 Sem problema! Voce pode registrar seu email depois com /status.',
+      '👍 Sem problema! Pode registrar seu email depois quando quiser.',
       '',
-      'Agora voce pode conversar comigo naturalmente. Experimente:',
+      'Agora e so conversar comigo! Me fala o que precisa 😊',
       '',
-      '• "Adiciona tarefa: revisar proposta"',
-      '• "Gastei R$50 no almoco"',
-      '• "Como ta meu dia?"',
-      '',
-      'Use /help para ver todos os comandos.',
+      '🎙️ Pode mandar audio tambem!',
     ].join('\n'))
 
   } else if (data === 'email_register_start') {
@@ -1529,7 +1525,7 @@ async function routeCommand(
       return 'apagar_dados'
     default:
       await reply(tg, msg,
-        `Comando desconhecido: <code>${command}</code>\nUse /help para ver os comandos disponiveis.`
+        'Hmm, nao entendi esse comando. Tenta me falar o que voce precisa com suas proprias palavras 😊'
       )
       return 'unknown_command'
   }
@@ -1618,7 +1614,7 @@ serve(async (req) => {
         if (!aicaUserId) {
           // User not linked — prompt to create account via /start
           await reply(tg, message,
-            'Use /start para criar sua conta e comecar a usar a AICA!'
+            'Oi! Me manda /start pra gente comecar 😊'
           )
           result.processed = true
         } else {
@@ -1626,15 +1622,19 @@ serve(async (req) => {
           const consentGiven = userData?.[0]?.consent_given
           if (!consentGiven) {
             await reply(tg, message, [
-              '⚠️ Preciso da sua autorizacao para processar mensagens com IA.',
+              'Antes de comecar, preciso da sua autorizacao.',
               '',
-              'Use /privacidade para ver a politica de dados.',
+              'Eu guardo um resumo das nossas conversas por 30 dias, protegido pela LGPD.',
             ].join('\n'), {
               inlineKeyboard: {
-                rows: [[
-                  { text: '✅ Autorizar', callbackData: 'consent_accept' },
-                  { text: '📜 Politica', url: 'https://aica.guru/privacy' },
-                ]],
+                rows: [
+                  [
+                    { text: '👍 Concordo, vamos la!', callbackData: 'consent_accept' },
+                  ],
+                  [
+                    { text: '📜 Saber mais', url: 'https://aica.guru/privacy' },
+                  ],
+                ],
               },
             })
             result.processed = true
@@ -1750,22 +1750,26 @@ serve(async (req) => {
 
         if (!aicaUserId) {
           await reply(tg, message,
-            'Use /start para criar sua conta e comecar a usar a AICA!'
+            'Oi! Me manda /start pra gente comecar 😊'
           )
           result.processed = true
         } else {
           const consentGiven = userData?.[0]?.consent_given
           if (!consentGiven) {
             await reply(tg, message, [
-              '⚠️ Preciso da sua autorizacao para processar mensagens com IA.',
+              'Antes de comecar, preciso da sua autorizacao.',
               '',
-              'Use /privacidade para ver a politica de dados.',
+              'Eu guardo um resumo das nossas conversas por 30 dias, protegido pela LGPD.',
             ].join('\n'), {
               inlineKeyboard: {
-                rows: [[
-                  { text: '✅ Autorizar', callbackData: 'consent_accept' },
-                  { text: '📜 Politica', url: 'https://aica.guru/privacy' },
-                ]],
+                rows: [
+                  [
+                    { text: '👍 Concordo, vamos la!', callbackData: 'consent_accept' },
+                  ],
+                  [
+                    { text: '📜 Saber mais', url: 'https://aica.guru/privacy' },
+                  ],
+                ],
               },
             })
             result.processed = true
@@ -1855,9 +1859,9 @@ serve(async (req) => {
         }
 
       } else {
-        // Unsupported message type
+        // Unsupported message type (stickers, photos, documents, etc.)
         await reply(tg, message,
-          'Este tipo de mensagem ainda nao e suportado. Use /help para ver os comandos.'
+          'Por enquanto eu so entendo texto e audio 😊\n\nMe manda uma mensagem escrita ou um audio que eu te ajudo!'
         )
         result.processed = false
       }
