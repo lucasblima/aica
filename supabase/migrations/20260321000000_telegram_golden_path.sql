@@ -105,8 +105,19 @@ BEGIN
     );
   END IF;
 
-  -- 2. Check inviter quota (if inviter exists)
-  IF p_inviter_id IS NOT NULL THEN
+  -- 2. Check for duplicate activation (idempotent — prevent double-decrement)
+  IF EXISTS (
+    SELECT 1 FROM user_referrals
+    WHERE invitee_id = p_invitee_id AND status = 'accepted'
+  ) THEN
+    RETURN json_build_object(
+      'success', true,
+      'message', 'Conta ja estava ativa'
+    );
+  END IF;
+
+  -- 3. Check inviter quota (skip for self-referral / organic users)
+  IF p_inviter_id IS NOT NULL AND p_inviter_id != p_invitee_id THEN
     SELECT * INTO v_inviter
     FROM user_telegram_links
     WHERE user_id = p_inviter_id
@@ -130,13 +141,13 @@ BEGIN
     END IF;
   END IF;
 
-  -- 3. Increment global pool
+  -- 4. Increment global pool
   UPDATE bot_invite_pool
   SET used_this_month = used_this_month + 1,
       updated_at = now()
   WHERE id = 1;
 
-  -- 4. Create referral record using existing user_referrals schema
+  -- 5. Create referral record using existing user_referrals schema
   -- Generate a token for the referral record (required by existing schema)
   v_invite_token := encode(gen_random_bytes(12), 'hex');
 
@@ -249,8 +260,8 @@ BEGIN
     RETURN v_code;
   END IF;
 
-  -- Generate unique 8-char uppercase alphanumeric code
-  LOOP
+  -- Generate unique 8-char uppercase alphanumeric code (max 10 attempts)
+  FOR i IN 1..10 LOOP
     v_code := upper(substr(md5(random()::text), 1, 8));
     BEGIN
       UPDATE user_telegram_links
@@ -272,6 +283,9 @@ COMMENT ON FUNCTION generate_telegram_referral_code IS 'Generates a unique 8-cha
 -- consume_bot_invite is called from Edge Functions with service_role,
 -- but granting to authenticated allows direct RPC calls from frontend if needed.
 
-GRANT EXECUTE ON FUNCTION consume_bot_invite(UUID, UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION reset_monthly_invite_pool() TO authenticated;
-GRANT EXECUTE ON FUNCTION generate_telegram_referral_code(UUID) TO authenticated;
+-- consume_bot_invite and reset_monthly_invite_pool: service_role ONLY (called from Edge Functions)
+-- NOT granted to authenticated — prevents privilege escalation
+GRANT EXECUTE ON FUNCTION consume_bot_invite(UUID, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION reset_monthly_invite_pool() TO service_role;
+-- generate_telegram_referral_code: safe for authenticated (only generates code for own user)
+GRANT EXECUTE ON FUNCTION generate_telegram_referral_code(UUID) TO service_role;

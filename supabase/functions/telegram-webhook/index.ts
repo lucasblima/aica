@@ -478,7 +478,7 @@ async function handleOnboardingEmailSubmission(
 
   const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
     email,
-    email_confirm: true,
+    email_confirm: false,
     user_metadata: {
       ...existingMeta,
       email_registered_via: 'telegram_onboarding',
@@ -1575,6 +1575,26 @@ serve(async (req) => {
                 JSON.stringify(result),
                 { status: 200, headers: { 'Content-Type': 'application/json' } }
               )
+            }
+
+            // Handle onboarding_email_sent for voice messages (mirror text branch)
+            if (activeFlow === 'onboarding_email_sent') {
+              const { data: { user: emailUser } } = await supabase.auth.admin.getUserById(aicaUserId)
+              if (emailUser?.email_confirmed_at && !emailUser.email?.endsWith('@telegram.aica.guru')) {
+                const inviterId = (flowState as Record<string, unknown>).invited_by_user_id as string | null
+                await supabase.rpc('consume_bot_invite', {
+                  p_inviter_id: inviterId || aicaUserId,
+                  p_invitee_id: aicaUserId,
+                })
+                await supabase.rpc('generate_telegram_referral_code', { p_user_id: aicaUserId })
+                await setActiveFlow(supabase, aicaUserId, chatId, null, {})
+                await reply(tg, message,
+                  `Email confirmado! ✅ Sua conta AICA esta ativa.\n\n🎟️ Voce ganhou 3 convites para compartilhar com amigos.\nPara convidar alguem, mande: /convidar\n\nQuando quiser, acesse aica.guru pelo navegador para ver seu painel completo.`
+                )
+                result.processed = true
+                return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } })
+              }
+              // Email not confirmed yet — fall through to normal voice processing
             }
 
             if (!message.content.voiceFileId) {
