@@ -112,9 +112,12 @@ export function useAthleteForm({
         name: initialData.name || '',
         email: initialData.email || '',
         phone: initialData.phone || '',
-        modalityLevels: initialData.modality
-          ? [{ modality: initialData.modality, level: 'iniciante' }]
-          : [],
+        modalityLevels:
+          initialData.practiced_modalities && initialData.practiced_modalities.length > 0
+            ? initialData.practiced_modalities.map((mod) => ({ modality: mod as TrainingModality, level: 'iniciante' as const }))
+            : initialData.modality
+              ? [{ modality: initialData.modality as TrainingModality, level: 'iniciante' as const }]
+              : [],
         requires_cardio_exam: initialData.requires_cardio_exam || false,
         requires_clearance_cert: initialData.requires_clearance_cert || false,
         allow_parq_onboarding: initialData.allow_parq_onboarding || false,

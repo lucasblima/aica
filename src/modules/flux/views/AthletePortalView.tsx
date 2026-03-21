@@ -369,12 +369,17 @@ export default function AthletePortalView() {
   }, [feedbackSheetDay, user, profile?.active_microcycle, profile?.athlete_id, selectedWeek, refetch]);
 
   const prescribedModalities = useMemo((): Array<keyof typeof MODALITY_CONFIG> => {
+    // Use practiced_modalities array when available (multiple sports)
+    if (profile?.practiced_modalities && profile.practiced_modalities.length > 0) {
+      return profile.practiced_modalities.filter((m) => MODALITY_CONFIG[m]) as Array<keyof typeof MODALITY_CONFIG>;
+    }
+    // Fallback to single modality field
     const mod = profile?.modality as keyof typeof MODALITY_CONFIG;
     if (mod === 'triathlon') {
       return ['triathlon', 'swimming', 'running', 'cycling'];
     }
     return mod && MODALITY_CONFIG[mod] ? [mod] : ['strength'];
-  }, [profile?.modality]);
+  }, [profile?.modality, profile?.practiced_modalities]);
 
   // ── Early returns ──
 

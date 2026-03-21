@@ -294,6 +294,7 @@ export interface MyAthleteProfile {
   athlete_phone?: string;
   coach_name: string;
   modality: TrainingModality;
+  practiced_modalities?: TrainingModality[];
   level: AthleteLevel;
   status: AthleteStatus;
   allow_parq_onboarding: boolean;
