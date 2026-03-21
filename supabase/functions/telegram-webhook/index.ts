@@ -35,6 +35,7 @@ import {
   buildExpenseCategoryKeyboard,
   buildMoodRatingKeyboard,
 } from "../_shared/telegram-ai-router.ts"
+import type { AIRouterResult } from "../_shared/telegram-ai-router.ts"
 
 // ============================================================================
 // TYPES
@@ -439,6 +440,216 @@ async function handleEmailRegistration(
 }
 
 // ============================================================================
+// GOLDEN PATH ONBOARDING (Phase 2)
+// ============================================================================
+
+function buildWowMessage(interactions: number, actions: number): string {
+  const lines = ['Olha o que ja construimos juntos:\n']
+  lines.push('📊 Suas primeiras capturas:')
+  if (actions > 0) {
+    lines.push(`  ✅ ${actions} ${actions === 1 ? 'acao realizada' : 'acoes realizadas'}`)
+  }
+  lines.push(`  💬 ${interactions} ${interactions === 1 ? 'interacao' : 'interacoes'}`)
+  lines.push('')
+  lines.push('Isso e so o comeco — com o tempo eu identifico padroes e te ajudo a melhorar cada area.')
+  lines.push('')
+  lines.push('Para salvar tudo e acompanhar sua evolucao, me diz seu email (digita ou manda por audio):')
+  return lines.join('\n')
+}
+
+async function handleOnboardingEmailSubmission(
+  tg: TelegramAdapter,
+  msg: UnifiedMessage,
+  supabase: SupabaseClient,
+  userId: string,
+  chatId: number,
+  email: string,
+  firstName: string,
+  flowState: Record<string, unknown>,
+): Promise<void> {
+  // Merge existing metadata to preserve telegram_id, first_name, source
+  const { data: existingAuth, error: fetchError } = await supabase.auth.admin.getUserById(userId)
+  if (fetchError || !existingAuth?.user) {
+    console.error(`[telegram-webhook] onboarding getUserById failed: ${fetchError?.message || 'no user returned'}`)
+    await reply(tg, msg, '❌ Erro ao acessar sua conta. Tente novamente.')
+    return
+  }
+  const existingMeta = existingAuth.user.user_metadata || {}
+
+  const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+    email,
+    email_confirm: false,
+    user_metadata: {
+      ...existingMeta,
+      email_registered_via: 'telegram_onboarding',
+      email_registered_at: new Date().toISOString(),
+    },
+  })
+
+  if (updateError) {
+    if (updateError.message?.includes('already been registered') || updateError.message?.includes('duplicate')) {
+      await reply(tg, msg, [
+        '⚠️ Esse email ja esta vinculado a outra conta AICA.',
+        '',
+        'Se essa conta e sua, acesse <b>aica.guru</b> e faca login.',
+        'Ou envie um email diferente.',
+      ].join('\n'))
+      return
+    }
+    console.error(`[telegram-webhook] Onboarding email update failed: ${updateError.message}`)
+    await reply(tg, msg, '❌ Erro ao registrar email. Tente novamente.')
+    return
+  }
+
+  // Send magic link via Supabase OTP
+  const redirectUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
+  const { error: otpError } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${redirectUrl}/welcome?source=telegram`,
+      shouldCreateUser: false,
+    },
+  })
+
+  if (otpError) {
+    console.error(`[telegram-webhook] Onboarding magic link failed: ${otpError.message}`)
+  }
+
+  // Consume invite if referral exists
+  const invitedByUserId = flowState.invited_by_user_id as string | null
+  if (invitedByUserId) {
+    const { data: inviteResult } = await supabase.rpc('consume_bot_invite', {
+      p_inviter_id: invitedByUserId,
+      p_invitee_id: userId,
+    })
+    console.log(`[telegram-webhook] consume_bot_invite result: ${JSON.stringify(inviteResult)}`)
+  } else {
+    // Self-activation (no inviter) — still consume from global pool
+    const { data: inviteResult } = await supabase.rpc('consume_bot_invite', {
+      p_inviter_id: userId, // self-referral
+      p_invitee_id: userId,
+    })
+    console.log(`[telegram-webhook] consume_bot_invite (self) result: ${JSON.stringify(inviteResult)}`)
+  }
+
+  // Generate referral code for the new user
+  const { data: refCode } = await supabase.rpc('generate_telegram_referral_code', {
+    p_user_id: userId,
+  })
+
+  // Update flow state
+  await setActiveFlow(supabase, userId, chatId, 'onboarding_email_sent', {
+    email,
+    sent_at: new Date().toISOString(),
+    invited_by_user_id: invitedByUserId,
+    referral_code: refCode || null,
+  })
+
+  const emailDisplay = escapeHtml(email)
+  if (otpError) {
+    await reply(tg, msg, [
+      `✅ Email registrado: <b>${emailDisplay}</b>`,
+      '',
+      '⚠️ Nao consegui enviar o link magico agora.',
+      'Acesse <b>aica.guru</b> e use "Entrar com email" para receber um novo link.',
+      '',
+      '📱 Enquanto isso, pode continuar conversando comigo aqui!',
+    ].join('\n'))
+  } else {
+    await reply(tg, msg, [
+      `✅ <b>Email registrado!</b>`,
+      '',
+      `Enviei um link para <b>${emailDisplay}</b>. Abre seu email e clica no link para confirmar ✉️`,
+      '',
+      `🎟️ Voce ganhou 3 convites! Depois de confirmar, mande /convidar para compartilhar.`,
+      '',
+      '📱 Enquanto isso, pode continuar conversando comigo aqui.',
+    ].join('\n'))
+  }
+}
+
+async function handleOnboardingConversation(
+  tg: TelegramAdapter,
+  msg: UnifiedMessage,
+  supabase: SupabaseClient,
+  userId: string,
+  chatId: number,
+  flowState: Record<string, unknown>,
+  firstName: string,
+): Promise<void> {
+  const interactionCount = ((flowState.interaction_count as number) || 0) + 1
+  const actionsCaptured = (flowState.actions_captured as number) || 0
+
+  // Process the message normally (text or voice) to get AI response + possible action
+  let aiResult: AIRouterResult
+  try {
+    if (msg.content.type === 'voice' && msg.content.voiceFileId) {
+      aiResult = await processVoiceMessage(supabase, userId, msg.chat.chatId, msg.content.voiceFileId, firstName)
+    } else {
+      aiResult = await processNaturalLanguage(supabase, userId, msg.chat.chatId, msg.content.text || '', firstName)
+    }
+  } catch (err) {
+    console.error(`[telegram-webhook] Onboarding AI processing error: ${(err as Error).message}`)
+    await reply(tg, msg, '❌ Desculpe, tive um problema ao processar. Tente novamente.')
+    return
+  }
+
+  // Count actions (function calls that created entities)
+  const newActionsCaptured = aiResult.action ? actionsCaptured + 1 : actionsCaptured
+
+  // Send the AI response with any inline keyboards
+  let keyboard: Partial<OutboundMessage> = {}
+  if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
+    keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
+  } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
+    keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+  }
+  await reply(tg, msg, aiResult.reply, keyboard)
+
+  // Check if WOW moment should trigger
+  const shouldTriggerWow = interactionCount >= 3 || newActionsCaptured >= 2
+
+  if (shouldTriggerWow && flowState.step !== 'ask_email') {
+    // Build WOW summary
+    const wowMessage = buildWowMessage(interactionCount, newActionsCaptured)
+    await reply(tg, msg, wowMessage)
+
+    // Transition to ask_email
+    await setActiveFlow(supabase, userId, chatId, 'onboarding_conversation', {
+      step: 'ask_email',
+      interaction_count: interactionCount,
+      actions_captured: newActionsCaptured,
+      invited_by_user_id: flowState.invited_by_user_id || null,
+    })
+  } else if (flowState.step === 'ask_email') {
+    // User responded but maybe didn't give email — check if this IS an email
+    const text = (msg.content.text || '').trim()
+    if (isValidEmail(text)) {
+      await handleOnboardingEmailSubmission(tg, msg, supabase, userId, chatId, text.toLowerCase(), firstName, flowState)
+    } else {
+      // Continue conversation but update state + periodic reminder
+      if (interactionCount > 5 && interactionCount % 3 === 0) {
+        // Rate-limited reminder every 3 messages after 5
+        await reply(tg, msg, 'Para salvar tudo e acompanhar sua evolucao, me diz seu email 📧')
+      }
+      await setActiveFlow(supabase, userId, chatId, 'onboarding_conversation', {
+        ...flowState,
+        interaction_count: interactionCount,
+        actions_captured: newActionsCaptured,
+      })
+    }
+  } else {
+    // Continue onboarding conversation
+    await setActiveFlow(supabase, userId, chatId, 'onboarding_conversation', {
+      step: 'conversation',
+      interaction_count: interactionCount,
+      actions_captured: newActionsCaptured,
+      invited_by_user_id: flowState.invited_by_user_id || null,
+    })
+  }
+}
+
+// ============================================================================
 // COMMAND HANDLERS
 // ============================================================================
 
@@ -449,6 +660,25 @@ async function handleStart(
 ): Promise<void> {
   const name = msg.sender.firstName || 'usuario'
   const telegramId = Number(msg.sender.channelUserId)
+
+  // Parse deep link payload (e.g., /start ref_ABCD1234)
+  const startPayload = (msg.content.commandArgs || '').trim()
+  const isReferral = startPayload.startsWith('ref_')
+  const referralCode = isReferral ? startPayload.replace('ref_', '') : null
+
+  // Look up inviter from referral code
+  let inviterUserId: string | null = null
+  if (referralCode) {
+    const { data: inviter } = await supabase
+      .from('user_telegram_links')
+      .select('user_id')
+      .eq('referral_code', referralCode)
+      .single()
+    inviterUserId = inviter?.user_id || null
+    if (!inviterUserId) {
+      console.warn(`[telegram-webhook] Referral code not found: ${referralCode}`)
+    }
+  }
 
   // Create guest account or get existing user
   let userId: string
@@ -465,13 +695,23 @@ async function handleStart(
     return
   }
 
+  // If referral, store the inviter in the flow state for later use in onboarding
+  if (inviterUserId) {
+    const chatId = Number(msg.chat.chatId)
+    await setActiveFlow(supabase, userId, chatId, 'pending_consent', {
+      invited_by_user_id: inviterUserId,
+      referral_code: referralCode,
+    })
+  }
+
   // Show welcome message with LGPD consent inline buttons
+  const referralNote = inviterUserId ? '\n🎟️ Voce foi convidado por um amigo!' : ''
   await reply(tg, msg, [
     `Ola, <b>${name}</b>! 👋`,
     '',
     'Eu sou a <b>AICA</b> — seu Sistema Operacional de Vida Integrada.',
     '',
-    'Criei uma conta para voce! Para continuar, preciso da sua autorizacao para processar mensagens com IA.',
+    `Criei uma conta para voce! Para continuar, preciso da sua autorizacao para processar mensagens com IA.${referralNote}`,
     '',
     '📋 <b>Dados coletados:</b> ID Telegram, resumo de mensagens',
     '🤖 <b>Processamento:</b> IA analisa para executar acoes',
@@ -811,35 +1051,41 @@ async function handleCallbackQuery(
       p_scope: ['messages', 'notifications', 'ai_processing'],
     })
 
-    // Resolve userId to set up email registration flow
+    // Resolve userId to set up onboarding flow
     const { data: consentUser } = await supabase
       .rpc('get_telegram_user', { p_telegram_id: telegramId })
     const consentUserId = consentUser?.[0]?.user_id
+    const firstName = msg.sender.firstName || 'usuario'
 
     if (consentUserId) {
-      // Check if user still has synthetic email (hasn't registered real email yet)
+      const chatId = Number(msg.chat.chatId)
+
+      // Check if user still has synthetic email (needs onboarding)
       const { data: authData } = await supabase.auth.admin.getUserById(consentUserId)
       const hasSyntheticEmail = authData?.user?.email?.endsWith('@telegram.aica.guru')
 
       if (hasSyntheticEmail) {
-        // Start email registration flow
-        const chatId = Number(msg.chat.chatId)
-        await setActiveFlow(supabase, consentUserId, chatId, 'email_registration', { step: 'waiting_email' })
+        // Retrieve any inviter info stored during /start deep link parsing
+        const { flowState: existingFlowState } = await getActiveFlow(supabase, consentUserId, chatId)
+        const invitedByUserId = existingFlowState.invited_by_user_id || null
+
+        // Start Golden Path onboarding conversation
+        await setActiveFlow(supabase, consentUserId, chatId, 'onboarding_conversation', {
+          step: 'greeting',
+          interaction_count: 0,
+          actions_captured: 0,
+          invited_by_user_id: invitedByUserId,
+        })
 
         await reply(tg, msg, [
-          '✅ <b>Consentimento registrado!</b>',
+          `Oi, ${firstName}! 🌿`,
           '',
-          '📧 Agora, qual e o seu <b>email</b>?',
+          'Me manda um audio ou texto com o que esta na sua cabeca agora.',
           '',
-          'Com o email, voce podera acessar a AICA pelo navegador tambem.',
-          'Envie no formato: <code>seu@email.com</code>',
-        ].join('\n'), {
-          inlineKeyboard: {
-            rows: [[
-              { text: '⏭️ Pular por agora', callbackData: 'email_skip' },
-            ]],
-          },
-        })
+          'Pode ser qualquer coisa — como foi seu dia, algo que precisa resolver, ou uma area da vida que quer organizar.',
+          '',
+          'Eu escuto, entendo e ja comeco a te ajudar.',
+        ].join('\n'))
         return
       }
     }
@@ -1200,6 +1446,58 @@ serve(async (req) => {
               )
             }
 
+            if (activeFlow === 'onboarding_conversation') {
+              const onbFirstName = message.sender.firstName || 'usuario'
+              await handleOnboardingConversation(tg, message, supabase, aicaUserId, chatId, flowState, onbFirstName)
+              result.processed = true
+
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[onboarding_conversation]',
+                action: 'onboarding',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+
+            if (activeFlow === 'onboarding_email_sent') {
+              // Check if email was validated
+              const { data: { user: authUser } } = await supabase.auth.admin.getUserById(aicaUserId)
+              if (authUser?.email_confirmed_at && !authUser.email?.endsWith('@telegram.aica.guru')) {
+                // Email validated! Activate user
+                const inviterId = flowState.invited_by_user_id as string | null
+
+                // Generate referral code if not already generated
+                await supabase.rpc('generate_telegram_referral_code', { p_user_id: aicaUserId })
+
+                // Clear flow
+                await setActiveFlow(supabase, aicaUserId, chatId, null, {})
+
+                await reply(tg, message, [
+                  'Email confirmado! ✅ Sua conta AICA esta ativa.',
+                  '',
+                  '🎟️ Voce ganhou 3 convites para compartilhar com amigos.',
+                  'Para convidar alguem, mande: /convidar',
+                  '',
+                  'Quando quiser, acesse aica.guru pelo navegador para ver seu painel completo.',
+                ].join('\n'))
+
+                const durationMs = Date.now() - startTime
+                await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                  intentSummary: '[email_confirmed]',
+                  action: 'onboarding_complete',
+                })
+                return new Response(
+                  JSON.stringify(result),
+                  { status: 200, headers: { 'Content-Type': 'application/json' } }
+                )
+              }
+              // Email not yet confirmed — process message normally (continued conversation)
+              // Falls through to normal AI processing below
+            }
+
             // Process with AI router
             const firstName = message.sender.firstName || 'usuario'
             const aiResult = await processNaturalLanguage(
@@ -1258,45 +1556,87 @@ serve(async (req) => {
               },
             })
             result.processed = true
-          } else if (!message.content.voiceFileId) {
-            await reply(tg, message,
-              '❌ Nao consegui processar o audio. Tente enviar novamente.'
-            )
-            result.processed = false
           } else {
-            const firstName = message.sender.firstName || 'usuario'
-            try {
-              const aiResult = await processVoiceMessage(
-                supabase, aicaUserId, message.chat.chatId, message.content.voiceFileId, firstName,
-              )
+            // Check if user is in onboarding flow (voice messages count too)
+            const chatId = Number(message.chat.chatId)
+            const { activeFlow, flowState } = await getActiveFlow(supabase, aicaUserId, chatId)
 
-              let keyboard: Partial<OutboundMessage> = {}
-              if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
-                keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
-              } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
-                keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
-              }
-
-              await reply(tg, message, aiResult.reply, keyboard)
-              result.action = aiResult.action
+            if (activeFlow === 'onboarding_conversation') {
+              const onbFirstName = message.sender.firstName || 'usuario'
+              await handleOnboardingConversation(tg, message, supabase, aicaUserId, chatId, flowState, onbFirstName)
               result.processed = true
 
               const durationMs = Date.now() - startTime
               await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
-                intentSummary: aiResult.intentSummary,
-                action: aiResult.action,
-                model: aiResult.model,
+                intentSummary: '[onboarding_conversation_voice]',
+                action: 'onboarding',
               })
               return new Response(
                 JSON.stringify(result),
                 { status: 200, headers: { 'Content-Type': 'application/json' } }
               )
-            } catch (voiceErr) {
-              console.error(`[telegram-webhook] Voice processing error: ${(voiceErr as Error).message}`)
+            }
+
+            // Handle onboarding_email_sent for voice messages (mirror text branch)
+            if (activeFlow === 'onboarding_email_sent') {
+              const { data: { user: emailUser } } = await supabase.auth.admin.getUserById(aicaUserId)
+              if (emailUser?.email_confirmed_at && !emailUser.email?.endsWith('@telegram.aica.guru')) {
+                const inviterId = (flowState as Record<string, unknown>).invited_by_user_id as string | null
+                await supabase.rpc('consume_bot_invite', {
+                  p_inviter_id: inviterId || aicaUserId,
+                  p_invitee_id: aicaUserId,
+                })
+                await supabase.rpc('generate_telegram_referral_code', { p_user_id: aicaUserId })
+                await setActiveFlow(supabase, aicaUserId, chatId, null, {})
+                await reply(tg, message,
+                  `Email confirmado! ✅ Sua conta AICA esta ativa.\n\n🎟️ Voce ganhou 3 convites para compartilhar com amigos.\nPara convidar alguem, mande: /convidar\n\nQuando quiser, acesse aica.guru pelo navegador para ver seu painel completo.`
+                )
+                result.processed = true
+                return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } })
+              }
+              // Email not confirmed yet — fall through to normal voice processing
+            }
+
+            if (!message.content.voiceFileId) {
               await reply(tg, message,
-                '❌ Desculpe, tive um problema ao processar o audio. Tente enviar uma mensagem de texto.'
+                '❌ Nao consegui processar o audio. Tente enviar novamente.'
               )
               result.processed = false
+            } else {
+              const firstName = message.sender.firstName || 'usuario'
+              try {
+                const aiResult = await processVoiceMessage(
+                  supabase, aicaUserId, message.chat.chatId, message.content.voiceFileId, firstName,
+                )
+
+                let keyboard: Partial<OutboundMessage> = {}
+                if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
+                  keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
+                } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
+                  keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+                }
+
+                await reply(tg, message, aiResult.reply, keyboard)
+                result.action = aiResult.action
+                result.processed = true
+
+                const durationMs = Date.now() - startTime
+                await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                  intentSummary: aiResult.intentSummary,
+                  action: aiResult.action,
+                  model: aiResult.model,
+                })
+                return new Response(
+                  JSON.stringify(result),
+                  { status: 200, headers: { 'Content-Type': 'application/json' } }
+                )
+              } catch (voiceErr) {
+                console.error(`[telegram-webhook] Voice processing error: ${(voiceErr as Error).message}`)
+                await reply(tg, message,
+                  '❌ Desculpe, tive um problema ao processar o audio. Tente enviar uma mensagem de texto.'
+                )
+                result.processed = false
+              }
             }
           }
         }
