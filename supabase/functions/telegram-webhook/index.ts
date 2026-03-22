@@ -818,7 +818,7 @@ async function handleStart(
     '',
     `Vou te ajudar a organizar tarefas, gastos e o dia a dia.${referralNote}`,
     '',
-    'Para funcionar, eu guardo um resumo das nossas conversas por 30 dias.',
+    'Para funcionar, eu uso inteligencia artificial e guardo um resumo das nossas conversas por 30 dias.',
     'Tudo protegido pela lei de dados (LGPD).',
   ].join('\n'), {
     inlineKeyboard: {
@@ -977,7 +977,7 @@ async function handleVincular(
   await reply(tg, msg, [
     '✅ <b>Conta vinculada com sucesso!</b>',
     '',
-    'Para funcionar, eu guardo um resumo das nossas conversas por 30 dias.',
+    'Para funcionar, eu uso inteligencia artificial e guardo um resumo das nossas conversas por 30 dias.',
     'Tudo protegido pela lei de dados (LGPD).',
   ].join('\n'), {
     inlineKeyboard: {
@@ -1182,7 +1182,7 @@ async function handleCallbackQuery(
         // Tutorial in 3 short messages with typing pauses
         // Msg 1 — What I can do
         await reply(tg, msg, [
-          `Oi, ${firstName}! Que bom ter voce aqui 🌿`,
+          `Oi, ${escapeHtml(firstName)}! Que bom ter voce aqui 🌿`,
           '',
           'Olha o que eu consigo fazer por voce:',
           '',
@@ -1453,36 +1453,52 @@ async function handleCallbackQuery(
       .rpc('get_telegram_user', { p_telegram_id: telegramId })
     const helpUserId = helpUser?.[0]?.user_id
     if (helpUserId) {
-      const helpQueries: Record<string, string> = {
-        help_my_tasks: 'O que tenho pra fazer?',
-        help_my_expenses: 'Quanto gastei esse mes?',
-        help_my_mood: 'Como estou me sentindo?',
-        help_privacy: '',
-      }
-
+      // Privacy is always accessible regardless of consent
       if (data === 'help_privacy') {
         await handlePrivacidade(tg, msg)
       } else {
-        await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
-        const firstName = msg.sender.firstName || 'usuario'
-        try {
-          const aiResult = await processNaturalLanguage(
-            supabase, helpUserId, msg.chat.chatId, helpQueries[data], firstName,
-          )
-          let keyboard: Partial<OutboundMessage> = {}
-          if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
-            keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
-          } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
-            keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+        // Check consent before AI processing
+        const consentGiven = helpUser?.[0]?.consent_given
+        if (!consentGiven) {
+          await reply(tg, msg, [
+            'Antes de comecar, preciso da sua autorizacao.',
+            '',
+            'Eu uso inteligencia artificial e guardo um resumo das nossas conversas por 30 dias, protegido pela LGPD.',
+          ].join('\n'), {
+            inlineKeyboard: {
+              rows: [
+                [{ text: '👍 Concordo, vamos la!', callbackData: 'consent_accept' }],
+                [{ text: '📜 Saber mais', url: 'https://aica.guru/privacy' }],
+              ],
+            },
+          })
+        } else {
+          await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
+          const firstName = msg.sender.firstName || 'usuario'
+          const helpQueries: Record<string, string> = {
+            help_my_tasks: 'O que tenho pra fazer?',
+            help_my_expenses: 'Quanto gastei esse mes?',
+            help_my_mood: 'Como estou me sentindo?',
           }
-          await reply(tg, msg, aiResult.reply, keyboard)
-        } catch (err) {
-          console.error(`[telegram-webhook] Help shortcut AI error: ${(err as Error).message}`)
-          await reply(tg, msg, 'Desculpa, tive um problema. Tenta de novo em alguns segundos.')
+          try {
+            const aiResult = await processNaturalLanguage(
+              supabase, helpUserId, msg.chat.chatId, helpQueries[data], firstName,
+            )
+            let keyboard: Partial<OutboundMessage> = {}
+            if (aiResult.action === 'create_task' && aiResult.actionData?.id) {
+              keyboard = { inlineKeyboard: buildTaskPriorityKeyboard(String(aiResult.actionData.id)) }
+            } else if (aiResult.action === 'log_expense' && aiResult.actionData?.id) {
+              keyboard = { inlineKeyboard: buildExpenseCategoryKeyboard(String(aiResult.actionData.id)) }
+            }
+            await reply(tg, msg, aiResult.reply, keyboard)
+          } catch (err) {
+            console.error(`[telegram-webhook] Help shortcut AI error: ${(err as Error).message}`)
+            await reply(tg, msg, 'Desculpa, tive um problema. Tenta de novo em alguns segundos.')
+          }
         }
       }
     } else {
-      await reply(tg, msg, 'Use /start para criar sua conta primeiro!')
+      await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
     }
   }
 }
@@ -1624,7 +1640,7 @@ serve(async (req) => {
             await reply(tg, message, [
               'Antes de comecar, preciso da sua autorizacao.',
               '',
-              'Eu guardo um resumo das nossas conversas por 30 dias, protegido pela LGPD.',
+              'Eu uso inteligencia artificial e guardo um resumo das nossas conversas por 30 dias, protegido pela LGPD.',
             ].join('\n'), {
               inlineKeyboard: {
                 rows: [
@@ -1759,7 +1775,7 @@ serve(async (req) => {
             await reply(tg, message, [
               'Antes de comecar, preciso da sua autorizacao.',
               '',
-              'Eu guardo um resumo das nossas conversas por 30 dias, protegido pela LGPD.',
+              'Eu uso inteligencia artificial e guardo um resumo das nossas conversas por 30 dias, protegido pela LGPD.',
             ].join('\n'), {
               inlineKeyboard: {
                 rows: [
