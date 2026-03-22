@@ -204,7 +204,8 @@ function extractEmailFromText(text: string): string | null {
   // 1) Try to find a standard email directly in the text
   const directMatch = normalized.match(/[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+/)
   if (directMatch) {
-    const candidate = directMatch[0]
+    // Strip trailing punctuation that regex may capture (e.g., "email@gmail.com.")
+    const candidate = directMatch[0].replace(/[),.;:!?]+$/, '')
     if (isValidEmail(candidate)) return candidate
   }
 
