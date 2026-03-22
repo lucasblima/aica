@@ -399,7 +399,61 @@ async function handleEmailRegistration(
       return
     }
 
-    const email = extractedEmail
+    // Show confirmation before processing (same pattern as onboarding)
+    const chatId = Number(msg.chat.chatId)
+    const emailDisplay = escapeHtml(extractedEmail)
+    await setActiveFlow(supabase, userId, chatId, 'email_registration', {
+      step: 'confirm_email',
+      pending_email: extractedEmail,
+    })
+    await reply(tg, msg, `Entendi! Seu email e <b>${emailDisplay}</b>?`, {
+      inlineKeyboard: {
+        rows: [[
+          { text: '👍 Isso mesmo!', callbackData: 'status_email_confirm_yes' },
+          { text: '❌ Nao, vou corrigir', callbackData: 'status_email_confirm_no' },
+        ]],
+      },
+    })
+    return
+  } else if (flowState.step === 'confirm_email') {
+    // User typed something instead of pressing button — try again
+    const extractedEmail = extractEmailFromText(text)
+    if (extractedEmail) {
+      const chatId = Number(msg.chat.chatId)
+      const emailDisplay = escapeHtml(extractedEmail)
+      await setActiveFlow(supabase, userId, chatId, 'email_registration', {
+        step: 'confirm_email',
+        pending_email: extractedEmail,
+      })
+      await reply(tg, msg, `Entendi! Seu email e <b>${emailDisplay}</b>?`, {
+        inlineKeyboard: {
+          rows: [[
+            { text: '👍 Isso mesmo!', callbackData: 'status_email_confirm_yes' },
+            { text: '❌ Nao, vou corrigir', callbackData: 'status_email_confirm_no' },
+          ]],
+        },
+      })
+      return
+    }
+    // Could not extract — ask again
+    const chatId = Number(msg.chat.chatId)
+    await setActiveFlow(supabase, userId, chatId, 'email_registration', { step: 'waiting_email' })
+    await reply(tg, msg, [
+      'Hmm, nao consegui entender o email.',
+      '',
+      'Tenta de novo: digita seu email completo (exemplo: maria@gmail.com)',
+      '',
+      'Ou fala por audio: "meu email e maria arroba gmail ponto com" 🎙️',
+    ].join('\n'), {
+      inlineKeyboard: {
+        rows: [[
+          { text: '⏭️ Deixar pra depois', callbackData: 'email_skip' },
+        ]],
+      },
+    })
+    return
+  } else if (flowState.step === 'processing_email') {
+    const email = flowState.pending_email as string
     const chatId = Number(msg.chat.chatId)
 
     // Update guest account: replace synthetic email with real email
@@ -1367,6 +1421,58 @@ async function handleCallbackQuery(
     } else {
       console.warn(`[telegram-webhook] email_confirm_no: could not resolve user for telegramId ${telegramId}`)
       await reply(tg, msg, 'Use /start para criar sua conta primeiro!')
+    }
+
+  // /status email registration confirmation callbacks
+  } else if (data === 'status_email_confirm_yes') {
+    const { data: regUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const regUserId = regUser?.[0]?.user_id
+    if (regUserId) {
+      const chatId = Number(msg.chat.chatId)
+      const { flowState } = await getActiveFlow(supabase, regUserId, chatId)
+      const pendingEmail = flowState.pending_email as string
+      if (pendingEmail && isValidEmail(pendingEmail)) {
+        // Transition to processing step and trigger the real email registration
+        await setActiveFlow(supabase, regUserId, chatId, 'email_registration', {
+          step: 'processing_email',
+          pending_email: pendingEmail,
+        })
+        // Re-invoke handleEmailRegistration with the confirmed email
+        await handleEmailRegistration(tg, msg, supabase, regUserId, {
+          step: 'processing_email',
+          pending_email: pendingEmail,
+        })
+      } else {
+        await reply(tg, msg, 'Hmm, algo deu errado. Me diz seu email de novo?')
+        await setActiveFlow(supabase, regUserId, chatId, 'email_registration', { step: 'waiting_email' })
+      }
+    } else {
+      console.warn(`[telegram-webhook] status_email_confirm_yes: could not resolve user for telegramId ${telegramId}`)
+      await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
+    }
+
+  } else if (data === 'status_email_confirm_no') {
+    const { data: regUser } = await supabase
+      .rpc('get_telegram_user', { p_telegram_id: telegramId })
+    const regUserId = regUser?.[0]?.user_id
+    if (regUserId) {
+      const chatId = Number(msg.chat.chatId)
+      await setActiveFlow(supabase, regUserId, chatId, 'email_registration', { step: 'waiting_email' })
+      await reply(tg, msg, [
+        'Sem problema! Me diz o email correto.',
+        '',
+        'Pode digitar ou falar por audio: "meu email e maria arroba gmail ponto com" 🎙️',
+      ].join('\n'), {
+        inlineKeyboard: {
+          rows: [[
+            { text: '⏭️ Deixar pra depois', callbackData: 'email_skip' },
+          ]],
+        },
+      })
+    } else {
+      console.warn(`[telegram-webhook] status_email_confirm_no: could not resolve user for telegramId ${telegramId}`)
+      await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
     }
 
   // Phase 2: Module interaction callbacks
