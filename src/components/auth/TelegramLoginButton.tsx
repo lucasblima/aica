@@ -43,7 +43,7 @@ export function TelegramLoginButton({ onSuccess, onError }: TelegramLoginButtonP
 
   useEffect(() => {
     const callbackName = `__tg_auth_${Date.now()}`
-    ;(window as Record<string, unknown>)[callbackName] = (user: TelegramLoginData) => {
+    ;(window as unknown as Record<string, unknown>)[callbackName] = (user: TelegramLoginData) => {
       handleTelegramAuth(user)
     }
 
@@ -65,7 +65,7 @@ export function TelegramLoginButton({ onSuccess, onError }: TelegramLoginButtonP
     }
 
     return () => {
-      delete (window as Record<string, unknown>)[callbackName]
+      delete (window as unknown as Record<string, unknown>)[callbackName]
       if (container) container.innerHTML = ''
     }
   }, [handleTelegramAuth])
