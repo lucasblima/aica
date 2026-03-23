@@ -158,8 +158,6 @@ export function WorkoutCard({
 }: WorkoutCardProps) {
   const modalityConfig = MODALITY_CONFIG[modality as keyof typeof MODALITY_CONFIG];
   const emoji = modalityConfig?.icon || '🏋️';
-  const prescribedDuration = slot.custom_duration || slot.template.duration;
-
   const structure = slot.exercise_structure
     ? (slot.exercise_structure as unknown as ExerciseStructureV2)
     : null;

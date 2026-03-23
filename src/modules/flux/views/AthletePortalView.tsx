@@ -1021,7 +1021,7 @@ export default function AthletePortalView() {
                               <button
                                 type="button"
                                 onClick={() => setFeedbackSheetDay(day)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 shadow-md transition-colors"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 shadow-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 focus-visible:ring-offset-2"
                               >
                                 <MessageSquare className="w-4 h-4 text-white flex-shrink-0" />
                                 <span className="text-sm font-bold text-white">Dar Feedback do Dia</span>

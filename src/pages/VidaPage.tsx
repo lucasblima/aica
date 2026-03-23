@@ -128,8 +128,8 @@ export default function VidaPage({
    const { stats: cpStats, progress: cpProgress } = useConsciousnessPoints();
 
    // Life Score — only show widget when 3+ domains are active
-   const { activeDomains } = useLifeScore();
-   const showLifeScore = activeDomains.length >= 3;
+   const { activeDomains, isLoading: isLifeScoreLoading } = useLifeScore();
+   const showLifeScore = !isLifeScoreLoading && activeDomains.length >= 3;
 
    // User metadata for avatar and profile
    const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
