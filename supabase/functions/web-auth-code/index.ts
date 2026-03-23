@@ -65,7 +65,15 @@ serve(async (req) => {
         p_session_token: session_token,
       })
 
-      if (error || !data || data.length === 0) {
+      if (error) {
+        console.error('[web-auth-code] poll error:', error)
+        return new Response(
+          JSON.stringify({ success: false, error: 'Erro ao verificar codigo.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      if (!data || data.length === 0) {
         return new Response(
           JSON.stringify({ success: true, status: 'not_found' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

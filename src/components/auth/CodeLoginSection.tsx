@@ -48,6 +48,7 @@ export function CodeLoginSection({ onError }: CodeLoginSectionProps) {
       if (remaining <= 0) {
         setCode(null)
         setSessionToken(null)
+        if (timerRef.current) clearInterval(timerRef.current)
       }
     }
     tick()
@@ -80,6 +81,7 @@ export function CodeLoginSection({ onError }: CodeLoginSectionProps) {
       }
     }
 
+    poll() // Immediate first check
     pollRef.current = setInterval(poll, 2000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [sessionToken, claimed])
@@ -127,9 +129,10 @@ export function CodeLoginSection({ onError }: CodeLoginSectionProps) {
           <button
             type="button"
             onClick={createCode}
-            className="text-xs text-amber-600 hover:text-amber-700 underline"
+            disabled={loading || timeLeft > 240}
+            className="text-xs text-amber-600 hover:text-amber-700 underline disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Gerar novo codigo
+            {timeLeft > 240 ? `Novo codigo em ${timeLeft - 240}s` : 'Gerar novo codigo'}
           </button>
         </>
       )}

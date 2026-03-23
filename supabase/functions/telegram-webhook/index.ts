@@ -1141,11 +1141,17 @@ async function handleCodigo(
   }
 
   // Claim the code with the magic link URL
-  const { data: claimed } = await supabase.rpc('claim_web_auth_code', {
+  const { data: claimed, error: claimError } = await supabase.rpc('claim_web_auth_code', {
     p_code: args,
     p_user_id: userId,
     p_magic_link_url: linkData.properties.action_link,
   })
+
+  if (claimError) {
+    console.error('[handleCodigo] claim RPC error:', claimError)
+    await reply(tg, msg, '⚠️ Erro ao validar codigo. Tente novamente.')
+    return
+  }
 
   if (!claimed) {
     await reply(tg, msg, [

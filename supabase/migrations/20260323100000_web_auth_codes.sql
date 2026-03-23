@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS web_auth_codes (
 );
 
 -- Index for fast code lookup
-CREATE INDEX idx_web_auth_codes_code ON web_auth_codes(code) WHERE status = 'pending';
+CREATE UNIQUE INDEX idx_web_auth_codes_code_unique ON web_auth_codes(code) WHERE status = 'pending';
 -- Index for polling by session_token
 CREATE INDEX idx_web_auth_codes_session ON web_auth_codes(session_token) WHERE status IN ('pending', 'claimed');
 
@@ -32,20 +32,33 @@ DECLARE
   v_code TEXT;
   v_session UUID;
   v_expires TIMESTAMPTZ;
+  v_attempts INT := 0;
 BEGIN
-  -- Generate 6-digit numeric code (avoid leading zeros)
-  v_code := LPAD(FLOOR(100000 + random() * 899999)::TEXT, 6, '0');
-  v_session := gen_random_uuid();
-  v_expires := now() + interval '5 minutes';
-
-  -- Expire any existing pending codes with the same code (collision handling)
+  -- Auto-expire old pending codes first
   UPDATE web_auth_codes SET status = 'expired'
-  WHERE web_auth_codes.code = v_code AND web_auth_codes.status = 'pending';
+  WHERE web_auth_codes.status = 'pending' AND web_auth_codes.expires_at < now();
 
-  INSERT INTO web_auth_codes (code, session_token, expires_at)
-  VALUES (v_code, v_session, v_expires);
+  LOOP
+    v_attempts := v_attempts + 1;
+    IF v_attempts > 5 THEN
+      RAISE EXCEPTION 'Failed to generate unique code after 5 attempts';
+    END IF;
 
-  RETURN QUERY SELECT v_code, v_session, v_expires;
+    v_code := LPAD(FLOOR(100000 + random() * 899999)::TEXT, 6, '0');
+    v_session := gen_random_uuid();
+    v_expires := now() + interval '5 minutes';
+
+    BEGIN
+      INSERT INTO web_auth_codes (code, session_token, expires_at)
+      VALUES (v_code, v_session, v_expires);
+      -- Success — exit loop
+      RETURN QUERY SELECT v_code, v_session, v_expires;
+      RETURN;
+    EXCEPTION WHEN unique_violation THEN
+      -- Code already in use — retry with new code
+      CONTINUE;
+    END;
+  END LOOP;
 END;
 $$;
 
