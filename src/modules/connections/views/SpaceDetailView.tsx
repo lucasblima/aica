@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, Activity, MoreVertical, Star, Trash2, Edit3, UserPlus } from 'lucide-react';
+import { Users, Activity, MoreVertical, Trash2, Edit3, UserPlus } from 'lucide-react';
+import { UnifiedHeader } from '@/components/layout/UnifiedHeader';
 import { useSpace } from '../hooks/useSpace';
 import { useSpaceMembers } from '../hooks/useSpaceMembers';
 import { ARCHETYPE_CONFIG } from '../types';
@@ -96,16 +97,10 @@ export function SpaceDetailView() {
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => navigate('/connections')}
-            className="ceramic-inset w-10 h-10 flex items-center justify-center hover:scale-95 transition-transform"
-            aria-label="Voltar"
-          >
-            <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
-          </button>
-
+      <UnifiedHeader
+        title={space?.name || 'Espaço'}
+        breadcrumbs={[{ label: 'Conexões', onClick: () => navigate('/connections') }]}
+        actions={
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
@@ -137,8 +132,13 @@ export function SpaceDetailView() {
               </>
             )}
           </div>
-        </div>
+        }
+        collapsible={false}
+        showNotifications={false}
+      />
 
+      {/* Space info + Tabs */}
+      <div className="px-6 pb-4">
         {/* Space info */}
         <div className="flex items-center gap-4 mb-1">
           <div className="ceramic-inset w-14 h-14 flex items-center justify-center text-3xl flex-shrink-0">
@@ -174,7 +174,7 @@ export function SpaceDetailView() {
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-6 pb-40">
