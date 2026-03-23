@@ -15,8 +15,9 @@ import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
 import { useAssessoriaEsportiva } from '../hooks/useAssessoriaEsportiva';
 import { CreateAssessoriaModal } from '../components/CreateAssessoriaModal';
 import { AdminDashboardSection } from '../components/coach/AdminDashboardSection';
-import { ArrowLeft, Users, BookOpen, Dumbbell, Briefcase, CheckCircle, X, Settings } from 'lucide-react';
+import { Users, BookOpen, Dumbbell, Briefcase, CheckCircle, X, Settings } from 'lucide-react';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
+import { UnifiedHeader } from '@/components/layout/UnifiedHeader';
 
 export default function FluxDashboard() {
   const navigate = useNavigate();
@@ -85,17 +86,8 @@ export default function FluxDashboard() {
     <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux Dashboard" />}>
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
       {/* Header */}
-      <div className="pt-8 px-6 pb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-        >
-          <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
-            <ArrowLeft className="w-4 h-4" />
-          </div>
-          <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
-        </button>
-
+      <UnifiedHeader title="Flux" breadcrumbs={[]} />
+      <div className="pt-4 px-6 pb-6">
         {hasAssessoria ? (
           <button
             onClick={() => navigate(`/connections/${assessoria!.id}`)}

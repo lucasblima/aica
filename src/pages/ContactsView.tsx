@@ -17,7 +17,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, MessageCircle, X, Inbox, Sparkles, Upload } from 'lucide-react'
-import { HeaderGlobal } from '../components'
+import { UnifiedHeader } from '@/components/layout/UnifiedHeader'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
@@ -144,11 +144,7 @@ export function ContactsView() {
 
   return (
     <div className="min-h-screen bg-ceramic-base">
-      <HeaderGlobal
-        title="Pessoas"
-        subtitle={hasContacts ? `${contacts.length} contatos` : undefined}
-        userEmail={user?.email}
-      />
+      <UnifiedHeader title="Pessoas" breadcrumbs={[]} />
 
       <main className="px-4 pt-3 pb-6 space-y-3 max-w-3xl mx-auto">
         {/* Entity Inbox Banner */}

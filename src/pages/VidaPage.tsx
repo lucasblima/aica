@@ -8,7 +8,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Compass, type LucideIcon } from 'lucide-react';
-import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
+import { ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
+import { UnifiedHeader } from '@/components/layout/UnifiedHeader';
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
 import { LifeScoreWidget } from '@/components/features';
@@ -236,22 +237,24 @@ export default function VidaPage({
 
    return (
       <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-         <HeaderGlobal
+         <UnifiedHeader
             title="Minha Vida"
             subtitle="LIFE OS"
-            userEmail={userEmail || undefined}
+            identityBar={cpStats ? {
+               level: cpStats.level,
+               levelName: cpStats.level_name,
+               levelColor: levelColor ?? '',
+               progressPercentage: progressPercentage,
+               totalPoints: cpStats.total_points,
+               currentStreak: cpStats.current_streak,
+            } : undefined}
             avatarUrl={avatarUrl}
+            currentStreak={cpStats?.current_streak}
+            userEmail={userEmail || undefined}
             userName={userName}
             onLogout={onLogout}
             onNavigateToFileSearch={onNavigateToFileSearch}
             onOpenProfile={() => setProfileDrawerOpen(true)}
-            level={cpStats?.level}
-            levelName={cpStats?.level_name}
-            levelColor={levelColor}
-            progressPercentage={progressPercentage}
-            totalPoints={cpStats?.total_points || 0}
-            currentStreak={cpStats?.current_streak || 0}
-            onAvatarClick={() => setProfileDrawerOpen(true)}
          />
 
          <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
