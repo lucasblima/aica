@@ -10,6 +10,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
 import { ArrowLeft, Upload, Eye, EyeOff, Loader2, Target, BarChart3, List, GitCompare, Settings, AlertTriangle, RefreshCw } from 'lucide-react';
+import { UnifiedHeader } from '@/components/layout/UnifiedHeader';
 import { Logo } from '@/components/ui';
 import { StatementUpload } from '../components/StatementUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
@@ -37,7 +38,6 @@ import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement,
 
 interface FinanceDashboardProps {
   userId: string;
-  onBack?: () => void;
 }
 
 type DashboardView = 'panorama' | 'transactions' | 'budget' | 'analysis' | 'settings';
@@ -61,17 +61,16 @@ const VIEW_TABS: ViewTab[] = [
 // =====================================================
 
 /* data-tour markers: finance-header, balance-overview, income-expenses, budget-categories, transaction-list, upload-statement, ai-insights, goals-tracking */
-export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ userId, onBack }) => {
+export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ userId }) => {
   return (
     <FinanceProvider userId={userId}>
-      <FinanceDashboardInner userId={userId} onBack={onBack} />
+      <FinanceDashboardInner userId={userId} />
     </FinanceProvider>
   );
 };
 
 const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   userId,
-  onBack,
 }) => {
   // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
   useTourAutoStart('finance-first-visit');
@@ -453,17 +452,10 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   if (activeView !== 'panorama') {
     return (
       <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+        <UnifiedHeader title="Financeiro" breadcrumbs={[]} />
         {/* Navigation Header */}
         <div className="pt-6 px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
           <div className="flex items-center gap-3 mb-4">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="w-8 h-8 ceramic-inset flex items-center justify-center hover:scale-105 transition-transform"
-              >
-                <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
-              </button>
-            )}
             <Logo variant="default" width={36} className="rounded-lg hidden lg:block" />
             <div>
               <h1 className="text-xl lg:text-2xl font-black text-ceramic-text-primary text-etched leading-tight">
@@ -511,19 +503,12 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   // ── History / Overview view ──
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+      <UnifiedHeader title="Financeiro" breadcrumbs={[]} />
       {/* Header */}
       <div className="pt-6 px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
         {/* Top Row: Logo + Title + Period Navigator + Actions */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="w-8 h-8 ceramic-inset flex items-center justify-center hover:scale-105 transition-transform"
-              >
-                <ArrowLeft className="w-4 h-4 text-ceramic-text-secondary" />
-              </button>
-            )}
             <Logo variant="default" width={36} className="rounded-lg hidden lg:block" />
             <div>
               <h1 className="text-xl lg:text-2xl font-black text-ceramic-text-primary text-etched leading-tight">
