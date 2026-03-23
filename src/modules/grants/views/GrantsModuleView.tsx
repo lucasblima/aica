@@ -5,7 +5,9 @@
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Archive, ArchiveRestore, Trash2, Building2 } from 'lucide-react';
+import { UnifiedHeader } from '@/components/layout/UnifiedHeader';
 import { EditalSetupWizard } from '../components/EditalSetupWizard';
 import { EditalDetailView } from '../components/EditalDetailView';
 import { ProjectBriefingView } from '../components/ProjectBriefingView';
@@ -61,11 +63,12 @@ type OpportunityWithCount = GrantOpportunity & {
 };
 
 interface GrantsModuleViewProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 /* data-tour markers: grants-header, opportunities-list, opportunity-filter, edital-parser, opportunity-detail, saved-opportunities, application-tracking, ai-briefing */
 export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
   useTourAutoStart('grants-first-visit');
 
@@ -500,7 +503,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       setSelectedOpportunity(null);
       setProjects([]);
     } else {
-      onBack();
+      navigate('/');
     }
   };
 
@@ -729,50 +732,31 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         <div className="min-h-screen bg-ceramic-base p-6">
           <div className="max-w-6xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={onBack}
-                  className="ceramic-concave p-3 rounded-full hover:scale-105 transition-transform"
-                  data-testid="back-btn"
-                  aria-label="Voltar"
-                >
-                  <ArrowLeft className="w-5 h-5 text-ceramic-text-primary" />
-                </button>
-                <div>
-                  <h1 className="text-3xl font-bold text-ceramic-text-primary">
-                    Módulo Captação
-                  </h1>
-                  <p className="text-sm text-ceramic-text-secondary">
-                    Assistente de escrita para editais de fomento
-                  </p>
-                </div>
-              </div>
+            <UnifiedHeader title="Captação" breadcrumbs={[]} />
 
-              <div className="flex items-center gap-3">
-                <button
-                  data-testid="open-organization-wizard"
-                  onClick={() => setIsOrganizationWizardOpen(true)}
-                  className="ceramic-card px-4 py-3 rounded-full font-bold text-ceramic-info hover:scale-105 transition-transform flex items-center gap-2"
-                  title="Cadastrar nova organização para participar de editais"
-                >
-                  <Building2 className="w-5 h-5" />
-                  <span className="hidden sm:inline">+ Nova Organização</span>
-                </button>
-                <button
-                  onClick={() => setIsSetupModalOpen(true)}
-                  className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform"
-                  data-testid="create-edital-btn"
-                >
-                  + Novo Edital
-                </button>
-                <button
-                  onClick={() => setIsApprovedProjectModalOpen(true)}
-                  className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-success hover:scale-105 transition-transform"
-                >
-                  + Projeto Aprovado
-                </button>
-              </div>
+            <div className="flex items-center justify-end gap-3 mb-8">
+              <button
+                data-testid="open-organization-wizard"
+                onClick={() => setIsOrganizationWizardOpen(true)}
+                className="ceramic-card px-4 py-3 rounded-full font-bold text-ceramic-info hover:scale-105 transition-transform flex items-center gap-2"
+                title="Cadastrar nova organização para participar de editais"
+              >
+                <Building2 className="w-5 h-5" />
+                <span className="hidden sm:inline">+ Nova Organização</span>
+              </button>
+              <button
+                onClick={() => setIsSetupModalOpen(true)}
+                className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform"
+                data-testid="create-edital-btn"
+              >
+                + Novo Edital
+              </button>
+              <button
+                onClick={() => setIsApprovedProjectModalOpen(true)}
+                className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-success hover:scale-105 transition-transform"
+              >
+                + Projeto Aprovado
+              </button>
             </div>
 
             {/* Uploaded Documents Manager - Shows all PDFs to avoid duplicates */}

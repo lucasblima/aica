@@ -630,7 +630,7 @@ export function AppRouter() {
             {currentView === 'grants' && (
                <motion.div key="grants" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
                   <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Grants" />}>
-                     <GrantsModuleView onBack={() => setCurrentView('vida')} />
+                     <GrantsModuleView />
                   </ErrorBoundary>
                </motion.div>
             )}
