@@ -933,35 +933,51 @@ async function handleStatus(
 
   if (data && data.length > 0) {
     const user = data[0]
-    // Check if user has a synthetic email (guest account from Telegram)
     const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user.user_id)
     const isSyntheticEmail = !authError && authUser?.user?.email?.endsWith('@telegram.aica.guru') || false
     const accountType = authError
       ? '⚠️ Conta (status indisponivel)'
       : isSyntheticEmail ? '📱 Conta Telegram (convidado)' : '🌐 Conta AICA completa'
 
-    const statusOptions: Partial<OutboundMessage> = isSyntheticEmail
-      ? {
-          inlineKeyboard: {
-            rows: [[
-              { text: '📧 Registrar email', callbackData: 'email_register_start' },
-            ]],
-          },
-        }
-      : {}
-
-    await reply(tg, msg, [
-      '✅ <b>Conta ativa</b>',
-      '',
-      `Tipo: ${accountType}`,
-      `Usuario: @${user.telegram_username || 'N/A'}`,
-      `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
-      '',
-      ...(isSyntheticEmail
-        ? ['💡 Envie seu email aqui para acessar a AICA pelo navegador.', '']
-        : [`📧 Email: <b>${escapeHtml(authUser?.user?.email || 'N/A')}</b>`, '']),
-      'Use /desvincular para remover a vinculacao.',
-    ].join('\n'), statusOptions)
+    if (isSyntheticEmail) {
+      // Synthetic email — encourage registration + offer /web as alternative
+      await reply(tg, msg, [
+        '✅ <b>Conta ativa</b>',
+        '',
+        `Tipo: ${accountType}`,
+        `Usuario: @${user.telegram_username || 'N/A'}`,
+        `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
+        '',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '🖥️ <b>Quer usar a AICA no computador?</b>',
+        '',
+        '1️⃣ <b>Agora:</b> Use /web para abrir no navegador',
+        '2️⃣ <b>Sempre:</b> Registre seu email para ter acesso permanente',
+        '',
+        '💡 Com email registrado voce pode criar senha e logar direto pelo site!',
+      ].join('\n'), {
+        inlineKeyboard: {
+          rows: [
+            [{ text: '🌐 Abrir no navegador agora', callbackData: 'trigger_web_command' }],
+            [{ text: '📧 Registrar meu email', callbackData: 'email_register_start' }],
+          ],
+        },
+      })
+    } else {
+      // Real email — show full status
+      await reply(tg, msg, [
+        '✅ <b>Conta ativa</b>',
+        '',
+        `Tipo: ${accountType}`,
+        `Usuario: @${user.telegram_username || 'N/A'}`,
+        `📧 Email: <b>${escapeHtml(authUser?.user?.email || 'N/A')}</b>`,
+        `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
+        '',
+        '🌐 Use /web para abrir a AICA no navegador.',
+        '',
+        'Use /desvincular para remover a vinculacao.',
+      ].join('\n'))
+    }
   } else {
     await reply(tg, msg, [
       '❌ <b>Conta nao encontrada</b>',
@@ -969,6 +985,65 @@ async function handleStatus(
       'Oi! Me manda /start pra gente comecar 😊',
     ].join('\n'))
   }
+}
+
+async function handleWeb(
+  tg: TelegramAdapter,
+  msg: UnifiedMessage,
+  supabase: SupabaseClient,
+): Promise<void> {
+  const telegramId = Number(msg.sender.channelUserId)
+
+  const { data } = await supabase
+    .rpc('get_telegram_user', { p_telegram_id: telegramId })
+
+  if (!data || data.length === 0) {
+    await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
+    return
+  }
+
+  const user = data[0]
+
+  // Get user's email (synthetic or real)
+  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user.user_id)
+  if (authError || !authUser?.user?.email) {
+    await reply(tg, msg, '⚠️ Nao consegui gerar o link. Tente novamente em alguns minutos.')
+    return
+  }
+
+  const redirectUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
+
+  // Generate magic link via admin API (no email sent — we deliver via Telegram)
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: 'magiclink',
+    email: authUser.user.email,
+    options: {
+      redirectTo: `${redirectUrl}/welcome?source=telegram`,
+    },
+  })
+
+  if (linkError || !linkData?.properties?.action_link) {
+    console.error('[handleWeb] generateLink error:', linkError)
+    await reply(tg, msg, '⚠️ Nao consegui gerar o link. Tente novamente em alguns minutos.')
+    return
+  }
+
+  const webLink = linkData.properties.action_link
+
+  await reply(tg, msg, [
+    '🌐 <b>Acesse a AICA pelo navegador</b>',
+    '',
+    `<a href="${webLink}">👉 Clique aqui para abrir</a>`,
+    '',
+    '⏳ Este link expira em 1 hora.',
+    '💡 No navegador voce tem acesso a todos os modulos!',
+  ].join('\n'), {
+    inlineKeyboard: {
+      rows: [[
+        { text: '🌐 Abrir AICA Web', url: webLink },
+      ]],
+    },
+  })
 }
 
 async function handleVincular(
@@ -1607,6 +1682,9 @@ async function handleCallbackQuery(
     } else {
       await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
     }
+
+  } else if (data === 'trigger_web_command') {
+    await handleWeb(tg, msg, supabase)
   }
 }
 
@@ -1646,6 +1724,9 @@ async function routeCommand(
     case '/apagar_dados':
       await handleApagarDados(tg, msg, supabase)
       return 'apagar_dados'
+    case '/web':
+      await handleWeb(tg, msg, supabase)
+      return 'web'
     default:
       await reply(tg, msg,
         'Hmm, nao entendi esse comando. Tenta me falar o que voce precisa com suas proprias palavras 😊'
