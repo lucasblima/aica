@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { springHover, springPress } from '@/lib/animations/ceramic-motion';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 
 interface LoginProps {
   onLogin: () => void;
@@ -169,6 +170,18 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
             )}
           </AnimatePresence>
         </motion.button>
+
+        {/* Telegram Login */}
+        <div className="flex items-center gap-3 my-3">
+          <div className="flex-1 h-px bg-ceramic-border" />
+          <span className="text-xs text-ceramic-text-secondary">ou</span>
+          <div className="flex-1 h-px bg-ceramic-border" />
+        </div>
+        <TelegramLoginButton
+          onError={(error) => {
+            setEmailError(error)
+          }}
+        />
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-6">
@@ -357,6 +370,18 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
             )}
           </AnimatePresence>
         </motion.button>
+
+        {/* Telegram Login */}
+        <div className="flex items-center gap-3 my-3">
+          <div className="flex-1 h-px bg-[#D5D0C7]" />
+          <span className="text-xs text-[#948D82]">ou</span>
+          <div className="flex-1 h-px bg-[#D5D0C7]" />
+        </div>
+        <TelegramLoginButton
+          onError={(error) => {
+            setEmailError(error)
+          }}
+        />
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-6">
