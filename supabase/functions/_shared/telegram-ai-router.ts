@@ -500,6 +500,7 @@ async function executeLogMood(
   supabase: SupabaseClient,
   userId: string,
   params: Record<string, unknown>,
+  source: 'text' | 'voice' = 'text',
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
   const score = Math.min(5, Math.max(1, Number(params.score)));
 
@@ -508,14 +509,13 @@ async function executeLogMood(
     : '';
 
   // moments table CHECK constraint only allows type IN ('audio','text','both')
-  // Store mood data using emotion + sentiment_data columns (see migration 20260302050000)
   const emotionLabel = score >= 4 ? 'feliz' : score === 3 ? 'neutro' : 'triste';
 
   const { data, error } = await supabase
     .from('moments')
     .insert({
       user_id: userId,
-      type: 'text',
+      type: source === 'voice' ? 'audio' : 'text',
       content: String(params.note || `Check-in de humor via Telegram: ${score}/5`).substring(0, 200),
       emotion: emotionText || emotionLabel,
       sentiment_data: {
@@ -1341,6 +1341,7 @@ async function executeFunctionCall(
   userId: string,
   functionName: string,
   args: Record<string, unknown>,
+  source: 'text' | 'voice' = 'text',
 ): Promise<{ reply: string; data: Record<string, unknown> }> {
   switch (functionName) {
     case 'create_task':
@@ -1348,7 +1349,7 @@ async function executeFunctionCall(
     case 'log_expense':
       return executeLogExpense(supabase, userId, args);
     case 'log_mood':
-      return executeLogMood(supabase, userId, args);
+      return executeLogMood(supabase, userId, args, source);
     case 'create_event':
       return executeCreateEvent(supabase, userId, args);
     case 'get_daily_summary':
@@ -1678,7 +1679,7 @@ export async function processVoiceMessage(
     console.log(`[telegram-ai-router] Voice function call: ${fnName}(${JSON.stringify(fnArgs)})`);
 
     try {
-      const execResult = await executeFunctionCall(supabase, userId, fnName, fnArgs as Record<string, unknown>);
+      const execResult = await executeFunctionCall(supabase, userId, fnName, fnArgs as Record<string, unknown>, 'voice');
 
       // Update conversation context
       await updateConversationContext(supabase, userId, chatId, intentSummary, execResult.reply);
