@@ -6,6 +6,7 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { springHover, springPress } from '@/lib/animations/ceramic-motion';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
+import { CodeLoginSection } from '@/components/auth/CodeLoginSection';
 
 interface LoginProps {
   onLogin: () => void;
@@ -182,6 +183,9 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
             setEmailError(error)
           }}
         />
+        <div className="mt-3">
+          <CodeLoginSection onError={(error) => setEmailError(error)} />
+        </div>
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-6">
@@ -382,6 +386,9 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
             setEmailError(error)
           }}
         />
+        <div className="mt-3">
+          <CodeLoginSection onError={(error) => setEmailError(error)} />
+        </div>
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-6">

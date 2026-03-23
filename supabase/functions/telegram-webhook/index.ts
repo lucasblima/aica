@@ -1071,6 +1071,105 @@ async function handleWeb(
   })
 }
 
+// ============================================================================
+// /codigo — Cross-device code login (Netflix pattern)
+// ============================================================================
+
+async function handleCodigo(
+  tg: TelegramAdapter,
+  msg: UnifiedMessage,
+  supabase: SupabaseClient,
+): Promise<void> {
+  const telegramId = Number(msg.sender.channelUserId)
+  if (Number.isNaN(telegramId)) {
+    await reply(tg, msg, '⚠️ Nao consegui identificar sua conta. Tente novamente.')
+    return
+  }
+
+  // Only in private chats
+  if (msg.chat.type !== 'private') {
+    await reply(tg, msg, '🔒 Use /codigo apenas na conversa privada comigo.')
+    return
+  }
+
+  // Extract code from message: "/codigo 482917" or just the number after keyboard tap
+  const args = (msg.content.text || '').replace(/^\/codigo\s*/i, '').trim()
+  if (!args || !/^\d{6}$/.test(args)) {
+    await reply(tg, msg, [
+      '🔢 <b>Login por codigo</b>',
+      '',
+      'Digite o codigo de 6 digitos que aparece no navegador:',
+      '',
+      'Exemplo: <code>/codigo 482917</code>',
+    ].join('\n'))
+    return
+  }
+
+  // Look up user
+  const { data: userData } = await supabase
+    .rpc('get_telegram_user', { p_telegram_id: telegramId })
+
+  if (!userData || userData.length === 0) {
+    await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
+    return
+  }
+
+  const userId = userData[0].user_id
+
+  // Get user email for magic link
+  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+  if (authError || !authUser?.user?.email) {
+    await reply(tg, msg, '⚠️ Erro ao buscar sua conta. Tente novamente.')
+    return
+  }
+
+  const redirectUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
+
+  // Generate magic link
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: 'magiclink',
+    email: authUser.user.email,
+    options: {
+      redirectTo: `${redirectUrl}/welcome?source=telegram`,
+    },
+  })
+
+  if (linkError || !linkData?.properties?.action_link) {
+    console.error('[handleCodigo] generateLink error:', linkError)
+    await reply(tg, msg, '⚠️ Erro ao gerar sessao. Tente novamente.')
+    return
+  }
+
+  // Claim the code with the magic link URL
+  const { data: claimed, error: claimError } = await supabase.rpc('claim_web_auth_code', {
+    p_code: args,
+    p_user_id: userId,
+    p_magic_link_url: linkData.properties.action_link,
+  })
+
+  if (claimError) {
+    console.error('[handleCodigo] claim RPC error:', claimError)
+    await reply(tg, msg, '⚠️ Erro ao validar codigo. Tente novamente.')
+    return
+  }
+
+  if (!claimed) {
+    await reply(tg, msg, [
+      '❌ <b>Codigo invalido ou expirado</b>',
+      '',
+      'Verifique o codigo no navegador e tente novamente.',
+      'Codigos expiram em 5 minutos.',
+    ].join('\n'))
+    return
+  }
+
+  await reply(tg, msg, [
+    '✅ <b>Codigo aceito!</b>',
+    '',
+    'Olhe o navegador — voce ja esta entrando na AICA! 🎉',
+  ].join('\n'))
+}
+
 async function handleVincular(
   tg: TelegramAdapter,
   msg: UnifiedMessage,
@@ -1752,6 +1851,9 @@ async function routeCommand(
     case '/web':
       await handleWeb(tg, msg, supabase)
       return 'web'
+    case '/codigo':
+      await handleCodigo(tg, msg, supabase)
+      return 'codigo'
     default:
       await reply(tg, msg,
         'Hmm, nao entendi esse comando. Tenta me falar o que voce precisa com suas proprias palavras 😊'
