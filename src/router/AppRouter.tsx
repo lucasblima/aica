@@ -166,12 +166,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
    return <AuthGuard><ActivationGuard>{children}</ActivationGuard></AuthGuard>;
 }
 
-// Finance route wrapper — gets userId from auth, navigates back to /
+// Finance route wrapper — gets userId from auth
 function FinanceRoutePage() {
    const { user } = useAuth();
-   const navigate = useNavigate();
    if (!user) return <CeramicLoadingState variant="page" />;
-   return <FinanceDashboard userId={user.id} onBack={() => navigate('/')} />;
+   return <FinanceDashboard userId={user.id} />;
 }
 
 // Reusable Module Card Component (for association detail view)
@@ -580,7 +579,6 @@ export function AppRouter() {
       userId ? (
          <FinanceDashboard
             userId={userId}
-            onBack={() => setCurrentView('vida')}
          />
       ) : <CeramicLoadingState variant="page" />
    );
@@ -713,12 +711,17 @@ export function AppRouter() {
       );
    }
 
-   // Layout wrapper for connections routes with bottom nav
+   // Layout wrapper for connections routes (focused mode — no BottomNav)
    const ConnectionsLayout = ({ children }: { children: React.ReactNode }) => (
       <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
          {children}
+      </div>
+   );
 
-         {/* ANCHOR PRINCIPLE: Global Navigation */}
+   // Layout wrapper for contacts route (keeps BottomNav)
+   const ContactsLayout = ({ children }: { children: React.ReactNode }) => (
+      <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
+         {children}
          <BottomNav
             currentView={currentView}
             onChange={handleViewChange}
@@ -915,9 +918,9 @@ export function AppRouter() {
                   element={
                      <ProtectedRoute>
                         <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Contacts" />}>
-                           <ConnectionsLayout>
+                           <ContactsLayout>
                               <ContactsView />
-                           </ConnectionsLayout>
+                           </ContactsLayout>
                         </ErrorBoundary>
                      </ProtectedRoute>
                   }

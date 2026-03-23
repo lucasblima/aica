@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectionsView } from '../modules/connections/views/ConnectionsView';
 import { CreateSpaceDrawer } from '../modules/connections/components/CreateSpaceDrawer';
+import { UnifiedHeader } from '@/components/layout/UnifiedHeader';
 import { useAuth } from '../hooks/useAuth';
 import type { ConnectionSpace, ArchetypeType } from '../modules/connections/types';
 
@@ -41,6 +42,7 @@ export function ConnectionsPage() {
 
   return (
     <>
+      <UnifiedHeader title="Conexões" breadcrumbs={[]} />
       <ConnectionsView
         userId={user.id}
         onNavigateToSpace={handleNavigateToSpace}
