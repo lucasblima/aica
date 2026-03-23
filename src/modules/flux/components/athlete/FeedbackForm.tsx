@@ -177,7 +177,6 @@ export function FeedbackForm({
                     <div key={slot.slotId} className="flex items-center gap-3 p-3 rounded-xl bg-ceramic-cool/40">
                       <span className={`w-2 h-2 rounded-full ${slot.isCompleted ? 'bg-green-500' : 'bg-amber-400'}`} />
                       <span className="text-sm font-medium text-ceramic-text-primary">{slot.templateName}</span>
-                      <span className="text-xs text-ceramic-text-secondary ml-auto">{slot.duration}min</span>
                     </div>
                   ))}
                 </div>

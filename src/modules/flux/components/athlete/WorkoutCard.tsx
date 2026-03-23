@@ -182,10 +182,6 @@ export function WorkoutCard({
           {slot.template.name}
         </p>
 
-        <span className="text-[11px] text-ceramic-text-secondary flex-shrink-0">
-          {prescribedDuration}min
-        </span>
-
         {existingRpe != null && (
           <span
             className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
