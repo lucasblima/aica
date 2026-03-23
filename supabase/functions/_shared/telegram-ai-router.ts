@@ -68,7 +68,7 @@ interface ConversationMessage {
 const FUNCTION_DECLARATIONS = [
   {
     name: 'create_task',
-    description: 'Cria uma nova tarefa no modulo Atlas (gestao de tarefas). Use quando o usuario pedir para adicionar, criar, anotar ou lembrar de uma tarefa, to-do ou atividade.',
+    description: 'Cria uma nova tarefa no modulo Atlas (gestao de tarefas). Use SOMENTE quando o usuario pedir explicitamente para criar uma tarefa, to-do ou atividade a ser feita. NAO use para relatos de humor, desabafos ou reflexoes pessoais — esses vao para log_mood.',
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -122,7 +122,7 @@ const FUNCTION_DECLARATIONS = [
   },
   {
     name: 'log_mood',
-    description: 'Registra o humor/sentimento do usuario no modulo Journey. Use quando o usuario falar como esta se sentindo, seu estado emocional, ou dar uma nota de humor.',
+    description: 'Registra o humor, sentimento ou reflexao do usuario no modulo Journey (diario pessoal). Use quando o usuario falar como esta se sentindo, seu estado emocional, compartilhar uma reflexao pessoal, desabafar, contar como foi o dia, ou expressar emocoes. Inclui audios de voz com relatos pessoais. Prefira esta funcao sobre create_task quando a mensagem for sobre sentimentos ou experiencias vividas.',
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -335,6 +335,11 @@ function buildSystemPrompt(userName: string): string {
     '- Studio: episodios de podcast, gravacoes, convidados',
     '- Grants: editais abertos, oportunidades, prazos',
     '- Agenda: eventos, reunioes (via Google Calendar no app)',
+    '',
+    'IMPORTANTE para audios de voz:',
+    '- Audios geralmente sao relatos pessoais, reflexoes ou desabafos → use log_mood',
+    '- So use create_task para audio se o usuario EXPLICITAMENTE pedir para criar tarefa',
+    '- Na duvida entre log_mood e create_task, prefira log_mood',
     '',
     `Data de hoje: ${today}.`,
     `Nome do usuario: ${userName}.`,

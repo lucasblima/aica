@@ -414,6 +414,7 @@ export class TelegramAdapter implements ChannelAdapter {
       ),
       one_time_keyboard: keyboard.oneTime ?? false,
       resize_keyboard: keyboard.resize ?? true,
+      is_persistent: keyboard.persistent ?? false,
     };
   }
 }

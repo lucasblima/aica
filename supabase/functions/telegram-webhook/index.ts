@@ -27,7 +27,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
 import { TelegramAdapter } from "../_shared/telegram-adapter.ts"
-import type { UnifiedMessage, OutboundMessage } from "../_shared/channel-adapter.ts"
+import type { UnifiedMessage, OutboundMessage, ReplyKeyboard } from "../_shared/channel-adapter.ts"
 import {
   processNaturalLanguage,
   processVoiceMessage,
@@ -36,6 +36,19 @@ import {
   buildMoodRatingKeyboard,
 } from "../_shared/telegram-ai-router.ts"
 import type { AIRouterResult } from "../_shared/telegram-ai-router.ts"
+
+// ============================================================================
+// PERSISTENT KEYBOARD — Replaces slash commands for non-technical users
+// ============================================================================
+
+const MAIN_KEYBOARD: ReplyKeyboard = {
+  rows: [
+    [{ text: '🌐 Abrir no navegador' }, { text: '📊 Meu dia' }],
+    [{ text: '😊 Como estou' }, { text: '❓ Ajuda' }],
+  ],
+  resize: true,
+  persistent: true,
+}
 
 // ============================================================================
 // TYPES
@@ -933,35 +946,51 @@ async function handleStatus(
 
   if (data && data.length > 0) {
     const user = data[0]
-    // Check if user has a synthetic email (guest account from Telegram)
     const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user.user_id)
     const isSyntheticEmail = !authError && authUser?.user?.email?.endsWith('@telegram.aica.guru') || false
     const accountType = authError
       ? '⚠️ Conta (status indisponivel)'
       : isSyntheticEmail ? '📱 Conta Telegram (convidado)' : '🌐 Conta AICA completa'
 
-    const statusOptions: Partial<OutboundMessage> = isSyntheticEmail
-      ? {
-          inlineKeyboard: {
-            rows: [[
-              { text: '📧 Registrar email', callbackData: 'email_register_start' },
-            ]],
-          },
-        }
-      : {}
-
-    await reply(tg, msg, [
-      '✅ <b>Conta ativa</b>',
-      '',
-      `Tipo: ${accountType}`,
-      `Usuario: @${user.telegram_username || 'N/A'}`,
-      `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
-      '',
-      ...(isSyntheticEmail
-        ? ['💡 Envie seu email aqui para acessar a AICA pelo navegador.', '']
-        : [`📧 Email: <b>${escapeHtml(authUser?.user?.email || 'N/A')}</b>`, '']),
-      'Use /desvincular para remover a vinculacao.',
-    ].join('\n'), statusOptions)
+    if (isSyntheticEmail) {
+      // Synthetic email — encourage registration + offer /web as alternative
+      await reply(tg, msg, [
+        '✅ <b>Conta ativa</b>',
+        '',
+        `Tipo: ${accountType}`,
+        `Usuario: @${user.telegram_username || 'N/A'}`,
+        `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
+        '',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '🖥️ <b>Quer usar a AICA no computador?</b>',
+        '',
+        '1️⃣ <b>Agora:</b> Use /web para abrir no navegador',
+        '2️⃣ <b>Sempre:</b> Registre seu email para ter acesso permanente',
+        '',
+        '💡 Com email registrado voce pode criar senha e logar direto pelo site!',
+      ].join('\n'), {
+        inlineKeyboard: {
+          rows: [
+            [{ text: '🌐 Abrir no navegador agora', callbackData: 'trigger_web_command' }],
+            [{ text: '📧 Registrar meu email', callbackData: 'email_register_start' }],
+          ],
+        },
+      })
+    } else {
+      // Real email — show full status
+      await reply(tg, msg, [
+        '✅ <b>Conta ativa</b>',
+        '',
+        `Tipo: ${accountType}`,
+        `Usuario: @${user.telegram_username || 'N/A'}`,
+        `📧 Email: <b>${escapeHtml(authUser?.user?.email || 'N/A')}</b>`,
+        `Consentimento LGPD: ${user.consent_given ? '✅ Concedido' : '⚠️ Pendente'}`,
+        '',
+        '🌐 Use /web para abrir a AICA no navegador.',
+        '',
+        'Use /desvincular para remover a vinculacao.',
+      ].join('\n'))
+    }
   } else {
     await reply(tg, msg, [
       '❌ <b>Conta nao encontrada</b>',
@@ -969,6 +998,77 @@ async function handleStatus(
       'Oi! Me manda /start pra gente comecar 😊',
     ].join('\n'))
   }
+}
+
+async function handleWeb(
+  tg: TelegramAdapter,
+  msg: UnifiedMessage,
+  supabase: SupabaseClient,
+): Promise<void> {
+  const telegramId = Number(msg.sender.channelUserId)
+
+  if (Number.isNaN(telegramId)) {
+    await reply(tg, msg, '⚠️ Nao consegui identificar sua conta. Tente novamente.')
+    return
+  }
+
+  // Security: only allow /web in private chats to prevent magic link exposure in groups
+  if (msg.chat.type && msg.chat.type !== 'private') {
+    await reply(tg, msg, '🔒 Por seguranca, use /web apenas na conversa privada comigo.')
+    return
+  }
+
+  const { data } = await supabase
+    .rpc('get_telegram_user', { p_telegram_id: telegramId })
+
+  if (!data || data.length === 0) {
+    await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
+    return
+  }
+
+  const user = data[0]
+
+  // Get user's email (synthetic or real)
+  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user.user_id)
+  if (authError || !authUser?.user?.email) {
+    await reply(tg, msg, '⚠️ Nao consegui gerar o link. Tente novamente em alguns minutos.')
+    return
+  }
+
+  const redirectUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
+
+  // Generate magic link via admin API (no email sent — we deliver via Telegram)
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: 'magiclink',
+    email: authUser.user.email,
+    options: {
+      redirectTo: `${redirectUrl}/welcome?source=telegram`,
+    },
+  })
+
+  if (linkError || !linkData?.properties?.action_link) {
+    console.error('[handleWeb] generateLink error:', linkError)
+    await reply(tg, msg, '⚠️ Nao consegui gerar o link. Tente novamente em alguns minutos.')
+    return
+  }
+
+  const webLink = linkData.properties.action_link
+
+  await reply(tg, msg, [
+    '🌐 <b>Acesse a AICA pelo navegador</b>',
+    '',
+    'Toque no botao abaixo para abrir:',
+    '',
+    '⏳ Este link expira em 1 hora.',
+    '💡 No navegador voce tem acesso a todos os modulos!',
+  ].join('\n'), {
+    disableLinkPreview: true,
+    inlineKeyboard: {
+      rows: [[
+        { text: '🌐 Abrir AICA Web', url: webLink },
+      ]],
+    },
+  })
 }
 
 async function handleVincular(
@@ -1258,13 +1358,13 @@ async function handleCallbackQuery(
           'E igualzinho mandar audio no WhatsApp.',
         ].join('\n'))
 
-        // Msg 3 — Call to action
+        // Msg 3 — Call to action + persistent keyboard
         await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
         await reply(tg, msg, [
           'Vamos comecar? Me conta uma coisa:',
           '',
-          'O que voce precisa fazer hoje? Pode falar por audio ou digitar 😊',
-        ].join('\n'))
+          'O que voce precisa fazer hoje? Pode falar por audio ou tocar nos botoes abaixo 😊',
+        ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
         return
       }
     }
@@ -1280,7 +1380,7 @@ async function handleCallbackQuery(
       '"Como ta meu dia?" → eu te mostro um resumo 📋',
       '',
       '🎙️ Pode mandar audio tambem!',
-    ].join('\n'))
+    ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
 
   } else if (data === 'consent_reject' || data.startsWith('consent_reject:')) {
     await reply(tg, msg, [
@@ -1607,6 +1707,9 @@ async function handleCallbackQuery(
     } else {
       await reply(tg, msg, 'Oi! Me manda /start pra gente comecar 😊')
     }
+
+  } else if (data === 'trigger_web_command') {
+    await handleWeb(tg, msg, supabase)
   }
 }
 
@@ -1646,6 +1749,9 @@ async function routeCommand(
     case '/apagar_dados':
       await handleApagarDados(tg, msg, supabase)
       return 'apagar_dados'
+    case '/web':
+      await handleWeb(tg, msg, supabase)
+      return 'web'
     default:
       await reply(tg, msg,
         'Hmm, nao entendi esse comando. Tenta me falar o que voce precisa com suas proprias palavras 😊'
@@ -1762,6 +1868,36 @@ serve(async (req) => {
             })
             result.processed = true
           } else {
+            // Handle persistent keyboard button taps before flow checks
+            const msgText = (message.content.text || '').trim()
+            if (msgText === '🌐 Abrir no navegador') {
+              await handleWeb(tg, message, supabase)
+              result.processed = true
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[keyboard_button:web]',
+                action: 'web',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+            if (msgText === '❓ Ajuda') {
+              await handleHelp(tg, message)
+              result.processed = true
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[keyboard_button:help]',
+                action: 'help',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+            // "📊 Meu dia" and "😊 Como estou" fall through to AI router naturally
+
             // Check if user is in a multi-step flow (e.g., email registration)
             const chatId = Number(message.chat.chatId)
             const { activeFlow, flowState } = await getActiveFlow(supabase, aicaUserId, chatId)
@@ -1815,10 +1951,9 @@ serve(async (req) => {
                   'Email confirmado! ✅ Sua conta AICA esta ativa.',
                   '',
                   '🎟️ Voce ganhou 3 convites para compartilhar com amigos.',
-                  'Para convidar alguem, mande: /convidar',
                   '',
-                  'Quando quiser, acesse aica.guru pelo navegador para ver seu painel completo.',
-                ].join('\n'))
+                  'Use os botoes abaixo para navegar, ou me mande audio! 🎙️',
+                ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
 
                 const durationMs = Date.now() - startTime
                 await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
@@ -1928,9 +2063,13 @@ serve(async (req) => {
                 })
                 await supabase.rpc('generate_telegram_referral_code', { p_user_id: aicaUserId })
                 await setActiveFlow(supabase, aicaUserId, chatId, null, {})
-                await reply(tg, message,
-                  `Email confirmado! ✅ Sua conta AICA esta ativa.\n\n🎟️ Voce ganhou 3 convites para compartilhar com amigos.\nPara convidar alguem, mande: /convidar\n\nQuando quiser, acesse aica.guru pelo navegador para ver seu painel completo.`
-                )
+                await reply(tg, message, [
+                  'Email confirmado! ✅ Sua conta AICA esta ativa.',
+                  '',
+                  '🎟️ Voce ganhou 3 convites para compartilhar com amigos.',
+                  '',
+                  'Use os botoes abaixo para navegar, ou me mande audio! 🎙️',
+                ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
                 result.processed = true
                 return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } })
               }
