@@ -12,6 +12,7 @@ import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../
 import { VidaUniversalInput } from '@/components/features/VidaUniversalInput';
 import { MementoMoriBar } from '@/components/features/MementoMoriBar';
 import { LifeScoreWidget } from '@/components/features';
+import { useLifeScore } from '@/hooks/useLifeScore';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -125,6 +126,10 @@ export default function VidaPage({
 
    // Identity data from Journey CP system
    const { stats: cpStats, progress: cpProgress } = useConsciousnessPoints();
+
+   // Life Score — only show widget when 3+ domains are active
+   const { activeDomains, isLoading: isLifeScoreLoading } = useLifeScore();
+   const showLifeScore = !isLifeScoreLoading && activeDomains.length >= 3;
 
    // User metadata for avatar and profile
    const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
@@ -293,8 +298,8 @@ export default function VidaPage({
                </motion.div>
             )}
 
-            {/* Life Score — cross-domain composite (cascade step 3) */}
-            {cascadeStep >= 3 && (
+            {/* Life Score — cross-domain composite (cascade step 3, 3+ domains required) */}
+            {cascadeStep >= 3 && showLifeScore && (
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
