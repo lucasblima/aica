@@ -8,9 +8,9 @@ interface UseScrollCollapseOptions {
 
 export function useScrollCollapse(options: UseScrollCollapseOptions = {}) {
   const { threshold = 80, restoreThreshold = 20, enabled = true } = options;
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const lastScrollY = useRef(0);
-  const highestScrollY = useRef(0);
+  const [isCollapsed, setIsCollapsed] = useState(() => enabled && window.scrollY > threshold);
+  const lastScrollY = useRef(window.scrollY);
+  const highestScrollY = useRef(window.scrollY);
 
   useEffect(() => {
     if (!enabled) return;

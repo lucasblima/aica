@@ -453,21 +453,8 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
     return (
       <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
         <UnifiedHeader title="Financeiro" breadcrumbs={[]} />
-        {/* Navigation Header */}
-        <div className="pt-6 px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
-          <div className="flex items-center gap-3 mb-4">
-            <Logo variant="default" width={36} className="rounded-lg hidden lg:block" />
-            <div>
-              <h1 className="text-xl lg:text-2xl font-black text-ceramic-text-primary text-etched leading-tight">
-                Finanças
-              </h1>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary hidden lg:block">
-                AICA Life OS
-              </p>
-            </div>
-          </div>
-
-          {/* Tab Navigation */}
+        {/* Tab Navigation */}
+        <div className="px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
           <div className="flex gap-1 lg:gap-2 overflow-x-auto pb-1 scrollbar-thin">
             {VIEW_TABS.map((tab) => {
               const Icon = tab.icon;
@@ -504,22 +491,9 @@ const FinanceDashboardInner: React.FC<FinanceDashboardProps> = ({
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
       <UnifiedHeader title="Financeiro" breadcrumbs={[]} />
-      {/* Header */}
-      <div className="pt-6 px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
-        {/* Top Row: Logo + Title + Period Navigator + Actions */}
+      {/* Period Navigator + Actions */}
+      <div className="px-6 lg:px-12 pb-4 flex-shrink-0 border-b border-ceramic-border/40">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Logo variant="default" width={36} className="rounded-lg hidden lg:block" />
-            <div>
-              <h1 className="text-xl lg:text-2xl font-black text-ceramic-text-primary text-etched leading-tight">
-                Finanças
-              </h1>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary hidden lg:block">
-                AICA Life OS
-              </p>
-            </div>
-          </div>
-
           {/* Period Navigator */}
           <div className="flex items-center gap-1">
             <button

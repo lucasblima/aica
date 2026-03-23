@@ -187,7 +187,8 @@ export function UnifiedHeader({
             <div className="flex items-center gap-3">
               <button
                 onClick={onOpenProfile}
-                className="flex-shrink-0 ceramic-avatar-recessed rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                disabled={!onOpenProfile}
+                className="flex-shrink-0 ceramic-avatar-recessed rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-60 disabled:cursor-default"
                 aria-label="Abrir perfil"
               >
                 {avatarUrl ? (
