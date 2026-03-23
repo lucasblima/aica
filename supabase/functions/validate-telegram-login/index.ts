@@ -52,6 +52,7 @@ serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
   }
 
   if (req.method === 'OPTIONS') {
@@ -89,8 +90,14 @@ serve(async (req) => {
     }
 
     // 3. Create admin Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://aica.guru'
@@ -129,18 +136,9 @@ serve(async (req) => {
       })
 
       if (createError) {
-        // User might already exist (race condition) — try to find by email
-        const { data: existingUsers } = await supabase.auth.admin.listUsers()
-        const existing = existingUsers?.users?.find(u => u.email === syntheticEmail)
-        if (existing) {
-          userEmail = syntheticEmail
-        } else {
-          console.error('[validate-telegram-login] createUser error:', createError)
-          return new Response(
-            JSON.stringify({ success: false, error: 'Erro ao criar conta.' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-          )
-        }
+        // Race condition or user already exists — try to proceed with synthetic email
+        // generateLink will work if the email exists in auth.users
+        userEmail = syntheticEmail
       } else {
         userEmail = syntheticEmail
 

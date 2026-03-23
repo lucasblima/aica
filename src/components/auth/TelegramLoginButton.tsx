@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '@/services/supabaseClient'
 
+const TELEGRAM_BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME || 'AicaLifeBot'
+
 interface TelegramLoginData {
   id: number
   first_name: string
@@ -12,11 +14,10 @@ interface TelegramLoginData {
 }
 
 interface TelegramLoginButtonProps {
-  onSuccess?: () => void
   onError?: (error: string) => void
 }
 
-export function TelegramLoginButton({ onSuccess, onError }: TelegramLoginButtonProps) {
+export function TelegramLoginButton({ onError }: TelegramLoginButtonProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
 
@@ -27,7 +28,7 @@ export function TelegramLoginButton({ onSuccess, onError }: TelegramLoginButtonP
         body: data,
       })
 
-      if (error || !result?.success) {
+      if (error || !result?.success || !result?.redirect_url) {
         onError?.(result?.error || 'Erro ao validar login do Telegram.')
         return
       }
@@ -39,7 +40,7 @@ export function TelegramLoginButton({ onSuccess, onError }: TelegramLoginButtonP
     } finally {
       setLoading(false)
     }
-  }, [onSuccess, onError])
+  }, [onError])
 
   useEffect(() => {
     const callbackName = `__tg_auth_${Date.now()}`
@@ -50,7 +51,7 @@ export function TelegramLoginButton({ onSuccess, onError }: TelegramLoginButtonP
     const script = document.createElement('script')
     script.src = 'https://telegram.org/js/telegram-widget.js?23'
     script.async = true
-    script.setAttribute('data-telegram-login', 'AicaLifeBot')
+    script.setAttribute('data-telegram-login', TELEGRAM_BOT_NAME)
     script.setAttribute('data-size', 'large')
     script.setAttribute('data-onauth', `${callbackName}(user)`)
     script.setAttribute('data-request-access', 'write')
