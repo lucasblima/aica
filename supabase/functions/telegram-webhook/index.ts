@@ -27,7 +27,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
 import { TelegramAdapter } from "../_shared/telegram-adapter.ts"
-import type { UnifiedMessage, OutboundMessage } from "../_shared/channel-adapter.ts"
+import type { UnifiedMessage, OutboundMessage, ReplyKeyboard } from "../_shared/channel-adapter.ts"
 import {
   processNaturalLanguage,
   processVoiceMessage,
@@ -36,6 +36,19 @@ import {
   buildMoodRatingKeyboard,
 } from "../_shared/telegram-ai-router.ts"
 import type { AIRouterResult } from "../_shared/telegram-ai-router.ts"
+
+// ============================================================================
+// PERSISTENT KEYBOARD — Replaces slash commands for non-technical users
+// ============================================================================
+
+const MAIN_KEYBOARD: ReplyKeyboard = {
+  rows: [
+    [{ text: '🌐 Abrir no navegador' }, { text: '📊 Meu dia' }],
+    [{ text: '😊 Como estou' }, { text: '❓ Ajuda' }],
+  ],
+  resize: true,
+  persistent: true,
+}
 
 // ============================================================================
 // TYPES
@@ -1333,13 +1346,13 @@ async function handleCallbackQuery(
           'E igualzinho mandar audio no WhatsApp.',
         ].join('\n'))
 
-        // Msg 3 — Call to action
+        // Msg 3 — Call to action + persistent keyboard
         await tg.sendTypingAction(msg.chat.chatId, msg.chat.messageThreadId)
         await reply(tg, msg, [
           'Vamos comecar? Me conta uma coisa:',
           '',
-          'O que voce precisa fazer hoje? Pode falar por audio ou digitar 😊',
-        ].join('\n'))
+          'O que voce precisa fazer hoje? Pode falar por audio ou tocar nos botoes abaixo 😊',
+        ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
         return
       }
     }
@@ -1355,7 +1368,7 @@ async function handleCallbackQuery(
       '"Como ta meu dia?" → eu te mostro um resumo 📋',
       '',
       '🎙️ Pode mandar audio tambem!',
-    ].join('\n'))
+    ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
 
   } else if (data === 'consent_reject' || data.startsWith('consent_reject:')) {
     await reply(tg, msg, [
@@ -1896,10 +1909,9 @@ serve(async (req) => {
                   'Email confirmado! ✅ Sua conta AICA esta ativa.',
                   '',
                   '🎟️ Voce ganhou 3 convites para compartilhar com amigos.',
-                  'Para convidar alguem, mande: /convidar',
                   '',
-                  'Quando quiser, acesse aica.guru pelo navegador para ver seu painel completo.',
-                ].join('\n'))
+                  'Use os botoes abaixo para navegar, ou me mande audio! 🎙️',
+                ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
 
                 const durationMs = Date.now() - startTime
                 await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
@@ -1914,6 +1926,36 @@ serve(async (req) => {
               // Email not yet confirmed — process message normally (continued conversation)
               // Falls through to normal AI processing below
             }
+
+            // Handle persistent keyboard button taps before AI routing
+            const msgText = (message.content.text || '').trim()
+            if (msgText === '🌐 Abrir no navegador') {
+              await handleWeb(tg, message, supabase)
+              result.processed = true
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[keyboard_button:web]',
+                action: 'web',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+            if (msgText === '❓ Ajuda') {
+              await handleHelp(tg, message)
+              result.processed = true
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[keyboard_button:help]',
+                action: 'help',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+            // "📊 Meu dia" and "😊 Como estou" fall through to AI router naturally
 
             // Process with AI router
             const firstName = message.sender.firstName || 'usuario'

@@ -87,6 +87,7 @@ export interface ReplyKeyboard {
   rows: ReplyKeyboardButton[][];
   oneTime?: boolean;
   resize?: boolean;
+  persistent?: boolean;
 }
 
 export interface OutboundMessage {
