@@ -1007,6 +1007,17 @@ async function handleWeb(
 ): Promise<void> {
   const telegramId = Number(msg.sender.channelUserId)
 
+  if (Number.isNaN(telegramId)) {
+    await reply(tg, msg, '⚠️ Nao consegui identificar sua conta. Tente novamente.')
+    return
+  }
+
+  // Security: only allow /web in private chats to prevent magic link exposure in groups
+  if (msg.chat.type && msg.chat.type !== 'private') {
+    await reply(tg, msg, '🔒 Por seguranca, use /web apenas na conversa privada comigo.')
+    return
+  }
+
   const { data } = await supabase
     .rpc('get_telegram_user', { p_telegram_id: telegramId })
 
@@ -1046,11 +1057,12 @@ async function handleWeb(
   await reply(tg, msg, [
     '🌐 <b>Acesse a AICA pelo navegador</b>',
     '',
-    `<a href="${webLink}">👉 Clique aqui para abrir</a>`,
+    'Toque no botao abaixo para abrir:',
     '',
     '⏳ Este link expira em 1 hora.',
     '💡 No navegador voce tem acesso a todos os modulos!',
   ].join('\n'), {
+    disableLinkPreview: true,
     inlineKeyboard: {
       rows: [[
         { text: '🌐 Abrir AICA Web', url: webLink },
@@ -1856,6 +1868,36 @@ serve(async (req) => {
             })
             result.processed = true
           } else {
+            // Handle persistent keyboard button taps before flow checks
+            const msgText = (message.content.text || '').trim()
+            if (msgText === '🌐 Abrir no navegador') {
+              await handleWeb(tg, message, supabase)
+              result.processed = true
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[keyboard_button:web]',
+                action: 'web',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+            if (msgText === '❓ Ajuda') {
+              await handleHelp(tg, message)
+              result.processed = true
+              const durationMs = Date.now() - startTime
+              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
+                intentSummary: '[keyboard_button:help]',
+                action: 'help',
+              })
+              return new Response(
+                JSON.stringify(result),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+            // "📊 Meu dia" and "😊 Como estou" fall through to AI router naturally
+
             // Check if user is in a multi-step flow (e.g., email registration)
             const chatId = Number(message.chat.chatId)
             const { activeFlow, flowState } = await getActiveFlow(supabase, aicaUserId, chatId)
@@ -1926,36 +1968,6 @@ serve(async (req) => {
               // Email not yet confirmed — process message normally (continued conversation)
               // Falls through to normal AI processing below
             }
-
-            // Handle persistent keyboard button taps before AI routing
-            const msgText = (message.content.text || '').trim()
-            if (msgText === '🌐 Abrir no navegador') {
-              await handleWeb(tg, message, supabase)
-              result.processed = true
-              const durationMs = Date.now() - startTime
-              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
-                intentSummary: '[keyboard_button:web]',
-                action: 'web',
-              })
-              return new Response(
-                JSON.stringify(result),
-                { status: 200, headers: { 'Content-Type': 'application/json' } }
-              )
-            }
-            if (msgText === '❓ Ajuda') {
-              await handleHelp(tg, message)
-              result.processed = true
-              const durationMs = Date.now() - startTime
-              await logMessage(supabase, message, aicaUserId, 'completed', durationMs, undefined, {
-                intentSummary: '[keyboard_button:help]',
-                action: 'help',
-              })
-              return new Response(
-                JSON.stringify(result),
-                { status: 200, headers: { 'Content-Type': 'application/json' } }
-              )
-            }
-            // "📊 Meu dia" and "😊 Como estou" fall through to AI router naturally
 
             // Process with AI router
             const firstName = message.sender.firstName || 'usuario'
@@ -2051,9 +2063,13 @@ serve(async (req) => {
                 })
                 await supabase.rpc('generate_telegram_referral_code', { p_user_id: aicaUserId })
                 await setActiveFlow(supabase, aicaUserId, chatId, null, {})
-                await reply(tg, message,
-                  `Email confirmado! ✅ Sua conta AICA esta ativa.\n\n🎟️ Voce ganhou 3 convites para compartilhar com amigos.\nPara convidar alguem, mande: /convidar\n\nQuando quiser, acesse aica.guru pelo navegador para ver seu painel completo.`
-                )
+                await reply(tg, message, [
+                  'Email confirmado! ✅ Sua conta AICA esta ativa.',
+                  '',
+                  '🎟️ Voce ganhou 3 convites para compartilhar com amigos.',
+                  '',
+                  'Use os botoes abaixo para navegar, ou me mande audio! 🎙️',
+                ].join('\n'), { replyKeyboard: MAIN_KEYBOARD })
                 result.processed = true
                 return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } })
               }
